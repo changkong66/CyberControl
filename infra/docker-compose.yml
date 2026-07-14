@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: liyans
+      POSTGRES_USER: liyans
+      POSTGRES_PASSWORD: liyans-local-only
+    ports:
+      - "5432:5432"
+    volumes:
+      - liyans-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liyans -d liyans"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/backend.Dockerfile
+    environment:
+      LIYAN_ENVIRONMENT: development
+      LIYAN_DATABASE_URL: postgresql+asyncpg://liyans:liyans-local-only@postgres:5432/liyans
+      LIYAN_AUDIT_LOG_PATH: /var/lib/liyans/audit/events.jsonl
+      LIYAN_SSE_CURSOR_SECRET: local-compose-cursor-secret-change-me-32
+    ports:
+      - "8000:8000"
+    volumes:
+      - liyans-runtime:/var/lib/liyans
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  liyans-postgres:
+  liyans-runtime:

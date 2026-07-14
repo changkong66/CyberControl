@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "ErrorSeverity": {
+      "enum": [
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ],
+      "title": "ErrorSeverity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.error-receipt.v1",
+      "description": "Wire version for the standard Topic 3 error receipt.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "error_code": {
+      "description": "Stable machine-readable error code from the shared error catalog.",
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Z][A-Z0-9_-]+$",
+      "title": "Error Code",
+      "type": "string"
+    },
+    "category": {
+      "description": "Error ownership category such as CONTRACT, PROVIDER, or TIMEOUT.",
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+    },
+    "severity": {
+      "$ref": "#/$defs/ErrorSeverity",
+      "description": "Operational severity; it does not encode academic correctness."
+    },
+    "retriable": {
+      "description": "Whether infrastructure policy permits another delivery attempt.",
+      "title": "Retriable",
+      "type": "boolean"
+    },
+    "safe_message": {
+      "description": "Redacted message safe for logs and authorized clients.",
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Safe Message",
+      "type": "string"
+    },
+    "details_ref": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Restricted artifact reference for diagnostics; never raw secrets.",
+      "title": "Details Ref"
+    },
+    "occurred_at": {
+      "description": "UTC time at which the error occurred.",
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "error_code",
+    "category",
+    "severity",
+    "retriable",
+    "safe_message",
+    "occurred_at"
+  ],
+  "title": "ErrorReceiptV1",
+  "type": "object"
+}

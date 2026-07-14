@@ -1,0 +1,155 @@
+{
+  "$defs": {
+    "VerificationBindingV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "verification.binding.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state_machine_version": {
+          "title": "State Machine Version",
+          "type": "string"
+        },
+        "verifier_build_version": {
+          "title": "Verifier Build Version",
+          "type": "string"
+        },
+        "policy_version": {
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "prompt_bundle_version": {
+          "title": "Prompt Bundle Version",
+          "type": "string"
+        },
+        "claim_schema_version": {
+          "const": "claim.v1",
+          "title": "Claim Schema Version",
+          "type": "string"
+        },
+        "retrieval_pipeline_version": {
+          "title": "Retrieval Pipeline Version",
+          "type": "string"
+        },
+        "knowledge_base_version": {
+          "title": "Knowledge Base Version",
+          "type": "string"
+        },
+        "toolchain_manifest_version": {
+          "title": "Toolchain Manifest Version",
+          "type": "string"
+        },
+        "content_security_policy_version": {
+          "title": "Content Security Policy Version",
+          "type": "string"
+        },
+        "license_policy_version": {
+          "title": "License Policy Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "state_machine_version",
+        "verifier_build_version",
+        "policy_version",
+        "prompt_bundle_version",
+        "claim_schema_version",
+        "retrieval_pipeline_version",
+        "knowledge_base_version",
+        "toolchain_manifest_version",
+        "content_security_policy_version",
+        "license_policy_version"
+      ],
+      "title": "VerificationBindingV1",
+      "type": "object"
+    },
+    "VerificationProfile": {
+      "enum": [
+        "STANDARD",
+        "STRICT",
+        "CODE_STRICT"
+      ],
+      "title": "VerificationProfile",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "verification.accepted.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "state": {
+      "const": "ACCEPTED",
+      "title": "State",
+      "type": "string"
+    },
+    "state_version": {
+      "minimum": 1,
+      "title": "State Version",
+      "type": "integer"
+    },
+    "binding": {
+      "$ref": "#/$defs/VerificationBindingV1"
+    },
+    "accepted_at": {
+      "format": "date-time",
+      "title": "Accepted At",
+      "type": "string"
+    },
+    "deadline_at": {
+      "format": "date-time",
+      "title": "Deadline At",
+      "type": "string"
+    },
+    "source_candidate_id": {
+      "format": "uuid",
+      "title": "Source Candidate Id",
+      "type": "string"
+    },
+    "source_candidate_version": {
+      "minimum": 1,
+      "title": "Source Candidate Version",
+      "type": "integer"
+    },
+    "source_candidate_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Candidate Sha256",
+      "type": "string"
+    },
+    "estimated_profile": {
+      "$ref": "#/$defs/VerificationProfile"
+    }
+  },
+  "required": [
+    "schema_version",
+    "verification_id",
+    "idempotency_key",
+    "state",
+    "state_version",
+    "binding",
+    "accepted_at",
+    "deadline_at",
+    "source_candidate_id",
+    "source_candidate_version",
+    "source_candidate_sha256",
+    "estimated_profile"
+  ],
+  "title": "VerificationAcceptedPayloadV1",
+  "type": "object"
+}

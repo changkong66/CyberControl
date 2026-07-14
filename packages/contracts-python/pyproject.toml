@@ -1,0 +1,23 @@
+[project]
+name = "liyans-contracts"
+version = "0.1.0"
+description = "Canonical Pydantic contracts for the Liyan platform"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pydantic>=2.10,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/liyans_contracts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

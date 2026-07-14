@@ -1,0 +1,53 @@
+[project]
+name = "liyans-backend"
+version = "0.1.0"
+description = "FastAPI control plane for the Liyan platform"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "httpx>=0.28,<1",
+  "liyans-contracts",
+  "orjson>=3.10,<4",
+  "pydantic-settings>=2.7,<3",
+  "sqlalchemy[asyncio]>=2.0,<3",
+  "asyncpg>=0.30,<1",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+academic = [
+  "numpy>=2.1,<3",
+  "sympy>=1.13,<2",
+]
+retrieval = [
+  "numpy>=2.1,<3",
+]
+dev = [
+  "coverage>=7.6,<8",
+  "hypothesis>=6.120,<7",
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+  "ruff>=0.9,<1",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/liyans"]
+
+[tool.uv.sources]
+liyans-contracts = { workspace = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]

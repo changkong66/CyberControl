@@ -1,0 +1,66 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "verification.binding.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_machine_version": {
+      "title": "State Machine Version",
+      "type": "string"
+    },
+    "verifier_build_version": {
+      "title": "Verifier Build Version",
+      "type": "string"
+    },
+    "policy_version": {
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "prompt_bundle_version": {
+      "title": "Prompt Bundle Version",
+      "type": "string"
+    },
+    "claim_schema_version": {
+      "const": "claim.v1",
+      "title": "Claim Schema Version",
+      "type": "string"
+    },
+    "retrieval_pipeline_version": {
+      "title": "Retrieval Pipeline Version",
+      "type": "string"
+    },
+    "knowledge_base_version": {
+      "title": "Knowledge Base Version",
+      "type": "string"
+    },
+    "toolchain_manifest_version": {
+      "title": "Toolchain Manifest Version",
+      "type": "string"
+    },
+    "content_security_policy_version": {
+      "title": "Content Security Policy Version",
+      "type": "string"
+    },
+    "license_policy_version": {
+      "title": "License Policy Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "state_machine_version",
+    "verifier_build_version",
+    "policy_version",
+    "prompt_bundle_version",
+    "claim_schema_version",
+    "retrieval_pipeline_version",
+    "knowledge_base_version",
+    "toolchain_manifest_version",
+    "content_security_policy_version",
+    "license_policy_version"
+  ],
+  "title": "VerificationBindingV1",
+  "type": "object"
+}

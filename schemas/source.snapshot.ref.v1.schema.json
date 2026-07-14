@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "ArtifactObjectRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "artifact.object.ref.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "storage_namespace": {
+          "const": "verification-artifacts",
+          "title": "Storage Namespace",
+          "type": "string"
+        },
+        "object_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9/_\\-.]{0,511}$",
+          "title": "Object Key",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "application/x-ndjson",
+            "text/markdown",
+            "text/plain",
+            "application/octet-stream"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_encoding": {
+          "enum": [
+            "identity",
+            "gzip"
+          ],
+          "title": "Content Encoding",
+          "type": "string"
+        },
+        "byte_size": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "storage_namespace",
+        "object_key",
+        "media_type",
+        "content_encoding",
+        "byte_size",
+        "sha256",
+        "created_at"
+      ],
+      "title": "ArtifactObjectRefV1",
+      "type": "object"
+    },
+    "BlockSnapshotManifestItemV1": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        },
+        "block_type": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Block Type",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "json_pointer": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Json Pointer",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "byte_size": {
+          "maximum": 16777216,
+          "minimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "block_type",
+        "ordinal",
+        "json_pointer",
+        "sha256",
+        "byte_size"
+      ],
+      "title": "BlockSnapshotManifestItemV1",
+      "type": "object"
+    },
+    "ResourceType": {
+      "enum": [
+        "Lecturer_Doc",
+        "MindMap",
+        "Gradient_Quiz",
+        "Simulation_Code",
+        "Extension_Material"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "SourceAgent": {
+      "enum": [
+        "Lecturer",
+        "MindMap",
+        "Tester",
+        "CodeSandbox",
+        "Extension"
+      ],
+      "title": "SourceAgent",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "source.snapshot.ref.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_envelope_id": {
+      "format": "uuid",
+      "title": "Source Envelope Id",
+      "type": "string"
+    },
+    "source_envelope_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Source Envelope Version",
+      "type": "string"
+    },
+    "source_envelope_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Source Envelope Sha256",
+      "type": "string"
+    },
+    "blueprint_id": {
+      "format": "uuid",
+      "title": "Blueprint Id",
+      "type": "string"
+    },
+    "blueprint_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Blueprint Version",
+      "type": "string"
+    },
+    "blueprint_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Blueprint Sha256",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "candidate_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Sha256",
+      "type": "string"
+    },
+    "source_agent": {
+      "$ref": "#/$defs/SourceAgent"
+    },
+    "resource_type": {
+      "$ref": "#/$defs/ResourceType"
+    },
+    "full_snapshot": {
+      "$ref": "#/$defs/ArtifactObjectRefV1"
+    },
+    "block_manifest": {
+      "items": {
+        "$ref": "#/$defs/BlockSnapshotManifestItemV1"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Block Manifest",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_envelope_id",
+    "source_envelope_version",
+    "source_envelope_sha256",
+    "blueprint_id",
+    "blueprint_version",
+    "blueprint_sha256",
+    "candidate_id",
+    "candidate_version",
+    "candidate_sha256",
+    "source_agent",
+    "resource_type",
+    "full_snapshot",
+    "block_manifest"
+  ],
+  "title": "SourceSnapshotRefV1",
+  "type": "object"
+}

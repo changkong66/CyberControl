@@ -1,0 +1,57 @@
+schema_version = "provider-policy.v1"
+policy_version = "1.0.0"
+default_fail_closed = true
+
+[providers.spark_text]
+provider = "xfyun"
+capability = "TEXT_GENERATION"
+allowlisted = true
+enabled_by_default = false
+runtime_validation_required = true
+required_request_fields = ["instructions", "tools"]
+allowed_data_classes = ["PUBLIC", "INTERNAL_REDACTED"]
+
+[providers.xfyun_code]
+provider = "xfyun"
+capability = "CODE_ASSISTANCE"
+allowlisted = true
+enabled_by_default = false
+runtime_validation_required = true
+allowed_data_classes = ["PUBLIC", "INTERNAL_REDACTED"]
+
+[providers.seedance]
+provider = "seedance"
+capability = "MULTIMODAL_GENERATION"
+allowlisted = true
+enabled_by_default = false
+runtime_validation_required = true
+official_endpoint_required = true
+allowed_data_classes = ["PUBLIC", "INTERNAL_REDACTED"]
+
+[providers.external_embedding]
+capability = "EMBEDDING"
+allowlisted = false
+enabled_by_default = false
+prohibited = true
+reason = "Not present in the frozen provider allowlist."
+
+[local_capabilities.faiss]
+capability = "VECTOR_SEARCH"
+enabled = true
+network_access = false
+
+[local_capabilities.hashed_lexical_embedding]
+capability = "DETERMINISTIC_VECTOR_FEATURES"
+enabled = true
+dimension = 2048
+network_access = false
+
+[local_capabilities.sympy]
+capability = "SYMBOLIC_MATH"
+enabled = true
+network_access = false
+
+[local_capabilities.numpy]
+capability = "NUMERIC_MATH"
+enabled = true
+network_access = false

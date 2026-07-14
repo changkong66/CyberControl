@@ -1,0 +1,11 @@
+# Replace the platform owner when the competition team account is finalized.
+* @wch06
+
+/packages/contracts-python/ @wch06
+/packages/contracts-ts/ @wch06
+/packages/contracts-go/ @wch06
+/backend/src/liyans/infrastructure/ @wch06
+/backend/src/liyans/core/ @wch06
+/config/ @wch06
+/infra/ @wch06
+/docs/adr/ @wch06

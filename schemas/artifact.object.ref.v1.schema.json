@@ -1,0 +1,71 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "artifact.object.ref.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "storage_namespace": {
+      "const": "verification-artifacts",
+      "title": "Storage Namespace",
+      "type": "string"
+    },
+    "object_key": {
+      "maxLength": 512,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9/_\\-.]{0,511}$",
+      "title": "Object Key",
+      "type": "string"
+    },
+    "media_type": {
+      "enum": [
+        "application/json",
+        "application/x-ndjson",
+        "text/markdown",
+        "text/plain",
+        "application/octet-stream"
+      ],
+      "title": "Media Type",
+      "type": "string"
+    },
+    "content_encoding": {
+      "enum": [
+        "identity",
+        "gzip"
+      ],
+      "title": "Content Encoding",
+      "type": "string"
+    },
+    "byte_size": {
+      "maximum": 33554432,
+      "minimum": 1,
+      "title": "Byte Size",
+      "type": "integer"
+    },
+    "sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "storage_namespace",
+    "object_key",
+    "media_type",
+    "content_encoding",
+    "byte_size",
+    "sha256",
+    "created_at"
+  ],
+  "title": "ArtifactObjectRefV1",
+  "type": "object"
+}

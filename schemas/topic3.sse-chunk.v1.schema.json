@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "StreamFragmentType": {
+      "enum": [
+        "START",
+        "DELTA",
+        "END",
+        "SNAPSHOT"
+      ],
+      "title": "StreamFragmentType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.sse-chunk.v1",
+      "description": "Topic 3 internal streaming fragment version.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stream_id": {
+      "description": "Generation stream identity.",
+      "format": "uuid",
+      "title": "Stream Id",
+      "type": "string"
+    },
+    "fragment_id": {
+      "description": "Unique fragment identity for idempotency.",
+      "format": "uuid",
+      "title": "Fragment Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "description": "Logical candidate identity.",
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "description": "Exact candidate version.",
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "block_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Block identity for block-scoped fragments.",
+      "title": "Block Id"
+    },
+    "fragment_type": {
+      "$ref": "#/$defs/StreamFragmentType",
+      "description": "Start, delta, end, or complete snapshot fragment."
+    },
+    "chunk_index": {
+      "description": "Zero-based fragment order within candidate/block partition.",
+      "minimum": 0,
+      "title": "Chunk Index",
+      "type": "integer"
+    },
+    "is_final": {
+      "description": "True only for the final fragment in the current partition.",
+      "title": "Is Final",
+      "type": "boolean"
+    },
+    "data_encoding": {
+      "description": "Encoding of the fragment data field.",
+      "enum": [
+        "utf-8-json",
+        "utf-8-text"
+      ],
+      "title": "Data Encoding",
+      "type": "string"
+    },
+    "data": {
+      "description": "Fragment body; unverified content remains staged.",
+      "maxLength": 65536,
+      "title": "Data",
+      "type": "string"
+    },
+    "data_sha256": {
+      "description": "SHA-256 of the exact UTF-8 fragment bytes.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Data Sha256",
+      "type": "string"
+    },
+    "emitted_at": {
+      "description": "UTC fragment creation time from the SSE collection layer.",
+      "format": "date-time",
+      "title": "Emitted At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "stream_id",
+    "fragment_id",
+    "candidate_id",
+    "candidate_version",
+    "fragment_type",
+    "chunk_index",
+    "is_final",
+    "data_encoding",
+    "data",
+    "data_sha256",
+    "emitted_at"
+  ],
+  "title": "SSEChunkV1",
+  "type": "object"
+}

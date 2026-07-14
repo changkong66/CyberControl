@@ -1,0 +1,480 @@
+{
+  "$defs": {
+    "DeliveryMetadataV1": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "AT_LEAST_ONCE",
+          "default": "AT_LEAST_ONCE",
+          "description": "Delivery guarantee. Consumers must be idempotent.",
+          "title": "Mode",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Stable deduplication key produced by the message originator.",
+          "maxLength": 160,
+          "minLength": 16,
+          "pattern": "^[A-Za-z0-9:_\\-.]+$",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "attempt": {
+          "default": 1,
+          "description": "Current delivery attempt, starting from one.",
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "max_attempts": {
+          "default": 3,
+          "description": "Maximum delivery attempts allowed by the routing policy.",
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "priority": {
+          "$ref": "#/$defs/MessagePriority",
+          "default": "NORMAL",
+          "description": "Queue priority assigned by the deterministic routing policy."
+        },
+        "available_at": {
+          "description": "Earliest UTC time at which the message may be dispatched.",
+          "format": "date-time",
+          "title": "Available At",
+          "type": "string"
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "UTC expiry after which the message must not be executed.",
+          "title": "Expires At"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "available_at"
+      ],
+      "title": "DeliveryMetadataV1",
+      "type": "object"
+    },
+    "ErrorReceiptV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "topic3.error-receipt.v1",
+          "description": "Wire version for the standard Topic 3 error receipt.",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "error_code": {
+          "description": "Stable machine-readable error code from the shared error catalog.",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Z][A-Z0-9_-]+$",
+          "title": "Error Code",
+          "type": "string"
+        },
+        "category": {
+          "description": "Error ownership category such as CONTRACT, PROVIDER, or TIMEOUT.",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Category",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/ErrorSeverity",
+          "description": "Operational severity; it does not encode academic correctness."
+        },
+        "retriable": {
+          "description": "Whether infrastructure policy permits another delivery attempt.",
+          "title": "Retriable",
+          "type": "boolean"
+        },
+        "safe_message": {
+          "description": "Redacted message safe for logs and authorized clients.",
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Safe Message",
+          "type": "string"
+        },
+        "details_ref": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Restricted artifact reference for diagnostics; never raw secrets.",
+          "title": "Details Ref"
+        },
+        "occurred_at": {
+          "description": "UTC time at which the error occurred.",
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "error_code",
+        "category",
+        "severity",
+        "retriable",
+        "safe_message",
+        "occurred_at"
+      ],
+      "title": "ErrorReceiptV1",
+      "type": "object"
+    },
+    "ErrorSeverity": {
+      "enum": [
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ],
+      "title": "ErrorSeverity",
+      "type": "string"
+    },
+    "MessageKind": {
+      "enum": [
+        "COMMAND",
+        "EVENT",
+        "RESULT",
+        "ERROR"
+      ],
+      "title": "MessageKind",
+      "type": "string"
+    },
+    "MessagePriority": {
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "NORMAL",
+        "LOW"
+      ],
+      "title": "MessagePriority",
+      "type": "string"
+    },
+    "ProducerMetadataV1": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAgent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Producing Topic 3 agent; null for platform infrastructure events."
+        },
+        "service": {
+          "description": "Stable producing service name from deployment metadata.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Service",
+          "type": "string"
+        },
+        "instance_id": {
+          "description": "Ephemeral process or worker instance identity.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Instance Id",
+          "type": "string"
+        },
+        "build_version": {
+          "description": "Immutable producer build version used for provenance.",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Build Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "service",
+        "instance_id",
+        "build_version"
+      ],
+      "title": "ProducerMetadataV1",
+      "type": "object"
+    },
+    "ResourceMetadataV1": {
+      "additionalProperties": false,
+      "properties": {
+        "resource_type": {
+          "$ref": "#/$defs/ResourceType",
+          "description": "Frozen Topic 3 resource family owning the payload."
+        },
+        "blueprint_id": {
+          "description": "Immutable blueprint identity from Topic 3 orchestration.",
+          "format": "uuid",
+          "title": "Blueprint Id",
+          "type": "string"
+        },
+        "blueprint_version": {
+          "description": "Blueprint version bound when generation started.",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Blueprint Version",
+          "type": "string"
+        },
+        "candidate_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Logical candidate identity when the message concerns a candidate.",
+          "title": "Candidate Id"
+        },
+        "candidate_version": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact candidate version; latest aliases are prohibited.",
+          "title": "Candidate Version"
+        },
+        "block_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact block identity for block-scoped messages.",
+          "title": "Block Id"
+        }
+      },
+      "required": [
+        "resource_type",
+        "blueprint_id",
+        "blueprint_version"
+      ],
+      "title": "ResourceMetadataV1",
+      "type": "object"
+    },
+    "ResourceType": {
+      "enum": [
+        "Lecturer_Doc",
+        "MindMap",
+        "Gradient_Quiz",
+        "Simulation_Code",
+        "Extension_Material"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "SourceAgent": {
+      "enum": [
+        "Lecturer",
+        "MindMap",
+        "Tester",
+        "CodeSandbox",
+        "Extension"
+      ],
+      "title": "SourceAgent",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.envelope.v1",
+      "default": "topic3.envelope.v1",
+      "description": "Frozen public Envelope wire version.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "envelope_id": {
+      "description": "Globally unique envelope identity generated at message creation.",
+      "format": "uuid",
+      "title": "Envelope Id",
+      "type": "string"
+    },
+    "event_type": {
+      "description": "Stable event name from the Topic 3 event catalog.",
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9_.-]+$",
+      "title": "Event Type",
+      "type": "string"
+    },
+    "message_kind": {
+      "$ref": "#/$defs/MessageKind",
+      "description": "Command, event, result, or standardized error receipt."
+    },
+    "tenant_id": {
+      "description": "Tenant boundary sourced only from authenticated server context.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Learning-session identity from the frozen Topic 1/2 session model.",
+      "format": "uuid",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "subject_ref": {
+      "description": "Tokenized user or service subject reference; never raw PII.",
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Subject Ref",
+      "type": "string"
+    },
+    "correlation_id": {
+      "description": "Root workflow correlation identity preserved across agents.",
+      "format": "uuid",
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "causation_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Envelope identity that directly caused this message.",
+      "title": "Causation Id"
+    },
+    "sequence": {
+      "description": "Monotonic sequence inside the partition key, assigned by the producer.",
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "partition_key": {
+      "description": "Ordering partition, normally tenant/session/candidate identity.",
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Partition Key",
+      "type": "string"
+    },
+    "producer": {
+      "$ref": "#/$defs/ProducerMetadataV1",
+      "description": "Producing agent/service provenance supplied by runtime infrastructure."
+    },
+    "delivery": {
+      "$ref": "#/$defs/DeliveryMetadataV1",
+      "description": "At-least-once delivery, retry, priority, and expiry metadata."
+    },
+    "resource": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResourceMetadataV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional blueprint/candidate/block identity for resource messages."
+    },
+    "trace_id": {
+      "description": "Distributed trace identity generated or propagated by infrastructure.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]+$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "span_id": {
+      "anyOf": [
+        {
+          "maxLength": 32,
+          "minLength": 8,
+          "pattern": "^[a-fA-F0-9]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Current trace span identity when tracing is enabled.",
+      "title": "Span Id"
+    },
+    "created_at": {
+      "description": "UTC message creation time from the producing service clock.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorReceiptV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Standard error receipt, required only when message_kind is ERROR."
+    },
+    "payload": {
+      "additionalProperties": true,
+      "description": "Agent-specific versioned payload; validated by the owning payload schema.",
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "envelope_id",
+    "event_type",
+    "message_kind",
+    "tenant_id",
+    "session_id",
+    "subject_ref",
+    "correlation_id",
+    "sequence",
+    "partition_key",
+    "producer",
+    "delivery",
+    "trace_id",
+    "created_at"
+  ],
+  "title": "Topic3EnvelopeV1",
+  "type": "object"
+}

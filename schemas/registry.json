@@ -1,0 +1,93 @@
+[
+  {
+    "schema_name": "artifact.object.ref.v1",
+    "owner": "verification-platform",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "artifact.object.ref.v1.schema.json"
+  },
+  {
+    "schema_name": "source.snapshot.ref.v1",
+    "owner": "verification-platform",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "source.snapshot.ref.v1.schema.json"
+  },
+  {
+    "schema_name": "topic3.envelope.v1",
+    "owner": "generation-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic3.envelope.v1.schema.json"
+  },
+  {
+    "schema_name": "topic3.error-receipt.v1",
+    "owner": "generation-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic3.error-receipt.v1.schema.json"
+  },
+  {
+    "schema_name": "topic3.block.v1",
+    "owner": "generation-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic3.block.v1.schema.json"
+  },
+  {
+    "schema_name": "topic3.candidate.v1",
+    "owner": "generation-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic3.candidate.v1.schema.json"
+  },
+  {
+    "schema_name": "topic3.sse-chunk.v1",
+    "owner": "generation-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic3.sse-chunk.v1.schema.json"
+  },
+  {
+    "schema_name": "responses.lite.request.v1",
+    "owner": "provider-platform",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "responses.lite.request.v1.schema.json"
+  },
+  {
+    "schema_name": "verification.binding.v1",
+    "owner": "verification-platform",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "verification.binding.v1.schema.json"
+  },
+  {
+    "schema_name": "verification.request.v1",
+    "owner": "verification-platform",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "verification.request.v1.schema.json"
+  },
+  {
+    "schema_name": "verification.accepted.v1",
+    "owner": "verification-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "verification.accepted.v1.schema.json"
+  },
+  {
+    "schema_name": "verification.state_changed.v1",
+    "owner": "verification-platform",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "verification.state_changed.v1.schema.json"
+  },
+  {
+    "schema_name": "release.authorization.v1",
+    "owner": "verification-platform",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "release.authorization.v1.schema.json"
+  }
+]

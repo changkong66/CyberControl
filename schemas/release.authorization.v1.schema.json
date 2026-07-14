@@ -1,0 +1,106 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "release.authorization.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "authorization_id": {
+      "format": "uuid",
+      "title": "Authorization Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "report_id": {
+      "format": "uuid",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "candidate_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Sha256",
+      "type": "string"
+    },
+    "release_mode": {
+      "enum": [
+        "FULL",
+        "FULL_WITH_DISCLOSURE"
+      ],
+      "title": "Release Mode",
+      "type": "string"
+    },
+    "allowed_block_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Allowed Block Ids",
+      "type": "array"
+    },
+    "disclosure_codes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Disclosure Codes",
+      "type": "array"
+    },
+    "report_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Report Sha256",
+      "type": "string"
+    },
+    "issued_at": {
+      "format": "date-time",
+      "title": "Issued At",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "one_time_use": {
+      "const": true,
+      "title": "One Time Use",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "authorization_id",
+    "verification_id",
+    "report_id",
+    "candidate_id",
+    "candidate_version",
+    "candidate_sha256",
+    "release_mode",
+    "allowed_block_ids",
+    "report_sha256",
+    "issued_at",
+    "expires_at",
+    "one_time_use"
+  ],
+  "title": "ReleaseAuthorizationPayloadV1",
+  "type": "object"
+}

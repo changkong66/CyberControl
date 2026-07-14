@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "VerificationState": {
+      "enum": [
+        "ACCEPTED",
+        "SNAPSHOT_VALIDATING",
+        "CLAIM_EXTRACTING",
+        "CLAIMS_READY",
+        "MODULE_DISPATCHING",
+        "VERIFYING",
+        "AGGREGATING",
+        "REVISION_PLANNING",
+        "REVISION_WAITING",
+        "REVERIFYING",
+        "RELEASE_PENDING",
+        "RELEASED",
+        "BLOCKED",
+        "REVIEW_REQUIRED",
+        "FAILED",
+        "EXPIRED",
+        "CANCELLED"
+      ],
+      "title": "VerificationState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "verification.state_changed.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "previous_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerificationState"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current_state": {
+      "$ref": "#/$defs/VerificationState"
+    },
+    "state_version": {
+      "minimum": 1,
+      "title": "State Version",
+      "type": "integer"
+    },
+    "reason_code": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "revision_round": {
+      "maximum": 2,
+      "minimum": 0,
+      "title": "Revision Round",
+      "type": "integer"
+    },
+    "changed_at": {
+      "format": "date-time",
+      "title": "Changed At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "verification_id",
+    "previous_state",
+    "current_state",
+    "state_version",
+    "reason_code",
+    "revision_round",
+    "changed_at"
+  ],
+  "title": "VerificationStateChangedPayloadV1",
+  "type": "object"
+}

@@ -1,0 +1,72 @@
+target-version = "py311"
+line-length = 100
+extend-exclude = [
+  ".git",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".venv",
+  "frontend",
+  "node_modules",
+  "schemas",
+]
+
+[lint]
+select = [
+  "ANN",
+  "ARG",
+  "ASYNC",
+  "B",
+  "C4",
+  "C90",
+  "DTZ",
+  "E",
+  "ERA",
+  "F",
+  "G",
+  "I",
+  "ICN",
+  "ISC",
+  "LOG",
+  "PERF",
+  "PIE",
+  "PL",
+  "PTH",
+  "Q",
+  "RET",
+  "RSE",
+  "RUF",
+  "S",
+  "SIM",
+  "T10",
+  "TID",
+  "UP",
+  "W",
+]
+ignore = [
+  "ANN401",
+  "ISC001",
+  "PLR0913",
+  "PLR2004",
+  "TID252",
+]
+fixable = ["ALL"]
+unfixable = []
+
+[lint.mccabe]
+max-complexity = 12
+
+[lint.pylint]
+max-branches = 12
+max-returns = 6
+max-statements = 50
+
+[lint.per-file-ignores]
+"backend/tests/**/*.py" = ["ANN", "ARG001", "S101"]
+"packages/contracts-python/tests/**/*.py" = ["ANN", "ARG001", "S101"]
+"tools/**/*.py" = ["T201"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+skip-magic-trailing-comma = false

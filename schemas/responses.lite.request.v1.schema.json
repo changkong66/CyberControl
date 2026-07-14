@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "LiteToolDefinitionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "input_schema": {
+          "additionalProperties": true,
+          "title": "Input Schema",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "input_schema"
+      ],
+      "title": "LiteToolDefinitionV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Internal provider-neutral request, translated by approved adapters.",
+  "properties": {
+    "schema_version": {
+      "const": "responses.lite.request.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "provider_alias": {
+      "enum": [
+        "spark_text",
+        "xfyun_code",
+        "seedance"
+      ],
+      "title": "Provider Alias",
+      "type": "string"
+    },
+    "model_alias": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Model Alias",
+      "type": "string"
+    },
+    "instructions": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Instructions",
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "$ref": "#/$defs/LiteToolDefinitionV1"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Tools",
+      "type": "array"
+    },
+    "input_segments": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "title": "Input Segments",
+      "type": "array"
+    },
+    "response_schema": {
+      "additionalProperties": true,
+      "title": "Response Schema",
+      "type": "object"
+    },
+    "temperature": {
+      "maximum": 0.3,
+      "minimum": 0.0,
+      "title": "Temperature",
+      "type": "number"
+    },
+    "max_output_tokens": {
+      "minimum": 128,
+      "title": "Max Output Tokens",
+      "type": "integer"
+    },
+    "timeout_ms": {
+      "maximum": 120000,
+      "minimum": 1000,
+      "title": "Timeout Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "provider_alias",
+    "model_alias",
+    "instructions",
+    "tools",
+    "input_segments",
+    "response_schema",
+    "temperature",
+    "max_output_tokens",
+    "timeout_ms"
+  ],
+  "title": "ResponsesLiteRequestV1",
+  "type": "object"
+}
