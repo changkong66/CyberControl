@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response, status
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -11,12 +11,20 @@ async def live() -> dict[str, str]:
 
 
 @router.get("/ready")
-async def ready(request: Request) -> dict[str, object]:
+async def ready(request: Request, response: Response) -> dict[str, object]:
     provider_policy = request.app.state.provider_policy
     task_queue = request.app.state.task_queue
     message_bus = request.app.state.message_bus
+    database = await request.app.state.database_health.check()
+    ready_status = database.healthy and task_queue.running and not message_bus.closed
+    if not ready_status:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
-        "status": "ready",
+        "status": "ready" if ready_status else "degraded",
+        "database": {
+            "status": "up" if database.healthy else "down",
+            "latency_ms": round(database.latency_ms, 3),
+        },
         "provider_policy_version": provider_policy.policy_version,
         "enabled_external_providers": provider_policy.enabled_external_aliases(),
         "task_queue_running": task_queue.running,

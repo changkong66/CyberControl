@@ -20,6 +20,14 @@ class Settings(BaseSettings):
 
     environment: str = "development"
     database_url: str = "postgresql+asyncpg://liyans:liyans@localhost:5432/liyans"
+    database_pool_size: int = 10
+    database_max_overflow: int = 20
+    database_pool_timeout_seconds: float = 10.0
+    database_pool_recycle_seconds: int = 1800
+    database_statement_timeout_ms: int = 30_000
+    database_idle_transaction_timeout_ms: int = 60_000
+    database_command_timeout_seconds: float = 35.0
+    database_health_timeout_seconds: float = 3.0
     artifact_root: Path = REPOSITORY_ROOT / "var" / "artifacts"
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
     provider_policy_path: Path = REPOSITORY_ROOT / "config" / "providers.toml"
@@ -35,6 +43,10 @@ class Settings(BaseSettings):
             raise ValueError("production requires LIYAN_SSE_CURSOR_SECRET")
         if len(self.sse_cursor_secret.encode("utf-8")) < 32:
             raise ValueError("sse_cursor_secret must contain at least 32 bytes")
+        if self.database_pool_size < 1 or self.database_max_overflow < 0:
+            raise ValueError("database pool sizing is invalid")
+        if self.database_statement_timeout_ms < 100:
+            raise ValueError("database_statement_timeout_ms must be at least 100")
         return self
 
 
