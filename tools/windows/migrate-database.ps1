@@ -11,6 +11,23 @@ Set-StrictMode -Version Latest
 $RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $AlembicConfig = Join-Path $RepositoryRoot "backend\alembic.ini"
 
+function Resolve-UvExecutable {
+    $command = Get-Command uv -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+    $candidates = @(
+        (Join-Path $env:APPDATA "Python\Python311\Scripts\uv.exe"),
+        (Join-Path $env:USERPROFILE ".local\bin\uv.exe")
+    )
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
+        }
+    }
+    throw "uv is unavailable. Run tools/windows/sync-python-environment.ps1 first."
+}
+
 if (-not $env:LIYAN_DATABASE_MIGRATION_URL) {
     throw "LIYAN_DATABASE_MIGRATION_URL must contain the privileged migration connection URL."
 }
@@ -19,28 +36,25 @@ if ($Action -eq "DowngradeOne" -and -not $AllowDestructiveDowngrade) {
     throw "DowngradeOne requires -AllowDestructiveDowngrade."
 }
 
-$UvCommand = Get-Command uv -ErrorAction SilentlyContinue
-if (-not $UvCommand) {
-    throw "uv is not available on PATH. Run tools/windows/sync-python-environment.ps1 first."
-}
+$UvExecutable = Resolve-UvExecutable
 
 Push-Location $RepositoryRoot
 try {
     switch ($Action) {
         "Upgrade" {
-            & $UvCommand.Source run --frozen alembic -c $AlembicConfig upgrade head
+            & $UvExecutable run --frozen alembic -c $AlembicConfig upgrade head
         }
         "DowngradeOne" {
-            & $UvCommand.Source run --frozen alembic -c $AlembicConfig downgrade -1
+            & $UvExecutable run --frozen alembic -c $AlembicConfig downgrade -1
         }
         "Current" {
-            & $UvCommand.Source run --frozen alembic -c $AlembicConfig current --check-heads
+            & $UvExecutable run --frozen alembic -c $AlembicConfig current --check-heads
         }
         "Check" {
-            & $UvCommand.Source run --frozen alembic -c $AlembicConfig check
+            & $UvExecutable run --frozen alembic -c $AlembicConfig check
         }
         "Sql" {
-            & $UvCommand.Source run --frozen alembic -c $AlembicConfig upgrade head --sql
+            & $UvExecutable run --frozen alembic -c $AlembicConfig upgrade head --sql
         }
     }
     if ($LASTEXITCODE -ne 0) {

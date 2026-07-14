@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+import os
+from uuid import uuid4
+
+import pytest
+from liyans.core.settings import Settings
+from liyans.core.tenant import TenantContext
+from liyans.infrastructure.database import (
+    DatabaseSessionManager,
+    SessionExecutionContext,
+    create_database_engine,
+)
+from sqlalchemy import text
+
+RUNTIME_URL = os.getenv("LIYAN_TEST_DATABASE_URL")
+MIGRATION_URL = os.getenv("LIYAN_TEST_MIGRATION_DATABASE_URL")
+
+
+async def assert_restricted_role(
+    database: DatabaseSessionManager,
+    *,
+    label: str,
+) -> None:
+    async with database.transaction() as session:
+        result = await session.execute(
+            text(
+                "SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user"
+            )
+        )
+        role_name, is_superuser, bypasses_rls = result.one()
+    if is_superuser or bypasses_rls:
+        pytest.fail(f"{label} role {role_name} must not be superuser or BYPASSRLS")
+
+
+@pytest.fixture
+async def postgres_runtime():
+    if not RUNTIME_URL or not MIGRATION_URL:
+        pytest.skip("PostgreSQL integration URLs are not configured")
+    runtime = DatabaseSessionManager(create_database_engine(Settings(database_url=RUNTIME_URL)))
+    migrator = DatabaseSessionManager(create_database_engine(Settings(database_url=MIGRATION_URL)))
+    tenant_id = f"it-{uuid4().hex[:24]}"
+    context = TenantContext(
+        tenant_id=tenant_id,
+        subject_ref="subject:integration",
+        roles=frozenset({"integration"}),
+        scopes=frozenset({"test"}),
+        trace_id="c" * 32,
+    )
+    try:
+        await assert_restricted_role(runtime, label="runtime")
+        await assert_restricted_role(migrator, label="migration")
+        async with migrator.transaction(
+            context=SessionExecutionContext(
+                tenant_id=tenant_id,
+                subject_ref="system:integration-provisioner",
+                trace_id=context.trace_id,
+            )
+        ) as session:
+            await session.execute(
+                text(
+                    "INSERT INTO tenants "
+                    "(tenant_id, slug, display_name, oidc_issuer, oidc_tenant_claim) "
+                    "VALUES (:tenant_id, :slug, :display_name, :issuer, :tenant_claim)"
+                ),
+                {
+                    "tenant_id": tenant_id,
+                    "slug": tenant_id,
+                    "display_name": "Integration Tenant",
+                    "issuer": "https://issuer.test",
+                    "tenant_claim": tenant_id,
+                },
+            )
+        yield runtime, migrator, context
+    finally:
+        await runtime.close()
+        await migrator.close()
