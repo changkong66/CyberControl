@@ -1,5 +1,6 @@
 """SSE chunking, assembly, replay, and bounded fan-out."""
 
+from .postgres_replay import PostgresSSEReplayLog
 from .sse import (
     InMemorySSEReplayLog,
     ReplayCursorCodec,
@@ -11,6 +12,7 @@ from .sse import (
 
 __all__ = [
     "InMemorySSEReplayLog",
+    "PostgresSSEReplayLog",
     "ReplayCursorCodec",
     "SSEBroker",
     "SSEChunkAssembler",

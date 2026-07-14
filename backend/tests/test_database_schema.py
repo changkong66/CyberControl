@@ -34,7 +34,7 @@ def test_all_constraints_and_indexes_are_stably_named() -> None:
 
 def test_alembic_has_one_linear_head() -> None:
     script = ScriptDirectory.from_config(alembic_config())
-    assert script.get_heads() == ["20260714_0001"]
+    assert script.get_heads() == ["20260714_0002"]
     assert script.get_base() == "20260714_0001"
 
 
@@ -51,6 +51,7 @@ def test_offline_upgrade_contains_security_and_integrity_controls() -> None:
     assert "CREATE TRIGGER trg_audit_events_append_only" in sql
     assert "CREATE FUNCTION reject_audit_event_mutation" in sql
     assert "CREATE TABLE alembic_version" in sql
+    assert "Liyan Platform" in sql
 
 
 def test_offline_downgrade_is_complete_and_ordered() -> None:

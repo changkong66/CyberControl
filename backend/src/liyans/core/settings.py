@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     database_idle_transaction_timeout_ms: int = 60_000
     database_command_timeout_seconds: float = 35.0
     database_health_timeout_seconds: float = 3.0
+    service_instance_id: str = "liyans-api-local"
+    idempotency_retention_seconds: float = 86_400
+    idempotency_processing_lease_seconds: float = 120
+    outbox_claim_lease_seconds: float = 30
+    sse_event_retention_seconds: float = 86_400
     artifact_root: Path = REPOSITORY_ROOT / "var" / "artifacts"
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
     provider_policy_path: Path = REPOSITORY_ROOT / "config" / "providers.toml"
@@ -50,6 +55,18 @@ class Settings(BaseSettings):
             raise ValueError("database pool sizing is invalid")
         if self.database_statement_timeout_ms < 100:
             raise ValueError("database_statement_timeout_ms must be at least 100")
+        if not self.service_instance_id or len(self.service_instance_id) > 128:
+            raise ValueError("service_instance_id must contain between one and 128 characters")
+        if (
+            min(
+                self.idempotency_retention_seconds,
+                self.idempotency_processing_lease_seconds,
+                self.outbox_claim_lease_seconds,
+                self.sse_event_retention_seconds,
+            )
+            <= 0
+        ):
+            raise ValueError("database retention and lease durations must be positive")
         return self
 
 

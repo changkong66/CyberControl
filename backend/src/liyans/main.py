@@ -21,13 +21,13 @@ from liyans.infrastructure.database import (
     create_database_engine,
 )
 from liyans.infrastructure.messaging.bus import AsyncMessageBus
-from liyans.infrastructure.observability.audit import AuditService, JsonlAuditStore
+from liyans.infrastructure.messaging.postgres_idempotency import PostgresIdempotencyStore
+from liyans.infrastructure.observability.audit import AuditService
 from liyans.infrastructure.observability.logging import configure_json_logging
-from liyans.infrastructure.streaming.sse import (
-    InMemorySSEReplayLog,
-    ReplayCursorCodec,
-    SSEBroker,
-)
+from liyans.infrastructure.observability.postgres_audit import PostgresAuditStore
+from liyans.infrastructure.persistence.postgres_outbox import PostgresOutboxRepository
+from liyans.infrastructure.streaming.postgres_replay import PostgresSSEReplayLog
+from liyans.infrastructure.streaming.sse import ReplayCursorCodec, SSEBroker
 from liyans.infrastructure.tasks.queue import AsyncTaskQueue
 
 
@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             database.engine,
             timeout_seconds=settings.database_health_timeout_seconds,
         )
-        audit = AuditService(JsonlAuditStore(settings.audit_log_path))
+        audit = AuditService(PostgresAuditStore(database))
         app.state.audit = audit
 
         provider_config = HotReloadingTomlConfig(
@@ -73,14 +73,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         resources.push_async_callback(provider_config.close)
         app.state.provider_config = provider_config
 
-        message_bus = AsyncMessageBus()
+        message_bus = AsyncMessageBus(
+            idempotency_store=PostgresIdempotencyStore(
+                database,
+                instance_id=settings.service_instance_id,
+                retention_seconds=settings.idempotency_retention_seconds,
+                processing_lease_seconds=settings.idempotency_processing_lease_seconds,
+            )
+        )
         resources.push_async_callback(message_bus.close)
         app.state.message_bus = message_bus
+        app.state.outbox = PostgresOutboxRepository(
+            database,
+            claim_lease_seconds=settings.outbox_claim_lease_seconds,
+        )
         task_queue = AsyncTaskQueue(worker_count=settings.task_worker_count)
         await task_queue.start()
         resources.push_async_callback(task_queue.close)
         app.state.task_queue = task_queue
-        replay_log = InMemorySSEReplayLog(capacity_per_tenant=settings.sse_replay_capacity)
+        replay_log = PostgresSSEReplayLog(
+            database,
+            retention_seconds=settings.sse_event_retention_seconds,
+        )
         app.state.sse_broker = SSEBroker(
             replay_log,
             subscriber_queue_size=settings.sse_subscriber_queue_size,

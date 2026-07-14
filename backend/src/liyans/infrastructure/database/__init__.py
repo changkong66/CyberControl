@@ -1,5 +1,6 @@
 """PostgreSQL async engine, session, transaction, and health primitives."""
 
+from .context import current_session_context, session_context_from_tenant
 from .engine import create_database_engine
 from .health import DatabaseHealthProbe, DatabaseHealthResult
 from .models import (
@@ -43,4 +44,6 @@ __all__ = [
     "TransactionRetryPolicy",
     "create_database_engine",
     "create_session_factory",
+    "current_session_context",
+    "session_context_from_tenant",
 ]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -63,7 +63,10 @@ def _record_hash(document: dict[str, Any]) -> str:
     return sha256_hex(canonical_json_bytes(document))
 
 
-def _build_record(draft: AuditDraft, sequence: int, previous_hash: str) -> AuditRecord:
+def build_audit_record(draft: AuditDraft, sequence: int, previous_hash: str) -> AuditRecord:
+    if draft.occurred_at.tzinfo is None:
+        raise ValueError("audit occurred_at must be timezone-aware")
+    draft = replace(draft, occurred_at=draft.occurred_at.astimezone(UTC))
     event_id = uuid4()
     material = {
         "event_id": str(event_id),
@@ -120,7 +123,7 @@ class InMemoryAuditStore:
         async with self._lock:
             tenant_records = self._records.setdefault(draft.tenant_id, [])
             previous_hash = tenant_records[-1].event_hash if tenant_records else GENESIS_HASH
-            record = _build_record(draft, len(tenant_records), previous_hash)
+            record = build_audit_record(draft, len(tenant_records), previous_hash)
             tenant_records.append(record)
             return record
 
@@ -170,7 +173,7 @@ class JsonlAuditStore(InMemoryAuditStore):
         async with self._lock:
             tenant_records = self._records.setdefault(draft.tenant_id, [])
             previous_hash = tenant_records[-1].event_hash if tenant_records else GENESIS_HASH
-            record = _build_record(draft, len(tenant_records), previous_hash)
+            record = build_audit_record(draft, len(tenant_records), previous_hash)
             line = json.dumps(record.to_document(), ensure_ascii=False, separators=(",", ":"))
             await asyncio.to_thread(self._append_line, line)
             tenant_records.append(record)

@@ -10,7 +10,7 @@ from collections import defaultdict, deque
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID, uuid4
 
 from liyans_contracts.topic3 import SSEChunkV1, StreamFragmentType
@@ -220,6 +220,21 @@ class SSEEvent:
     emitted_at: datetime
 
 
+class SSEReplayLog(Protocol):
+    async def append(
+        self,
+        tenant_id: str,
+        event_type: str,
+        data: dict[str, Any],
+    ) -> SSEEvent: ...
+
+    async def replay(
+        self,
+        tenant_id: str,
+        after_sequence: int | None,
+    ) -> list[SSEEvent]: ...
+
+
 class ReplayCursorCodec:
     def __init__(self, secret: bytes) -> None:
         if len(secret) < 32:
@@ -303,7 +318,7 @@ class _Subscriber:
 class SSEBroker:
     def __init__(
         self,
-        replay_log: InMemorySSEReplayLog,
+        replay_log: SSEReplayLog,
         *,
         subscriber_queue_size: int = 128,
     ) -> None:
@@ -312,11 +327,11 @@ class SSEBroker:
         self._replay_log = replay_log
         self._subscriber_queue_size = subscriber_queue_size
         self._subscribers: dict[str, set[_Subscriber]] = defaultdict(set)
-        self._lock = asyncio.Lock()
+        self._tenant_locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
 
     async def publish(self, tenant_id: str, event_type: str, data: dict[str, Any]) -> SSEEvent:
-        async with self._lock:
-            event = await self._replay_log.append(tenant_id, event_type, data)
+        event = await self._replay_log.append(tenant_id, event_type, data)
+        async with self._tenant_locks[tenant_id]:
             for subscriber in list(self._subscribers[tenant_id]):
                 try:
                     subscriber.queue.put_nowait(event)
@@ -333,7 +348,7 @@ class SSEBroker:
         heartbeat_seconds: float = 15.0,
     ) -> AsyncIterator[SSEEvent | None]:
         subscriber = _Subscriber(asyncio.Queue(maxsize=self._subscriber_queue_size))
-        async with self._lock:
+        async with self._tenant_locks[tenant_id]:
             replay = await self._replay_log.replay(tenant_id, after_sequence)
             self._subscribers[tenant_id].add(subscriber)
         for event in replay:
@@ -350,7 +365,7 @@ class SSEBroker:
                     continue
                 yield event
         finally:
-            async with self._lock:
+            async with self._tenant_locks[tenant_id]:
                 self._subscribers[tenant_id].discard(subscriber)
 
 

@@ -52,6 +52,9 @@ liyans-contracts = { workspace = true }
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+markers = [
+  "integration: requires an external PostgreSQL test database",
+]
 
 [tool.ruff]
 line-length = 100
