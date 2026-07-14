@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     idempotency_processing_lease_seconds: float = 120
     outbox_claim_lease_seconds: float = 30
     sse_event_retention_seconds: float = 86_400
+    oidc_issuer: str | None = None
+    oidc_audience: str | None = None
+    oidc_jwks_url: str | None = None
+    oidc_algorithms: tuple[str, ...] = ("RS256",)
+    oidc_tenant_claim: str = "tenant_id"
+    oidc_roles_claim: str = "roles"
+    oidc_scope_claim: str = "scope"
+    oidc_clock_skew_seconds: float = 30
+    oidc_max_token_lifetime_seconds: float = 3600
+    oidc_jwks_cache_ttl_seconds: float = 300
+    oidc_http_timeout_seconds: float = 3
     artifact_root: Path = REPOSITORY_ROOT / "var" / "artifacts"
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
     provider_policy_path: Path = REPOSITORY_ROOT / "config" / "providers.toml"
@@ -67,7 +78,34 @@ class Settings(BaseSettings):
             <= 0
         ):
             raise ValueError("database retention and lease durations must be positive")
+        oidc_values = (self.oidc_issuer, self.oidc_audience, self.oidc_jwks_url)
+        if any(oidc_values) and not all(oidc_values):
+            raise ValueError("OIDC issuer, audience, and JWKS URL must be configured together")
+        if self.environment == "production" and not all(oidc_values):
+            raise ValueError("production requires OIDC issuer, audience, and JWKS URL")
+        allowed_algorithms = {"RS256", "RS384", "RS512", "ES256", "ES384"}
+        if not self.oidc_algorithms or not set(self.oidc_algorithms) <= allowed_algorithms:
+            raise ValueError("oidc_algorithms contains an unsupported signing algorithm")
+        if self.environment == "production" and (
+            not self.oidc_issuer.startswith("https://")
+            or not self.oidc_jwks_url.startswith("https://")
+        ):
+            raise ValueError("production OIDC endpoints must use HTTPS")
+        if (
+            min(
+                self.oidc_clock_skew_seconds,
+                self.oidc_max_token_lifetime_seconds,
+                self.oidc_jwks_cache_ttl_seconds,
+                self.oidc_http_timeout_seconds,
+            )
+            <= 0
+        ):
+            raise ValueError("OIDC timing settings must be positive")
         return self
+
+    @property
+    def oidc_configured(self) -> bool:
+        return bool(self.oidc_issuer and self.oidc_audience and self.oidc_jwks_url)
 
 
 @lru_cache

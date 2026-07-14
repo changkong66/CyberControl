@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from liyans import __version__
 from liyans.api.errors import install_exception_handlers
-from liyans.api.middleware import TenantTraceMiddleware
+from liyans.api.middleware import AuthenticationTenantMiddleware
 from liyans.api.routes.health import router as health_router
 from liyans.api.routes.topic3 import router as topic3_router
 from liyans.core.config import ConfigSnapshot, HotReloadingTomlConfig
@@ -26,6 +26,7 @@ from liyans.infrastructure.observability.audit import AuditService
 from liyans.infrastructure.observability.logging import configure_json_logging
 from liyans.infrastructure.observability.postgres_audit import PostgresAuditStore
 from liyans.infrastructure.persistence.postgres_outbox import PostgresOutboxRepository
+from liyans.infrastructure.security import PostgresTenantAuthorizer, build_token_verifier
 from liyans.infrastructure.streaming.postgres_replay import PostgresSSEReplayLog
 from liyans.infrastructure.streaming.sse import ReplayCursorCodec, SSEBroker
 from liyans.infrastructure.tasks.queue import AsyncTaskQueue
@@ -43,6 +44,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             database.engine,
             timeout_seconds=settings.database_health_timeout_seconds,
         )
+        token_verifier = build_token_verifier(settings)
+        resources.push_async_callback(token_verifier.close)
+        await token_verifier.initialize()
+        app.state.token_verifier = token_verifier
+        app.state.tenant_authorizer = PostgresTenantAuthorizer(database)
+        app.state.auth_configured = settings.oidc_configured
         audit = AuditService(PostgresAuditStore(database))
         app.state.audit = audit
 
@@ -111,7 +118,7 @@ def create_app() -> FastAPI:
         default_response_class=JSONResponse,
         lifespan=lifespan,
     )
-    application.add_middleware(TenantTraceMiddleware)
+    application.add_middleware(AuthenticationTenantMiddleware)
     install_exception_handlers(application)
     application.include_router(health_router)
     application.include_router(topic3_router)

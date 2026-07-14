@@ -16,7 +16,10 @@ async def ready(request: Request, response: Response) -> dict[str, object]:
     task_queue = request.app.state.task_queue
     message_bus = request.app.state.message_bus
     database = await request.app.state.database_health.check()
-    ready_status = database.healthy and task_queue.running and not message_bus.closed
+    auth_configured = request.app.state.auth_configured
+    ready_status = (
+        database.healthy and task_queue.running and not message_bus.closed and auth_configured
+    )
     if not ready_status:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
@@ -25,6 +28,7 @@ async def ready(request: Request, response: Response) -> dict[str, object]:
             "status": "up" if database.healthy else "down",
             "latency_ms": round(database.latency_ms, 3),
         },
+        "authentication": "configured" if auth_configured else "unconfigured",
         "provider_policy_version": provider_policy.policy_version,
         "enabled_external_providers": provider_policy.enabled_external_aliases(),
         "task_queue_running": task_queue.running,

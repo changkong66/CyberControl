@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import os
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from liyans.core.errors import LiyanError
+from liyans.core.errors import ErrorCode, LiyanError
 from liyans.core.settings import Settings
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.infrastructure.database import (
@@ -19,12 +20,18 @@ from liyans.infrastructure.database.models import (
     OutboxMessageModel,
     OutboxStatus,
     SSEEventModel,
+    TenantModel,
+    TenantStatus,
 )
 from liyans.infrastructure.messaging import PostgresIdempotencyStore
 from liyans.infrastructure.messaging.idempotency import ReservationDecision
 from liyans.infrastructure.observability.audit import AuditService, verify_audit_chain
 from liyans.infrastructure.observability.postgres_audit import PostgresAuditStore
 from liyans.infrastructure.persistence import OutboxMessage, PostgresOutboxRepository
+from liyans.infrastructure.security import (
+    AuthenticatedPrincipal,
+    PostgresTenantAuthorizer,
+)
 from liyans.infrastructure.streaming import PostgresSSEReplayLog
 from liyans_contracts.enums import SourceAgent
 from liyans_contracts.envelope import (
@@ -111,13 +118,16 @@ async def postgres_runtime():
         ) as session:
             await session.execute(
                 text(
-                    "INSERT INTO tenants (tenant_id, slug, display_name) "
-                    "VALUES (:tenant_id, :slug, :display_name)"
+                    "INSERT INTO tenants "
+                    "(tenant_id, slug, display_name, oidc_issuer, oidc_tenant_claim) "
+                    "VALUES (:tenant_id, :slug, :display_name, :issuer, :tenant_claim)"
                 ),
                 {
                     "tenant_id": tenant_id,
                     "slug": tenant_id,
                     "display_name": "Integration Tenant",
+                    "issuer": "https://issuer.test",
+                    "tenant_claim": tenant_id,
                 },
             )
         yield runtime, migrator, context
@@ -362,3 +372,41 @@ async def test_postgres_sse_replay_survives_store_recreation(postgres_runtime) -
         restarted_replay = PostgresSSEReplayLog(database, retention_seconds=300)
         events = await restarted_replay.replay(context.tenant_id, first.sequence)
         assert [event.sequence for event in events] == [second.sequence]
+
+
+@pytest.mark.asyncio
+async def test_postgres_tenant_authorizer_enforces_binding_and_status(
+    postgres_runtime,
+) -> None:
+    database, migrator, context = postgres_runtime
+    authorizer = PostgresTenantAuthorizer(database)
+    now = datetime.now(UTC)
+    principal = AuthenticatedPrincipal(
+        issuer="https://issuer.test",
+        subject=context.subject_ref,
+        tenant_id=context.tenant_id,
+        roles=frozenset({"student"}),
+        scopes=frozenset({"topic3:validate"}),
+        token_id="integration-token",
+        issued_at=now,
+        expires_at=now + timedelta(minutes=5),
+    )
+    authorized = await authorizer.authorize(principal, trace_id=context.trace_id)
+    assert authorized.tenant_id == context.tenant_id
+    assert authorized.scopes == principal.scopes
+
+    with pytest.raises(LiyanError):
+        await authorizer.authorize(
+            replace(principal, issuer="https://wrong-issuer.test"),
+            trace_id=context.trace_id,
+        )
+
+    async with migrator.transaction(context=session_context_from_tenant(context)) as session:
+        await session.execute(
+            update(TenantModel)
+            .where(TenantModel.tenant_id == context.tenant_id)
+            .values(status=TenantStatus.SUSPENDED.value)
+        )
+    with pytest.raises(LiyanError) as suspended:
+        await authorizer.authorize(principal, trace_id=context.trace_id)
+    assert suspended.value.code == ErrorCode.TENANT_INACTIVE

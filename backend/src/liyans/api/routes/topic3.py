@@ -3,12 +3,13 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Any
 
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import StreamingResponse
 from liyans_contracts.envelope import Topic3EnvelopeV1
 
+from liyans.api.auth import require_scopes
 from liyans.core.errors import ContractError
-from liyans.core.tenant import assert_tenant, current_tenant
+from liyans.core.tenant import assert_tenant, current_tenant, tenant_scope
 from liyans.domains.generation.compatibility import CompatibilityError, Topic3EnvelopeAdapter
 from liyans.infrastructure.streaming.sse import encode_sse_frame
 
@@ -16,7 +17,10 @@ router = APIRouter(prefix="/internal/topic3", tags=["topic3-internal"])
 adapter = Topic3EnvelopeAdapter()
 
 
-@router.post("/envelopes/validate")
+@router.post(
+    "/envelopes/validate",
+    dependencies=[Depends(require_scopes("topic3:validate"))],
+)
 async def validate_envelope(body: dict[str, Any]) -> dict[str, Any]:
     try:
         envelope = Topic3EnvelopeV1.model_validate(body)
@@ -26,7 +30,10 @@ async def validate_envelope(body: dict[str, Any]) -> dict[str, Any]:
     return {"envelope": envelope.model_dump(mode="json"), "warnings": []}
 
 
-@router.post("/envelopes/adapt")
+@router.post(
+    "/envelopes/adapt",
+    dependencies=[Depends(require_scopes("topic3:validate"))],
+)
 async def adapt_envelope(body: dict[str, Any]) -> dict[str, Any]:
     try:
         result = adapter.adapt(body)
@@ -42,7 +49,10 @@ async def adapt_envelope(body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-@router.post("/sse/events")
+@router.post(
+    "/sse/events",
+    dependencies=[Depends(require_scopes("topic3:sse:publish"))],
+)
 async def publish_sse_event(request: Request, body: dict[str, Any]) -> dict[str, Any]:
     context = current_tenant()
     event_type = str(body.get("event_type", "")).strip()
@@ -54,7 +64,10 @@ async def publish_sse_event(request: Request, body: dict[str, Any]) -> dict[str,
     return {"cursor": cursor, "sequence": event.sequence}
 
 
-@router.get("/sse/stream")
+@router.get(
+    "/sse/stream",
+    dependencies=[Depends(require_scopes("topic3:sse:read"))],
+)
 async def stream_sse(
     request: Request,
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -68,20 +81,21 @@ async def stream_sse(
         )
 
     async def events() -> AsyncIterator[bytes]:
-        async for event in request.app.state.sse_broker.subscribe(
-            context.tenant_id,
-            after_sequence=after_sequence,
-        ):
-            if await request.is_disconnected():
-                return
-            if event is None:
-                yield b": heartbeat\n\n"
-                continue
-            cursor = request.app.state.sse_cursor_codec.encode(
+        with tenant_scope(context):
+            async for event in request.app.state.sse_broker.subscribe(
                 context.tenant_id,
-                event.sequence,
-            )
-            yield encode_sse_frame(event, cursor)
+                after_sequence=after_sequence,
+            ):
+                if await request.is_disconnected():
+                    return
+                if event is None:
+                    yield b": heartbeat\n\n"
+                    continue
+                cursor = request.app.state.sse_cursor_codec.encode(
+                    context.tenant_id,
+                    event.sequence,
+                )
+                yield encode_sse_frame(event, cursor)
 
     return StreamingResponse(
         events(),

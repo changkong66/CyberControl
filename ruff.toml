@@ -61,7 +61,7 @@ max-returns = 6
 max-statements = 50
 
 [lint.per-file-ignores]
-"backend/tests/**/*.py" = ["ANN", "ARG001", "S101"]
+"backend/tests/**/*.py" = ["ANN", "ARG001", "S101", "S105", "S106"]
 "packages/contracts-python/tests/**/*.py" = ["ANN", "ARG001", "S101"]
 "tools/**/*.py" = ["T201"]
 

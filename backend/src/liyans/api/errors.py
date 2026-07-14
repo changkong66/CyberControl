@@ -22,13 +22,16 @@ def error_response(request: Request, error: LiyanError) -> JSONResponse:
         details_ref=error.details or None,
         occurred_at=datetime.now(UTC),
     )
-    return JSONResponse(
+    response = JSONResponse(
         status_code=error.status_code,
         content={
             "error": receipt.model_dump(mode="json"),
             "trace_id": getattr(request.state, "trace_id", None),
         },
     )
+    if error.status_code == 401:
+        response.headers["WWW-Authenticate"] = "Bearer"
+    return response
 
 
 def install_exception_handlers(app: FastAPI) -> None:
