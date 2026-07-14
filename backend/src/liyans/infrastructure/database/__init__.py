@@ -2,6 +2,19 @@
 
 from .engine import create_database_engine
 from .health import DatabaseHealthProbe, DatabaseHealthResult
+from .models import (
+    ArtifactModel,
+    ArtifactStatus,
+    AuditEventModel,
+    Base,
+    IdempotencyRecordModel,
+    IdempotencyStatus,
+    OutboxMessageModel,
+    OutboxStatus,
+    SSEEventModel,
+    TenantModel,
+    TenantStatus,
+)
 from .session import (
     DatabaseSessionManager,
     SessionExecutionContext,
@@ -11,10 +24,21 @@ from .session import (
 )
 
 __all__ = [
+    "ArtifactModel",
+    "ArtifactStatus",
+    "AuditEventModel",
+    "Base",
     "DatabaseHealthProbe",
     "DatabaseHealthResult",
     "DatabaseSessionManager",
+    "IdempotencyRecordModel",
+    "IdempotencyStatus",
+    "OutboxMessageModel",
+    "OutboxStatus",
+    "SSEEventModel",
     "SessionExecutionContext",
+    "TenantModel",
+    "TenantStatus",
     "TransactionIsolation",
     "TransactionRetryPolicy",
     "create_database_engine",

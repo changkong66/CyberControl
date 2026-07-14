@@ -19,7 +19,10 @@ class Settings(BaseSettings):
     )
 
     environment: str = "development"
-    database_url: str = "postgresql+asyncpg://liyans:liyans@localhost:5432/liyans"
+    database_url: str = (
+        "postgresql+asyncpg://liyans_app:liyans-app-local-only@localhost:5432/liyans"
+    )
+    database_migration_url: str | None = None
     database_pool_size: int = 10
     database_max_overflow: int = 20
     database_pool_timeout_seconds: float = 10.0
