@@ -9,15 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
-from liyans.core.hashing import sha256_hex
-from liyans.core.tenant import assert_tenant, current_tenant
-from liyans.infrastructure.database.context import current_session_context
 from liyans.infrastructure.database.models import OutboxMessageModel, OutboxStatus
 from liyans.infrastructure.database.session import DatabaseSessionManager
 from liyans.infrastructure.persistence.outbox import OutboxMessage
 
 
-class PostgresOutboxRepository:
+class PostgresOutboxDispatcherRepository:
+    """Cross-tenant Outbox access through the least-privilege dispatcher DB role."""
+
     def __init__(
         self,
         database: DatabaseSessionManager,
@@ -29,54 +28,11 @@ class PostgresOutboxRepository:
         self._database = database
         self._claim_lease = timedelta(seconds=claim_lease_seconds)
 
-    async def append(self, session: AsyncSession, message: OutboxMessage) -> None:
-        assert_tenant(message.tenant_id)
-        if not session.in_transaction():
-            raise LiyanError(
-                ErrorCode.DATABASE_TRANSACTION_STATE,
-                "Outbox append requires the active business transaction.",
-                category=ErrorCategory.DATABASE,
-                status_code=500,
-            )
-        if message.published_at is not None or message.attempts != 0:
-            raise ValueError("new outbox messages cannot be pre-published or pre-attempted")
-        if message.max_attempts != message.envelope.delivery.max_attempts:
-            raise ValueError("outbox max_attempts must match the Envelope delivery contract")
-        if message.created_at.tzinfo is None or message.available_at.tzinfo is None:
-            raise ValueError("outbox timestamps must be timezone-aware")
-        document = message.envelope.model_dump(mode="json")
-        session.add(
-            OutboxMessageModel(
-                outbox_id=message.outbox_id,
-                tenant_id=message.tenant_id,
-                envelope_id=message.envelope.envelope_id,
-                event_type=message.envelope.event_type,
-                message_kind=message.envelope.message_kind.value,
-                partition_key=message.envelope.partition_key,
-                sequence=message.envelope.sequence,
-                envelope_document=document,
-                envelope_sha256=sha256_hex(document),
-                state=OutboxStatus.PENDING.value,
-                priority=message.envelope.delivery.priority.value,
-                attempts=message.attempts,
-                max_attempts=message.max_attempts,
-                available_at=message.available_at,
-                published_at=message.published_at,
-                created_at=message.created_at,
-                updated_at=message.created_at,
-            )
-        )
-        await session.flush()
-
     async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]:
-        if not worker_id or len(worker_id) > 128:
-            raise ValueError("worker_id must contain between one and 128 characters")
-        if not 1 <= limit <= 1000:
-            raise ValueError("outbox claim limit must be between one and 1000")
-        tenant_id = current_tenant().tenant_id
+        self._validate_claim_request(worker_id, limit)
         now = datetime.now(UTC)
-        async with self._database.transaction(context=current_session_context()) as session:
-            await self._recover_expired_claims(session, tenant_id, now)
+        async with self._database.transaction() as session:
+            await self._recover_expired_claims(session, now)
             earlier = aliased(OutboxMessageModel)
             published = aliased(OutboxMessageModel)
             published_cursor = (
@@ -98,7 +54,6 @@ class PostgresOutboxRepository:
             result = await session.execute(
                 select(OutboxMessageModel)
                 .where(
-                    OutboxMessageModel.tenant_id == tenant_id,
                     OutboxMessageModel.state == OutboxStatus.PENDING.value,
                     OutboxMessageModel.available_at <= now,
                     OutboxMessageModel.attempts < OutboxMessageModel.max_attempts,
@@ -130,18 +85,6 @@ class PostgresOutboxRepository:
                 row.updated_at = now
             return [self._to_message(row) for row in rows]
 
-    async def published_cursor(self, tenant_id: str, partition_key: str) -> int:
-        assert_tenant(tenant_id)
-        async with self._database.transaction(context=current_session_context()) as session:
-            result = await session.execute(
-                select(func.coalesce(func.max(OutboxMessageModel.sequence) + 1, 0)).where(
-                    OutboxMessageModel.tenant_id == tenant_id,
-                    OutboxMessageModel.partition_key == partition_key,
-                    OutboxMessageModel.state == OutboxStatus.PUBLISHED.value,
-                )
-            )
-            return int(result.scalar_one())
-
     async def mark_published(
         self,
         outbox_id: UUID,
@@ -150,13 +93,10 @@ class PostgresOutboxRepository:
     ) -> None:
         if published_at.tzinfo is None:
             raise ValueError("published_at must be timezone-aware")
-        tenant_id = current_tenant().tenant_id
-        result = None
-        async with self._database.transaction(context=current_session_context()) as session:
+        async with self._database.transaction() as session:
             result = await session.execute(
                 update(OutboxMessageModel)
                 .where(
-                    OutboxMessageModel.tenant_id == tenant_id,
                     OutboxMessageModel.outbox_id == outbox_id,
                     OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
                     OutboxMessageModel.claimed_by == worker_id,
@@ -184,12 +124,10 @@ class PostgresOutboxRepository:
     ) -> None:
         if available_at.tzinfo is None:
             raise ValueError("available_at must be timezone-aware")
-        tenant_id = current_tenant().tenant_id
-        async with self._database.transaction(context=current_session_context()) as session:
+        async with self._database.transaction() as session:
             result = await session.execute(
                 select(OutboxMessageModel)
                 .where(
-                    OutboxMessageModel.tenant_id == tenant_id,
                     OutboxMessageModel.outbox_id == outbox_id,
                     OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
                     OutboxMessageModel.claimed_by == worker_id,
@@ -211,16 +149,24 @@ class PostgresOutboxRepository:
             row.last_error_code = error_code
             row.updated_at = datetime.now(UTC)
 
+    async def published_cursor(self, tenant_id: str, partition_key: str) -> int:
+        if not tenant_id or not partition_key:
+            raise ValueError("tenant_id and partition_key are required")
+        async with self._database.transaction() as session:
+            result = await session.execute(
+                select(func.coalesce(func.max(OutboxMessageModel.sequence) + 1, 0)).where(
+                    OutboxMessageModel.tenant_id == tenant_id,
+                    OutboxMessageModel.partition_key == partition_key,
+                    OutboxMessageModel.state == OutboxStatus.PUBLISHED.value,
+                )
+            )
+            return int(result.scalar_one())
+
     @staticmethod
-    async def _recover_expired_claims(
-        session: AsyncSession,
-        tenant_id: str,
-        now: datetime,
-    ) -> None:
+    async def _recover_expired_claims(session: AsyncSession, now: datetime) -> None:
         await session.execute(
             update(OutboxMessageModel)
             .where(
-                OutboxMessageModel.tenant_id == tenant_id,
                 OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
                 OutboxMessageModel.claim_expires_at <= now,
                 OutboxMessageModel.attempts >= OutboxMessageModel.max_attempts,
@@ -236,7 +182,6 @@ class PostgresOutboxRepository:
         await session.execute(
             update(OutboxMessageModel)
             .where(
-                OutboxMessageModel.tenant_id == tenant_id,
                 OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
                 OutboxMessageModel.claim_expires_at <= now,
                 OutboxMessageModel.attempts < OutboxMessageModel.max_attempts,
@@ -249,6 +194,13 @@ class PostgresOutboxRepository:
                 updated_at=now,
             )
         )
+
+    @staticmethod
+    def _validate_claim_request(worker_id: str, limit: int) -> None:
+        if not worker_id or len(worker_id) > 128:
+            raise ValueError("worker_id must contain between one and 128 characters")
+        if not 1 <= limit <= 1000:
+            raise ValueError("outbox claim limit must be between one and 1000")
 
     @staticmethod
     def _to_message(row: OutboxMessageModel) -> OutboxMessage:

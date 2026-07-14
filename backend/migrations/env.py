@@ -4,11 +4,12 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from liyans.core.settings import Settings
-from liyans.infrastructure.database.models import Base
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection, make_url
 from sqlalchemy.ext.asyncio import async_engine_from_config
+
+from liyans.core.settings import Settings
+from liyans.infrastructure.database.models import Base
 
 config = context.config
 if config.config_file_name is not None:

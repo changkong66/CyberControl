@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy.exc import DBAPIError
+
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.core.settings import Settings
 from liyans.infrastructure.database.engine import create_database_engine
@@ -13,7 +15,6 @@ from liyans.infrastructure.database.session import (
     TransactionRetryPolicy,
     is_retryable_transaction_error,
 )
-from sqlalchemy.exc import DBAPIError
 
 
 class FakeTransaction(AbstractAsyncContextManager[None]):

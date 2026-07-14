@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.infrastructure.messaging.bus import AsyncMessageBus, DispatchStatus
 
@@ -65,3 +66,44 @@ async def test_handler_failure_does_not_advance_partition_cursor(make_envelope) 
     result = await bus.publish(retried)
     assert result.status == DispatchStatus.PROCESSED
     assert result.next_expected_sequence == 1
+
+
+@pytest.mark.asyncio
+async def test_partition_cursor_is_scoped_by_tenant(make_envelope) -> None:
+    observed: list[str] = []
+    bus = AsyncMessageBus()
+
+    async def handler(envelope) -> None:
+        observed.append(envelope.tenant_id)
+
+    bus.register("topic3.test.event", handler)
+    first = make_envelope(0, tenant_id="tenant-a").model_copy(
+        update={"partition_key": "shared-logical-partition"}
+    )
+    second = make_envelope(0, tenant_id="tenant-b").model_copy(
+        update={"partition_key": "shared-logical-partition"}
+    )
+
+    first_result = await bus.publish(first)
+    second_result = await bus.publish(second)
+
+    assert first_result.next_expected_sequence == 1
+    assert second_result.next_expected_sequence == 1
+    assert observed == ["tenant-a", "tenant-b"]
+
+
+@pytest.mark.asyncio
+async def test_duplicate_buffered_message_is_not_reported_as_completed(make_envelope) -> None:
+    bus = AsyncMessageBus()
+
+    async def handler(_envelope) -> None:
+        return None
+
+    bus.register("topic3.test.event", handler)
+    envelope = make_envelope(1)
+
+    first = await bus.publish(envelope)
+    duplicate = await bus.publish(envelope)
+
+    assert first.status == DispatchStatus.BUFFERED
+    assert duplicate.status == DispatchStatus.IN_FLIGHT

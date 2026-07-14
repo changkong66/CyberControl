@@ -4,6 +4,8 @@ import os
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import text
+
 from liyans.core.settings import Settings
 from liyans.core.tenant import TenantContext
 from liyans.infrastructure.database import (
@@ -11,10 +13,10 @@ from liyans.infrastructure.database import (
     SessionExecutionContext,
     create_database_engine,
 )
-from sqlalchemy import text
 
 RUNTIME_URL = os.getenv("LIYAN_TEST_DATABASE_URL")
 MIGRATION_URL = os.getenv("LIYAN_TEST_MIGRATION_DATABASE_URL")
+DISPATCHER_URL = os.getenv("LIYAN_TEST_DISPATCHER_DATABASE_URL")
 
 
 async def assert_restricted_role(
@@ -75,3 +77,20 @@ async def postgres_runtime():
     finally:
         await runtime.close()
         await migrator.close()
+
+
+@pytest.fixture
+async def postgres_dispatcher(postgres_runtime):
+    if not DISPATCHER_URL:
+        pytest.skip("PostgreSQL dispatcher integration URL is not configured")
+    dispatcher = DatabaseSessionManager(
+        create_database_engine(
+            Settings(database_url=DISPATCHER_URL),
+            application_name="liyans-integration-dispatcher",
+        )
+    )
+    try:
+        await assert_restricted_role(dispatcher, label="dispatcher")
+        yield dispatcher
+    finally:
+        await dispatcher.close()

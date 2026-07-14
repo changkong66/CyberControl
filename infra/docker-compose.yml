@@ -38,7 +38,12 @@ services:
     environment:
       LIYAN_ENVIRONMENT: development
       LIYAN_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans
+      LIYAN_OUTBOX_DISPATCHER_DATABASE_URL: postgresql+asyncpg://liyans_dispatcher:liyans-dispatcher-local-only@postgres:5432/liyans
+      LIYAN_OUTBOX_PUBLISHER_ENABLED: "true"
+      LIYAN_SSE_NOTIFICATION_ENABLED: "true"
+      LIYAN_SSE_NOTIFICATION_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans
       LIYAN_AUDIT_LOG_PATH: /var/lib/liyans/audit/events.jsonl
+      LIYAN_ARTIFACT_ROOT: /var/lib/liyans/artifacts
       LIYAN_SSE_CURSOR_SECRET: local-compose-cursor-secret-change-me-32
     ports:
       - "8000:8000"
@@ -48,16 +53,20 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
+      # Development Compose has no identity provider. Container health therefore
+      # uses liveness; production orchestrators MUST gate traffic on /health/ready.
       test:
         [
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live')",
         ]
       interval: 10s
       timeout: 3s
       retries: 10
+      start_period: 10s
+    stop_grace_period: 30s
 
 volumes:
   liyans-postgres:

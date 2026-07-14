@@ -5,6 +5,9 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import func, select, text, update
+from sqlalchemy.exc import DBAPIError
+
 from liyans.core.tenant import tenant_scope
 from liyans.infrastructure.database import (
     SessionExecutionContext,
@@ -13,8 +16,6 @@ from liyans.infrastructure.database import (
 from liyans.infrastructure.database.models import ArtifactModel, AuditEventModel, TenantModel
 from liyans.infrastructure.observability.audit import AuditDraft
 from liyans.infrastructure.observability.postgres_audit import PostgresAuditStore
-from sqlalchemy import func, select, text, update
-from sqlalchemy.exc import DBAPIError
 
 pytestmark = pytest.mark.integration
 

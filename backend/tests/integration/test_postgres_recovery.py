@@ -7,6 +7,8 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from sqlalchemy import select
+
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.settings import get_settings
 from liyans.core.tenant import tenant_scope
@@ -17,7 +19,6 @@ from liyans.infrastructure.messaging.idempotency import ReservationDecision
 from liyans.infrastructure.persistence import OutboxMessage, PostgresOutboxRepository
 from liyans.infrastructure.security import AuthenticatedPrincipal
 from liyans.main import create_app
-from sqlalchemy import select
 
 from .support import make_envelope
 

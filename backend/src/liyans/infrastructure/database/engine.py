@@ -11,10 +11,17 @@ from liyans.core.settings import Settings
 logger = logging.getLogger(__name__)
 
 
-def create_database_engine(settings: Settings) -> AsyncEngine:
+def create_database_engine(
+    settings: Settings,
+    *,
+    database_url: str | None = None,
+    application_name: str = "liyans-api",
+) -> AsyncEngine:
     """Create the process-wide async engine; it does not open a connection."""
 
-    url = make_url(settings.database_url)
+    if not application_name or len(application_name) > 63:
+        raise ValueError("application_name must contain between one and 63 characters")
+    url = make_url(database_url or settings.database_url)
     if url.drivername != "postgresql+asyncpg":
         raise LiyanError(
             ErrorCode.CONFIG_INVALID,
@@ -24,7 +31,7 @@ def create_database_engine(settings: Settings) -> AsyncEngine:
         )
 
     server_settings = {
-        "application_name": "liyans-api",
+        "application_name": application_name,
         "timezone": "UTC",
         "statement_timeout": str(settings.database_statement_timeout_ms),
         "idle_in_transaction_session_timeout": str(settings.database_idle_transaction_timeout_ms),

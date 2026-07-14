@@ -5,14 +5,15 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select, text, update
+from sqlalchemy.exc import DBAPIError
+
 from liyans.infrastructure.database import (
     TransactionIsolation,
     TransactionRetryPolicy,
     session_context_from_tenant,
 )
 from liyans.infrastructure.database.models import ArtifactModel
-from sqlalchemy import select, text, update
-from sqlalchemy.exc import DBAPIError
 
 pytestmark = pytest.mark.integration
 

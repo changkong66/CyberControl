@@ -12,7 +12,7 @@ from liyans.core.tenant import assert_tenant
 from liyans.infrastructure.database.context import session_context_from_tenant
 from liyans.infrastructure.database.models import SSEEventModel
 from liyans.infrastructure.database.session import DatabaseSessionManager
-from liyans.infrastructure.streaming.sse import SSEEvent
+from liyans.infrastructure.streaming.sse import SSEEvent, validate_sse_event
 
 
 class PostgresSSEReplayLog:
@@ -21,11 +21,19 @@ class PostgresSSEReplayLog:
         database: DatabaseSessionManager,
         *,
         retention_seconds: float = 86_400,
+        max_event_bytes: int = 256 * 1024,
+        max_replay_events: int = 4096,
     ) -> None:
         if retention_seconds <= 0:
             raise ValueError("SSE retention_seconds must be positive")
+        if max_event_bytes < 1:
+            raise ValueError("SSE max_event_bytes must be positive")
+        if not 1 <= max_replay_events <= 10_000:
+            raise ValueError("SSE max_replay_events must be between one and 10000")
         self._database = database
         self._retention = timedelta(seconds=retention_seconds)
+        self._max_event_bytes = max_event_bytes
+        self._max_replay_events = max_replay_events
 
     async def append(
         self,
@@ -33,6 +41,7 @@ class PostgresSSEReplayLog:
         event_type: str,
         data: dict[str, Any],
     ) -> SSEEvent:
+        validate_sse_event(event_type, data, max_event_bytes=self._max_event_bytes)
         context = assert_tenant(tenant_id)
         now = datetime.now(UTC)
         async with self._database.transaction(
@@ -87,18 +96,43 @@ class PostgresSSEReplayLog:
             )
             minimum_retained, maximum_seen = bounds.one()
             self._validate_cursor(after_sequence, minimum_retained, maximum_seen)
-            statement = (
-                select(SSEEventModel)
-                .where(
-                    SSEEventModel.tenant_id == tenant_id,
-                    SSEEventModel.expires_at > now,
-                )
-                .order_by(SSEEventModel.sequence)
+            statement = select(SSEEventModel).where(
+                SSEEventModel.tenant_id == tenant_id,
+                SSEEventModel.expires_at > now,
             )
             if after_sequence is not None:
-                statement = statement.where(SSEEventModel.sequence > after_sequence)
+                statement = (
+                    statement.where(SSEEventModel.sequence > after_sequence)
+                    .order_by(SSEEventModel.sequence)
+                    .limit(self._max_replay_events + 1)
+                )
+            else:
+                statement = statement.order_by(SSEEventModel.sequence.desc()).limit(
+                    self._max_replay_events
+                )
             result = await session.execute(statement)
-            return [self._to_event(row) for row in result.scalars()]
+            rows = list(result.scalars())
+            if after_sequence is not None and len(rows) > self._max_replay_events:
+                raise LiyanError(
+                    ErrorCode.SSE_REPLAY_CURSOR_INVALID,
+                    "The SSE replay gap exceeds the per-connection event budget.",
+                    category=ErrorCategory.MESSAGING,
+                    status_code=409,
+                )
+            if after_sequence is None:
+                rows.reverse()
+            return [self._to_event(row) for row in rows]
+
+    async def latest_sequence(self, tenant_id: str) -> int | None:
+        context = assert_tenant(tenant_id)
+        async with self._database.transaction(
+            context=session_context_from_tenant(context)
+        ) as session:
+            result = await session.execute(
+                select(func.max(SSEEventModel.sequence)).where(SSEEventModel.tenant_id == tenant_id)
+            )
+            maximum = result.scalar_one()
+            return int(maximum) if maximum is not None else None
 
     async def delete_expired(self, tenant_id: str, *, limit: int = 1000) -> int:
         if not 1 <= limit <= 10_000:
@@ -156,6 +190,13 @@ class PostgresSSEReplayLog:
 
     @staticmethod
     def _to_event(row: SSEEventModel) -> SSEEvent:
+        if sha256_hex(row.data_document) != row.data_sha256:
+            raise LiyanError(
+                ErrorCode.SSE_EVENT_INTEGRITY_FAILED,
+                "The persisted SSE event failed its integrity check.",
+                category=ErrorCategory.DATABASE,
+                status_code=500,
+            )
         return SSEEvent(
             tenant_id=row.tenant_id,
             sequence=row.sequence,

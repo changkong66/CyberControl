@@ -43,3 +43,27 @@ class OutboxRepository(Protocol):
         *,
         error_code: str | None = None,
     ) -> None: ...
+
+    async def published_cursor(self, tenant_id: str, partition_key: str) -> int: ...
+
+
+class OutboxDispatchRepository(Protocol):
+    async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]: ...
+
+    async def mark_published(
+        self,
+        outbox_id: UUID,
+        worker_id: str,
+        published_at: datetime,
+    ) -> None: ...
+
+    async def release_claim(
+        self,
+        outbox_id: UUID,
+        worker_id: str,
+        available_at: datetime,
+        *,
+        error_code: str | None = None,
+    ) -> None: ...
+
+    async def published_cursor(self, tenant_id: str, partition_key: str) -> int: ...

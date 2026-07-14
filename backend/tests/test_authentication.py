@@ -7,10 +7,11 @@ import httpx
 import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
+from pydantic import ValidationError
+
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.core.settings import Settings
 from liyans.infrastructure.security import OIDCTokenVerifier
-from pydantic import ValidationError
 
 ISSUER = "https://issuer.test"
 AUDIENCE = "liyans-api"

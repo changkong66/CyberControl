@@ -23,6 +23,7 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://liyans_app:liyans-app-local-only@localhost:5432/liyans"
     )
     database_migration_url: str | None = None
+    outbox_dispatcher_database_url: str | None = None
     database_pool_size: int = 10
     database_max_overflow: int = 20
     database_pool_timeout_seconds: float = 10.0
@@ -35,7 +36,19 @@ class Settings(BaseSettings):
     idempotency_retention_seconds: float = 86_400
     idempotency_processing_lease_seconds: float = 120
     outbox_claim_lease_seconds: float = 30
+    outbox_publisher_enabled: bool = False
+    outbox_publisher_batch_size: int = 32
+    outbox_publisher_poll_seconds: float = 0.5
+    outbox_publisher_retry_base_seconds: float = 0.25
+    outbox_publisher_retry_max_seconds: float = 30
     sse_event_retention_seconds: float = 86_400
+    sse_event_max_bytes: int = 256 * 1024
+    sse_notification_enabled: bool = False
+    sse_notification_database_url: str | None = None
+    sse_notification_queue_size: int = 1024
+    sse_notification_reconnect_base_seconds: float = 0.25
+    sse_notification_reconnect_max_seconds: float = 10
+    sse_notification_startup_timeout_seconds: float = 5
     oidc_issuer: str | None = None
     oidc_audience: str | None = None
     oidc_jwks_url: str | None = None
@@ -48,6 +61,7 @@ class Settings(BaseSettings):
     oidc_jwks_cache_ttl_seconds: float = 300
     oidc_http_timeout_seconds: float = 3
     artifact_root: Path = REPOSITORY_ROOT / "var" / "artifacts"
+    artifact_max_object_bytes: int = 64 * 1024 * 1024
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
     provider_policy_path: Path = REPOSITORY_ROOT / "config" / "providers.toml"
     provider_policy_poll_seconds: float = 2.0
@@ -66,6 +80,10 @@ class Settings(BaseSettings):
             raise ValueError("database pool sizing is invalid")
         if self.database_statement_timeout_ms < 100:
             raise ValueError("database_statement_timeout_ms must be at least 100")
+        if self.artifact_max_object_bytes < 1:
+            raise ValueError("artifact_max_object_bytes must be positive")
+        if not 256 <= self.sse_event_max_bytes <= 4 * 1024 * 1024:
+            raise ValueError("sse_event_max_bytes must be between 256 bytes and 4 MiB")
         if not self.service_instance_id or len(self.service_instance_id) > 128:
             raise ValueError("service_instance_id must contain between one and 128 characters")
         if (
@@ -78,6 +96,35 @@ class Settings(BaseSettings):
             <= 0
         ):
             raise ValueError("database retention and lease durations must be positive")
+        if not 1 <= self.outbox_publisher_batch_size <= 1000:
+            raise ValueError("outbox_publisher_batch_size must be between one and 1000")
+        if (
+            min(
+                self.outbox_publisher_poll_seconds,
+                self.outbox_publisher_retry_base_seconds,
+                self.outbox_publisher_retry_max_seconds,
+            )
+            <= 0
+        ):
+            raise ValueError("outbox publisher timing settings must be positive")
+        if not 1 <= self.sse_notification_queue_size <= 100_000:
+            raise ValueError("sse_notification_queue_size must be between one and 100000")
+        if (
+            min(
+                self.sse_notification_reconnect_base_seconds,
+                self.sse_notification_reconnect_max_seconds,
+                self.sse_notification_startup_timeout_seconds,
+            )
+            <= 0
+        ):
+            raise ValueError("SSE notification timing settings must be positive")
+        if (
+            self.sse_notification_reconnect_base_seconds
+            > self.sse_notification_reconnect_max_seconds
+        ):
+            raise ValueError("SSE notification reconnect base cannot exceed its maximum")
+        if self.outbox_publisher_enabled and not self.outbox_dispatcher_database_url:
+            raise ValueError("enabled Outbox publisher requires its dispatcher database URL")
         oidc_values = (self.oidc_issuer, self.oidc_audience, self.oidc_jwks_url)
         if any(oidc_values) and not all(oidc_values):
             raise ValueError("OIDC issuer, audience, and JWKS URL must be configured together")

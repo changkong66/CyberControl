@@ -29,6 +29,7 @@ class DispatchStatus(StrEnum):
     PROCESSED = "PROCESSED"
     BUFFERED = "BUFFERED"
     DUPLICATE = "DUPLICATE"
+    IN_FLIGHT = "IN_FLIGHT"
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,9 +65,11 @@ class AsyncMessageBus:
         self._max_gap_buffer = max_gap_buffer_per_partition
         self._failure_handler = failure_handler
         self._handlers: dict[str, list[MessageHandler]] = defaultdict(list)
-        self._expected: dict[str, int] = defaultdict(int)
-        self._pending: dict[str, dict[int, tuple[Topic3EnvelopeV1, str]]] = defaultdict(dict)
-        self._partition_locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._expected: dict[tuple[str, str], int] = defaultdict(int)
+        self._pending: dict[tuple[str, str], dict[int, tuple[Topic3EnvelopeV1, str]]] = defaultdict(
+            dict
+        )
+        self._partition_locks: dict[tuple[str, str], asyncio.Lock] = defaultdict(asyncio.Lock)
         self._closed = False
 
     @property
@@ -79,6 +82,25 @@ class AsyncMessageBus:
         if handler in self._handlers[event_type]:
             raise ValueError(f"handler already registered for {event_type}")
         self._handlers[event_type].append(handler)
+
+    def restore_partition_cursor(
+        self,
+        tenant_id: str,
+        partition_key: str,
+        next_expected_sequence: int,
+    ) -> None:
+        """Restore a durable cursor before dispatching a reclaimed Outbox message."""
+        if not tenant_id or not partition_key:
+            raise ValueError("tenant_id and partition_key are required")
+        if next_expected_sequence < 0:
+            raise ValueError("next_expected_sequence cannot be negative")
+        partition = (tenant_id, partition_key)
+        if self._pending.get(partition):
+            raise RuntimeError("cannot restore a partition while gap-buffered messages exist")
+        current = self._expected.get(partition, 0)
+        if next_expected_sequence < current:
+            raise RuntimeError("cannot move a partition cursor backwards")
+        self._expected[partition] = next_expected_sequence
 
     async def close(self) -> None:
         self._closed = True
@@ -93,7 +115,8 @@ class AsyncMessageBus:
             )
         self._assert_not_expired(envelope)
         digest = delivery_digest(envelope)
-        partition = envelope.partition_key
+        partition_key = envelope.partition_key
+        partition = (envelope.tenant_id, partition_key)
 
         async with self._partition_locks[partition]:
             expected = self._expected[partition]
@@ -102,9 +125,14 @@ class AsyncMessageBus:
                 digest,
             )
             if decision != ReservationDecision.RESERVED:
+                status = (
+                    DispatchStatus.DUPLICATE
+                    if decision == ReservationDecision.DUPLICATE_COMPLETED
+                    else DispatchStatus.IN_FLIGHT
+                )
                 return DispatchResult(
-                    status=DispatchStatus.DUPLICATE,
-                    partition_key=partition,
+                    status=status,
+                    partition_key=partition_key,
                     sequence=envelope.sequence,
                     next_expected_sequence=expected,
                 )
@@ -137,7 +165,7 @@ class AsyncMessageBus:
                 pending[envelope.sequence] = (envelope, digest)
                 return DispatchResult(
                     status=DispatchStatus.BUFFERED,
-                    partition_key=partition,
+                    partition_key=partition_key,
                     sequence=envelope.sequence,
                     next_expected_sequence=expected,
                 )
@@ -147,12 +175,12 @@ class AsyncMessageBus:
             await self._drain_partition(partition)
             return DispatchResult(
                 status=DispatchStatus.PROCESSED,
-                partition_key=partition,
+                partition_key=partition_key,
                 sequence=envelope.sequence,
                 next_expected_sequence=self._expected[partition],
             )
 
-    async def _drain_partition(self, partition: str) -> None:
+    async def _drain_partition(self, partition: tuple[str, str]) -> None:
         pending = self._pending[partition]
         while self._expected[partition] in pending:
             sequence = self._expected[partition]

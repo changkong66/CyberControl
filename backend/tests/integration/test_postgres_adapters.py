@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select, update
+
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.core.tenant import tenant_scope
 from liyans.infrastructure.database import (
@@ -28,7 +30,6 @@ from liyans.infrastructure.security import (
     PostgresTenantAuthorizer,
 )
 from liyans.infrastructure.streaming import PostgresSSEReplayLog
-from sqlalchemy import select, update
 
 from .support import make_envelope
 
@@ -194,10 +195,16 @@ async def test_postgres_outbox_competing_workers_never_share_a_claim(
     with tenant_scope(context):
         async with database.transaction(context=session_context_from_tenant(context)) as session:
             for sequence in range(10):
-                envelope = make_envelope(
-                    context.tenant_id,
-                    now,
-                    sequence=sequence,
+                envelope = make_envelope(context.tenant_id, now, sequence=0)
+                envelope = envelope.model_copy(
+                    update={
+                        "partition_key": f"{context.tenant_id}:parallel:{sequence}",
+                        "delivery": envelope.delivery.model_copy(
+                            update={
+                                "idempotency_key": (f"parallel:{context.tenant_id}:{sequence:016d}")
+                            }
+                        ),
+                    }
                 )
                 await outbox.append(
                     session,
@@ -271,6 +278,28 @@ async def test_postgres_sse_replay_survives_store_recreation(postgres_runtime) -
         restarted_replay = PostgresSSEReplayLog(database, retention_seconds=300)
         events = await restarted_replay.replay(context.tenant_id, first.sequence)
         assert [event.sequence for event in events] == [second.sequence]
+
+
+@pytest.mark.asyncio
+async def test_postgres_sse_replay_rejects_tampered_evidence(postgres_runtime) -> None:
+    database, migrator, context = postgres_runtime
+    with tenant_scope(context):
+        replay = PostgresSSEReplayLog(database)
+        event = await replay.append(context.tenant_id, "progress", {"value": 1})
+        async with migrator.transaction(context=session_context_from_tenant(context)) as session:
+            await session.execute(
+                update(SSEEventModel)
+                .where(
+                    SSEEventModel.tenant_id == context.tenant_id,
+                    SSEEventModel.sequence == event.sequence,
+                )
+                .values(data_sha256="0" * 64)
+            )
+
+        with pytest.raises(LiyanError) as error:
+            await replay.replay(context.tenant_id, None)
+
+    assert error.value.code == ErrorCode.SSE_EVENT_INTEGRITY_FAILED
 
 
 @pytest.mark.asyncio

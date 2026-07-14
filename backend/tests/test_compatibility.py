@@ -3,13 +3,14 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from liyans_contracts.enums import SourceAgent
+
 from liyans.domains.generation.compatibility import (
     AgentPayloadAdapterRegistry,
     CompatibilityError,
     LegacyCandidateAdapter,
     Topic3EnvelopeAdapter,
 )
-from liyans_contracts.enums import SourceAgent
 
 
 def test_legacy_envelope_is_tokenized_and_error_code_is_sanitized() -> None:

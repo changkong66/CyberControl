@@ -6,6 +6,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
+
 from liyans.infrastructure.database.models import TENANT_SCOPED_TABLES, Base
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -34,7 +35,7 @@ def test_all_constraints_and_indexes_are_stably_named() -> None:
 
 def test_alembic_has_one_linear_head() -> None:
     script = ScriptDirectory.from_config(alembic_config())
-    assert script.get_heads() == ["20260714_0002"]
+    assert script.get_heads() == ["20260715_0003"]
     assert script.get_base() == "20260714_0001"
 
 
