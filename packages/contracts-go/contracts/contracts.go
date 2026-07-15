@@ -17,6 +17,13 @@ type ArtifactObjectRefV1 struct {
 	CreatedAt        DateTime `json:"created_at"`
 }
 
+type AuthoritySourceRefV1 struct {
+	SourceId      string  `json:"source_id"`
+	SourceVersion string  `json:"source_version"`
+	Locator       string  `json:"locator"`
+	ContentSha256 *string `json:"content_sha256,omitempty"`
+}
+
 type BlockSnapshotManifestItemV1 struct {
 	BlockId     string `json:"block_id"`
 	BlockType   string `json:"block_type"`
@@ -123,6 +130,14 @@ type CandidateV1 struct {
 	CreatedAt DateTime `json:"created_at"`
 }
 
+type CourseStatus string
+
+const (
+	CourseStatusDRAFT    CourseStatus = "DRAFT"
+	CourseStatusACTIVE   CourseStatus = "ACTIVE"
+	CourseStatusARCHIVED CourseStatus = "ARCHIVED"
+)
+
 type DeliveryMetadataV1 struct {
 	// Delivery guarantee. Consumers must be idempotent.
 	Mode *string `json:"mode,omitempty"`
@@ -167,6 +182,25 @@ const (
 	ErrorSeverityCRITICAL ErrorSeverity = "CRITICAL"
 )
 
+type GoldenQuestionType string
+
+const (
+	GoldenQuestionTypeSINGLECHOICE   GoldenQuestionType = "SINGLE_CHOICE"
+	GoldenQuestionTypeMULTIPLECHOICE GoldenQuestionType = "MULTIPLE_CHOICE"
+	GoldenQuestionTypeCALCULATION    GoldenQuestionType = "CALCULATION"
+	GoldenQuestionTypePROOF          GoldenQuestionType = "PROOF"
+	GoldenQuestionTypeDESIGN         GoldenQuestionType = "DESIGN"
+	GoldenQuestionTypeSIMULATION     GoldenQuestionType = "SIMULATION"
+)
+
+type KnowledgePointStatus string
+
+const (
+	KnowledgePointStatusDRAFT      KnowledgePointStatus = "DRAFT"
+	KnowledgePointStatusACTIVE     KnowledgePointStatus = "ACTIVE"
+	KnowledgePointStatusDEPRECATED KnowledgePointStatus = "DEPRECATED"
+)
+
 type LiteToolDefinitionV1 struct {
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
@@ -189,6 +223,23 @@ const (
 	MessagePriorityHIGH     MessagePriority = "HIGH"
 	MessagePriorityNORMAL   MessagePriority = "NORMAL"
 	MessagePriorityLOW      MessagePriority = "LOW"
+)
+
+type MisconceptionSeverity string
+
+const (
+	MisconceptionSeverityLOW      MisconceptionSeverity = "LOW"
+	MisconceptionSeverityMEDIUM   MisconceptionSeverity = "MEDIUM"
+	MisconceptionSeverityHIGH     MisconceptionSeverity = "HIGH"
+	MisconceptionSeverityCRITICAL MisconceptionSeverity = "CRITICAL"
+)
+
+type PrerequisiteType string
+
+const (
+	PrerequisiteTypeREQUIRED    PrerequisiteType = "REQUIRED"
+	PrerequisiteTypeRECOMMENDED PrerequisiteType = "RECOMMENDED"
+	PrerequisiteTypeSUPPORTING  PrerequisiteType = "SUPPORTING"
 )
 
 type ProducerMetadataV1 struct {
@@ -323,6 +374,185 @@ const (
 	StreamFragmentTypeEND      StreamFragmentType = "END"
 	StreamFragmentTypeSNAPSHOT StreamFragmentType = "SNAPSHOT"
 )
+
+type TextbookMappingType string
+
+const (
+	TextbookMappingTypePRIMARY    TextbookMappingType = "PRIMARY"
+	TextbookMappingTypeSUPPORTING TextbookMappingType = "SUPPORTING"
+	TextbookMappingTypeEXAMPLE    TextbookMappingType = "EXAMPLE"
+	TextbookMappingTypeEXERCISE   TextbookMappingType = "EXERCISE"
+)
+
+type Topic1ApiEnvelopeV1 struct {
+	SchemaVersion *string        `json:"schema_version,omitempty"`
+	RequestId     UUID           `json:"request_id"`
+	TraceId       string         `json:"trace_id"`
+	Data          map[string]any `json:"data"`
+}
+
+type Topic1CourseV1 struct {
+	SchemaVersion    *string                `json:"schema_version,omitempty"`
+	CourseId         string                 `json:"course_id"`
+	Revision         int64                  `json:"revision"`
+	CourseCode       string                 `json:"course_code"`
+	Title            string                 `json:"title"`
+	Description      string                 `json:"description"`
+	Locale           *string                `json:"locale,omitempty"`
+	AcademicLevel    *string                `json:"academic_level,omitempty"`
+	CreditHours      float64                `json:"credit_hours"`
+	Status           CourseStatus           `json:"status"`
+	AuthoritySources []AuthoritySourceRefV1 `json:"authority_sources,omitempty"`
+	CreatedAt        DateTime               `json:"created_at"`
+	UpdatedAt        DateTime               `json:"updated_at"`
+}
+
+type Topic1GoldenQuestionV1 struct {
+	SchemaVersion    *string                `json:"schema_version,omitempty"`
+	QuestionId       string                 `json:"question_id"`
+	PrimaryKpId      string                 `json:"primary_kp_id"`
+	RelatedKpIds     []string               `json:"related_kp_ids,omitempty"`
+	QuestionType     GoldenQuestionType     `json:"question_type"`
+	StemMarkdown     string                 `json:"stem_markdown"`
+	AnswerDocument   map[string]any         `json:"answer_document"`
+	SolutionMarkdown string                 `json:"solution_markdown"`
+	DifficultyLevel  int64                  `json:"difficulty_level"`
+	Discrimination   float64                `json:"discrimination"`
+	DiagnosticTags   []string               `json:"diagnostic_tags"`
+	MisconceptionIds []string               `json:"misconception_ids,omitempty"`
+	AuthoritySources []AuthoritySourceRefV1 `json:"authority_sources"`
+	Revision         int64                  `json:"revision"`
+	CreatedAt        DateTime               `json:"created_at"`
+	UpdatedAt        DateTime               `json:"updated_at"`
+}
+
+type Topic1GraphContentV1 struct {
+	Course           Topic1CourseV1            `json:"course"`
+	KnowledgePoints  []Topic1KnowledgePointV1  `json:"knowledge_points"`
+	Prerequisites    []Topic1PrerequisiteV1    `json:"prerequisites"`
+	Misconceptions   []Topic1MisconceptionV1   `json:"misconceptions,omitempty"`
+	Textbooks        []Topic1TextbookV1        `json:"textbooks,omitempty"`
+	TextbookSections []Topic1TextbookSectionV1 `json:"textbook_sections,omitempty"`
+	TextbookMappings []Topic1TextbookMappingV1 `json:"textbook_mappings,omitempty"`
+	GoldenQuestions  []Topic1GoldenQuestionV1  `json:"golden_questions,omitempty"`
+}
+
+type Topic1GraphSnapshotV1 struct {
+	SchemaVersion          *string              `json:"schema_version,omitempty"`
+	SnapshotId             UUID                 `json:"snapshot_id"`
+	CourseId               string               `json:"course_id"`
+	GraphVersion           int64                `json:"graph_version"`
+	ParentSnapshotId       *UUID                `json:"parent_snapshot_id,omitempty"`
+	RestoredFromSnapshotId *UUID                `json:"restored_from_snapshot_id,omitempty"`
+	Content                Topic1GraphContentV1 `json:"content"`
+	ContentSha256          string               `json:"content_sha256"`
+	NodeCount              int64                `json:"node_count"`
+	EdgeCount              int64                `json:"edge_count"`
+	CreatedBySubject       string               `json:"created_by_subject"`
+	FrozenAt               DateTime             `json:"frozen_at"`
+}
+
+type Topic1ImportBundleV1 struct {
+	SchemaVersion         *string              `json:"schema_version,omitempty"`
+	ImportId              UUID                 `json:"import_id"`
+	ExpectedParentVersion *int64               `json:"expected_parent_version,omitempty"`
+	Content               Topic1GraphContentV1 `json:"content"`
+	RequestedAt           DateTime             `json:"requested_at"`
+}
+
+type Topic1KnowledgePointV1 struct {
+	SchemaVersion      *string                `json:"schema_version,omitempty"`
+	KpId               string                 `json:"kp_id"`
+	CourseId           string                 `json:"course_id"`
+	Revision           int64                  `json:"revision"`
+	Title              string                 `json:"title"`
+	Aliases            []string               `json:"aliases,omitempty"`
+	Summary            string                 `json:"summary"`
+	LearningObjectives []string               `json:"learning_objectives"`
+	Category           string                 `json:"category"`
+	DifficultyLevel    int64                  `json:"difficulty_level"`
+	DifficultyScore    float64                `json:"difficulty_score"`
+	TopologyLevel      int64                  `json:"topology_level"`
+	TopologyWeight     float64                `json:"topology_weight"`
+	EstimatedMinutes   int64                  `json:"estimated_minutes"`
+	FormulaSignatures  []string               `json:"formula_signatures,omitempty"`
+	Tags               []string               `json:"tags,omitempty"`
+	Status             KnowledgePointStatus   `json:"status"`
+	AuthoritySources   []AuthoritySourceRefV1 `json:"authority_sources,omitempty"`
+	CreatedAt          DateTime               `json:"created_at"`
+	UpdatedAt          DateTime               `json:"updated_at"`
+}
+
+type Topic1MisconceptionV1 struct {
+	SchemaVersion   *string               `json:"schema_version,omitempty"`
+	MisconceptionId string                `json:"misconception_id"`
+	KpId            string                `json:"kp_id"`
+	Title           string                `json:"title"`
+	Description     string                `json:"description"`
+	TriggerPattern  string                `json:"trigger_pattern"`
+	DiagnosisTags   []string              `json:"diagnosis_tags"`
+	RemediationHint string                `json:"remediation_hint"`
+	Severity        MisconceptionSeverity `json:"severity"`
+	Revision        int64                 `json:"revision"`
+	CreatedAt       DateTime              `json:"created_at"`
+	UpdatedAt       DateTime              `json:"updated_at"`
+}
+
+type Topic1PrerequisiteV1 struct {
+	SchemaVersion    *string          `json:"schema_version,omitempty"`
+	EdgeId           string           `json:"edge_id"`
+	CourseId         string           `json:"course_id"`
+	PrerequisiteKpId string           `json:"prerequisite_kp_id"`
+	DependentKpId    string           `json:"dependent_kp_id"`
+	RelationType     PrerequisiteType `json:"relation_type"`
+	Strength         float64          `json:"strength"`
+	Rationale        string           `json:"rationale"`
+	Revision         int64            `json:"revision"`
+	CreatedAt        DateTime         `json:"created_at"`
+	UpdatedAt        DateTime         `json:"updated_at"`
+}
+
+type Topic1TextbookMappingV1 struct {
+	SchemaVersion *string             `json:"schema_version,omitempty"`
+	MappingId     string              `json:"mapping_id"`
+	KpId          string              `json:"kp_id"`
+	SectionId     string              `json:"section_id"`
+	MappingType   TextbookMappingType `json:"mapping_type"`
+	Coverage      float64             `json:"coverage"`
+	Note          *string             `json:"note,omitempty"`
+	Revision      int64               `json:"revision"`
+	CreatedAt     DateTime            `json:"created_at"`
+	UpdatedAt     DateTime            `json:"updated_at"`
+}
+
+type Topic1TextbookSectionV1 struct {
+	SchemaVersion   *string  `json:"schema_version,omitempty"`
+	SectionId       string   `json:"section_id"`
+	TextbookId      string   `json:"textbook_id"`
+	ParentSectionId *string  `json:"parent_section_id,omitempty"`
+	ChapterNumber   string   `json:"chapter_number"`
+	Title           string   `json:"title"`
+	StartPage       *int64   `json:"start_page,omitempty"`
+	EndPage         *int64   `json:"end_page,omitempty"`
+	Revision        int64    `json:"revision"`
+	CreatedAt       DateTime `json:"created_at"`
+	UpdatedAt       DateTime `json:"updated_at"`
+}
+
+type Topic1TextbookV1 struct {
+	SchemaVersion   *string  `json:"schema_version,omitempty"`
+	TextbookId      string   `json:"textbook_id"`
+	Title           string   `json:"title"`
+	Authors         []string `json:"authors"`
+	Publisher       string   `json:"publisher"`
+	Edition         string   `json:"edition"`
+	Isbn            *string  `json:"isbn,omitempty"`
+	PublicationYear int64    `json:"publication_year"`
+	AuthorityLevel  int64    `json:"authority_level"`
+	Revision        int64    `json:"revision"`
+	CreatedAt       DateTime `json:"created_at"`
+	UpdatedAt       DateTime `json:"updated_at"`
+}
 
 type Topic3EnvelopeV1 struct {
 	// Frozen public Envelope wire version.

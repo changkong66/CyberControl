@@ -86,7 +86,7 @@ non-superuser, non-`BYPASSRLS` roles. It then performs:
 
 Redline: every migration direction succeeds, no model drift exists, all transaction,
 RLS, restart, lease, idempotency, Outbox, audit, and SSE recovery tests pass, and
-coverage is at least 85.00%.
+coverage is at least 88.00%.
 
 ### 3.3 Go contract gate
 
@@ -235,7 +235,7 @@ exception.
 - Python lock and pnpm lock reproduce without mutation;
 - Ruff findings and generated contract drift equal zero;
 - Go vet/race/build and TypeScript/Vue build all pass;
-- PostgreSQL integration passes on version 16 with coverage at least 85%;
+- PostgreSQL integration passes on version 16 with coverage at least 88%;
 - Python and Node known high/critical dependency findings equal zero;
 - fixable high/critical container findings equal zero;
 - secret findings equal zero;

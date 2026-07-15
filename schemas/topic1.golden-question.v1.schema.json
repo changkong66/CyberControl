@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "AuthoritySourceRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Version",
+          "type": "string"
+        },
+        "locator": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 64,
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Sha256"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_version",
+        "locator"
+      ],
+      "title": "AuthoritySourceRefV1",
+      "type": "object"
+    },
+    "GoldenQuestionType": {
+      "enum": [
+        "SINGLE_CHOICE",
+        "MULTIPLE_CHOICE",
+        "CALCULATION",
+        "PROOF",
+        "DESIGN",
+        "SIMULATION"
+      ],
+      "title": "GoldenQuestionType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.golden-question.v1",
+      "default": "topic1.golden-question.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "question_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Question Id",
+      "type": "string"
+    },
+    "primary_kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "pattern": "^KP_\\S{3,117}$",
+      "title": "Primary Kp Id",
+      "type": "string"
+    },
+    "related_kp_ids": {
+      "items": {
+        "maxLength": 120,
+        "minLength": 6,
+        "pattern": "^KP_\\S{3,117}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Related Kp Ids",
+      "type": "array"
+    },
+    "question_type": {
+      "$ref": "#/$defs/GoldenQuestionType"
+    },
+    "stem_markdown": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Stem Markdown",
+      "type": "string"
+    },
+    "answer_document": {
+      "additionalProperties": true,
+      "title": "Answer Document",
+      "type": "object"
+    },
+    "solution_markdown": {
+      "maxLength": 30000,
+      "minLength": 1,
+      "title": "Solution Markdown",
+      "type": "string"
+    },
+    "difficulty_level": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Difficulty Level",
+      "type": "integer"
+    },
+    "discrimination": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Discrimination",
+      "type": "number"
+    },
+    "diagnostic_tags": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Diagnostic Tags",
+      "type": "array"
+    },
+    "misconception_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 6,
+        "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Misconception Ids",
+      "type": "array"
+    },
+    "authority_sources": {
+      "items": {
+        "$ref": "#/$defs/AuthoritySourceRefV1"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Authority Sources",
+      "type": "array"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "question_id",
+    "primary_kp_id",
+    "question_type",
+    "stem_markdown",
+    "answer_document",
+    "solution_markdown",
+    "difficulty_level",
+    "discrimination",
+    "diagnostic_tags",
+    "authority_sources",
+    "revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1GoldenQuestionV1",
+  "type": "object"
+}

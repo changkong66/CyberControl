@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "AuthoritySourceRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Version",
+          "type": "string"
+        },
+        "locator": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 64,
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Sha256"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_version",
+        "locator"
+      ],
+      "title": "AuthoritySourceRefV1",
+      "type": "object"
+    },
+    "KnowledgePointStatus": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "DEPRECATED"
+      ],
+      "title": "KnowledgePointStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.knowledge-point.v1",
+      "default": "topic1.knowledge-point.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "pattern": "^KP_\\S{3,117}$",
+      "title": "Kp Id",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 7,
+      "pattern": "^CRS_[A-Z0-9_]{3,60}$",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "title": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Aliases",
+      "type": "array"
+    },
+    "summary": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "learning_objectives": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Learning Objectives",
+      "type": "array"
+    },
+    "category": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+    },
+    "difficulty_level": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Difficulty Level",
+      "type": "integer"
+    },
+    "difficulty_score": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Difficulty Score",
+      "type": "number"
+    },
+    "topology_level": {
+      "minimum": 0,
+      "title": "Topology Level",
+      "type": "integer"
+    },
+    "topology_weight": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Topology Weight",
+      "type": "number"
+    },
+    "estimated_minutes": {
+      "maximum": 2400,
+      "minimum": 1,
+      "title": "Estimated Minutes",
+      "type": "integer"
+    },
+    "formula_signatures": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Formula Signatures",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Tags",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/KnowledgePointStatus"
+    },
+    "authority_sources": {
+      "items": {
+        "$ref": "#/$defs/AuthoritySourceRefV1"
+      },
+      "maxItems": 64,
+      "title": "Authority Sources",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kp_id",
+    "course_id",
+    "revision",
+    "title",
+    "summary",
+    "learning_objectives",
+    "category",
+    "difficulty_level",
+    "difficulty_score",
+    "topology_level",
+    "topology_weight",
+    "estimated_minutes",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1KnowledgePointV1",
+  "type": "object"
+}

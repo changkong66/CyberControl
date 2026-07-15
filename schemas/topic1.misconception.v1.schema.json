@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "MisconceptionSeverity": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "MisconceptionSeverity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.misconception.v1",
+      "default": "topic1.misconception.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "misconception_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Misconception Id",
+      "type": "string"
+    },
+    "kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "pattern": "^KP_\\S{3,117}$",
+      "title": "Kp Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "trigger_pattern": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Trigger Pattern",
+      "type": "string"
+    },
+    "diagnosis_tags": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Diagnosis Tags",
+      "type": "array"
+    },
+    "remediation_hint": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Remediation Hint",
+      "type": "string"
+    },
+    "severity": {
+      "$ref": "#/$defs/MisconceptionSeverity"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "misconception_id",
+    "kp_id",
+    "title",
+    "description",
+    "trigger_pattern",
+    "diagnosis_tags",
+    "remediation_hint",
+    "severity",
+    "revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1MisconceptionV1",
+  "type": "object"
+}

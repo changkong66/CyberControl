@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "AuthoritySourceRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Version",
+          "type": "string"
+        },
+        "locator": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "content_sha256": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 64,
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Sha256"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_version",
+        "locator"
+      ],
+      "title": "AuthoritySourceRefV1",
+      "type": "object"
+    },
+    "CourseStatus": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "ARCHIVED"
+      ],
+      "title": "CourseStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.course.v1",
+      "default": "topic1.course.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 7,
+      "pattern": "^CRS_[A-Z0-9_]{3,60}$",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "course_code": {
+      "maxLength": 32,
+      "minLength": 2,
+      "pattern": "^[A-Z0-9_-]+$",
+      "title": "Course Code",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "locale": {
+      "default": "zh-CN",
+      "maxLength": 16,
+      "minLength": 2,
+      "title": "Locale",
+      "type": "string"
+    },
+    "academic_level": {
+      "default": "UNDERGRADUATE",
+      "maxLength": 32,
+      "minLength": 2,
+      "title": "Academic Level",
+      "type": "string"
+    },
+    "credit_hours": {
+      "maximum": 256,
+      "minimum": 0,
+      "title": "Credit Hours",
+      "type": "number"
+    },
+    "status": {
+      "$ref": "#/$defs/CourseStatus"
+    },
+    "authority_sources": {
+      "items": {
+        "$ref": "#/$defs/AuthoritySourceRefV1"
+      },
+      "maxItems": 64,
+      "title": "Authority Sources",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "course_id",
+    "revision",
+    "course_code",
+    "title",
+    "description",
+    "credit_hours",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1CourseV1",
+  "type": "object"
+}

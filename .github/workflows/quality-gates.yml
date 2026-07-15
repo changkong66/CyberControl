@@ -155,7 +155,7 @@ jobs:
             --cov=packages/contracts-python/src/liyans_contracts \
             --cov-report=term-missing \
             --cov-report=xml:artifacts/coverage/python-coverage.xml \
-            --cov-fail-under=85
+            --cov-fail-under=88
       - name: Upload test and coverage evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

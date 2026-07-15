@@ -1,0 +1,44 @@
+{
+  "schema_version": "topic1.acceptance.v1",
+  "topic": "Topic 1",
+  "status": "REMOTE_PENDING",
+  "local_accepted_at_utc": "2026-07-15T13:42:15Z",
+  "implementation_branch": "codex/topic1-knowledge-topology",
+  "foundation_commit": "4af95302cd3e7321f2e8738e03581597d51f82c6",
+  "phase1_1_status": "ACCEPTED",
+  "topic1_foundation_frozen": false,
+  "topic2_unlocked": false,
+  "local_evidence": {
+    "python_tests_passed": 164,
+    "python_tests_skipped_windows_only": 1,
+    "python_coverage_percent": 88.24,
+    "python_coverage_redline_percent": 88.0,
+    "topic1_postgresql_tests_passed": 9,
+    "ruff": "passed",
+    "contract_generation": "passed",
+    "go_contracts": "passed",
+    "typescript_contracts": "passed",
+    "alembic_round_trip": "passed",
+    "alembic_model_drift": "none",
+    "authoritative_seed": "contract-valid, acyclic, PostgreSQL round-trip passed",
+    "full_release_quality_redline": "passed",
+    "container_trivy_all_severities": 0,
+    "gitleaks_history_and_worktree": 0,
+    "dependency_audits": "passed",
+    "sbom_and_license_policy": "passed"
+  },
+  "remote_evidence": {
+    "repository": "changkong66/CyberControl",
+    "required_status": "Release quality redline",
+    "implementation_pull_request": null,
+    "branch_workflow_run_id": null,
+    "main_workflow_run_id": null,
+    "conclusion": "pending"
+  },
+  "pending_gates": {
+    "remote_branch_ci": "pending",
+    "protected_main_merge": "pending",
+    "remote_main_ci": "pending"
+  },
+  "next_stage": "Complete Topic 1 local and remote release acceptance before unlocking Topic 2"
+}

@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "PrerequisiteType": {
+      "enum": [
+        "REQUIRED",
+        "RECOMMENDED",
+        "SUPPORTING"
+      ],
+      "title": "PrerequisiteType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.prerequisite.v1",
+      "default": "topic1.prerequisite.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "edge_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Edge Id",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 7,
+      "pattern": "^CRS_[A-Z0-9_]{3,60}$",
+      "title": "Course Id",
+      "type": "string"
+    },
+    "prerequisite_kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "pattern": "^KP_\\S{3,117}$",
+      "title": "Prerequisite Kp Id",
+      "type": "string"
+    },
+    "dependent_kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "pattern": "^KP_\\S{3,117}$",
+      "title": "Dependent Kp Id",
+      "type": "string"
+    },
+    "relation_type": {
+      "$ref": "#/$defs/PrerequisiteType"
+    },
+    "strength": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Strength",
+      "type": "number"
+    },
+    "rationale": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "edge_id",
+    "course_id",
+    "prerequisite_kp_id",
+    "dependent_kp_id",
+    "relation_type",
+    "strength",
+    "rationale",
+    "revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1PrerequisiteV1",
+  "type": "object"
+}

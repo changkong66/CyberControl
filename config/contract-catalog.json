@@ -1,6 +1,17 @@
 {
   "catalog_version": "1.0.0",
   "entries": [
+    {"schema_name":"topic1.api-envelope.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.course.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.knowledge-point.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.prerequisite.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.misconception.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.textbook.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.textbook-section.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.textbook-mapping.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.golden-question.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.import-bundle.v1","owner":"topic1","status":"CODED_TOPIC1"},
+    {"schema_name":"topic1.graph-snapshot.v1","owner":"topic1","status":"CODED_TOPIC1"},
     {"schema_name":"artifact.object.ref.v1","owner":"verification","status":"CODED_BASELINE"},
     {"schema_name":"source.snapshot.ref.v1","owner":"verification","status":"CODED_BASELINE"},
     {"schema_name":"topic3.envelope.v1","owner":"generation","status":"CODED_BASELINE"},
