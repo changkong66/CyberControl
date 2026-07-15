@@ -1,0 +1,299 @@
+{
+  "$defs": {
+    "Topic2LearningPathSnapshotV1": {
+      "additionalProperties": false,
+      "description": "Immutable path snapshot bound to exact Topic 1 graph and profile versions.",
+      "properties": {
+        "schema_version": {
+          "const": "topic2.learning-path-snapshot.v1",
+          "default": "topic2.learning-path-snapshot.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "path_snapshot_id": {
+          "format": "uuid",
+          "title": "Path Snapshot Id",
+          "type": "string"
+        },
+        "learner_ref": {
+          "maxLength": 256,
+          "minLength": 3,
+          "title": "Learner Ref",
+          "type": "string"
+        },
+        "course_id": {
+          "maxLength": 64,
+          "minLength": 3,
+          "title": "Course Id",
+          "type": "string"
+        },
+        "path_version": {
+          "minimum": 1,
+          "title": "Path Version",
+          "type": "integer"
+        },
+        "parent_path_snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Path Snapshot Id"
+        },
+        "topic1_graph_snapshot_id": {
+          "format": "uuid",
+          "title": "Topic1 Graph Snapshot Id",
+          "type": "string"
+        },
+        "topic1_graph_version": {
+          "minimum": 1,
+          "title": "Topic1 Graph Version",
+          "type": "integer"
+        },
+        "profile_id": {
+          "format": "uuid",
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "plan_type": {
+          "$ref": "#/$defs/Topic2PathPlanType"
+        },
+        "trigger_reason": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Trigger Reason",
+          "type": "string"
+        },
+        "target_goal": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Target Goal",
+          "type": "string"
+        },
+        "policy_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "path_document": {
+          "additionalProperties": true,
+          "title": "Path Document",
+          "type": "object"
+        },
+        "decision_document": {
+          "additionalProperties": true,
+          "title": "Decision Document",
+          "type": "object"
+        },
+        "node_count": {
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Node Count",
+          "type": "integer"
+        },
+        "estimated_minutes": {
+          "maximum": 1200000,
+          "minimum": 0,
+          "title": "Estimated Minutes",
+          "type": "integer"
+        },
+        "manual_override": {
+          "title": "Manual Override",
+          "type": "boolean"
+        },
+        "content_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "frozen_at": {
+          "format": "date-time",
+          "title": "Frozen At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path_snapshot_id",
+        "learner_ref",
+        "course_id",
+        "path_version",
+        "topic1_graph_snapshot_id",
+        "topic1_graph_version",
+        "profile_id",
+        "plan_type",
+        "trigger_reason",
+        "target_goal",
+        "policy_version",
+        "path_document",
+        "decision_document",
+        "node_count",
+        "estimated_minutes",
+        "manual_override",
+        "content_sha256",
+        "frozen_at"
+      ],
+      "title": "Topic2LearningPathSnapshotV1",
+      "type": "object"
+    },
+    "Topic2PathChangeType": {
+      "enum": [
+        "INITIALIZED",
+        "MEMORY_RISK",
+        "MASTERY_DEFICIT",
+        "MISCONCEPTION",
+        "GOAL_CHANGED",
+        "MANUAL_OVERRIDE",
+        "TOPOLOGY_REPAIRED",
+        "RESTORED"
+      ],
+      "title": "Topic2PathChangeType",
+      "type": "string"
+    },
+    "Topic2PathChangeV1": {
+      "additionalProperties": false,
+      "description": "Immutable delta explaining why a new learning path version was created.",
+      "properties": {
+        "schema_version": {
+          "const": "topic2.path-change.v1",
+          "default": "topic2.path-change.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "change_id": {
+          "format": "uuid",
+          "title": "Change Id",
+          "type": "string"
+        },
+        "learner_ref": {
+          "maxLength": 256,
+          "minLength": 3,
+          "title": "Learner Ref",
+          "type": "string"
+        },
+        "course_id": {
+          "maxLength": 64,
+          "minLength": 3,
+          "title": "Course Id",
+          "type": "string"
+        },
+        "from_path_snapshot_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Path Snapshot Id"
+        },
+        "to_path_snapshot_id": {
+          "format": "uuid",
+          "title": "To Path Snapshot Id",
+          "type": "string"
+        },
+        "change_type": {
+          "$ref": "#/$defs/Topic2PathChangeType"
+        },
+        "reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "policy_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "change_document": {
+          "additionalProperties": true,
+          "title": "Change Document",
+          "type": "object"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "change_id",
+        "learner_ref",
+        "course_id",
+        "to_path_snapshot_id",
+        "change_type",
+        "reason",
+        "policy_version",
+        "change_document",
+        "occurred_at"
+      ],
+      "title": "Topic2PathChangeV1",
+      "type": "object"
+    },
+    "Topic2PathPlanType": {
+      "enum": [
+        "INITIAL",
+        "REPLANNED",
+        "MANUAL_OVERRIDE",
+        "RESTORED"
+      ],
+      "title": "Topic2PathPlanType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Persisted path snapshot, its change explanation, and audit provenance.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.learning-path-record.v1",
+      "default": "topic2.learning-path-record.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "snapshot": {
+      "$ref": "#/$defs/Topic2LearningPathSnapshotV1"
+    },
+    "change": {
+      "$ref": "#/$defs/Topic2PathChangeV1"
+    },
+    "audit_event_id": {
+      "format": "uuid",
+      "title": "Audit Event Id",
+      "type": "string"
+    },
+    "created_by_subject": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Created By Subject",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "snapshot",
+    "change",
+    "audit_event_id",
+    "created_by_subject",
+    "created_at"
+  ],
+  "title": "Topic2LearningPathRecordV1",
+  "type": "object"
+}

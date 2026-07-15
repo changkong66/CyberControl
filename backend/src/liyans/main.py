@@ -13,6 +13,7 @@ from liyans.api.middleware import AuthenticationTenantMiddleware
 from liyans.api.routes.health import router as health_router
 from liyans.api.routes.metrics import router as metrics_router
 from liyans.api.routes.topic1 import router as topic1_router
+from liyans.api.routes.topic2 import router as topic2_router
 from liyans.api.routes.topic3 import router as topic3_router
 from liyans.api.topic1_limits import Topic1ImportBodyLimitMiddleware
 from liyans.core.config import ConfigSnapshot, HotReloadingTomlConfig
@@ -20,6 +21,12 @@ from liyans.core.provider_policy import ProviderPolicyRegistry
 from liyans.core.settings import get_settings
 from liyans.domains.topic1.postgres_repository import PostgresTopic1Repository
 from liyans.domains.topic1.service import MAX_IMPORT_HTTP_BYTES, Topic1Service
+from liyans.domains.topic2.memory import EbbinghausMemoryEngine
+from liyans.domains.topic2.orchestrator import Topic2Orchestrator
+from liyans.domains.topic2.path_planning import AdaptivePathPlanner
+from liyans.domains.topic2.postgres_repository import PostgresTopic2Repository
+from liyans.domains.topic2.profiling import SixDimensionProfileEngine
+from liyans.domains.topic2.service import Topic2Service
 from liyans.infrastructure.database import (
     DatabaseHealthProbe,
     DatabaseSessionManager,
@@ -112,11 +119,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             database,
             claim_lease_seconds=settings.outbox_claim_lease_seconds,
         )
+        topic1_repository = PostgresTopic1Repository()
         app.state.topic1_service = Topic1Service(
             database,
-            PostgresTopic1Repository(),
+            topic1_repository,
             app.state.outbox,
             instance_id=settings.service_instance_id,
+        )
+        topic2_repository = PostgresTopic2Repository()
+        app.state.topic2_service = Topic2Service(
+            database,
+            topic2_repository,
+            topic1_repository,
+            app.state.outbox,
+            instance_id=settings.service_instance_id,
+        )
+        app.state.topic2_orchestrator = Topic2Orchestrator(
+            database,
+            topic1_repository,
+            app.state.topic2_service,
+            SixDimensionProfileEngine(),
+            EbbinghausMemoryEngine(),
+            AdaptivePathPlanner(),
         )
         app.state.artifact_service = ArtifactService(
             database,
@@ -207,6 +231,7 @@ def create_app() -> FastAPI:
     application.include_router(health_router)
     application.include_router(metrics_router)
     application.include_router(topic1_router)
+    application.include_router(topic2_router)
     application.include_router(topic3_router)
     return application
 

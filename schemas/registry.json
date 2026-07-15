@@ -77,6 +77,90 @@
     "file": "topic1.graph-snapshot.v1.schema.json"
   },
   {
+    "schema_name": "topic2.operation-command.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.operation-command.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.behavior-event-command.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.behavior-event-command.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.learning-behavior-event.v1",
+    "owner": "topic2",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "topic2.learning-behavior-event.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.profile-feature.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.profile-feature.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.student-profile.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.student-profile.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.memory-state.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.memory-state.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.path-node.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.path-node.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.learning-path-snapshot.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.learning-path-snapshot.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.path-change.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.path-change.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.learning-path-record.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.learning-path-record.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.path-generate-command.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.path-generate-command.v1.schema.json"
+  },
+  {
+    "schema_name": "topic2.agent-context.v1",
+    "owner": "topic2",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic2.agent-context.v1.schema.json"
+  },
+  {
     "schema_name": "artifact.object.ref.v1",
     "owner": "verification-platform",
     "visibility": "internal",

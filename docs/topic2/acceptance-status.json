@@ -1,0 +1,38 @@
+{
+  "schema_version": "topic2.acceptance.v1",
+  "topic": "Topic 2",
+  "status": "LOCAL_ACCEPTED_REMOTE_PENDING",
+  "local_accepted_at_utc": "2026-07-15T16:48:07.0351760Z",
+  "implementation_branch": "codex/topic2-adaptive-learning",
+  "foundation_main_commit": "b6a0fbc058eb7a8b70267f5bbd55376cceb39e81",
+  "phase1_1_status": "ACCEPTED",
+  "topic1_status": "ACCEPTED",
+  "topic2_foundation_frozen": false,
+  "topic3_unlocked": false,
+  "local_evidence": {
+    "python_tests_passed": 195,
+    "python_tests_skipped_windows_only": 1,
+    "python_coverage_percent": 89.14,
+    "python_coverage_redline_percent": 88.0,
+    "topic2_postgresql_integration_tests_passed": 10,
+    "ruff": "passed",
+    "contract_generation": "passed",
+    "go_contracts": "passed",
+    "typescript_vue": "passed",
+    "alembic_round_trip": "passed",
+    "alembic_model_drift": "none",
+    "dependency_audits": "passed",
+    "sbom_and_license_policy": "passed",
+    "container_trivy_all_severities": 0,
+    "gitleaks_history_and_worktree": 0,
+    "full_release_quality_redline": "passed",
+    "evidence_generated_at_utc": "2026-07-15T16:48:07.0351760Z"
+  },
+  "remote_evidence": {},
+  "pending_gates": {
+    "implementation_branch_ci": "required",
+    "pull_request_ci": "required",
+    "protected_main_merge_ci": "required"
+  },
+  "next_stage": "Push the Topic 2 branch and complete protected remote PR acceptance"
+}

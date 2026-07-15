@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "Topic2PathChangeType": {
+      "enum": [
+        "INITIALIZED",
+        "MEMORY_RISK",
+        "MASTERY_DEFICIT",
+        "MISCONCEPTION",
+        "GOAL_CHANGED",
+        "MANUAL_OVERRIDE",
+        "TOPOLOGY_REPAIRED",
+        "RESTORED"
+      ],
+      "title": "Topic2PathChangeType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Replay-stable initial or replanned learning-path command.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.path-generate-command.v1",
+      "default": "topic2.path-generate-command.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "title": "Operation Id",
+      "type": "string"
+    },
+    "requested_at": {
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+    },
+    "target_goal": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Target Goal",
+      "type": "string"
+    },
+    "target_kp_ids": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Kp Ids"
+    },
+    "manual_order": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 500,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Manual Order"
+    },
+    "change_type": {
+      "$ref": "#/$defs/Topic2PathChangeType",
+      "default": "INITIALIZED"
+    },
+    "trigger_reason": {
+      "default": "PROFILE_OR_MEMORY_UPDATED",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Trigger Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation_id",
+    "requested_at",
+    "target_goal"
+  ],
+  "title": "Topic2PathGenerateCommandV1",
+  "type": "object"
+}

@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Replay-stable command identity for profile, memory, or path generation.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.operation-command.v1",
+      "default": "topic2.operation-command.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "title": "Operation Id",
+      "type": "string"
+    },
+    "requested_at": {
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation_id",
+    "requested_at"
+  ],
+  "title": "Topic2OperationCommandV1",
+  "type": "object"
+}
