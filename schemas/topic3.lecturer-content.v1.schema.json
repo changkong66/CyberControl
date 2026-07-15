@@ -1,0 +1,124 @@
+{
+  "$defs": {
+    "LecturerDepth": {
+      "enum": [
+        "FOUNDATION",
+        "EXAM_FOCUS",
+        "POSTGRADUATE",
+        "ENGINEERING"
+      ],
+      "title": "LecturerDepth",
+      "type": "string"
+    },
+    "LecturerSectionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "section_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Section Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "depth": {
+          "$ref": "#/$defs/LecturerDepth"
+        },
+        "markdown": {
+          "maxLength": 65536,
+          "minLength": 1,
+          "title": "Markdown",
+          "type": "string"
+        },
+        "target_kp_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Target Kp Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section_id",
+        "title",
+        "depth",
+        "markdown",
+        "target_kp_ids"
+      ],
+      "title": "LecturerSectionV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.lecturer-content.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "learning_objectives": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "title": "Learning Objectives",
+      "type": "array"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/LecturerSectionV1"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    },
+    "summary": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Summary",
+      "type": "array"
+    },
+    "misconception_alerts": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Misconception Alerts",
+      "type": "array"
+    },
+    "personalization_notes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Personalization Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "title",
+    "learning_objectives",
+    "sections",
+    "summary"
+  ],
+  "title": "LecturerContentV1",
+  "type": "object"
+}

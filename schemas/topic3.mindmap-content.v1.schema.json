@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "MindMapEdgeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "source_node_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Source Node Id",
+          "type": "string"
+        },
+        "target_node_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Target Node Id",
+          "type": "string"
+        },
+        "relation": {
+          "enum": [
+            "PREREQUISITE",
+            "CONTAINS",
+            "REINFORCES"
+          ],
+          "title": "Relation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_node_id",
+        "target_node_id",
+        "relation"
+      ],
+      "title": "MindMapEdgeV1",
+      "type": "object"
+    },
+    "MindMapNodeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "kp_id": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Kp Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "mastery": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Mastery",
+          "type": "number"
+        },
+        "state": {
+          "enum": [
+            "PREREQUISITE",
+            "CURRENT",
+            "MASTERED",
+            "WEAK",
+            "FUTURE"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "collapsed": {
+          "default": false,
+          "title": "Collapsed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "node_id",
+        "kp_id",
+        "label",
+        "mastery",
+        "state"
+      ],
+      "title": "MindMapNodeV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.mindmap-content.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "direction": {
+      "enum": [
+        "TD",
+        "LR"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/MindMapNodeV1"
+      },
+      "maxItems": 512,
+      "minItems": 1,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/MindMapEdgeV1"
+      },
+      "maxItems": 2048,
+      "title": "Edges",
+      "type": "array"
+    },
+    "mermaid": {
+      "maxLength": 65536,
+      "minLength": 1,
+      "title": "Mermaid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "direction",
+    "nodes",
+    "mermaid"
+  ],
+  "title": "MindMapContentV1",
+  "type": "object"
+}

@@ -1,0 +1,260 @@
+{
+  "$defs": {
+    "ResourceType": {
+      "enum": [
+        "Lecturer_Doc",
+        "MindMap",
+        "Gradient_Quiz",
+        "Simulation_Code",
+        "Extension_Material"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "SourceAgent": {
+      "enum": [
+        "Lecturer",
+        "MindMap",
+        "Tester",
+        "CodeSandbox",
+        "Extension"
+      ],
+      "title": "SourceAgent",
+      "type": "string"
+    },
+    "Topic3BlueprintStepV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "topic3.blueprint-step.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "ordinal": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "agent": {
+          "$ref": "#/$defs/SourceAgent"
+        },
+        "resource_type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "dependency_task_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Dependency Task Ids",
+          "type": "array"
+        },
+        "provider_alias": {
+          "enum": [
+            "spark_text",
+            "xfyun_code",
+            "seedance",
+            "local"
+          ],
+          "title": "Provider Alias",
+          "type": "string"
+        },
+        "prompt_bundle_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Prompt Bundle Version",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "maximum": 120.0,
+          "minimum": 1.0,
+          "title": "Timeout Seconds",
+          "type": "number"
+        },
+        "max_attempts": {
+          "default": 3,
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "activation_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Activation Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "task_id",
+        "ordinal",
+        "agent",
+        "resource_type",
+        "provider_alias",
+        "prompt_bundle_version",
+        "timeout_seconds",
+        "activation_reasons"
+      ],
+      "title": "Topic3BlueprintStepV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable, replayable execution plan selected from frozen Topic 1/2 inputs.",
+  "properties": {
+    "schema_version": {
+      "const": "topic3.execution-blueprint.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "blueprint_id": {
+      "format": "uuid",
+      "title": "Blueprint Id",
+      "type": "string"
+    },
+    "blueprint_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Blueprint Version",
+      "type": "string"
+    },
+    "generation_session_id": {
+      "format": "uuid",
+      "title": "Generation Session Id",
+      "type": "string"
+    },
+    "generation_session_version": {
+      "minimum": 1,
+      "title": "Generation Session Version",
+      "type": "integer"
+    },
+    "topic1_graph_snapshot_id": {
+      "format": "uuid",
+      "title": "Topic1 Graph Snapshot Id",
+      "type": "string"
+    },
+    "topic1_graph_version": {
+      "minimum": 1,
+      "title": "Topic1 Graph Version",
+      "type": "integer"
+    },
+    "topic1_graph_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Topic1 Graph Sha256",
+      "type": "string"
+    },
+    "topic2_profile_id": {
+      "format": "uuid",
+      "title": "Topic2 Profile Id",
+      "type": "string"
+    },
+    "topic2_profile_version": {
+      "minimum": 1,
+      "title": "Topic2 Profile Version",
+      "type": "integer"
+    },
+    "topic2_path_snapshot_id": {
+      "format": "uuid",
+      "title": "Topic2 Path Snapshot Id",
+      "type": "string"
+    },
+    "topic2_path_version": {
+      "minimum": 1,
+      "title": "Topic2 Path Version",
+      "type": "integer"
+    },
+    "personalization_policy_digest": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Personalization Policy Digest",
+      "type": "string"
+    },
+    "target_kp_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Target Kp Ids",
+      "type": "array"
+    },
+    "max_parallelism": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Max Parallelism",
+      "type": "integer"
+    },
+    "allow_partial": {
+      "title": "Allow Partial",
+      "type": "boolean"
+    },
+    "activation_policy_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Activation Policy Version",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/Topic3BlueprintStepV1"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Steps",
+      "type": "array"
+    },
+    "blueprint_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Blueprint Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "blueprint_id",
+    "blueprint_version",
+    "generation_session_id",
+    "generation_session_version",
+    "topic1_graph_snapshot_id",
+    "topic1_graph_version",
+    "topic1_graph_sha256",
+    "topic2_profile_id",
+    "topic2_profile_version",
+    "topic2_path_snapshot_id",
+    "topic2_path_version",
+    "personalization_policy_digest",
+    "target_kp_ids",
+    "max_parallelism",
+    "allow_partial",
+    "activation_policy_version",
+    "steps",
+    "blueprint_sha256",
+    "created_at"
+  ],
+  "title": "Topic3ExecutionBlueprintV1",
+  "type": "object"
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": "topic3.acceptance.v1",
+  "topic": "Topic 3",
+  "status": "LOCAL_ACCEPTANCE_PENDING_FULL_REDLINE",
+  "foundation_main_commit": "89302fcd953ae116c12b159f1d3037d1a17bab05",
+  "implementation_branch": "codex/topic3-agent-cluster",
+  "implementation_branch_commit": null,
+  "accepted_main_commit": null,
+  "phase1_1_status": "ACCEPTED",
+  "topic1_status": "ACCEPTED",
+  "topic2_status": "ACCEPTED",
+  "topic3_foundation_frozen": true,
+  "topic4_unlocked": false,
+  "local_evidence": {
+    "python_tests_passed": 226,
+    "python_tests_skipped_windows_only": 1,
+    "python_coverage_percent": 89.66,
+    "python_coverage_redline_percent": 89.0,
+    "focused_topic3_tests": "passed",
+    "ruff": "passed",
+    "contract_generation": "passed",
+    "baseline_validation": "passed",
+    "full_release_quality_redline": "pending"
+  },
+  "remote_evidence": {},
+  "pending_gates": {
+    "local_release_redline": "pending",
+    "branch_ci": "pending",
+    "pull_request_ci": "pending",
+    "main_merge_ci": "pending"
+  },
+  "next_stage": "Topic 4 remains locked until protected-main remote acceptance"
+}

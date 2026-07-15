@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "LecturerDepth": {
+      "enum": [
+        "FOUNDATION",
+        "EXAM_FOCUS",
+        "POSTGRADUATE",
+        "ENGINEERING"
+      ],
+      "title": "LecturerDepth",
+      "type": "string"
+    },
+    "ResourceType": {
+      "enum": [
+        "Lecturer_Doc",
+        "MindMap",
+        "Gradient_Quiz",
+        "Simulation_Code",
+        "Extension_Material"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Trusted command that starts one immutable multi-agent generation workflow.",
+  "properties": {
+    "schema_version": {
+      "const": "topic3.generation-command.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "operation_id": {
+      "format": "uuid",
+      "title": "Operation Id",
+      "type": "string"
+    },
+    "generation_session_id": {
+      "format": "uuid",
+      "title": "Generation Session Id",
+      "type": "string"
+    },
+    "learner_ref": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Learner Ref",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Course Id",
+      "type": "string"
+    },
+    "target_kp_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Target Kp Ids",
+      "type": "array"
+    },
+    "requested_resources": {
+      "items": {
+        "$ref": "#/$defs/ResourceType"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Requested Resources",
+      "type": "array"
+    },
+    "lecturer_depth": {
+      "$ref": "#/$defs/LecturerDepth",
+      "default": "FOUNDATION"
+    },
+    "learning_goal": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Learning Goal",
+      "type": "string"
+    },
+    "locale": {
+      "default": "zh-CN",
+      "enum": [
+        "zh-CN",
+        "en-US"
+      ],
+      "title": "Locale",
+      "type": "string"
+    },
+    "max_parallelism": {
+      "default": 3,
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Max Parallelism",
+      "type": "integer"
+    },
+    "allow_partial": {
+      "default": false,
+      "title": "Allow Partial",
+      "type": "boolean"
+    },
+    "requested_at": {
+      "format": "date-time",
+      "title": "Requested At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "operation_id",
+    "generation_session_id",
+    "learner_ref",
+    "course_id",
+    "target_kp_ids",
+    "requested_resources",
+    "learning_goal",
+    "requested_at"
+  ],
+  "title": "Topic3GenerationCommandV1",
+  "type": "object"
+}

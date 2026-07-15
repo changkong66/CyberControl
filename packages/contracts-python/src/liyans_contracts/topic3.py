@@ -251,3 +251,358 @@ class SSEChunkV1(BaseModel):
     emitted_at: AwareDatetime = Field(
         description="UTC fragment creation time from the SSE collection layer.",
     )
+
+
+class GenerationSessionState(StrEnum):
+    PLANNED = "PLANNED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    PARTIAL = "PARTIAL"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class AgentTaskState(StrEnum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
+    CANCELLED = "CANCELLED"
+
+
+class LecturerDepth(StrEnum):
+    FOUNDATION = "FOUNDATION"
+    EXAM_FOCUS = "EXAM_FOCUS"
+    POSTGRADUATE = "POSTGRADUATE"
+    ENGINEERING = "ENGINEERING"
+
+
+class Topic3GenerationCommandV1(BaseModel):
+    """Trusted command that starts one immutable multi-agent generation workflow."""
+
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.generation-command.v1"]
+    operation_id: UUID
+    generation_session_id: UUID
+    learner_ref: str = Field(min_length=1, max_length=256)
+    course_id: str = Field(min_length=1, max_length=64)
+    target_kp_ids: list[str] = Field(min_length=1, max_length=128)
+    requested_resources: list[ResourceType] = Field(min_length=1, max_length=5)
+    lecturer_depth: LecturerDepth = LecturerDepth.FOUNDATION
+    learning_goal: str = Field(min_length=1, max_length=512)
+    locale: Literal["zh-CN", "en-US"] = "zh-CN"
+    max_parallelism: int = Field(default=3, ge=1, le=5)
+    allow_partial: bool = False
+    requested_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def validate_unique_targets(self) -> Topic3GenerationCommandV1:
+        if len(self.target_kp_ids) != len(set(self.target_kp_ids)):
+            raise ValueError("target_kp_ids must be unique")
+        if len(self.requested_resources) != len(set(self.requested_resources)):
+            raise ValueError("requested_resources must be unique")
+        return self
+
+
+class Topic3BlueprintStepV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.blueprint-step.v1"]
+    task_id: UUID
+    ordinal: int = Field(ge=0, le=4)
+    agent: SourceAgent
+    resource_type: ResourceType
+    dependency_task_ids: list[UUID] = Field(default_factory=list, max_length=4)
+    provider_alias: Literal["spark_text", "xfyun_code", "seedance", "local"]
+    prompt_bundle_version: VersionString
+    timeout_seconds: float = Field(ge=1.0, le=120.0)
+    max_attempts: int = Field(default=3, ge=1, le=8)
+    activation_reasons: list[str] = Field(min_length=1, max_length=16)
+
+    @model_validator(mode="after")
+    def validate_agent_resource(self) -> Topic3BlueprintStepV1:
+        if self.resource_type not in AGENT_RESOURCE_MATRIX[self.agent]:
+            raise ValueError("resource_type is not owned by the selected agent")
+        if self.task_id in self.dependency_task_ids:
+            raise ValueError("blueprint step cannot depend on itself")
+        if len(self.dependency_task_ids) != len(set(self.dependency_task_ids)):
+            raise ValueError("dependency_task_ids must be unique")
+        return self
+
+
+class Topic3ExecutionBlueprintV1(BaseModel):
+    """Immutable, replayable execution plan selected from frozen Topic 1/2 inputs."""
+
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.execution-blueprint.v1"]
+    blueprint_id: UUID
+    blueprint_version: VersionString
+    generation_session_id: UUID
+    generation_session_version: int = Field(ge=1)
+    topic1_graph_snapshot_id: UUID
+    topic1_graph_version: int = Field(ge=1)
+    topic1_graph_sha256: Sha256Hex
+    topic2_profile_id: UUID
+    topic2_profile_version: int = Field(ge=1)
+    topic2_path_snapshot_id: UUID
+    topic2_path_version: int = Field(ge=1)
+    personalization_policy_digest: Sha256Hex
+    target_kp_ids: list[str] = Field(min_length=1, max_length=128)
+    max_parallelism: int = Field(ge=1, le=5)
+    allow_partial: bool
+    activation_policy_version: VersionString
+    steps: list[Topic3BlueprintStepV1] = Field(min_length=1, max_length=5)
+    blueprint_sha256: Sha256Hex
+    created_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def validate_blueprint(self) -> Topic3ExecutionBlueprintV1:
+        step_ids = [step.task_id for step in self.steps]
+        if len(step_ids) != len(set(step_ids)):
+            raise ValueError("blueprint task identifiers must be unique")
+        ordinals = sorted(step.ordinal for step in self.steps)
+        if ordinals != list(range(len(self.steps))):
+            raise ValueError("blueprint step ordinals must be contiguous")
+        known: set[UUID] = set()
+        for step in sorted(self.steps, key=lambda value: value.ordinal):
+            if not set(step.dependency_task_ids) <= known:
+                raise ValueError("step dependencies must reference earlier blueprint steps")
+            known.add(step.task_id)
+        document = self.model_dump(mode="json", exclude={"blueprint_sha256"})
+        if canonical_sha256(document) != self.blueprint_sha256:
+            raise ValueError("blueprint_sha256 does not match the canonical blueprint")
+        return self
+
+
+class Topic3AgentTaskSnapshotV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.agent-task-snapshot.v1"]
+    task_id: UUID
+    task_version: int = Field(ge=1)
+    blueprint_id: UUID
+    blueprint_version: VersionString
+    agent: SourceAgent
+    resource_type: ResourceType
+    state: AgentTaskState
+    attempt: int = Field(ge=0, le=8)
+    max_attempts: int = Field(ge=1, le=8)
+    request_sha256: Sha256Hex
+    result_sha256: Sha256Hex | None = None
+    candidate_id: UUID | None = None
+    candidate_version: int | None = Field(default=None, ge=1)
+    error_code: str | None = Field(default=None, max_length=128)
+    started_at: AwareDatetime | None = None
+    completed_at: AwareDatetime | None = None
+
+    @model_validator(mode="after")
+    def validate_task_state(self) -> Topic3AgentTaskSnapshotV1:
+        if self.attempt > self.max_attempts:
+            raise ValueError("attempt cannot exceed max_attempts")
+        if (self.candidate_id is None) != (self.candidate_version is None):
+            raise ValueError("candidate_id and candidate_version must be provided together")
+        if self.state == AgentTaskState.SUCCEEDED and self.candidate_id is None:
+            raise ValueError("successful tasks require an exact candidate version")
+        if self.state == AgentTaskState.FAILED and not self.error_code:
+            raise ValueError("failed tasks require an error_code")
+        return self
+
+
+class Topic3GenerationSessionV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.generation-session.v1"]
+    generation_session_id: UUID
+    session_version: int = Field(ge=1)
+    parent_session_snapshot_id: UUID | None = None
+    learner_ref: str = Field(min_length=1, max_length=256)
+    course_id: str = Field(min_length=1, max_length=64)
+    state: GenerationSessionState
+    blueprint_id: UUID | None = None
+    blueprint_version: VersionString | None = None
+    requested_resources: list[ResourceType] = Field(min_length=1, max_length=5)
+    tasks: list[Topic3AgentTaskSnapshotV1] = Field(default_factory=list, max_length=64)
+    candidate_ids: list[UUID] = Field(default_factory=list, max_length=64)
+    content_sha256: Sha256Hex
+    created_at: AwareDatetime
+
+
+class LecturerSectionV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    section_id: str = Field(min_length=1, max_length=128)
+    title: str = Field(min_length=1, max_length=256)
+    depth: LecturerDepth
+    markdown: str = Field(min_length=1, max_length=65536)
+    target_kp_ids: list[str] = Field(min_length=1, max_length=64)
+
+
+class LecturerContentV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.lecturer-content.v1"]
+    title: str = Field(min_length=1, max_length=256)
+    learning_objectives: list[str] = Field(min_length=1, max_length=16)
+    sections: list[LecturerSectionV1] = Field(min_length=1, max_length=32)
+    summary: list[str] = Field(min_length=1, max_length=32)
+    misconception_alerts: list[str] = Field(default_factory=list, max_length=32)
+    personalization_notes: list[str] = Field(default_factory=list, max_length=32)
+
+
+class MindMapNodeV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    node_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$")
+    kp_id: str = Field(min_length=1, max_length=120)
+    label: str = Field(min_length=1, max_length=128)
+    mastery: float = Field(ge=0.0, le=1.0)
+    state: Literal["PREREQUISITE", "CURRENT", "MASTERED", "WEAK", "FUTURE"]
+    collapsed: bool = False
+
+
+class MindMapEdgeV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    source_node_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$")
+    target_node_id: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]{0,63}$")
+    relation: Literal["PREREQUISITE", "CONTAINS", "REINFORCES"]
+
+
+class MindMapContentV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.mindmap-content.v1"]
+    direction: Literal["TD", "LR"]
+    nodes: list[MindMapNodeV1] = Field(min_length=1, max_length=512)
+    edges: list[MindMapEdgeV1] = Field(default_factory=list, max_length=2048)
+    mermaid: str = Field(min_length=1, max_length=65536)
+
+    @model_validator(mode="after")
+    def validate_graph(self) -> MindMapContentV1:
+        node_ids = [node.node_id for node in self.nodes]
+        if len(node_ids) != len(set(node_ids)):
+            raise ValueError("mind-map node identifiers must be unique")
+        node_set = set(node_ids)
+        for edge in self.edges:
+            if edge.source_node_id == edge.target_node_id:
+                raise ValueError("mind-map self edges are prohibited")
+            if edge.source_node_id not in node_set or edge.target_node_id not in node_set:
+                raise ValueError("mind-map edge references an unknown node")
+        if not self.mermaid.startswith(f"graph {self.direction}"):
+            raise ValueError("mermaid must start with the declared graph direction")
+        if any(token in self.mermaid.lower() for token in ("<script", "javascript:", "click ")):
+            raise ValueError("unsafe Mermaid directives are prohibited")
+        return self
+
+
+class TesterQuestionV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    question_id: str = Field(min_length=1, max_length=128)
+    question_type: Literal[
+        "CONCEPT", "DISCRIMINATION", "CALCULATION", "ENGINEERING", "MISCONCEPTION"
+    ]
+    difficulty: float = Field(ge=0.0, le=1.0)
+    target_kp_ids: list[str] = Field(min_length=1, max_length=16)
+    prompt_markdown: str = Field(min_length=1, max_length=8192)
+    standard_answer: str = Field(min_length=1, max_length=8192)
+    solution_steps: list[str] = Field(min_length=1, max_length=32)
+    misconception_diagnostics: list[str] = Field(default_factory=list, max_length=16)
+    score: float = Field(gt=0.0, le=100.0)
+
+
+class TesterContentV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.tester-content.v1"]
+    title: str = Field(min_length=1, max_length=256)
+    total_score: float = Field(gt=0.0, le=1000.0)
+    questions: list[TesterQuestionV1] = Field(min_length=1, max_length=100)
+    diagnostic_dimensions: list[str] = Field(min_length=1, max_length=16)
+
+    @model_validator(mode="after")
+    def validate_questions(self) -> TesterContentV1:
+        ids = [question.question_id for question in self.questions]
+        if len(ids) != len(set(ids)):
+            raise ValueError("question identifiers must be unique")
+        if abs(sum(question.score for question in self.questions) - self.total_score) > 1e-6:
+            raise ValueError("question scores must sum to total_score")
+        return self
+
+
+class CodeFileV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    path: str = Field(min_length=1, max_length=256, pattern=r"^[A-Za-z0-9_./-]+$")
+    language: Literal["python", "matlab"]
+    content: str = Field(min_length=1, max_length=65536)
+    entrypoint: bool = False
+
+
+class CodeSandboxContentV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.code-sandbox-content.v1"]
+    title: str = Field(min_length=1, max_length=256)
+    objective: str = Field(min_length=1, max_length=1024)
+    files: list[CodeFileV1] = Field(min_length=1, max_length=32)
+    parameters: dict[str, str] = Field(default_factory=dict)
+    expected_observations: list[str] = Field(min_length=1, max_length=32)
+    result_analysis: str = Field(min_length=1, max_length=8192)
+    safety_notes: list[str] = Field(default_factory=list, max_length=16)
+
+    @model_validator(mode="after")
+    def validate_files(self) -> CodeSandboxContentV1:
+        paths = [item.path for item in self.files]
+        if len(paths) != len(set(paths)):
+            raise ValueError("code file paths must be unique")
+        if sum(1 for item in self.files if item.entrypoint) != 1:
+            raise ValueError("exactly one code file must be the entrypoint")
+        return self
+
+
+class ExtensionResourceV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    resource_id: str = Field(min_length=1, max_length=128)
+    resource_kind: Literal["ENGINEERING", "PAPER", "RESEARCH", "INDUSTRY", "COMPETITION"]
+    title: str = Field(min_length=1, max_length=512)
+    summary: str = Field(min_length=1, max_length=8192)
+    relevance_to_kp_ids: list[str] = Field(min_length=1, max_length=32)
+    citation_text: str = Field(min_length=1, max_length=2048)
+    source_url: str | None = Field(default=None, max_length=2048)
+
+
+class ExtensionContentV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.extension-content.v1"]
+    title: str = Field(min_length=1, max_length=256)
+    resources: list[ExtensionResourceV1] = Field(min_length=1, max_length=32)
+    recommended_sequence: list[str] = Field(min_length=1, max_length=32)
+
+    @model_validator(mode="after")
+    def validate_resources(self) -> ExtensionContentV1:
+        resource_ids = [resource.resource_id for resource in self.resources]
+        if len(resource_ids) != len(set(resource_ids)):
+            raise ValueError("extension resource identifiers must be unique")
+        if set(self.recommended_sequence) != set(resource_ids):
+            raise ValueError("recommended_sequence must contain every resource exactly once")
+        return self
+
+
+class Topic3GenerationResultV1(BaseModel):
+    model_config = FROZEN_MODEL_CONFIG
+
+    schema_version: Literal["topic3.generation-result.v1"]
+    generation_session_id: UUID
+    session_version: int = Field(ge=1)
+    state: GenerationSessionState
+    blueprint: Topic3ExecutionBlueprintV1
+    tasks: list[Topic3AgentTaskSnapshotV1] = Field(min_length=1, max_length=64)
+    candidates: list[CandidateV1] = Field(default_factory=list, max_length=64)
+    failed_agents: list[SourceAgent] = Field(default_factory=list, max_length=5)
+    completed_at: AwareDatetime

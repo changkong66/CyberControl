@@ -9,6 +9,7 @@ from alembic.script import ScriptDirectory
 
 from liyans.domains.topic1.models import TOPIC1_TENANT_TABLES
 from liyans.domains.topic2.models import TOPIC2_TENANT_TABLES
+from liyans.domains.topic3.models import TOPIC3_TENANT_TABLES
 from liyans.infrastructure.database.models import TENANT_SCOPED_TABLES, Base
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +18,7 @@ ALL_TENANT_TABLES = (
     *TENANT_SCOPED_TABLES,
     *TOPIC1_TENANT_TABLES,
     *TOPIC2_TENANT_TABLES,
+    *TOPIC3_TENANT_TABLES,
 )
 
 
@@ -26,7 +28,7 @@ def alembic_config(output: StringIO | None = None) -> Config:
     return config
 
 
-def test_metadata_contains_frozen_and_topic2_table_families() -> None:
+def test_metadata_contains_all_frozen_tenant_table_families() -> None:
     assert set(Base.metadata.tables) == set(ALL_TENANT_TABLES)
     for table_name in ALL_TENANT_TABLES:
         table = Base.metadata.tables[table_name]
@@ -42,7 +44,7 @@ def test_all_constraints_and_indexes_are_stably_named() -> None:
 
 def test_alembic_has_one_linear_head() -> None:
     script = ScriptDirectory.from_config(alembic_config())
-    assert script.get_heads() == ["20260715_0005"]
+    assert script.get_heads() == ["20260716_0006"]
     assert script.get_base() == "20260714_0001"
 
 
@@ -63,6 +65,9 @@ def test_offline_upgrade_contains_security_and_integrity_controls() -> None:
     assert "CREATE FUNCTION reject_topic2_history_mutation" in sql
     for table_name in TOPIC2_TENANT_TABLES:
         assert f"CREATE TRIGGER trg_{table_name}_append_only" in sql
+    assert "CREATE FUNCTION reject_topic3_history_mutation" in sql
+    for table_name in TOPIC3_TENANT_TABLES:
+        assert f"CREATE TRIGGER trg_{table_name}_append_only" in sql
     assert "CREATE TABLE alembic_version" in sql
     assert "Liyan Platform" in sql
 
@@ -71,7 +76,7 @@ def test_offline_downgrade_is_complete_and_ordered() -> None:
     output = StringIO()
     command.downgrade(
         alembic_config(output),
-        "20260715_0005:base",
+        "20260716_0006:base",
         sql=True,
     )
     sql = output.getvalue()
@@ -80,6 +85,9 @@ def test_offline_downgrade_is_complete_and_ordered() -> None:
     assert "DROP TRIGGER IF EXISTS trg_topic1_graph_snapshots_append_only" in sql
     assert "DROP FUNCTION IF EXISTS reject_topic2_history_mutation" in sql
     for table_name in TOPIC2_TENANT_TABLES:
+        assert f"DROP TRIGGER IF EXISTS trg_{table_name}_append_only" in sql
+    assert "DROP FUNCTION IF EXISTS reject_topic3_history_mutation" in sql
+    for table_name in TOPIC3_TENANT_TABLES:
         assert f"DROP TRIGGER IF EXISTS trg_{table_name}_append_only" in sql
     for table_name in reversed(ALL_TENANT_TABLES):
         assert f"DROP TABLE {table_name}" in sql
