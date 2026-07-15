@@ -5,50 +5,46 @@
 | 项目 | 结果 |
 |---|---|
 | Repository | `changkong66/CyberControl` |
-| Visibility | Private |
-| Code baseline | `bca073fc94ceaca1f5d20783705ae4b70c00e590` |
-| Governance baseline | `39e7f016a071f435ad9fcf56876ae5866625ef97` |
+| Visibility | Public |
+| Accepted baseline | `611375cd8f40dfb88d418685695b5bb1a9436d7d` |
 | Required status | `Release quality redline` |
-| Remote CI | 通过 |
-| main protection | GitHub Free 私有仓库套餐阻塞 |
-| Phase status | `REMOTE_PENDING` |
-| Topic 1 | 锁定 |
+| Phase branch CI | 通过 |
+| main CI | 通过 |
+| Classic protection | API 回读通过 |
+| Repository Rulesets | 2 个 Active 规则集，API 回读通过 |
+| Public security audit | 0 findings / 0 open alerts |
+| Phase status | `ACCEPTED` |
+| Topic 1 | `UNLOCKED` |
+
+Phase1.1 本地基础设施、GitHub Actions 远端复现、服务端主干保护、标签不可变规则和公开
+仓库安全控制已经全部闭环。此前 GitHub Free 私有仓库返回 403 的阻塞通过项目所有者
+批准切换为 Public 后消除；本报告替代所有旧的 `REMOTE_PENDING` 判定。
 
 ## 2. 远端 CI 证据
 
-### 2.1 Phase 1.1 分支
+### 2.1 Phase1.1 分支最终基线
 
 - Branch：`codex/phase-1.1-foundation`
-- Commit：`39e7f016a071f435ad9fcf56876ae5866625ef97`
-- Workflow run：<https://github.com/changkong66/CyberControl/actions/runs/29399037874>
-- Run ID：`29399037874`
-- Redline job ID：`87299312349`
+- Commit：`611375cd8f40dfb88d418685695b5bb1a9436d7d`
+- Workflow run：<https://github.com/changkong66/CyberControl/actions/runs/29400649820>
+- Run ID：`29400649820`
+- Redline job ID：`87304401906`
 - Conclusion：`success`
 
-### 2.2 main 初始化基线
+### 2.2 main 最终基线
 
 - Branch：`main`
-- Commit：`39e7f016a071f435ad9fcf56876ae5866625ef97`
-- Workflow run：<https://github.com/changkong66/CyberControl/actions/runs/29399212865>
-- Run ID：`29399212865`
-- Redline job ID：`87299892896`
+- Commit：`611375cd8f40dfb88d418685695b5bb1a9436d7d`
+- Workflow run：<https://github.com/changkong66/CyberControl/actions/runs/29400659103>
+- Run ID：`29400659103`
+- Redline job ID：`87304437634`
 - Conclusion：`success`
 
-### 2.3 最终验收台账提交
+验收文档与治理脚本后续提交仍必须触发同一聚合红线。提交无法在自身内容中写入尚未
+生成的 run ID，因此精确的最新运行证据由 GitHub Actions 与提交 SHA 永久关联，并由
+`tools/github/verify-remote-quality-gate.ps1` 写入本地机器证据。
 
-- Commit：`fe3482bb8662281c21359af66e952e69e827b958`
-- Phase branch run：<https://github.com/changkong66/CyberControl/actions/runs/29399883914>
-- Phase redline job ID：`87301948744`
-- main run：<https://github.com/changkong66/CyberControl/actions/runs/29400001506>
-- main redline job ID：`87302395191`
-- 两次 conclusion：`success`
-
-最终验收文档提交同样必须在 Phase 分支和 `main` 触发该工作流。由于提交无法在自身
-内容中包含尚未生成的 run ID，最终 run 的精确机器证据由
-`tools/github/verify-remote-quality-gate.ps1` 写入
-`artifacts/quality-gates/remote-ci.json`，并由 GitHub Actions 永久关联到提交。
-
-## 3. 远端门禁复现矩阵
+## 3. Release 质量红线复现矩阵
 
 | 门禁 | 远端结果 |
 |---|---|
@@ -56,49 +52,105 @@
 | Actionlint | 0 findings |
 | Ruff lint/format | 0 findings |
 | 冻结契约再生成与漂移 | 0 drift |
-| Python 单元与 PostgreSQL 集成测试 | 通过 |
+| Python 单元与 PostgreSQL 集成测试 | 115 passed, Linux 执行 Windows symlink skip 用例 |
 | Alembic upgrade/downgrade/upgrade | 通过 |
-| Python coverage redline | `>=85%` |
+| Python coverage redline | `>=85%`，基线 85.42% |
 | Go fmt/vet/race/test/build | 通过 |
 | Vue/TypeScript/Vite | 通过 |
 | pnpm/Python dependency audit | 0 blocking findings |
 | Python/Node/Container CycloneDX SBOM | 生成并上传 |
 | License policy | 通过 |
 | Non-root minimal container | 通过 |
-| Trivy complete/fixable scan | 0 vulnerabilities |
+| Trivy complete/fixable scan | 全等级 0 vulnerabilities |
 | Gitleaks history/worktree | 0 findings |
 
-Windows 无法创建符号链接而跳过的路径安全用例在 GitHub Linux runner 中执行，远端
-成功结果消除了本地单一 skip 的残余风险。
+## 4. Classic Branch Protection 验收
 
-## 4. main 保护阻塞
-
-最终保护必须同时满足：
+`tools/github/configure-repository-protection.ps1` 对 `main` 幂等应用并回读以下规则：
 
 - strict required status：`Release quality redline`；
-- PR required，至少一个批准；
-- Code Owner review、stale review dismissal、last-push approval；
-- conversation resolution 和 linear history；
+- 所有变更必须经 PR；
+- 至少 1 个批准，强制 CODEOWNERS、dismiss stale reviews 和 last-push approval；
+- required conversation resolution；
+- required linear history；
 - administrators enforced；
-- force-push、branch deletion 和 matching-ref creation 禁止；
+- force-push disabled；
+- branch deletion disabled；
 - Actions 默认 `GITHUB_TOKEN` 为 read-only，不能批准 PR。
 
-账户 `changkong66` 对仓库具有 admin 权限，但账户计划为 GitHub Free，仓库为
-Private。经典 Branch Protection API 与 Repository Rulesets API 均返回 HTTP 403，
-因此上述控制无法在服务器端生效。这不是 Token 权限问题，也不能用失败后报警的 CI
-替代真正的 push 阻断。
+Classic API PUT 与 GET 均返回成功，`api_readback_verified=true`。个人仓库对现有默认分支
+固定回读 `block_creations=false`，但 `main` 删除已由 Classic 和 Ruleset 双层阻断，且
+默认分支自身不能被删除，因此不构成验收缺口。
 
-套餐允许的治理项已经配置并回读：默认分支 `main`、禁用 merge commit、允许
-squash/rebase、合并后删除分支、Actions 默认只读且不能批准 PR。
+## 5. Repository Rulesets 验收
 
-## 5. 空仓库 bootstrap 边界
+### 5.1 main-release-governance
 
-远端初始没有 `main` 引用，因此先把已经通过 Phase 分支远端红线的治理提交一次性
-创建为 `main`，再执行 `main` 自身 CI。由于保护 API 受套餐阻塞，bootstrap 已完成但
-正式验收尚未完成；在升级 GitHub Pro/Team 或经项目所有者明确批准公开仓库前，不得
-继续 Topic 1。
+| 属性 | 值 |
+|---|---|
+| Ruleset ID | `18985297` |
+| Target | default branch |
+| Enforcement | `active` |
+| Rules | deletion, non-fast-forward, linear history, pull request, required status checks |
+| Required status | `Release quality redline` |
+| Bypass | Repository Admin, `pull_request` mode only |
 
-## 6. 解锁判定
+仓库当前只有 `@changkong66` 一个管理员和 CODEOWNER。GitHub 禁止提交者自我批准，
+因此 Admin 的 PR-only bypass 是避免所有者 PR 永久不可合并的最小临时通道；它不能用于
+直接 push。新增第二名可信 CODEOWNER 后，应优先执行常规双门槛，不使用 bypass。
 
-Phase 1.1 的本地与远端 CI 已通过，但服务器端分支保护是硬性解锁条件。当前 Topic 1、
-Topic 2、Topic 3 Agent runtime、Topic 4 Verifier runtime 和前端业务工作台全部锁定。
+Repository Ruleset 元数据接口对当前个人公开仓库拒绝 `commit_message_pattern`。提交规范
+由 GitHub Actions 的 `tools/validate_commit_messages.py` 执行，并被必需聚合状态绑定；
+格式不合规的提交不能合并到 `main`。
+
+### 5.2 immutable-release-tags
+
+| 属性 | 值 |
+|---|---|
+| Ruleset ID | `18985299` |
+| Target | `refs/tags/*` |
+| Enforcement | `active` |
+| Rules | deletion, non-fast-forward |
+| Bypass actors | none |
+
+## 6. Git 协议违规探针
+
+执行 `tools/github/test-repository-protection.ps1`，结果如下：
+
+| 探针 | GitHub 结果 | 远端影响 |
+|---|---|---|
+| 新提交直接 push 到 main | `GH013`, rejected | 无 |
+| orphan commit force-push 到 main | `GH013`, rejected | 无 |
+| 删除 main | remote rejected | 无 |
+| 删除 `phase-1.1-baseline-611375c` 标签 | `GH013`, rejected | 无 |
+
+探针完成后远端 `main` 仍为
+`611375cd8f40dfb88d418685695b5bb1a9436d7d`。脚本只创建临时 Git object，不修改本地
+分支或工作树。
+
+## 7. Public 安全二次巡检
+
+仓库切换 Public 后执行了独立安全复核：
+
+- Gitleaks 8.30.1 发布包 SHA-256 固定并校验；
+- 所有可达历史提交 findings：0；
+- 当前工作树 findings：0；
+- GitHub Secret Scanning：enabled；
+- GitHub Push Protection：enabled；
+- GitHub open secret alerts：0；
+- 有效讯飞星火、讯飞代码、SeeDance 凭证：0；
+- 生产数据库口令、JWT 私钥、PII：0；
+- 未脱敏黄金评测集、完整私有 Prompt、核验阈值和评分权重：0。
+
+完整范围与竞赛资产分级见
+`docs/security/public-repository-security-audit.md`。
+
+## 8. 解锁判定
+
+Phase1.1 的代码质量、远端 CI、服务端分支保护、不可变标签和公开仓库安全前置条件均已
+满足，状态正式切换为 `ACCEPTED`。允许创建
+`codex/topic1-knowledge-topology` 并开始 Topic1 编码。
+
+Topic2、Topic3 Agent runtime、Topic4 Verifier runtime 和前端业务工作台继续保持锁定，
+直到各自直接前置阶段通过独立验收。Phase1.1 的租户身份、RLS、事务、Outbox、审计、
+持久化 SSE 和冻结 Envelope 语义不得被 Topic1 侵入式修改。

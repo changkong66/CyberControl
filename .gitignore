@@ -1,6 +1,37 @@
 .env
 .env.*
 !.env.example
+*.env.local
+
+# Secrets, signing material, provider credentials, and local identity stores.
+.secrets/
+secrets/
+.credentials/
+credentials/
+*.secret
+*.credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+local-credentials*.json
+*-credentials.local.json
+docker-auth*.json
+.docker/
+
+# Non-public competition assets and unfinished internal design material.
+docs/private/
+docs/drafts/
+docs/**/private/
+docs/**/drafts/
+*.private.md
+*.internal.md
+*.draft.md
+private-assets/
+restricted-assets/
 
 __pycache__/
 *.py[cod]
