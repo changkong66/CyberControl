@@ -1,16 +1,20 @@
 {
-  "schema_version": "phase1.1.acceptance.v2",
+  "schema_version": "phase1.1.acceptance.v3",
   "phase": "Phase 1.1",
-  "status": "REMOTE_PENDING",
-  "upper_layers_unlocked": false,
-  "unlocked_layers": [],
+  "status": "ACCEPTED",
+  "accepted_at_utc": "2026-07-15T11:40:54Z",
+  "phase_foundation_frozen": true,
+  "upper_layers_unlocked": true,
+  "unlocked_layers": [
+    "topic1"
+  ],
   "still_locked_layers": [
-    "topic1",
     "topic2",
     "topic3-agent-runtime",
     "topic4-verifier-runtime",
     "frontend-business-workbench"
   ],
+  "acceptance_note": "The repository is Public; Classic protection, branch and tag rulesets, remote CI, public-repository secret controls, and destructive push probes are all verified. Phase 1.1 is frozen and Topic 1 is unlocked.",
   "local_gates": {
     "actionlint": "passed",
     "alembic_round_trip": "passed",
@@ -32,52 +36,74 @@
     "node_audit": "passed",
     "python_audit": "passed",
     "python_coverage_redline_percent": 85.0,
-    "python_coverage_observed_min_percent": 85.37,
-    "python_coverage_observed_max_percent": 85.54,
+    "python_coverage_observed_percent": 85.42,
     "python_tests_passed": 115,
+    "python_tests_skipped_windows_only": 1,
     "ruff": "passed"
   },
   "remote_evidence": {
     "repository": "changkong66/CyberControl",
     "origin": "https://github.com/changkong66/CyberControl.git",
+    "visibility": "public",
+    "default_branch": "main",
+    "accepted_code_baseline_commit": "611375cd8f40dfb88d418685695b5bb1a9436d7d",
     "phase_branch": "codex/phase-1.1-foundation",
-    "phase_code_baseline_commit": "bca073fc94ceaca1f5d20783705ae4b70c00e590",
-    "governance_commit": "39e7f016a071f435ad9fcf56876ae5866625ef97",
     "phase_branch_ci": {
-      "run_id": 29399037874,
-      "url": "https://github.com/changkong66/CyberControl/actions/runs/29399037874",
+      "commit": "611375cd8f40dfb88d418685695b5bb1a9436d7d",
+      "run_id": 29400649820,
+      "url": "https://github.com/changkong66/CyberControl/actions/runs/29400649820",
       "conclusion": "success",
-      "redline_job_id": 87299312349
+      "redline_job_id": 87304401906
     },
-    "main_bootstrap_ci": {
-      "run_id": 29399212865,
-      "url": "https://github.com/changkong66/CyberControl/actions/runs/29399212865",
+    "main_ci": {
+      "commit": "611375cd8f40dfb88d418685695b5bb1a9436d7d",
+      "run_id": 29400659103,
+      "url": "https://github.com/changkong66/CyberControl/actions/runs/29400659103",
       "conclusion": "success",
-      "redline_job_id": 87299892896
-    },
-    "final_phase_branch_ci": {
-      "commit": "fe3482bb8662281c21359af66e952e69e827b958",
-      "run_id": 29399883914,
-      "url": "https://github.com/changkong66/CyberControl/actions/runs/29399883914",
-      "conclusion": "success",
-      "redline_job_id": 87301948744
-    },
-    "final_main_ci": {
-      "commit": "fe3482bb8662281c21359af66e952e69e827b958",
-      "run_id": 29400001506,
-      "url": "https://github.com/changkong66/CyberControl/actions/runs/29400001506",
-      "conclusion": "success",
-      "redline_job_id": 87302395191
+      "redline_job_id": 87304437634
     },
     "main_branch_protection": {
       "required_context": "Release quality redline",
-      "api_readback_verified": false,
-      "classic_protection_http_status": 403,
-      "repository_rulesets_http_status": 403,
-      "blocker": "GitHub Free does not expose branch protection or repository rulesets for this private repository"
+      "api_readback_verified": true,
+      "classic_protection_http_status": 200,
+      "administrators_enforced": true,
+      "required_approving_reviews": 1,
+      "code_owner_reviews_required": true,
+      "last_push_approval_required": true,
+      "strict_status_checks": true,
+      "linear_history_required": true,
+      "force_pushes_allowed": false,
+      "deletions_allowed": false
     },
-    "available_remote_hardening": {
-      "default_branch": "main",
+    "repository_rulesets": {
+      "api_http_status": 200,
+      "main": {
+        "id": 18985297,
+        "name": "main-release-governance",
+        "enforcement": "active"
+      },
+      "tags": {
+        "id": 18985299,
+        "name": "immutable-release-tags",
+        "enforcement": "active",
+        "bypass_actors": 0
+      }
+    },
+    "protection_push_probes": {
+      "direct_push": "rejected",
+      "force_push": "rejected",
+      "main_deletion": "rejected",
+      "protected_tag_deletion": "rejected",
+      "remote_sha_unchanged": true
+    },
+    "public_repository_security": {
+      "gitleaks_history_findings": 0,
+      "gitleaks_worktree_findings": 0,
+      "github_secret_scanning": "enabled",
+      "github_push_protection": "enabled",
+      "github_open_secret_alerts": 0
+    },
+    "repository_hardening": {
       "merge_commits_allowed": false,
       "squash_merge_allowed": true,
       "rebase_merge_allowed": true,
@@ -86,8 +112,7 @@
       "actions_can_approve_pull_requests": false
     }
   },
-  "pending_gates": {
-    "main_branch_protection": "upgrade the GitHub account/organization plan or explicitly approve making the repository public, then apply and verify protection"
-  },
-  "required_remote_status": "Release quality redline"
+  "pending_gates": {},
+  "required_remote_status": "Release quality redline",
+  "next_stage": "Topic 1 automatic-control knowledge topology"
 }
