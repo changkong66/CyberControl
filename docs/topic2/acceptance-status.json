@@ -1,14 +1,17 @@
 {
   "schema_version": "topic2.acceptance.v1",
   "topic": "Topic 2",
-  "status": "LOCAL_ACCEPTED_REMOTE_PENDING",
+  "status": "ACCEPTED",
   "local_accepted_at_utc": "2026-07-15T16:48:07.0351760Z",
+  "accepted_at_utc": "2026-07-15T17:11:00Z",
   "implementation_branch": "codex/topic2-adaptive-learning",
+  "implementation_branch_commit": "00300f9797173275ab8743f2e089368370a0d85c",
+  "accepted_main_commit": "327999c3eb230c572640a2f9772b2b185cb81107",
   "foundation_main_commit": "b6a0fbc058eb7a8b70267f5bbd55376cceb39e81",
   "phase1_1_status": "ACCEPTED",
   "topic1_status": "ACCEPTED",
-  "topic2_foundation_frozen": false,
-  "topic3_unlocked": false,
+  "topic2_foundation_frozen": true,
+  "topic3_unlocked": true,
   "local_evidence": {
     "python_tests_passed": 195,
     "python_tests_skipped_windows_only": 1,
@@ -28,11 +31,43 @@
     "full_release_quality_redline": "passed",
     "evidence_generated_at_utc": "2026-07-15T16:48:07.0351760Z"
   },
-  "remote_evidence": {},
-  "pending_gates": {
-    "implementation_branch_ci": "required",
-    "pull_request_ci": "required",
-    "protected_main_merge_ci": "required"
+  "remote_evidence": {
+    "repository": "changkong66/CyberControl",
+    "required_status": "Release quality redline",
+    "implementation_pull_request": 12,
+    "branch_workflow": {
+      "run_id": 29434959723,
+      "head_sha": "00300f9797173275ab8743f2e089368370a0d85c",
+      "conclusion": "success"
+    },
+    "pull_request_workflow": {
+      "run_id": 29435132359,
+      "head_sha": "00300f9797173275ab8743f2e089368370a0d85c",
+      "conclusion": "success"
+    },
+    "main_workflow": {
+      "run_id": 29435381238,
+      "head_sha": "327999c3eb230c572640a2f9772b2b185cb81107",
+      "conclusion": "success"
+    },
+    "repository_protection": {
+      "ruleset_main_id": 18985297,
+      "ruleset_tags_id": 18985299,
+      "classic_review_control_restored": true,
+      "required_status_checks_preserved": true,
+      "force_push_and_deletion_blocks_preserved": true
+    },
+    "conclusion": "success"
   },
-  "next_stage": "Push the Topic 2 branch and complete protected remote PR acceptance"
+  "pending_gates": {},
+  "frozen_boundaries": [
+    "topic2 migration 20260715_0005 and append-only RLS persistence semantics",
+    "topic2 Python TypeScript Go and JSON contracts",
+    "six-dimensional profile policy v1",
+    "exponential memory and review reconciliation policy v1",
+    "adaptive path scoring and graph repair policy v1",
+    "topic2 REST scopes idempotency audit and Outbox semantics",
+    "topic2 agent-context version binding and personalization digest"
+  ],
+  "next_stage": "Topic 3 five-agent generation runtime and SSE collaboration"
 }
