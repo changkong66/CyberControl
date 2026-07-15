@@ -6,15 +6,15 @@
   "phase_foundation_frozen": true,
   "upper_layers_unlocked": true,
   "unlocked_layers": [
-    "topic1"
+    "topic1",
+    "topic2"
   ],
   "still_locked_layers": [
-    "topic2",
     "topic3-agent-runtime",
     "topic4-verifier-runtime",
     "frontend-business-workbench"
   ],
-  "acceptance_note": "The repository is Public; Classic protection, branch and tag rulesets, remote CI, public-repository secret controls, and destructive push probes are all verified. Phase 1.1 is frozen and Topic 1 is unlocked.",
+  "acceptance_note": "The repository is Public; Classic protection, branch and tag rulesets, remote CI, public-repository secret controls, and destructive push probes are verified. Phase 1.1 remains frozen. Topic 1 is accepted and frozen; Topic 2 is unlocked.",
   "local_gates": {
     "actionlint": "passed",
     "alembic_round_trip": "passed",
@@ -114,5 +114,11 @@
   },
   "pending_gates": {},
   "required_remote_status": "Release quality redline",
-  "next_stage": "Topic 1 automatic-control knowledge topology"
+  "topic1_acceptance": {
+    "status": "ACCEPTED",
+    "accepted_main_commit": "7eb9b940ed10dbca09c62d2caed809245e75ae5b",
+    "implementation_pull_request": 10,
+    "main_workflow_run_id": 29421543279
+  },
+  "next_stage": "Topic 2 six-dimensional profile, memory decay, and adaptive path runtime"
 }

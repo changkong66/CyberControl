@@ -19,16 +19,19 @@ Status: completed for the Topic 3 shared wrapper and Provider policy baseline.
   repository, transactional outbox, structured logs, metrics, and trace context.
 - Establish CI checks, SBOM generation, secret scanning, and migration ownership.
 
-Status: in progress. In-process messaging, task resilience, SSE replay baseline,
-tenant context, hot configuration, structured logs, audit JSONL, and persistence
-ports are coded. PostgreSQL adapters, authentication, migrations, lockfiles,
-SBOM, and CI gates remain.
+Status: completed and frozen as Phase 1.1. PostgreSQL RLS, OIDC/JWKS, transactional
+Outbox, global idempotency, audit hash chain, persistent SSE, reproducible locks,
+SBOM, container security, and local/remote CI gates are accepted.
 
 ## Phase 2: Topics 1 and 2
 
 - Implement the frozen data repositories and knowledge topology readers.
 - Implement profile extraction, decay, Ebbinghaus scheduling, and route planning.
 - Add deterministic and multi-tenant tests before model integration.
+
+Status: Topic 1 is completed, accepted, and frozen at
+`7eb9b940ed10dbca09c62d2caed809245e75ae5b`. Topic 2 is the active unlocked stage;
+Topic 3 and later runtimes remain locked.
 
 ## Phase 3: Topic 3 generation plane
 

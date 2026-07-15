@@ -1,24 +1,27 @@
 # Topic 2 解锁凭证
 
-## 1. 当前状态
+## 1. 正式解锁状态
 
 | 属性 | 值 |
 |---|---|
-| Topic 1 | `REMOTE_PENDING` |
-| Topic 2 | `LOCKED` |
-| 解锁凭证 | 尚未签发 |
+| Topic 1 | `ACCEPTED` |
+| Topic 1 main commit | `7eb9b940ed10dbca09c62d2caed809245e75ae5b` |
+| Topic 2 | `UNLOCKED` |
+| 解锁生效时间 | `2026-07-15T14:03:06Z` |
 
-Topic 1 已完成本地功能、数据库、契约、覆盖率和完整 Release 门禁验收，但远端分支 CI、
-受保护主干合并和 main CI 尚未全部闭环。依据不可逆分层开发规则，当前禁止开始 Topic 2
-画像抽取、记忆衰退或自适应路径运行时代码。
+Topic 1 已完成本地与远端全部验收，服务端保护恢复并通过破坏性操作探针。依据不可逆
+分层开发规则，现正式允许从最新受保护 main 创建 Topic 2 开发分支，开始六维无感画像、
+艾宾浩斯记忆衰退和自适应学习路径运行时代码。
 
-## 2. 解锁必要条件
+## 2. Topic 2 开发前置约束
 
-- Topic 1 远端 `Release quality redline` 通过。
-- Topic 1 通过受保护 PR 合并至 `main`，main CI 复现通过。
-- 公开仓库 Gitleaks/Secret Scanning 保持 0 findings / 0 open alerts。
-- `docs/topic1/acceptance-status.json` 更新为 `ACCEPTED`。
-- Topic 1 持久化模型、契约和事件边界标记为冻结，只允许兼容式扩展。
+- 从包含上述接受提交的最新 `main` 创建 `codex/topic2-*` 功能分支。
+- 只读取 Topic 1 的版本化快照与公开 Repository/API，不修改 Topic 1 表和契约语义。
+- 学生画像、遗忘参数和路径状态必须新建 Topic 2 租户域迁移，不复用 Topic 1 字段偷存。
+- 所有画像更新继续复用 Phase 1.1 的 OIDC、RLS、幂等、审计和 Outbox。
+- Topic 2 验收前不得启动 Topic 3 Agent runtime 或 Topic 4 Verifier runtime。
 
-全部条件满足后，本文件将更新为正式 Topic 2 解锁凭证，并记录对应提交、PR 与 Actions
-证据。在此之前，任何 Topic 2 业务实现均属于越过阶段门禁。
+## 3. 解锁签发
+
+本凭证由 Topic 1 分支、PR 和 main 三次远端 `Release quality redline`、受保护 PR #10、
+main 提交及保护规则复核共同签发。Topic 2 从本文件生效后进入可编码状态。
