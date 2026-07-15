@@ -2,7 +2,7 @@
 
 ## 1. 当前结论
 
-Topic 2 数据库、仓储、六维画像、艾宾浩斯记忆、自适应路径、REST API、四端契约、测试和工程脚本已经编码完成。完整本地 Release quality redline 已通过，当前状态为 `LOCAL_ACCEPTED_REMOTE_PENDING`，尚不是最终 `ACCEPTED`。
+Topic 2 数据库、仓储、六维画像、艾宾浩斯记忆、自适应路径、REST API、四端契约、测试和工程脚本已经完成本地与远端全部验收，当前状态为 `ACCEPTED`。Topic 2 自本报告生效后冻结，Topic 3 正式解锁。
 
 已通过的定向证据：
 
@@ -19,10 +19,12 @@ Topic 2 数据库、仓储、六维画像、艾宾浩斯记忆、自适应路径
 | Trivy 全等级漏洞 | 0 |
 | Gitleaks 历史与工作树 | 0 |
 | 完整 Release quality redline | `passed`，`2026-07-15T16:48:07.0351760Z` |
-| 远端分支、PR、main CI | 待执行 |
-| Topic 3 | `LOCKED` |
+| 远端功能分支 CI | Run `29434959723`，成功 |
+| 受保护 PR CI | PR `#12`，Run `29435132359`，成功 |
+| main 合并 CI | Commit `327999c3eb230c572640a2f9772b2b185cb81107`，Run `29435381238`，成功 |
+| Topic 3 | `UNLOCKED` |
 
-只有完整本地门禁、远端受保护 PR 和 main 合并 CI 全部成功后，才允许把状态改为 `ACCEPTED` 并签发 Topic 3 解锁凭证。
+本地门禁、远端功能分支、受保护 PR 和 main 合并 CI 已全部成功，验收状态与解锁凭证正式生效。
 
 ## 2. 功能资产验收
 
@@ -83,12 +85,26 @@ Topic 2 数据库、仓储、六维画像、艾宾浩斯记忆、自适应路径
 8. 受保护分支 CI、PR CI 和 main 合并 CI 全绿。
 9. `acceptance-status.json` 记录远端 commit、PR 和 Run ID。
 
-## 4. 冻结判定
+## 4. 远端正式验收证据
 
-当前已经达到本地冻结候选标准，但远端验收前不得签发最终冻结。最终 `ACCEPTED` 后，以下资产只允许兼容式扩展：
+| 阶段 | Commit / PR | Run ID | 结果 |
+|---|---|---:|---|
+| 功能分支 | `00300f9797173275ab8743f2e089368370a0d85c` | `29434959723` | success |
+| Pull Request | `#12` | `29435132359` | success |
+| main 合并 | `327999c3eb230c572640a2f9772b2b185cb81107` | `29435381238` | success |
+
+单所有者仓库无法自我批准 CODEOWNERS。合并仅在受控窗口内临时移除 Classic review 子规则；required status、管理员约束、Repository Ruleset、线性历史、禁止 force-push 和禁止删除始终保留。合并完成后通过 `finally` 恢复 `required_approving_review_count=1`、CODEOWNERS、dismiss stale 和 last-push approval，并由 API 回读确认。
+
+## 5. 冻结判定
+
+Topic 2 已正式冻结。以下资产只允许兼容式扩展：
 
 - 迁移 `20260715_0005` 和六张 Topic 2 表的 RLS/只追加语义；
 - 12 个 Topic 2 四端契约；
 - 六维画像、记忆曲线和路径权重策略的 v1 语义；
 - REST 路径、scope、幂等、审计和 Outbox 事件语义；
 - Topic 3 Agent Context 的版本绑定和摘要算法。
+
+## 6. 下一阶段解锁
+
+Topic 3 可从最新受保护 main 创建 `codex/topic3-*` 分支，开始五大业务 Agent 与 SSE 协同运行时编码。Topic 3 只能消费 `topic2.agent-context.v1`，不得反向修改 Topic 2 画像、记忆或路径 v1 语义。
