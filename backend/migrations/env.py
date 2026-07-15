@@ -10,9 +10,11 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from liyans.core.settings import Settings
 from liyans.domains.topic1 import models as topic1_models
+from liyans.domains.topic2 import models as topic2_models
 from liyans.infrastructure.database.models import Base
 
 del topic1_models
+del topic2_models
 
 config = context.config
 if config.config_file_name is not None:

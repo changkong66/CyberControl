@@ -554,6 +554,313 @@ type Topic1TextbookV1 struct {
 	UpdatedAt       DateTime `json:"updated_at"`
 }
 
+// Topic2AgentContextV1 Single personalization input consumed by Lecturer and Tester agents.
+type Topic2AgentContextV1 struct {
+	SchemaVersion               *string                    `json:"schema_version,omitempty"`
+	LearnerRef                  string                     `json:"learner_ref"`
+	CourseId                    string                     `json:"course_id"`
+	Profile                     Topic2StudentProfileV1     `json:"profile"`
+	MemoryStates                []Topic2MemoryStateV1      `json:"memory_states"`
+	LearningPath                Topic2LearningPathRecordV1 `json:"learning_path"`
+	PersonalizationPolicyDigest string                     `json:"personalization_policy_digest"`
+}
+
+// Topic2BehaviorEventCommandV1 Tokenized learner behavior accepted by the silent profiling pipeline.
+type Topic2BehaviorEventCommandV1 struct {
+	SchemaVersion     *string                  `json:"schema_version,omitempty"`
+	EventId           UUID                     `json:"event_id"`
+	SourceEventId     string                   `json:"source_event_id"`
+	EventVersion      *int64                   `json:"event_version,omitempty"`
+	LearnerRef        string                   `json:"learner_ref"`
+	CourseId          string                   `json:"course_id"`
+	KpId              *string                  `json:"kp_id,omitempty"`
+	SessionId         *UUID                    `json:"session_id,omitempty"`
+	EventType         Topic2BehaviorEventType  `json:"event_type"`
+	SourceType        Topic2BehaviorSourceType `json:"source_type"`
+	DurationSeconds   *float64                 `json:"duration_seconds,omitempty"`
+	ResponseLatencyMs *int64                   `json:"response_latency_ms,omitempty"`
+	Correctness       *float64                 `json:"correctness,omitempty"`
+	Score             *float64                 `json:"score,omitempty"`
+	AttemptCount      *int64                   `json:"attempt_count,omitempty"`
+	InteractionCount  *int64                   `json:"interaction_count,omitempty"`
+	AttentionRatio    *float64                 `json:"attention_ratio,omitempty"`
+	MisconceptionIds  []string                 `json:"misconception_ids,omitempty"`
+	GoalTags          []string                 `json:"goal_tags,omitempty"`
+	Payload           map[string]any           `json:"payload"`
+	PayloadSha256     string                   `json:"payload_sha256"`
+	OccurredAt        DateTime                 `json:"occurred_at"`
+}
+
+type Topic2BehaviorEventType string
+
+const (
+	Topic2BehaviorEventTypeANSWERSUBMITTED Topic2BehaviorEventType = "ANSWER_SUBMITTED"
+	Topic2BehaviorEventTypeRESOURCEVIEWED  Topic2BehaviorEventType = "RESOURCE_VIEWED"
+	Topic2BehaviorEventTypeSIMULATIONRUN   Topic2BehaviorEventType = "SIMULATION_RUN"
+	Topic2BehaviorEventTypeREVIEWCOMPLETED Topic2BehaviorEventType = "REVIEW_COMPLETED"
+	Topic2BehaviorEventTypeCODEEXECUTED    Topic2BehaviorEventType = "CODE_EXECUTED"
+	Topic2BehaviorEventTypeSESSIONFOCUSED  Topic2BehaviorEventType = "SESSION_FOCUSED"
+	Topic2BehaviorEventTypeGOALSELECTED    Topic2BehaviorEventType = "GOAL_SELECTED"
+)
+
+type Topic2BehaviorSourceType string
+
+const (
+	Topic2BehaviorSourceTypeLEARNERUI   Topic2BehaviorSourceType = "LEARNER_UI"
+	Topic2BehaviorSourceTypeLECTURER    Topic2BehaviorSourceType = "LECTURER"
+	Topic2BehaviorSourceTypeMINDMAP     Topic2BehaviorSourceType = "MINDMAP"
+	Topic2BehaviorSourceTypeTESTER      Topic2BehaviorSourceType = "TESTER"
+	Topic2BehaviorSourceTypeCODESANDBOX Topic2BehaviorSourceType = "CODE_SANDBOX"
+	Topic2BehaviorSourceTypeEXTENSION   Topic2BehaviorSourceType = "EXTENSION"
+	Topic2BehaviorSourceTypeSYSTEM      Topic2BehaviorSourceType = "SYSTEM"
+)
+
+// Topic2LearningBehaviorEventV1 Immutable persisted behavior event with audit provenance.
+type Topic2LearningBehaviorEventV1 struct {
+	SchemaVersion     *string                  `json:"schema_version,omitempty"`
+	EventId           UUID                     `json:"event_id"`
+	SourceEventId     string                   `json:"source_event_id"`
+	EventVersion      *int64                   `json:"event_version,omitempty"`
+	LearnerRef        string                   `json:"learner_ref"`
+	CourseId          string                   `json:"course_id"`
+	KpId              *string                  `json:"kp_id,omitempty"`
+	SessionId         *UUID                    `json:"session_id,omitempty"`
+	EventType         Topic2BehaviorEventType  `json:"event_type"`
+	SourceType        Topic2BehaviorSourceType `json:"source_type"`
+	DurationSeconds   *float64                 `json:"duration_seconds,omitempty"`
+	ResponseLatencyMs *int64                   `json:"response_latency_ms,omitempty"`
+	Correctness       *float64                 `json:"correctness,omitempty"`
+	Score             *float64                 `json:"score,omitempty"`
+	AttemptCount      *int64                   `json:"attempt_count,omitempty"`
+	InteractionCount  *int64                   `json:"interaction_count,omitempty"`
+	AttentionRatio    *float64                 `json:"attention_ratio,omitempty"`
+	MisconceptionIds  []string                 `json:"misconception_ids,omitempty"`
+	GoalTags          []string                 `json:"goal_tags,omitempty"`
+	Payload           map[string]any           `json:"payload"`
+	PayloadSha256     string                   `json:"payload_sha256"`
+	OccurredAt        DateTime                 `json:"occurred_at"`
+	ReceivedAt        DateTime                 `json:"received_at"`
+	AuditEventId      UUID                     `json:"audit_event_id"`
+	CreatedAt         DateTime                 `json:"created_at"`
+}
+
+// Topic2LearningPathRecordV1 Persisted path snapshot, its change explanation, and audit provenance.
+type Topic2LearningPathRecordV1 struct {
+	SchemaVersion    *string                      `json:"schema_version,omitempty"`
+	Snapshot         Topic2LearningPathSnapshotV1 `json:"snapshot"`
+	Change           Topic2PathChangeV1           `json:"change"`
+	AuditEventId     UUID                         `json:"audit_event_id"`
+	CreatedBySubject string                       `json:"created_by_subject"`
+	CreatedAt        DateTime                     `json:"created_at"`
+}
+
+// Topic2LearningPathSnapshotV1 Immutable path snapshot bound to exact Topic 1 graph and profile versions.
+type Topic2LearningPathSnapshotV1 struct {
+	SchemaVersion         *string            `json:"schema_version,omitempty"`
+	PathSnapshotId        UUID               `json:"path_snapshot_id"`
+	LearnerRef            string             `json:"learner_ref"`
+	CourseId              string             `json:"course_id"`
+	PathVersion           int64              `json:"path_version"`
+	ParentPathSnapshotId  *UUID              `json:"parent_path_snapshot_id,omitempty"`
+	Topic1GraphSnapshotId UUID               `json:"topic1_graph_snapshot_id"`
+	Topic1GraphVersion    int64              `json:"topic1_graph_version"`
+	ProfileId             UUID               `json:"profile_id"`
+	PlanType              Topic2PathPlanType `json:"plan_type"`
+	TriggerReason         string             `json:"trigger_reason"`
+	TargetGoal            string             `json:"target_goal"`
+	PolicyVersion         string             `json:"policy_version"`
+	PathDocument          map[string]any     `json:"path_document"`
+	DecisionDocument      map[string]any     `json:"decision_document"`
+	NodeCount             int64              `json:"node_count"`
+	EstimatedMinutes      int64              `json:"estimated_minutes"`
+	ManualOverride        bool               `json:"manual_override"`
+	ContentSha256         string             `json:"content_sha256"`
+	FrozenAt              DateTime           `json:"frozen_at"`
+}
+
+type Topic2LearningTier string
+
+const (
+	Topic2LearningTierFOUNDATION    Topic2LearningTier = "FOUNDATION"
+	Topic2LearningTierREINFORCEMENT Topic2LearningTier = "REINFORCEMENT"
+	Topic2LearningTierEXTENSION     Topic2LearningTier = "EXTENSION"
+)
+
+type Topic2MemoryRiskLevel string
+
+const (
+	Topic2MemoryRiskLevelLOW      Topic2MemoryRiskLevel = "LOW"
+	Topic2MemoryRiskLevelMEDIUM   Topic2MemoryRiskLevel = "MEDIUM"
+	Topic2MemoryRiskLevelHIGH     Topic2MemoryRiskLevel = "HIGH"
+	Topic2MemoryRiskLevelCRITICAL Topic2MemoryRiskLevel = "CRITICAL"
+)
+
+// Topic2MemoryStateV1 Versioned exponential-forgetting state for one Topic 1 knowledge point.
+type Topic2MemoryStateV1 struct {
+	SchemaVersion          *string               `json:"schema_version,omitempty"`
+	MemoryStateId          UUID                  `json:"memory_state_id"`
+	LearnerRef             string                `json:"learner_ref"`
+	CourseId               string                `json:"course_id"`
+	KpId                   string                `json:"kp_id"`
+	StateVersion           int64                 `json:"state_version"`
+	ParentMemoryStateId    *UUID                 `json:"parent_memory_state_id,omitempty"`
+	ModelVersion           string                `json:"model_version"`
+	StabilityDays          float64               `json:"stability_days"`
+	EffectiveStabilityDays float64               `json:"effective_stability_days"`
+	ElapsedDays            float64               `json:"elapsed_days"`
+	Retrievability         float64               `json:"retrievability"`
+	ForgettingRate         float64               `json:"forgetting_rate"`
+	DifficultyFactor       float64               `json:"difficulty_factor"`
+	ReviewGain             float64               `json:"review_gain"`
+	ReviewCount            int64                 `json:"review_count"`
+	LapseCount             int64                 `json:"lapse_count"`
+	LastReviewedAt         *DateTime             `json:"last_reviewed_at,omitempty"`
+	LastActivityAt         DateTime              `json:"last_activity_at"`
+	NextReviewAt           DateTime              `json:"next_review_at"`
+	RiskLevel              Topic2MemoryRiskLevel `json:"risk_level"`
+	ModelParameters        map[string]any        `json:"model_parameters"`
+	ContentSha256          string                `json:"content_sha256"`
+	ComputedAt             DateTime              `json:"computed_at"`
+	AuditEventId           UUID                  `json:"audit_event_id"`
+	CreatedAt              DateTime              `json:"created_at"`
+}
+
+// Topic2OperationCommandV1 Replay-stable command identity for profile, memory, or path generation.
+type Topic2OperationCommandV1 struct {
+	SchemaVersion *string  `json:"schema_version,omitempty"`
+	OperationId   UUID     `json:"operation_id"`
+	RequestedAt   DateTime `json:"requested_at"`
+}
+
+type Topic2PathChangeType string
+
+const (
+	Topic2PathChangeTypeINITIALIZED      Topic2PathChangeType = "INITIALIZED"
+	Topic2PathChangeTypeMEMORYRISK       Topic2PathChangeType = "MEMORY_RISK"
+	Topic2PathChangeTypeMASTERYDEFICIT   Topic2PathChangeType = "MASTERY_DEFICIT"
+	Topic2PathChangeTypeMISCONCEPTION    Topic2PathChangeType = "MISCONCEPTION"
+	Topic2PathChangeTypeGOALCHANGED      Topic2PathChangeType = "GOAL_CHANGED"
+	Topic2PathChangeTypeMANUALOVERRIDE   Topic2PathChangeType = "MANUAL_OVERRIDE"
+	Topic2PathChangeTypeTOPOLOGYREPAIRED Topic2PathChangeType = "TOPOLOGY_REPAIRED"
+	Topic2PathChangeTypeRESTORED         Topic2PathChangeType = "RESTORED"
+)
+
+// Topic2PathChangeV1 Immutable delta explaining why a new learning path version was created.
+type Topic2PathChangeV1 struct {
+	SchemaVersion      *string              `json:"schema_version,omitempty"`
+	ChangeId           UUID                 `json:"change_id"`
+	LearnerRef         string               `json:"learner_ref"`
+	CourseId           string               `json:"course_id"`
+	FromPathSnapshotId *UUID                `json:"from_path_snapshot_id,omitempty"`
+	ToPathSnapshotId   UUID                 `json:"to_path_snapshot_id"`
+	ChangeType         Topic2PathChangeType `json:"change_type"`
+	Reason             string               `json:"reason"`
+	PolicyVersion      string               `json:"policy_version"`
+	ChangeDocument     map[string]any       `json:"change_document"`
+	OccurredAt         DateTime             `json:"occurred_at"`
+}
+
+// Topic2PathGenerateCommandV1 Replay-stable initial or replanned learning-path command.
+type Topic2PathGenerateCommandV1 struct {
+	SchemaVersion *string               `json:"schema_version,omitempty"`
+	OperationId   UUID                  `json:"operation_id"`
+	RequestedAt   DateTime              `json:"requested_at"`
+	TargetGoal    string                `json:"target_goal"`
+	TargetKpIds   []string              `json:"target_kp_ids,omitempty"`
+	ManualOrder   []string              `json:"manual_order,omitempty"`
+	ChangeType    *Topic2PathChangeType `json:"change_type,omitempty"`
+	TriggerReason *string               `json:"trigger_reason,omitempty"`
+}
+
+// Topic2PathNodeV1 One stable ordered learning node with explanation and tier assignment.
+type Topic2PathNodeV1 struct {
+	SchemaVersion     *string                     `json:"schema_version,omitempty"`
+	Order             int64                       `json:"order"`
+	KpId              string                      `json:"kp_id"`
+	Title             string                      `json:"title"`
+	Tier              Topic2LearningTier          `json:"tier"`
+	PriorityScore     float64                     `json:"priority_score"`
+	ScoreComponents   Topic2PathScoreComponentsV1 `json:"score_components"`
+	PrerequisiteKpIds []string                    `json:"prerequisite_kp_ids,omitempty"`
+	EstimatedMinutes  int64                       `json:"estimated_minutes"`
+	RationaleCodes    []string                    `json:"rationale_codes"`
+}
+
+type Topic2PathPlanType string
+
+const (
+	Topic2PathPlanTypeINITIAL        Topic2PathPlanType = "INITIAL"
+	Topic2PathPlanTypeREPLANNED      Topic2PathPlanType = "REPLANNED"
+	Topic2PathPlanTypeMANUALOVERRIDE Topic2PathPlanType = "MANUAL_OVERRIDE"
+	Topic2PathPlanTypeRESTORED       Topic2PathPlanType = "RESTORED"
+)
+
+// Topic2PathScoreComponentsV1 Auditable weighted components used for one path-node decision.
+type Topic2PathScoreComponentsV1 struct {
+	MasteryDeficit        float64 `json:"mastery_deficit"`
+	MemoryRisk            float64 `json:"memory_risk"`
+	MisconceptionSeverity float64 `json:"misconception_severity"`
+	GoalAlignment         float64 `json:"goal_alignment"`
+	TopologyWeight        float64 `json:"topology_weight"`
+	DifficultyPaceFit     float64 `json:"difficulty_pace_fit"`
+	PrerequisiteReadiness float64 `json:"prerequisite_readiness"`
+	Total                 float64 `json:"total"`
+}
+
+type Topic2ProfileDimension string
+
+const (
+	Topic2ProfileDimensionKNOWLEDGEMASTERY          Topic2ProfileDimension = "KNOWLEDGE_MASTERY"
+	Topic2ProfileDimensionPROBLEMSOLVINGPROFICIENCY Topic2ProfileDimension = "PROBLEM_SOLVING_PROFICIENCY"
+	Topic2ProfileDimensionMISCONCEPTIONPREFERENCE   Topic2ProfileDimension = "MISCONCEPTION_PREFERENCE"
+	Topic2ProfileDimensionLEARNINGPACE              Topic2ProfileDimension = "LEARNING_PACE"
+	Topic2ProfileDimensionFORGETTINGRATE            Topic2ProfileDimension = "FORGETTING_RATE"
+	Topic2ProfileDimensionLEARNINGGOALTENDENCY      Topic2ProfileDimension = "LEARNING_GOAL_TENDENCY"
+)
+
+// Topic2ProfileFeatureV1 Evidence-backed feature supporting one six-dimensional profile snapshot.
+type Topic2ProfileFeatureV1 struct {
+	SchemaVersion   *string                `json:"schema_version,omitempty"`
+	FeatureId       UUID                   `json:"feature_id"`
+	Dimension       Topic2ProfileDimension `json:"dimension"`
+	FeatureKey      string                 `json:"feature_key"`
+	ValueDocument   map[string]any         `json:"value_document"`
+	NormalizedScore float64                `json:"normalized_score"`
+	Confidence      float64                `json:"confidence"`
+	EvidenceCount   int64                  `json:"evidence_count"`
+	SourceEventIds  []string               `json:"source_event_ids,omitempty"`
+	ComputedAt      DateTime               `json:"computed_at"`
+}
+
+// Topic2StudentProfileV1 Immutable profile aggregate, full evidence features, and audit binding.
+type Topic2StudentProfileV1 struct {
+	SchemaVersion             *string                  `json:"schema_version,omitempty"`
+	ProfileId                 UUID                     `json:"profile_id"`
+	LearnerRef                string                   `json:"learner_ref"`
+	CourseId                  string                   `json:"course_id"`
+	ProfileVersion            int64                    `json:"profile_version"`
+	ParentProfileId           *UUID                    `json:"parent_profile_id,omitempty"`
+	PolicyVersion             string                   `json:"policy_version"`
+	KnowledgeMastery          float64                  `json:"knowledge_mastery"`
+	ProblemSolvingProficiency float64                  `json:"problem_solving_proficiency"`
+	MisconceptionPreference   float64                  `json:"misconception_preference"`
+	LearningPace              float64                  `json:"learning_pace"`
+	ForgettingRate            float64                  `json:"forgetting_rate"`
+	LearningGoalTendency      float64                  `json:"learning_goal_tendency"`
+	ConfidenceScore           float64                  `json:"confidence_score"`
+	ActivityCount             int64                    `json:"activity_count"`
+	LastEventAt               *DateTime                `json:"last_event_at,omitempty"`
+	SourceWindowStart         *DateTime                `json:"source_window_start,omitempty"`
+	SourceWindowEnd           *DateTime                `json:"source_window_end,omitempty"`
+	ProfileDocument           map[string]any           `json:"profile_document"`
+	ContentSha256             string                   `json:"content_sha256"`
+	FrozenAt                  DateTime                 `json:"frozen_at"`
+	Features                  []Topic2ProfileFeatureV1 `json:"features"`
+	AuditEventId              UUID                     `json:"audit_event_id"`
+	CreatedBySubject          string                   `json:"created_by_subject"`
+	CreatedAt                 DateTime                 `json:"created_at"`
+}
+
 type Topic3EnvelopeV1 struct {
 	// Frozen public Envelope wire version.
 	SchemaVersion *string `json:"schema_version,omitempty"`

@@ -441,6 +441,240 @@ export interface Topic1TextbookV1 {
   "updated_at": string
 }
 
+export interface Topic2AgentContextV1 {
+  "schema_version"?: "topic2.agent-context.v1"
+  "learner_ref": string
+  "course_id": string
+  "profile": Topic2StudentProfileV1
+  "memory_states": Array<Topic2MemoryStateV1>
+  "learning_path": Topic2LearningPathRecordV1
+  "personalization_policy_digest": string
+}
+
+export interface Topic2BehaviorEventCommandV1 {
+  "schema_version"?: "topic2.behavior-event-command.v1"
+  "event_id": string
+  "source_event_id": string
+  "event_version"?: number
+  "learner_ref": string
+  "course_id": string
+  "kp_id"?: string | null
+  "session_id"?: string | null
+  "event_type": Topic2BehaviorEventType
+  "source_type": Topic2BehaviorSourceType
+  "duration_seconds"?: number | null
+  "response_latency_ms"?: number | null
+  "correctness"?: number | null
+  "score"?: number | null
+  "attempt_count"?: number
+  "interaction_count"?: number
+  "attention_ratio"?: number | null
+  "misconception_ids"?: Array<string>
+  "goal_tags"?: Array<string>
+  "payload": {  }
+  "payload_sha256": string
+  "occurred_at": string
+}
+
+export type Topic2BehaviorEventType = "ANSWER_SUBMITTED" | "RESOURCE_VIEWED" | "SIMULATION_RUN" | "REVIEW_COMPLETED" | "CODE_EXECUTED" | "SESSION_FOCUSED" | "GOAL_SELECTED"
+
+export type Topic2BehaviorSourceType = "LEARNER_UI" | "LECTURER" | "MINDMAP" | "TESTER" | "CODE_SANDBOX" | "EXTENSION" | "SYSTEM"
+
+export interface Topic2LearningBehaviorEventV1 {
+  "schema_version"?: "topic2.learning-behavior-event.v1"
+  "event_id": string
+  "source_event_id": string
+  "event_version"?: number
+  "learner_ref": string
+  "course_id": string
+  "kp_id"?: string | null
+  "session_id"?: string | null
+  "event_type": Topic2BehaviorEventType
+  "source_type": Topic2BehaviorSourceType
+  "duration_seconds"?: number | null
+  "response_latency_ms"?: number | null
+  "correctness"?: number | null
+  "score"?: number | null
+  "attempt_count"?: number
+  "interaction_count"?: number
+  "attention_ratio"?: number | null
+  "misconception_ids"?: Array<string>
+  "goal_tags"?: Array<string>
+  "payload": {  }
+  "payload_sha256": string
+  "occurred_at": string
+  "received_at": string
+  "audit_event_id": string
+  "created_at": string
+}
+
+export interface Topic2LearningPathRecordV1 {
+  "schema_version"?: "topic2.learning-path-record.v1"
+  "snapshot": Topic2LearningPathSnapshotV1
+  "change": Topic2PathChangeV1
+  "audit_event_id": string
+  "created_by_subject": string
+  "created_at": string
+}
+
+export interface Topic2LearningPathSnapshotV1 {
+  "schema_version"?: "topic2.learning-path-snapshot.v1"
+  "path_snapshot_id": string
+  "learner_ref": string
+  "course_id": string
+  "path_version": number
+  "parent_path_snapshot_id"?: string | null
+  "topic1_graph_snapshot_id": string
+  "topic1_graph_version": number
+  "profile_id": string
+  "plan_type": Topic2PathPlanType
+  "trigger_reason": string
+  "target_goal": string
+  "policy_version": string
+  "path_document": {  }
+  "decision_document": {  }
+  "node_count": number
+  "estimated_minutes": number
+  "manual_override": boolean
+  "content_sha256": string
+  "frozen_at": string
+}
+
+export type Topic2LearningTier = "FOUNDATION" | "REINFORCEMENT" | "EXTENSION"
+
+export type Topic2MemoryRiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+
+export interface Topic2MemoryStateV1 {
+  "schema_version"?: "topic2.memory-state.v1"
+  "memory_state_id": string
+  "learner_ref": string
+  "course_id": string
+  "kp_id": string
+  "state_version": number
+  "parent_memory_state_id"?: string | null
+  "model_version": string
+  "stability_days": number
+  "effective_stability_days": number
+  "elapsed_days": number
+  "retrievability": number
+  "forgetting_rate": number
+  "difficulty_factor": number
+  "review_gain": number
+  "review_count": number
+  "lapse_count": number
+  "last_reviewed_at"?: string | null
+  "last_activity_at": string
+  "next_review_at": string
+  "risk_level": Topic2MemoryRiskLevel
+  "model_parameters": {  }
+  "content_sha256": string
+  "computed_at": string
+  "audit_event_id": string
+  "created_at": string
+}
+
+export interface Topic2OperationCommandV1 {
+  "schema_version"?: "topic2.operation-command.v1"
+  "operation_id": string
+  "requested_at": string
+}
+
+export type Topic2PathChangeType = "INITIALIZED" | "MEMORY_RISK" | "MASTERY_DEFICIT" | "MISCONCEPTION" | "GOAL_CHANGED" | "MANUAL_OVERRIDE" | "TOPOLOGY_REPAIRED" | "RESTORED"
+
+export interface Topic2PathChangeV1 {
+  "schema_version"?: "topic2.path-change.v1"
+  "change_id": string
+  "learner_ref": string
+  "course_id": string
+  "from_path_snapshot_id"?: string | null
+  "to_path_snapshot_id": string
+  "change_type": Topic2PathChangeType
+  "reason": string
+  "policy_version": string
+  "change_document": {  }
+  "occurred_at": string
+}
+
+export interface Topic2PathGenerateCommandV1 {
+  "schema_version"?: "topic2.path-generate-command.v1"
+  "operation_id": string
+  "requested_at": string
+  "target_goal": string
+  "target_kp_ids"?: Array<string> | null
+  "manual_order"?: Array<string> | null
+  "change_type"?: Topic2PathChangeType
+  "trigger_reason"?: string
+}
+
+export interface Topic2PathNodeV1 {
+  "schema_version"?: "topic2.path-node.v1"
+  "order": number
+  "kp_id": string
+  "title": string
+  "tier": Topic2LearningTier
+  "priority_score": number
+  "score_components": Topic2PathScoreComponentsV1
+  "prerequisite_kp_ids"?: Array<string>
+  "estimated_minutes": number
+  "rationale_codes": Array<string>
+}
+
+export type Topic2PathPlanType = "INITIAL" | "REPLANNED" | "MANUAL_OVERRIDE" | "RESTORED"
+
+export interface Topic2PathScoreComponentsV1 {
+  "mastery_deficit": number
+  "memory_risk": number
+  "misconception_severity": number
+  "goal_alignment": number
+  "topology_weight": number
+  "difficulty_pace_fit": number
+  "prerequisite_readiness": number
+  "total": number
+}
+
+export type Topic2ProfileDimension = "KNOWLEDGE_MASTERY" | "PROBLEM_SOLVING_PROFICIENCY" | "MISCONCEPTION_PREFERENCE" | "LEARNING_PACE" | "FORGETTING_RATE" | "LEARNING_GOAL_TENDENCY"
+
+export interface Topic2ProfileFeatureV1 {
+  "schema_version"?: "topic2.profile-feature.v1"
+  "feature_id": string
+  "dimension": Topic2ProfileDimension
+  "feature_key": string
+  "value_document": {  }
+  "normalized_score": number
+  "confidence": number
+  "evidence_count": number
+  "source_event_ids"?: Array<string>
+  "computed_at": string
+}
+
+export interface Topic2StudentProfileV1 {
+  "schema_version"?: "topic2.student-profile.v1"
+  "profile_id": string
+  "learner_ref": string
+  "course_id": string
+  "profile_version": number
+  "parent_profile_id"?: string | null
+  "policy_version": string
+  "knowledge_mastery": number
+  "problem_solving_proficiency": number
+  "misconception_preference": number
+  "learning_pace": number
+  "forgetting_rate": number
+  "learning_goal_tendency": number
+  "confidence_score": number
+  "activity_count": number
+  "last_event_at"?: string | null
+  "source_window_start"?: string | null
+  "source_window_end"?: string | null
+  "profile_document": {  }
+  "content_sha256": string
+  "frozen_at": string
+  "features": Array<Topic2ProfileFeatureV1>
+  "audit_event_id": string
+  "created_by_subject": string
+  "created_at": string
+}
+
 export interface Topic3EnvelopeV1 {
   /** Frozen public Envelope wire version. */
   "schema_version"?: "topic3.envelope.v1"

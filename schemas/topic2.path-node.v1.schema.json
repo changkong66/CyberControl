@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "Topic2LearningTier": {
+      "enum": [
+        "FOUNDATION",
+        "REINFORCEMENT",
+        "EXTENSION"
+      ],
+      "title": "Topic2LearningTier",
+      "type": "string"
+    },
+    "Topic2PathScoreComponentsV1": {
+      "additionalProperties": false,
+      "description": "Auditable weighted components used for one path-node decision.",
+      "properties": {
+        "mastery_deficit": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Mastery Deficit",
+          "type": "number"
+        },
+        "memory_risk": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Memory Risk",
+          "type": "number"
+        },
+        "misconception_severity": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Misconception Severity",
+          "type": "number"
+        },
+        "goal_alignment": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Goal Alignment",
+          "type": "number"
+        },
+        "topology_weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Topology Weight",
+          "type": "number"
+        },
+        "difficulty_pace_fit": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Difficulty Pace Fit",
+          "type": "number"
+        },
+        "prerequisite_readiness": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Prerequisite Readiness",
+          "type": "number"
+        },
+        "total": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Total",
+          "type": "number"
+        }
+      },
+      "required": [
+        "mastery_deficit",
+        "memory_risk",
+        "misconception_severity",
+        "goal_alignment",
+        "topology_weight",
+        "difficulty_pace_fit",
+        "prerequisite_readiness",
+        "total"
+      ],
+      "title": "Topic2PathScoreComponentsV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One stable ordered learning node with explanation and tier assignment.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.path-node.v1",
+      "default": "topic2.path-node.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "order": {
+      "minimum": 0,
+      "title": "Order",
+      "type": "integer"
+    },
+    "kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "title": "Kp Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "tier": {
+      "$ref": "#/$defs/Topic2LearningTier"
+    },
+    "priority_score": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Priority Score",
+      "type": "number"
+    },
+    "score_components": {
+      "$ref": "#/$defs/Topic2PathScoreComponentsV1"
+    },
+    "prerequisite_kp_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 500,
+      "title": "Prerequisite Kp Ids",
+      "type": "array"
+    },
+    "estimated_minutes": {
+      "maximum": 2400,
+      "minimum": 1,
+      "title": "Estimated Minutes",
+      "type": "integer"
+    },
+    "rationale_codes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Rationale Codes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "order",
+    "kp_id",
+    "title",
+    "tier",
+    "priority_score",
+    "score_components",
+    "estimated_minutes",
+    "rationale_codes"
+  ],
+  "title": "Topic2PathNodeV1",
+  "type": "object"
+}

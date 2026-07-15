@@ -1,0 +1,250 @@
+{
+  "$defs": {
+    "Topic2BehaviorEventType": {
+      "enum": [
+        "ANSWER_SUBMITTED",
+        "RESOURCE_VIEWED",
+        "SIMULATION_RUN",
+        "REVIEW_COMPLETED",
+        "CODE_EXECUTED",
+        "SESSION_FOCUSED",
+        "GOAL_SELECTED"
+      ],
+      "title": "Topic2BehaviorEventType",
+      "type": "string"
+    },
+    "Topic2BehaviorSourceType": {
+      "enum": [
+        "LEARNER_UI",
+        "LECTURER",
+        "MINDMAP",
+        "TESTER",
+        "CODE_SANDBOX",
+        "EXTENSION",
+        "SYSTEM"
+      ],
+      "title": "Topic2BehaviorSourceType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable persisted behavior event with audit provenance.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.learning-behavior-event.v1",
+      "default": "topic2.learning-behavior-event.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "source_event_id": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Source Event Id",
+      "type": "string"
+    },
+    "event_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Event Version",
+      "type": "integer"
+    },
+    "learner_ref": {
+      "maxLength": 256,
+      "minLength": 3,
+      "title": "Learner Ref",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 3,
+      "title": "Course Id",
+      "type": "string"
+    },
+    "kp_id": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "minLength": 6,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Kp Id"
+    },
+    "session_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Session Id"
+    },
+    "event_type": {
+      "$ref": "#/$defs/Topic2BehaviorEventType"
+    },
+    "source_type": {
+      "$ref": "#/$defs/Topic2BehaviorSourceType"
+    },
+    "duration_seconds": {
+      "anyOf": [
+        {
+          "maximum": 86400,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duration Seconds"
+    },
+    "response_latency_ms": {
+      "anyOf": [
+        {
+          "maximum": 86400000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Latency Ms"
+    },
+    "correctness": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Correctness"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Score"
+    },
+    "attempt_count": {
+      "default": 0,
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Attempt Count",
+      "type": "integer"
+    },
+    "interaction_count": {
+      "default": 0,
+      "maximum": 100000,
+      "minimum": 0,
+      "title": "Interaction Count",
+      "type": "integer"
+    },
+    "attention_ratio": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attention Ratio"
+    },
+    "misconception_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Misconception Ids",
+      "type": "array"
+    },
+    "goal_tags": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Goal Tags",
+      "type": "array"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "payload_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Payload Sha256",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+    },
+    "audit_event_id": {
+      "format": "uuid",
+      "title": "Audit Event Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "source_event_id",
+    "learner_ref",
+    "course_id",
+    "event_type",
+    "source_type",
+    "payload",
+    "payload_sha256",
+    "occurred_at",
+    "received_at",
+    "audit_event_id",
+    "created_at"
+  ],
+  "title": "Topic2LearningBehaviorEventV1",
+  "type": "object"
+}

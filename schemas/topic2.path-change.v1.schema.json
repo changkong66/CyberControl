@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "Topic2PathChangeType": {
+      "enum": [
+        "INITIALIZED",
+        "MEMORY_RISK",
+        "MASTERY_DEFICIT",
+        "MISCONCEPTION",
+        "GOAL_CHANGED",
+        "MANUAL_OVERRIDE",
+        "TOPOLOGY_REPAIRED",
+        "RESTORED"
+      ],
+      "title": "Topic2PathChangeType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable delta explaining why a new learning path version was created.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.path-change.v1",
+      "default": "topic2.path-change.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "change_id": {
+      "format": "uuid",
+      "title": "Change Id",
+      "type": "string"
+    },
+    "learner_ref": {
+      "maxLength": 256,
+      "minLength": 3,
+      "title": "Learner Ref",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 3,
+      "title": "Course Id",
+      "type": "string"
+    },
+    "from_path_snapshot_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "From Path Snapshot Id"
+    },
+    "to_path_snapshot_id": {
+      "format": "uuid",
+      "title": "To Path Snapshot Id",
+      "type": "string"
+    },
+    "change_type": {
+      "$ref": "#/$defs/Topic2PathChangeType"
+    },
+    "reason": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "policy_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "change_document": {
+      "additionalProperties": true,
+      "title": "Change Document",
+      "type": "object"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "change_id",
+    "learner_ref",
+    "course_id",
+    "to_path_snapshot_id",
+    "change_type",
+    "reason",
+    "policy_version",
+    "change_document",
+    "occurred_at"
+  ],
+  "title": "Topic2PathChangeV1",
+  "type": "object"
+}

@@ -1,0 +1,203 @@
+{
+  "$defs": {
+    "Topic2MemoryRiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "Topic2MemoryRiskLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Versioned exponential-forgetting state for one Topic 1 knowledge point.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.memory-state.v1",
+      "default": "topic2.memory-state.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "memory_state_id": {
+      "format": "uuid",
+      "title": "Memory State Id",
+      "type": "string"
+    },
+    "learner_ref": {
+      "maxLength": 256,
+      "minLength": 3,
+      "title": "Learner Ref",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 3,
+      "title": "Course Id",
+      "type": "string"
+    },
+    "kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "title": "Kp Id",
+      "type": "string"
+    },
+    "state_version": {
+      "minimum": 1,
+      "title": "State Version",
+      "type": "integer"
+    },
+    "parent_memory_state_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Memory State Id"
+    },
+    "model_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "stability_days": {
+      "exclusiveMinimum": 0,
+      "maximum": 36500,
+      "title": "Stability Days",
+      "type": "number"
+    },
+    "effective_stability_days": {
+      "exclusiveMinimum": 0,
+      "maximum": 36500,
+      "title": "Effective Stability Days",
+      "type": "number"
+    },
+    "elapsed_days": {
+      "minimum": 0,
+      "title": "Elapsed Days",
+      "type": "number"
+    },
+    "retrievability": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Retrievability",
+      "type": "number"
+    },
+    "forgetting_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Forgetting Rate",
+      "type": "number"
+    },
+    "difficulty_factor": {
+      "maximum": 4,
+      "minimum": 0.25,
+      "title": "Difficulty Factor",
+      "type": "number"
+    },
+    "review_gain": {
+      "maximum": 16,
+      "minimum": 0,
+      "title": "Review Gain",
+      "type": "number"
+    },
+    "review_count": {
+      "minimum": 0,
+      "title": "Review Count",
+      "type": "integer"
+    },
+    "lapse_count": {
+      "minimum": 0,
+      "title": "Lapse Count",
+      "type": "integer"
+    },
+    "last_reviewed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Reviewed At"
+    },
+    "last_activity_at": {
+      "format": "date-time",
+      "title": "Last Activity At",
+      "type": "string"
+    },
+    "next_review_at": {
+      "format": "date-time",
+      "title": "Next Review At",
+      "type": "string"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/Topic2MemoryRiskLevel"
+    },
+    "model_parameters": {
+      "additionalProperties": true,
+      "title": "Model Parameters",
+      "type": "object"
+    },
+    "content_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "computed_at": {
+      "format": "date-time",
+      "title": "Computed At",
+      "type": "string"
+    },
+    "audit_event_id": {
+      "format": "uuid",
+      "title": "Audit Event Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "memory_state_id",
+    "learner_ref",
+    "course_id",
+    "kp_id",
+    "state_version",
+    "model_version",
+    "stability_days",
+    "effective_stability_days",
+    "elapsed_days",
+    "retrievability",
+    "forgetting_rate",
+    "difficulty_factor",
+    "review_gain",
+    "review_count",
+    "lapse_count",
+    "last_activity_at",
+    "next_review_at",
+    "risk_level",
+    "model_parameters",
+    "content_sha256",
+    "computed_at",
+    "audit_event_id",
+    "created_at"
+  ],
+  "title": "Topic2MemoryStateV1",
+  "type": "object"
+}

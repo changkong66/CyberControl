@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "Topic2ProfileDimension": {
+      "enum": [
+        "KNOWLEDGE_MASTERY",
+        "PROBLEM_SOLVING_PROFICIENCY",
+        "MISCONCEPTION_PREFERENCE",
+        "LEARNING_PACE",
+        "FORGETTING_RATE",
+        "LEARNING_GOAL_TENDENCY"
+      ],
+      "title": "Topic2ProfileDimension",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Evidence-backed feature supporting one six-dimensional profile snapshot.",
+  "properties": {
+    "schema_version": {
+      "const": "topic2.profile-feature.v1",
+      "default": "topic2.profile-feature.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "feature_id": {
+      "format": "uuid",
+      "title": "Feature Id",
+      "type": "string"
+    },
+    "dimension": {
+      "$ref": "#/$defs/Topic2ProfileDimension"
+    },
+    "feature_key": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Feature Key",
+      "type": "string"
+    },
+    "value_document": {
+      "additionalProperties": true,
+      "title": "Value Document",
+      "type": "object"
+    },
+    "normalized_score": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Normalized Score",
+      "type": "number"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "evidence_count": {
+      "minimum": 0,
+      "title": "Evidence Count",
+      "type": "integer"
+    },
+    "source_event_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5000,
+      "title": "Source Event Ids",
+      "type": "array"
+    },
+    "computed_at": {
+      "format": "date-time",
+      "title": "Computed At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "feature_id",
+    "dimension",
+    "feature_key",
+    "value_document",
+    "normalized_score",
+    "confidence",
+    "evidence_count",
+    "computed_at"
+  ],
+  "title": "Topic2ProfileFeatureV1",
+  "type": "object"
+}
