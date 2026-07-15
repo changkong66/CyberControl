@@ -1,17 +1,20 @@
 {
   "schema_version": "topic3.acceptance.v1",
   "topic": "Topic 3",
-  "status": "REMOTE_PENDING",
+  "status": "ACCEPTED",
   "local_accepted_at_utc": "2026-07-15T19:52:10.9631115Z",
+  "accepted_at_utc": "2026-07-15T20:12:12Z",
   "foundation_main_commit": "89302fcd953ae116c12b159f1d3037d1a17bab05",
   "implementation_branch": "codex/topic3-agent-cluster",
   "implementation_branch_commit": "0ab96d283f30c97ee62292a383c33ac6797e327c",
-  "accepted_main_commit": null,
+  "implementation_branch_head_commit": "4afeaecf99419d1a97193679ba710525d5091665",
+  "accepted_main_commit": "0b1c9d525c1e378940872f35f4a10322b53f2c55",
   "phase1_1_status": "ACCEPTED",
   "topic1_status": "ACCEPTED",
   "topic2_status": "ACCEPTED",
   "topic3_foundation_frozen": true,
-  "topic4_unlocked": false,
+  "topic4_unlocked": true,
+  "frontend_unlocked": false,
   "local_evidence": {
     "python_tests_passed": 226,
     "python_tests_skipped_windows_only": 1,
@@ -32,11 +35,44 @@
     "full_release_quality_redline": "passed",
     "evidence_generated_at_utc": "2026-07-15T19:52:10.9631115Z"
   },
-  "remote_evidence": {},
-  "pending_gates": {
-    "branch_ci": "pending",
-    "pull_request_ci": "pending",
-    "main_merge_ci": "pending"
+  "remote_evidence": {
+    "repository": "changkong66/CyberControl",
+    "required_status": "Release quality redline",
+    "implementation_pull_request": 14,
+    "branch_workflow": {
+      "run_id": 29446618990,
+      "head_sha": "4afeaecf99419d1a97193679ba710525d5091665",
+      "conclusion": "success"
+    },
+    "pull_request_workflow": {
+      "run_id": 29446969374,
+      "head_sha": "4afeaecf99419d1a97193679ba710525d5091665",
+      "conclusion": "success"
+    },
+    "main_workflow": {
+      "run_id": 29447331017,
+      "head_sha": "0b1c9d525c1e378940872f35f4a10322b53f2c55",
+      "conclusion": "success"
+    },
+    "repository_protection": {
+      "ruleset_main_id": 18985297,
+      "ruleset_tags_id": 18985299,
+      "classic_review_control_restored": true,
+      "required_status_checks_preserved": true,
+      "force_push_and_deletion_blocks_preserved": true
+    },
+    "conclusion": "success"
   },
-  "next_stage": "Push the implementation branch, pass protected PR and main CI, then unlock Topic 4"
+  "pending_gates": {},
+  "frozen_boundaries": [
+    "topic3 migration 20260716_0006 and six append-only FORCE RLS persistence models",
+    "topic3 Envelope Block Candidate Blueprint session task call evidence and SSE contracts",
+    "immutable Blueprint v1 activation dependency wave and snapshot semantics",
+    "Lecturer MindMap Tester CodeSandbox and Extension Agent v1 output semantics",
+    "Spark XFYun Code and SeeDance provider whitelist with Responses Lite instructions and tools enforcement",
+    "Outbox-driven execution advisory-lock recovery idempotency audit and atomic candidate commit semantics",
+    "durable SSE UTF-8 chunk HMAC cursor replay and recovery semantics",
+    "topic3 REST scopes version binding error and audit semantics"
+  ],
+  "next_stage": "Topic 4 C1-C12 academic verification, revision and release-authorization runtime; frontend remains locked"
 }
