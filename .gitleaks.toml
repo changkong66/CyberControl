@@ -1,0 +1,24 @@
+title = "Liyan repository secret scanning policy"
+
+[extend]
+useDefault = true
+
+# Generated output, local databases, dependency installations, tool binaries, and
+# VCS internals are not source inputs. Their canonical manifests and source files
+# remain scanned. This path-only allowlist never suppresses a source-code finding.
+[[allowlists]]
+description = "Exclude non-source local and generated trees"
+paths = [
+  '''(^|[\\/])\.git([\\/]|$)''',
+  '''(^|[\\/])\.venv([\\/]|$)''',
+  '''(^|[\\/])\.pytest_cache([\\/]|$)''',
+  '''(^|[\\/])\.ruff_cache([\\/]|$)''',
+  '''(^|[\\/])__pycache__([\\/]|$)''',
+  '''(^|[\\/])node_modules([\\/]|$)''',
+  '''(^|[\\/])artifacts([\\/]|$)''',
+  '''(^|[\\/])dist([\\/]|$)''',
+  '''(^|[\\/])var([\\/]|$)''',
+  '''(^|[\\/])tmp([\\/]|$)''',
+  '''(^|[\\/])\.coverage$''',
+  '''\.tsbuildinfo$''',
+]

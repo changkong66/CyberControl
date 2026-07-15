@@ -8,7 +8,9 @@ from pathlib import Path
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+REPOSITORY_ROOT = Path(
+    os.getenv("LIYAN_REPOSITORY_ROOT", str(Path(__file__).resolve().parents[4]))
+).resolve()
 
 
 class Settings(BaseSettings):

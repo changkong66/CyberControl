@@ -1,0 +1,37 @@
+{
+  "schema_version": "phase1.1.acceptance.v1",
+  "phase": "Phase 1.1",
+  "status": "REMOTE_PENDING",
+  "upper_layers_unlocked": false,
+  "local_gates": {
+    "actionlint": "passed",
+    "alembic_round_trip": "passed",
+    "compose_runtime": "passed",
+    "container_non_root": "passed",
+    "container_trivy": "passed",
+    "container_trivy_fixable_high_critical": 0,
+    "container_trivy_inventory": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "unknown": 0
+    },
+    "frontend_build": "passed",
+    "gitleaks": "passed",
+    "go": "passed",
+    "license_policy": "passed",
+    "node_audit": "passed",
+    "python_audit": "passed",
+    "python_coverage_redline_percent": 85.0,
+    "python_coverage_observed_min_percent": 85.37,
+    "python_coverage_observed_max_percent": 85.54,
+    "python_tests_passed": 103,
+    "ruff": "passed"
+  },
+  "pending_gates": {
+    "remote_ci": "git remote is not configured",
+    "main_branch_protection": "target repository identity is not configured"
+  },
+  "required_remote_status": "Release quality redline"
+}

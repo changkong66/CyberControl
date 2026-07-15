@@ -1,0 +1,16 @@
+.git
+.github
+.pytest_cache
+.ruff_cache
+.venv
+artifacts
+docs
+frontend
+infra/nginx
+node_modules
+tests
+tmp
+var
+**/__pycache__
+**/*.pyc
+**/*.tsbuildinfo

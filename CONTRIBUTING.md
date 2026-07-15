@@ -38,3 +38,7 @@ buildable or explicitly marked as a mechanical/generated artifact update.
 
 No pull request may merge without Python tests, Ruff, Go tests, TypeScript checks,
 migration validation, dependency vulnerability checks, and SBOM generation.
+The protected branch requires the aggregated **Release quality redline** status
+defined in `.github/workflows/quality-gates.yml`. Windows contributors can reproduce
+the release-equivalent suite with `tools/windows/run-quality-gates.ps1`; runs using
+any skip switch are diagnostic only.

@@ -10,6 +10,8 @@
 - [ ] Go contracts compile and test.
 - [ ] TypeScript and Vue type checks pass.
 - [ ] Database migrations include upgrade and downgrade validation when applicable.
+- [ ] Python, frontend, and container dependency/security gates pass with fresh SBOMs.
+- [ ] Full-history and worktree secret scans pass with zero findings.
 - [ ] Security, tenant isolation, audit, and recovery behavior were reviewed.
 
 ## Operational Impact

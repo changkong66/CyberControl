@@ -12,6 +12,9 @@ if (-not $env:LIYAN_TEST_DATABASE_URL) {
 if (-not $env:LIYAN_TEST_MIGRATION_DATABASE_URL) {
     throw "LIYAN_TEST_MIGRATION_DATABASE_URL is required."
 }
+if (-not $env:LIYAN_TEST_DISPATCHER_DATABASE_URL) {
+    throw "LIYAN_TEST_DISPATCHER_DATABASE_URL is required."
+}
 
 $RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 

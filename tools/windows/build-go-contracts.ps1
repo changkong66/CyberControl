@@ -1,10 +1,15 @@
 [CmdletBinding()]
 param(
-    [string]$ProjectRoot = "C:\Users\wch06\Documents\CyberControl",
+    [string]$ProjectRoot,
     [switch]$SkipRace
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
+    $ProjectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
+} else {
+    $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
+}
 $contractsRoot = Join-Path $ProjectRoot "packages\contracts-go"
 $logRoot = Join-Path $ProjectRoot "artifacts\toolchain"
 $logPath = Join-Path $logRoot "go-build.log"
@@ -84,9 +89,13 @@ try {
     Invoke-GoStep -Title "Download dependencies" -Arguments @("mod", "download")
     Invoke-GoStep -Title "Verify module cache" -Arguments @("mod", "verify")
 
-    Write-Log "`n==> Format source"
-    & gofmt -w .
+    Write-Log "`n==> Enforce canonical source formatting"
+    $unformatted = @(& gofmt -l .)
     if ($LASTEXITCODE -ne 0) { throw "gofmt failed with exit code $LASTEXITCODE" }
+    if ($unformatted.Count -gt 0) {
+        foreach ($path in $unformatted) { Write-Log "Unformatted: $path" }
+        throw "Go source formatting drift detected. Run gofmt before committing."
+    }
 
     Invoke-GoStep -Title "Static semantic validation" -Arguments @("vet", "./...")
     Invoke-GoStep -Title "Unit tests with coverage" -Arguments @("test", "-cover", "./...")

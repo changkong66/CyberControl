@@ -1,0 +1,484 @@
+name: Release Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ACTIONLINT_VERSION: "1.7.12"
+  GO_VERSION: "1.22.x"
+  NODE_VERSION: "22.20.0"
+  PNPM_VERSION: "11.7.0"
+  PYTHON_VERSION: "3.11"
+  UV_VERSION: "0.11.28"
+
+jobs:
+  python-contracts-unit:
+    name: Python, contracts, and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out immutable source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Go formatter
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+      - name: Install pinned uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Reproduce locked Python environment
+        run: |
+          uv lock --check
+          uv sync --frozen --all-packages --all-extras
+      - name: Validate GitHub Actions syntax and expressions
+        env:
+          ACTIONLINT_ARCHIVE_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            --output "$archive" "$url"
+          printf '%s  %s\n' "$ACTIONLINT_ARCHIVE_SHA256" "$archive" \
+            | sha256sum --check --strict
+          tar --extract --gzip --file "$archive" actionlint
+          ./actionlint -no-color
+      - name: Enforce Ruff lint and formatting
+        run: |
+          uv run --frozen ruff check .
+          uv run --frozen ruff format --check .
+      - name: Regenerate and validate frozen wire contracts
+        run: |
+          uv run --frozen python tools/export_contracts.py
+          uv run --frozen python tools/validate_baseline.py
+          git diff --exit-code -- \
+            schemas \
+            packages/contracts-ts/src/generated \
+            packages/contracts-go/contracts
+      - name: Run deterministic unit suite
+        run: uv run --frozen pytest -q -m "not integration"
+
+  postgres-integration:
+    name: PostgreSQL 16 integration and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+        env:
+          POSTGRES_DB: liyans
+          POSTGRES_USER: liyans_bootstrap
+          POSTGRES_PASSWORD: liyans-bootstrap-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U liyans_bootstrap -d liyans"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      LIYAN_DATABASE_MIGRATION_URL: postgresql+asyncpg://liyans_migrator:liyans-migrator-local-only@127.0.0.1:5432/liyans
+      LIYAN_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@127.0.0.1:5432/liyans
+      LIYAN_TEST_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@127.0.0.1:5432/liyans
+      LIYAN_TEST_MIGRATION_DATABASE_URL: postgresql+asyncpg://liyans_migrator:liyans-migrator-local-only@127.0.0.1:5432/liyans
+      LIYAN_TEST_DISPATCHER_DATABASE_URL: postgresql+asyncpg://liyans_dispatcher:liyans-dispatcher-local-only@127.0.0.1:5432/liyans
+      LIYAN_SSE_CURSOR_SECRET: ci-postgres-cursor-secret-at-least-32-bytes
+    steps:
+      - name: Check out immutable source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install pinned uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Reproduce locked Python environment
+        run: uv sync --frozen --all-packages --all-extras
+      - name: Provision restricted runtime and migration roles
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: >-
+          docker exec -i "$POSTGRES_CONTAINER"
+          psql --set ON_ERROR_STOP=1 --username liyans_bootstrap --dbname liyans
+          < infra/postgres/init/001-runtime-role.sql
+      - name: Verify migration upgrade, downgrade, and schema drift
+        run: |
+          uv run --frozen alembic -c backend/alembic.ini upgrade head
+          uv run --frozen alembic -c backend/alembic.ini current --check-heads
+          uv run --frozen alembic -c backend/alembic.ini check
+          uv run --frozen alembic -c backend/alembic.ini downgrade base
+          uv run --frozen alembic -c backend/alembic.ini upgrade head
+          uv run --frozen alembic -c backend/alembic.ini current --check-heads
+          uv run --frozen alembic -c backend/alembic.ini check
+      - name: Run full suite against PostgreSQL with coverage redline
+        run: |
+          mkdir -p artifacts/test-results artifacts/coverage
+          uv run --frozen pytest -q -rs \
+            --junitxml=artifacts/test-results/python-junit.xml \
+            --cov=backend/src/liyans \
+            --cov=packages/contracts-python/src/liyans_contracts \
+            --cov-report=term-missing \
+            --cov-report=xml:artifacts/coverage/python-coverage.xml \
+            --cov-fail-under=85
+      - name: Upload test and coverage evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: python-postgres-test-evidence
+          path: |
+            artifacts/test-results
+            artifacts/coverage
+          if-no-files-found: warn
+          retention-days: 30
+
+  go-contracts:
+    name: Go contract compiler gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/contracts-go
+    steps:
+      - name: Check out immutable source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: packages/contracts-go/go.mod
+      - name: Enforce canonical formatting and module graph
+        run: |
+          unformatted="$(gofmt -l .)"
+          test -z "$unformatted" || { printf 'Unformatted Go files:\n%s\n' "$unformatted"; exit 1; }
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          test "$(go list -m all | wc -l)" -eq 1
+          go mod verify
+      - name: Vet, race-test, and compile all packages
+        run: |
+          mkdir -p ../../artifacts/go
+          go vet ./...
+          go test -race -coverprofile=../../artifacts/go/coverage.out ./...
+          go tool cover -func=../../artifacts/go/coverage.out
+          go build ./...
+          go list -m -json all > ../../artifacts/go/modules.json
+      - name: Upload Go evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: go-contract-evidence
+          path: artifacts/go
+          if-no-files-found: error
+          retention-days: 30
+
+  frontend:
+    name: Vue, TypeScript, pnpm audit, and Node SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out immutable source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Reproduce locked frontend environment
+        run: pnpm --dir frontend install --frozen-lockfile
+      - name: Validate generated TypeScript contracts
+        run: pnpm --dir frontend exec tsc --noEmit --project ../packages/contracts-ts/tsconfig.json
+      - name: Type-check and build Vue production assets
+        run: |
+          pnpm --dir frontend run typecheck
+          pnpm --dir frontend run build
+      - name: Block high and critical Node vulnerabilities
+        run: pnpm --dir frontend audit --audit-level high
+      - name: Generate deterministic CycloneDX Node SBOM
+        run: |
+          python3 tools/generate_node_sbom.py \
+            --project frontend \
+            --output artifacts/sbom/frontend.cdx.json
+          python3 tools/validate_sbom_policy.py \
+            artifacts/sbom/frontend.cdx.json \
+            --output artifacts/sbom/frontend-license-policy.json
+      - name: Upload frontend SBOM
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: frontend-sbom
+          path: |
+            artifacts/sbom/frontend.cdx.json
+            artifacts/sbom/frontend-license-policy.json
+          if-no-files-found: error
+          retention-days: 90
+
+  python-supply-chain:
+    name: Python audit and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out immutable source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install pinned uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Reproduce locked Python environment
+        run: uv sync --frozen --all-packages --all-extras
+      - name: Audit the exact resolved dependency graph
+        run: |
+          mkdir -p artifacts/sbom
+          uv export --quiet --frozen --all-packages --all-extras \
+            --no-emit-workspace \
+            --format requirements-txt \
+            --output-file artifacts/sbom/python-requirements.txt
+          uv run --frozen pip-audit --strict -r artifacts/sbom/python-requirements.txt
+          uv tree --frozen > artifacts/sbom/python-dependency-tree.txt
+      - name: Generate validated reproducible Python SBOM
+        env:
+          PYTHONUTF8: "1"
+        run: >-
+          uv run --frozen cyclonedx-py environment .venv
+          --pyproject backend/pyproject.toml
+          --mc-type application
+          --spec-version 1.6
+          --output-reproducible
+          --output-format JSON
+          --output-file artifacts/sbom/python.cdx.json
+          --validate
+      - name: Enforce Python dependency license policy
+        run: >-
+          uv run --frozen python tools/validate_sbom_policy.py
+          artifacts/sbom/python.cdx.json
+          --output artifacts/sbom/python-license-policy.json
+      - name: Upload Python supply-chain evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: python-supply-chain
+          path: artifacts/sbom
+          if-no-files-found: error
+          retention-days: 90
+
+  container-security:
+    name: Container build, runtime, SBOM, and vulnerability scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      IMAGE_REF: liyans-backend:ci-${{ github.sha }}
+    steps:
+      - name: Check out immutable source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Configure Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - name: Validate Compose and build the pinned production image
+        run: |
+          docker compose -f infra/docker-compose.yml config --quiet
+          docker buildx build \
+            --file infra/backend.Dockerfile \
+            --tag "$IMAGE_REF" \
+            --load \
+            .
+          mkdir -p artifacts/container artifacts/security artifacts/sbom
+          docker image inspect "$IMAGE_REF" > artifacts/container/image-inspect.json
+      - name: Enforce non-root and minimal runtime image
+        run: |
+          test "$(docker image inspect "$IMAGE_REF" --format '{{.Config.User}}')" = "10001:10001"
+          docker run --rm --entrypoint /bin/sh "$IMAGE_REF" -c '
+            set -eu
+            id -u | grep -qx 10001
+            id -g | grep -qx 10001
+            test ! -e /app/backend/src
+            test ! -e /app/packages
+            test ! -x /app/.venv/bin/pytest
+            test ! -x /usr/local/bin/pip
+            test ! -e /usr/local/lib/python3.11/site-packages/setuptools
+            test ! -e /usr/local/lib/python3.11/site-packages/wheel
+            python -c "import liyans, liyans_contracts"
+          '
+      - name: Smoke-test container liveness
+        run: |
+          container_id="$(docker run -d \
+            -p 127.0.0.1::8000 \
+            -e LIYAN_ENVIRONMENT=development \
+            -e LIYAN_SSE_CURSOR_SECRET=ci-container-cursor-secret-at-least-32-bytes \
+            "$IMAGE_REF")"
+          trap 'docker logs "$container_id" || true; docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+          port="$(docker port "$container_id" 8000/tcp | awk -F: '{print $NF}')"
+          for _ in $(seq 1 40); do
+            if curl --fail --silent --show-error "http://127.0.0.1:${port}/health/live" \
+              | grep -q '"status":"live"'; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          exit 1
+      - name: Generate CycloneDX container SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.IMAGE_REF }}
+          format: cyclonedx-json
+          output-file: artifacts/sbom/backend-container.cdx.json
+          upload-artifact: false
+          dependency-snapshot: false
+      - name: Record complete container vulnerability inventory
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_REF }}
+          scanners: vuln
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          timeout: 15m0s
+          exit-code: "0"
+          format: json
+          output: artifacts/security/container-trivy.json
+      - name: Block fixable high and critical container vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_REF }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          timeout: 15m0s
+          exit-code: "1"
+          format: table
+      - name: Upload container security evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: container-security-evidence
+          path: |
+            artifacts/container
+            artifacts/security
+            artifacts/sbom/backend-container.cdx.json
+          if-no-files-found: warn
+          retention-days: 90
+
+  secret-history-scan:
+    name: Full Git history secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_ARCHIVE_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      GITLEAKS_VERSION: 8.30.1
+    steps:
+      - name: Check out complete immutable history
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install checksum-verified Gitleaks CLI
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            --output "$archive" "$url"
+          printf '%s  %s\n' "$GITLEAKS_ARCHIVE_SHA256" "$archive" | sha256sum --check --strict
+          tar --extract --gzip --file "$archive" gitleaks
+          ./gitleaks version
+      - name: Scan all reachable commits with redacted findings
+        run: |
+          mkdir -p artifacts/security
+          ./gitleaks git . \
+            --log-opts="--all" \
+            --redact \
+            --no-banner \
+            --exit-code 1 \
+            --report-format json \
+            --report-path artifacts/security/gitleaks.json
+          ./gitleaks dir . \
+            --redact \
+            --no-banner \
+            --exit-code 1 \
+            --report-format json \
+            --report-path artifacts/security/gitleaks-working-tree.json
+      - name: Upload secret-scan evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: secret-scan-evidence
+          path: artifacts/security/gitleaks*.json
+          if-no-files-found: warn
+          retention-days: 90
+
+  release-quality-gate:
+    name: Release quality redline
+    if: ${{ always() }}
+    needs:
+      - python-contracts-unit
+      - postgres-integration
+      - go-contracts
+      - frontend
+      - python-supply-chain
+      - container-security
+      - secret-history-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reject any skipped, cancelled, or failed prerequisite
+        env:
+          CONTAINER_RESULT: ${{ needs.container-security.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          GO_RESULT: ${{ needs.go-contracts.result }}
+          POSTGRES_RESULT: ${{ needs.postgres-integration.result }}
+          PYTHON_RESULT: ${{ needs.python-contracts-unit.result }}
+          SECRET_RESULT: ${{ needs.secret-history-scan.result }}
+          SUPPLY_CHAIN_RESULT: ${{ needs.python-supply-chain.result }}
+        run: |
+          for result in \
+            "$PYTHON_RESULT" \
+            "$POSTGRES_RESULT" \
+            "$GO_RESULT" \
+            "$FRONTEND_RESULT" \
+            "$SUPPLY_CHAIN_RESULT" \
+            "$CONTAINER_RESULT" \
+            "$SECRET_RESULT"; do
+            test "$result" = "success" || exit 1
+          done
+          echo "All release quality redlines passed."

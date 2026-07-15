@@ -1,12 +1,12 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
     environment:
       POSTGRES_DB: liyans
       POSTGRES_USER: liyans_bootstrap
       POSTGRES_PASSWORD: liyans-bootstrap-local-only
     ports:
-      - "5432:5432"
+      - "${LIYAN_POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - liyans-postgres:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
@@ -46,7 +46,7 @@ services:
       LIYAN_ARTIFACT_ROOT: /var/lib/liyans/artifacts
       LIYAN_SSE_CURSOR_SECRET: local-compose-cursor-secret-change-me-32
     ports:
-      - "8000:8000"
+      - "${LIYAN_API_HOST_PORT:-8000}:8000"
     volumes:
       - liyans-runtime:/var/lib/liyans
     depends_on:
