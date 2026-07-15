@@ -11,6 +11,13 @@ export interface ArtifactObjectRefV1 {
   "created_at": string
 }
 
+export interface AuthoritySourceRefV1 {
+  "source_id": string
+  "source_version": string
+  "locator": string
+  "content_sha256"?: string | null
+}
+
 export interface BlockSnapshotManifestItemV1 {
   "block_id": string
   "block_type": string
@@ -95,6 +102,8 @@ export interface CandidateV1 {
   "created_at": string
 }
 
+export type CourseStatus = "DRAFT" | "ACTIVE" | "ARCHIVED"
+
 export interface DeliveryMetadataV1 {
   /** Delivery guarantee. Consumers must be idempotent. */
   "mode"?: "AT_LEAST_ONCE"
@@ -133,6 +142,10 @@ export interface ErrorReceiptV1 {
 
 export type ErrorSeverity = "WARNING" | "ERROR" | "CRITICAL"
 
+export type GoldenQuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "CALCULATION" | "PROOF" | "DESIGN" | "SIMULATION"
+
+export type KnowledgePointStatus = "DRAFT" | "ACTIVE" | "DEPRECATED"
+
 export interface LiteToolDefinitionV1 {
   "name": string
   "description": string
@@ -142,6 +155,10 @@ export interface LiteToolDefinitionV1 {
 export type MessageKind = "COMMAND" | "EVENT" | "RESULT" | "ERROR"
 
 export type MessagePriority = "CRITICAL" | "HIGH" | "NORMAL" | "LOW"
+
+export type MisconceptionSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+
+export type PrerequisiteType = "REQUIRED" | "RECOMMENDED" | "SUPPORTING"
 
 export interface ProducerMetadataV1 {
   /** Producing Topic 3 agent; null for platform infrastructure events. */
@@ -251,6 +268,178 @@ export interface SourceSnapshotRefV1 {
 }
 
 export type StreamFragmentType = "START" | "DELTA" | "END" | "SNAPSHOT"
+
+export type TextbookMappingType = "PRIMARY" | "SUPPORTING" | "EXAMPLE" | "EXERCISE"
+
+export interface Topic1ApiEnvelopeV1 {
+  "schema_version"?: "topic1.api-envelope.v1"
+  "request_id": string
+  "trace_id": string
+  "data": {  }
+}
+
+export interface Topic1CourseV1 {
+  "schema_version"?: "topic1.course.v1"
+  "course_id": string
+  "revision": number
+  "course_code": string
+  "title": string
+  "description": string
+  "locale"?: string
+  "academic_level"?: string
+  "credit_hours": number
+  "status": CourseStatus
+  "authority_sources"?: Array<AuthoritySourceRefV1>
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1GoldenQuestionV1 {
+  "schema_version"?: "topic1.golden-question.v1"
+  "question_id": string
+  "primary_kp_id": string
+  "related_kp_ids"?: Array<string>
+  "question_type": GoldenQuestionType
+  "stem_markdown": string
+  "answer_document": {  }
+  "solution_markdown": string
+  "difficulty_level": number
+  "discrimination": number
+  "diagnostic_tags": Array<string>
+  "misconception_ids"?: Array<string>
+  "authority_sources": Array<AuthoritySourceRefV1>
+  "revision": number
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1GraphContentV1 {
+  "course": Topic1CourseV1
+  "knowledge_points": Array<Topic1KnowledgePointV1>
+  "prerequisites": Array<Topic1PrerequisiteV1>
+  "misconceptions"?: Array<Topic1MisconceptionV1>
+  "textbooks"?: Array<Topic1TextbookV1>
+  "textbook_sections"?: Array<Topic1TextbookSectionV1>
+  "textbook_mappings"?: Array<Topic1TextbookMappingV1>
+  "golden_questions"?: Array<Topic1GoldenQuestionV1>
+}
+
+export interface Topic1GraphSnapshotV1 {
+  "schema_version"?: "topic1.graph-snapshot.v1"
+  "snapshot_id": string
+  "course_id": string
+  "graph_version": number
+  "parent_snapshot_id"?: string | null
+  "restored_from_snapshot_id"?: string | null
+  "content": Topic1GraphContentV1
+  "content_sha256": string
+  "node_count": number
+  "edge_count": number
+  "created_by_subject": string
+  "frozen_at": string
+}
+
+export interface Topic1ImportBundleV1 {
+  "schema_version"?: "topic1.import-bundle.v1"
+  "import_id": string
+  "expected_parent_version"?: number | null
+  "content": Topic1GraphContentV1
+  "requested_at": string
+}
+
+export interface Topic1KnowledgePointV1 {
+  "schema_version"?: "topic1.knowledge-point.v1"
+  "kp_id": string
+  "course_id": string
+  "revision": number
+  "title": string
+  "aliases"?: Array<string>
+  "summary": string
+  "learning_objectives": Array<string>
+  "category": string
+  "difficulty_level": number
+  "difficulty_score": number
+  "topology_level": number
+  "topology_weight": number
+  "estimated_minutes": number
+  "formula_signatures"?: Array<string>
+  "tags"?: Array<string>
+  "status": KnowledgePointStatus
+  "authority_sources"?: Array<AuthoritySourceRefV1>
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1MisconceptionV1 {
+  "schema_version"?: "topic1.misconception.v1"
+  "misconception_id": string
+  "kp_id": string
+  "title": string
+  "description": string
+  "trigger_pattern": string
+  "diagnosis_tags": Array<string>
+  "remediation_hint": string
+  "severity": MisconceptionSeverity
+  "revision": number
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1PrerequisiteV1 {
+  "schema_version"?: "topic1.prerequisite.v1"
+  "edge_id": string
+  "course_id": string
+  "prerequisite_kp_id": string
+  "dependent_kp_id": string
+  "relation_type": PrerequisiteType
+  "strength": number
+  "rationale": string
+  "revision": number
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1TextbookMappingV1 {
+  "schema_version"?: "topic1.textbook-mapping.v1"
+  "mapping_id": string
+  "kp_id": string
+  "section_id": string
+  "mapping_type": TextbookMappingType
+  "coverage": number
+  "note"?: string | null
+  "revision": number
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1TextbookSectionV1 {
+  "schema_version"?: "topic1.textbook-section.v1"
+  "section_id": string
+  "textbook_id": string
+  "parent_section_id"?: string | null
+  "chapter_number": string
+  "title": string
+  "start_page"?: number | null
+  "end_page"?: number | null
+  "revision": number
+  "created_at": string
+  "updated_at": string
+}
+
+export interface Topic1TextbookV1 {
+  "schema_version"?: "topic1.textbook.v1"
+  "textbook_id": string
+  "title": string
+  "authors": Array<string>
+  "publisher": string
+  "edition": string
+  "isbn"?: string | null
+  "publication_year": number
+  "authority_level": number
+  "revision": number
+  "created_at": string
+  "updated_at": string
+}
 
 export interface Topic3EnvelopeV1 {
   /** Frozen public Envelope wire version. */

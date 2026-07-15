@@ -1,0 +1,104 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.textbook-section.v1",
+      "default": "topic1.textbook-section.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "section_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Section Id",
+      "type": "string"
+    },
+    "textbook_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Textbook Id",
+      "type": "string"
+    },
+    "parent_section_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 6,
+          "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Section Id"
+    },
+    "chapter_number": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Chapter Number",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "start_page": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Start Page"
+    },
+    "end_page": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End Page"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "section_id",
+    "textbook_id",
+    "chapter_number",
+    "title",
+    "revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1TextbookSectionV1",
+  "type": "object"
+}

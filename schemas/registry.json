@@ -1,5 +1,82 @@
 [
   {
+    "schema_name": "topic1.api-envelope.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.api-envelope.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.course.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.course.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.knowledge-point.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.knowledge-point.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.prerequisite.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.prerequisite.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.misconception.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.misconception.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.textbook.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.textbook.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.textbook-section.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.textbook-section.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.textbook-mapping.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.textbook-mapping.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.golden-question.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.golden-question.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.import-bundle.v1",
+    "owner": "topic1",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "topic1.import-bundle.v1.schema.json"
+  },
+  {
+    "schema_name": "topic1.graph-snapshot.v1",
+    "owner": "topic1",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "topic1.graph-snapshot.v1.schema.json"
+  },
+  {
     "schema_name": "artifact.object.ref.v1",
     "owner": "verification-platform",
     "visibility": "internal",

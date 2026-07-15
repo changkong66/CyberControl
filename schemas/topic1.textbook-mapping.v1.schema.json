@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "TextbookMappingType": {
+      "enum": [
+        "PRIMARY",
+        "SUPPORTING",
+        "EXAMPLE",
+        "EXERCISE"
+      ],
+      "title": "TextbookMappingType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.textbook-mapping.v1",
+      "default": "topic1.textbook-mapping.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "mapping_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Mapping Id",
+      "type": "string"
+    },
+    "kp_id": {
+      "maxLength": 120,
+      "minLength": 6,
+      "pattern": "^KP_\\S{3,117}$",
+      "title": "Kp Id",
+      "type": "string"
+    },
+    "section_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Section Id",
+      "type": "string"
+    },
+    "mapping_type": {
+      "$ref": "#/$defs/TextbookMappingType"
+    },
+    "coverage": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Coverage",
+      "type": "number"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mapping_id",
+    "kp_id",
+    "section_id",
+    "mapping_type",
+    "coverage",
+    "revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1TextbookMappingV1",
+  "type": "object"
+}

@@ -1,0 +1,100 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic1.textbook.v1",
+      "default": "topic1.textbook.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "textbook_id": {
+      "maxLength": 128,
+      "minLength": 6,
+      "pattern": "^[A-Z][A-Z0-9_:-]{5,127}$",
+      "title": "Textbook Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Authors",
+      "type": "array"
+    },
+    "publisher": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Publisher",
+      "type": "string"
+    },
+    "edition": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Edition",
+      "type": "string"
+    },
+    "isbn": {
+      "anyOf": [
+        {
+          "maxLength": 32,
+          "minLength": 10,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Isbn"
+    },
+    "publication_year": {
+      "maximum": 2200,
+      "minimum": 1900,
+      "title": "Publication Year",
+      "type": "integer"
+    },
+    "authority_level": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Authority Level",
+      "type": "integer"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "textbook_id",
+    "title",
+    "authors",
+    "publisher",
+    "edition",
+    "publication_year",
+    "authority_level",
+    "revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "Topic1TextbookV1",
+  "type": "object"
+}
