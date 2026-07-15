@@ -2,7 +2,7 @@
 
 ## 1. 当前结论
 
-Topic 3 五大业务 Agent、Immutable Blueprint、异步 DAG 编排、Provider 白名单、PostgreSQL 只追加持久化、Outbox 恢复、SSE staged 流和四端契约已经完成编码。当前处于本地完整 Release quality redline 执行前的收口状态，尚未签发 `ACCEPTED`，Topic 4 继续锁定。
+Topic 3 五大业务 Agent、Immutable Blueprint、异步 DAG 编排、Provider 白名单、PostgreSQL 只追加持久化、Outbox 恢复、SSE staged 流和四端契约已经完成编码，并通过本地完整 Release quality redline。当前状态为 `REMOTE_PENDING`；远端分支、受保护 PR 和 main 合并 CI 完成前不签发 `ACCEPTED`，Topic 4 继续锁定。
 
 已完成的定向证据：
 
@@ -13,7 +13,13 @@ Topic 3 五大业务 Agent、Immutable Blueprint、异步 DAG 编排、Provider 
 | Ruff lint/format | 通过 |
 | 契约生成与 baseline validator | 通过 |
 | Topic 3 PostgreSQL 集成 | 通过 |
-| 完整 Release quality redline | 待执行 |
+| Alembic upgrade/downgrade/upgrade 与 drift | 通过 / 无漂移 |
+| Go vet/race/test/build | 通过 |
+| TypeScript/Vue typecheck/build | 通过 |
+| Python/Node 依赖审计、SBOM、许可证 | 通过 |
+| Trivy 全等级漏洞 | 0 |
+| Gitleaks 历史与工作树 | 0 |
+| 完整 Release quality redline | `passed`，`2026-07-15T19:52:10.9631115Z` |
 | 远端分支/PR/main CI | 待执行 |
 
 ## 2. 功能验收范围
@@ -31,7 +37,7 @@ Topic 3 五大业务 Agent、Immutable Blueprint、异步 DAG 编排、Provider 
 
 ## 3. 冻结判定条件
 
-只有以下条件全部满足才能把状态改为 `ACCEPTED`：
+本地验收已满足第 1 至 4 项。只有远端条件也全部满足才能把状态改为 `ACCEPTED`：
 
 1. 本地 `run-topic3-acceptance.ps1` 全绿。
 2. Ruff、契约 drift、Go、TS/Vue、依赖审计、SBOM 和许可证门禁全绿。
@@ -42,4 +48,4 @@ Topic 3 五大业务 Agent、Immutable Blueprint、异步 DAG 编排、Provider 
 
 ## 4. Topic 4 锁定
 
-本报告当前不构成 Topic 4 解锁凭证。Topic 3 staged Candidate 不得绕过 Verifier 直接获得最终发布授权。
+本报告证明 Topic 3 已本地验收，但当前仍不构成 Topic 4 解锁凭证。Topic 3 staged Candidate 不得绕过 Verifier 直接获得最终发布授权。

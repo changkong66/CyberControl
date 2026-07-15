@@ -4,7 +4,7 @@
 
 `LOCKED_PENDING_TOPIC3_REMOTE_ACCEPTANCE`
 
-Topic 3 已完成主要编码与定向测试，但尚未完成完整本地 Release quality redline、受保护 Pull Request 和 main 合并后 CI。本文目前仅是待签发模板，不授权 Topic 4 编码。
+Topic 3 已完成编码并通过本地完整 Release quality redline，但尚未完成远端功能分支、受保护 Pull Request 和 main 合并后 CI。本文目前仅是待签发模板，不授权 Topic 4 编码。
 
 ## 2. 正式签发条件
 

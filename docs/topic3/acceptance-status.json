@@ -1,10 +1,11 @@
 {
   "schema_version": "topic3.acceptance.v1",
   "topic": "Topic 3",
-  "status": "LOCAL_ACCEPTANCE_PENDING_FULL_REDLINE",
+  "status": "REMOTE_PENDING",
+  "local_accepted_at_utc": "2026-07-15T19:52:10.9631115Z",
   "foundation_main_commit": "89302fcd953ae116c12b159f1d3037d1a17bab05",
   "implementation_branch": "codex/topic3-agent-cluster",
-  "implementation_branch_commit": null,
+  "implementation_branch_commit": "0ab96d283f30c97ee62292a383c33ac6797e327c",
   "accepted_main_commit": null,
   "phase1_1_status": "ACCEPTED",
   "topic1_status": "ACCEPTED",
@@ -20,14 +21,22 @@
     "ruff": "passed",
     "contract_generation": "passed",
     "baseline_validation": "passed",
-    "full_release_quality_redline": "pending"
+    "alembic_round_trip": "passed",
+    "alembic_model_drift": "none",
+    "go_contracts": "passed",
+    "typescript_vue": "passed",
+    "dependency_audits": "passed",
+    "sbom_and_license_policy": "passed",
+    "container_trivy_all_severities": 0,
+    "gitleaks_history_and_worktree": 0,
+    "full_release_quality_redline": "passed",
+    "evidence_generated_at_utc": "2026-07-15T19:52:10.9631115Z"
   },
   "remote_evidence": {},
   "pending_gates": {
-    "local_release_redline": "pending",
     "branch_ci": "pending",
     "pull_request_ci": "pending",
     "main_merge_ci": "pending"
   },
-  "next_stage": "Topic 4 remains locked until protected-main remote acceptance"
+  "next_stage": "Push the implementation branch, pass protected PR and main CI, then unlock Topic 4"
 }
