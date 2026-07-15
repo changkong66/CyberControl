@@ -118,14 +118,55 @@ if ($RequiredFlags -contains $false) {
 if ($Verified.allow_force_pushes.enabled -or $Verified.allow_deletions.enabled) {
     throw "Force pushes or branch deletion remain enabled."
 }
+$ReviewPolicy = $Verified.required_pull_request_reviews
+if ($null -eq $ReviewPolicy) {
+    throw "Pull-request review protection is absent."
+}
+if (
+    $ReviewPolicy.required_approving_review_count -lt 1 -or
+    -not $ReviewPolicy.require_code_owner_reviews -or
+    -not $ReviewPolicy.dismiss_stale_reviews -or
+    -not $ReviewPolicy.require_last_push_approval
+) {
+    throw "One or more required pull-request review controls remain disabled."
+}
+if (-not $Verified.block_creations.enabled) {
+    throw "Creation of matching protected references is not blocked."
+}
 
-[ordered]@{
+$WorkflowPermissions = Invoke-GitHubJson -Method GET `
+    -Uri "$ApiRoot/actions/permissions/workflow"
+if (
+    $WorkflowPermissions.default_workflow_permissions -ne "read" -or
+    $WorkflowPermissions.can_approve_pull_request_reviews
+) {
+    throw "GitHub Actions default token permissions are not read-only."
+}
+
+$Evidence = [ordered]@{
+    schema_version = "phase1.1.branch-protection.v1"
     repository = $Repository
     branch = $Branch
     required_context = $RequiredContext
     strict_status_checks = $Verified.required_status_checks.strict
     administrators_enforced = $Verified.enforce_admins.enabled
+    required_approving_reviews = $ReviewPolicy.required_approving_review_count
+    code_owner_reviews_required = $ReviewPolicy.require_code_owner_reviews
+    stale_reviews_dismissed = $ReviewPolicy.dismiss_stale_reviews
+    last_push_approval_required = $ReviewPolicy.require_last_push_approval
+    conversation_resolution_required = $Verified.required_conversation_resolution.enabled
+    linear_history_required = $Verified.required_linear_history.enabled
+    matching_branch_creation_blocked = $Verified.block_creations.enabled
     force_pushes_allowed = $Verified.allow_force_pushes.enabled
     deletions_allowed = $Verified.allow_deletions.enabled
+    actions_default_workflow_permissions = $WorkflowPermissions.default_workflow_permissions
+    actions_can_approve_pull_requests = $WorkflowPermissions.can_approve_pull_request_reviews
     verified_at_utc = [DateTime]::UtcNow.ToString("o")
-} | ConvertTo-Json -Depth 5
+}
+$EvidenceRoot = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..\..")) `
+    "artifacts\quality-gates"
+New-Item -ItemType Directory -Force -Path $EvidenceRoot | Out-Null
+$Evidence | ConvertTo-Json -Depth 5 | Set-Content `
+    -LiteralPath (Join-Path $EvidenceRoot "branch-protection.json") `
+    -Encoding utf8
+$Evidence | ConvertTo-Json -Depth 5

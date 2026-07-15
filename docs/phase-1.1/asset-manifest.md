@@ -57,6 +57,8 @@
 - `tools/windows/stop-local.ps1`
 - `docs/engineering/repository-governance.md`
 - `docs/engineering/windows-environment-reproduction.md`
+- `docs/phase-1.1/remote-acceptance-report.md`
+- `docs/phase-1.1/topic1-unlock.md`
 
 ## 6. 核心自动化测试
 

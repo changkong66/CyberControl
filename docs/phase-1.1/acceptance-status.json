@@ -1,8 +1,18 @@
 {
-  "schema_version": "phase1.1.acceptance.v1",
+  "schema_version": "phase1.1.acceptance.v2",
   "phase": "Phase 1.1",
-  "status": "REMOTE_PENDING",
-  "upper_layers_unlocked": false,
+  "status": "ACCEPTED",
+  "accepted_on": "2026-07-15",
+  "upper_layers_unlocked": true,
+  "unlocked_layers": [
+    "topic1"
+  ],
+  "still_locked_layers": [
+    "topic2",
+    "topic3-agent-runtime",
+    "topic4-verifier-runtime",
+    "frontend-business-workbench"
+  ],
   "local_gates": {
     "actionlint": "passed",
     "alembic_round_trip": "passed",
@@ -26,12 +36,38 @@
     "python_coverage_redline_percent": 85.0,
     "python_coverage_observed_min_percent": 85.37,
     "python_coverage_observed_max_percent": 85.54,
-    "python_tests_passed": 103,
+    "python_tests_passed": 115,
     "ruff": "passed"
   },
-  "pending_gates": {
-    "remote_ci": "git remote is not configured",
-    "main_branch_protection": "target repository identity is not configured"
+  "remote_evidence": {
+    "repository": "changkong66/CyberControl",
+    "origin": "https://github.com/changkong66/CyberControl.git",
+    "phase_branch": "codex/phase-1.1-foundation",
+    "phase_code_baseline_commit": "bca073fc94ceaca1f5d20783705ae4b70c00e590",
+    "governance_commit": "39e7f016a071f435ad9fcf56876ae5866625ef97",
+    "phase_branch_ci": {
+      "run_id": 29399037874,
+      "url": "https://github.com/changkong66/CyberControl/actions/runs/29399037874",
+      "conclusion": "success",
+      "redline_job_id": 87299312349
+    },
+    "main_bootstrap_ci": {
+      "run_id": 29399212865,
+      "url": "https://github.com/changkong66/CyberControl/actions/runs/29399212865",
+      "conclusion": "success",
+      "redline_job_id": 87299892896
+    },
+    "main_branch_protection": {
+      "required_context": "Release quality redline",
+      "strict": true,
+      "administrators_enforced": true,
+      "pull_request_required": true,
+      "code_owner_review_required": true,
+      "force_pushes_allowed": false,
+      "deletions_allowed": false,
+      "api_readback_verified": true
+    }
   },
+  "pending_gates": {},
   "required_remote_status": "Release quality redline"
 }
