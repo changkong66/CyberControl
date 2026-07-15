@@ -1,13 +1,11 @@
 {
   "schema_version": "phase1.1.acceptance.v2",
   "phase": "Phase 1.1",
-  "status": "ACCEPTED",
-  "accepted_on": "2026-07-15",
-  "upper_layers_unlocked": true,
-  "unlocked_layers": [
-    "topic1"
-  ],
+  "status": "REMOTE_PENDING",
+  "upper_layers_unlocked": false,
+  "unlocked_layers": [],
   "still_locked_layers": [
+    "topic1",
     "topic2",
     "topic3-agent-runtime",
     "topic4-verifier-runtime",
@@ -57,17 +55,39 @@
       "conclusion": "success",
       "redline_job_id": 87299892896
     },
+    "final_phase_branch_ci": {
+      "commit": "fe3482bb8662281c21359af66e952e69e827b958",
+      "run_id": 29399883914,
+      "url": "https://github.com/changkong66/CyberControl/actions/runs/29399883914",
+      "conclusion": "success",
+      "redline_job_id": 87301948744
+    },
+    "final_main_ci": {
+      "commit": "fe3482bb8662281c21359af66e952e69e827b958",
+      "run_id": 29400001506,
+      "url": "https://github.com/changkong66/CyberControl/actions/runs/29400001506",
+      "conclusion": "success",
+      "redline_job_id": 87302395191
+    },
     "main_branch_protection": {
       "required_context": "Release quality redline",
-      "strict": true,
-      "administrators_enforced": true,
-      "pull_request_required": true,
-      "code_owner_review_required": true,
-      "force_pushes_allowed": false,
-      "deletions_allowed": false,
-      "api_readback_verified": true
+      "api_readback_verified": false,
+      "classic_protection_http_status": 403,
+      "repository_rulesets_http_status": 403,
+      "blocker": "GitHub Free does not expose branch protection or repository rulesets for this private repository"
+    },
+    "available_remote_hardening": {
+      "default_branch": "main",
+      "merge_commits_allowed": false,
+      "squash_merge_allowed": true,
+      "rebase_merge_allowed": true,
+      "delete_branch_on_merge": true,
+      "actions_default_workflow_permissions": "read",
+      "actions_can_approve_pull_requests": false
     }
   },
-  "pending_gates": {},
+  "pending_gates": {
+    "main_branch_protection": "upgrade the GitHub account/organization plan or explicitly approve making the repository public, then apply and verify protection"
+  },
   "required_remote_status": "Release quality redline"
 }

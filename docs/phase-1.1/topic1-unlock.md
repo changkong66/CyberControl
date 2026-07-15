@@ -1,11 +1,17 @@
-# Topic 1 正式开发解锁说明
+# Topic 1 开发解锁门禁说明
 
 ## 1. 解锁状态
 
-Phase 1.1 本地与 GitHub 远端验收均已通过，`main` 强保护生效，Topic 1
-“自动控制原理知识拓扑与权威知识库”正式进入可开发状态。
+Phase 1.1 本地与 GitHub Actions 远端验收已通过，但 GitHub Free 私有仓库无法启用
+Branch Protection 或 Repository Rulesets。Topic 1 当前状态为 `LOCKED`，不得开始
+业务实现。
 
-推荐开发分支：
+满足以下任一外部条件并完成保护 API 回读后，才能把本文件状态改为 `UNLOCKED`：
+
+1. 将账户/组织升级到支持私有仓库保护规则的 GitHub Pro/Team；或
+2. 由项目所有者明确批准把仓库改为 Public，再应用同一保护规则。
+
+正式解锁后的推荐开发分支：
 
 ```powershell
 git switch main
@@ -13,7 +19,7 @@ git pull --ff-only origin main
 git switch -c codex/topic1-knowledge-topology
 ```
 
-## 2. 允许新增的边界
+## 2. 解锁后允许新增的边界
 
 - 追加 Topic 1 Alembic migration，不修改既有 `20260714_0001` 至
   `20260715_0003` migration。
@@ -44,4 +50,6 @@ Topic 1 每个提交必须保持：
 - 契约四端生成无漂移；
 - 项目总体覆盖率提升并最终达到 Topic 1 要求的 `>=88%`。
 
-只有 Topic 1 独立验收报告状态为 `ACCEPTED` 后，才解锁 Topic 2。
+当前不得创建 Topic 1 业务提交。保护生效并更新 `acceptance-status.json` 为
+`ACCEPTED` 后，才执行本节开发入口；只有 Topic 1 独立验收报告状态为 `ACCEPTED`
+后，才解锁 Topic 2。
