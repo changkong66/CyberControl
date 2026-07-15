@@ -67,6 +67,18 @@ class Settings(BaseSettings):
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
     provider_policy_path: Path = REPOSITORY_ROOT / "config" / "providers.toml"
     provider_policy_poll_seconds: float = 2.0
+    provider_external_enabled: bool = False
+    spark_text_endpoint: str | None = None
+    spark_text_api_key: str | None = Field(default=None, repr=False)
+    spark_text_model_alias: str = "spark-text-approved"
+    xfyun_code_endpoint: str | None = None
+    xfyun_code_api_key: str | None = Field(default=None, repr=False)
+    xfyun_code_model_alias: str = "xfyun-code-approved"
+    seedance_endpoint: str | None = None
+    seedance_api_key: str | None = Field(default=None, repr=False)
+    seedance_model_alias: str = "seedance-approved"
+    provider_http_timeout_seconds: float = 90.0
+    provider_max_connections: int = 32
     task_worker_count: int = 4
     sse_replay_capacity: int = 4096
     sse_subscriber_queue_size: int = 128
@@ -140,6 +152,42 @@ class Settings(BaseSettings):
             or not self.oidc_jwks_url.startswith("https://")
         ):
             raise ValueError("production OIDC endpoints must use HTTPS")
+        provider_pairs = (
+            ("spark_text", self.spark_text_endpoint, self.spark_text_api_key),
+            ("xfyun_code", self.xfyun_code_endpoint, self.xfyun_code_api_key),
+            ("seedance", self.seedance_endpoint, self.seedance_api_key),
+        )
+        for alias, endpoint, api_key in provider_pairs:
+            if bool(endpoint) != bool(api_key):
+                raise ValueError(f"{alias} endpoint and API key must be configured together")
+            if (
+                self.environment == "production"
+                and endpoint
+                and not endpoint.startswith("https://")
+            ):
+                raise ValueError(f"production {alias} endpoint must use HTTPS")
+        if self.environment == "production" and self.provider_external_enabled:
+            if not self.outbox_publisher_enabled:
+                raise ValueError(
+                    "production Topic 3 provider execution requires the durable Outbox publisher"
+                )
+            if not self.sse_notification_enabled:
+                raise ValueError(
+                    "production Topic 3 provider execution requires PostgreSQL SSE notifications"
+                )
+            required_provider_aliases = {
+                alias for alias, endpoint, api_key in provider_pairs if endpoint and api_key
+            }
+            missing = {"spark_text", "xfyun_code"} - required_provider_aliases
+            if missing:
+                raise ValueError(
+                    "production Topic 3 requires configured providers: "
+                    + ", ".join(sorted(missing))
+                )
+        if self.provider_http_timeout_seconds <= 0:
+            raise ValueError("provider_http_timeout_seconds must be positive")
+        if not 1 <= self.provider_max_connections <= 1024:
+            raise ValueError("provider_max_connections must be between one and 1024")
         if (
             min(
                 self.oidc_clock_skew_seconds,
@@ -155,6 +203,32 @@ class Settings(BaseSettings):
     @property
     def oidc_configured(self) -> bool:
         return bool(self.oidc_issuer and self.oidc_audience and self.oidc_jwks_url)
+
+    def provider_credentials(self, alias: str) -> tuple[str, str, str] | None:
+        values = {
+            "spark_text": (
+                self.spark_text_endpoint,
+                self.spark_text_api_key,
+                self.spark_text_model_alias,
+            ),
+            "xfyun_code": (
+                self.xfyun_code_endpoint,
+                self.xfyun_code_api_key,
+                self.xfyun_code_model_alias,
+            ),
+            "seedance": (
+                self.seedance_endpoint,
+                self.seedance_api_key,
+                self.seedance_model_alias,
+            ),
+        }
+        try:
+            endpoint, api_key, model_alias = values[alias]
+        except KeyError as exc:
+            raise ValueError(f"unknown approved provider alias: {alias}") from exc
+        if endpoint is None or api_key is None:
+            return None
+        return endpoint, api_key, model_alias
 
 
 @lru_cache

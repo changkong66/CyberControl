@@ -1,0 +1,330 @@
+{
+  "$defs": {
+    "AgentTaskState": {
+      "enum": [
+        "PENDING",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "SKIPPED",
+        "CANCELLED"
+      ],
+      "title": "AgentTaskState",
+      "type": "string"
+    },
+    "GenerationSessionState": {
+      "enum": [
+        "PLANNED",
+        "RUNNING",
+        "COMPLETED",
+        "PARTIAL",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "title": "GenerationSessionState",
+      "type": "string"
+    },
+    "ResourceType": {
+      "enum": [
+        "Lecturer_Doc",
+        "MindMap",
+        "Gradient_Quiz",
+        "Simulation_Code",
+        "Extension_Material"
+      ],
+      "title": "ResourceType",
+      "type": "string"
+    },
+    "SourceAgent": {
+      "enum": [
+        "Lecturer",
+        "MindMap",
+        "Tester",
+        "CodeSandbox",
+        "Extension"
+      ],
+      "title": "SourceAgent",
+      "type": "string"
+    },
+    "Topic3AgentTaskSnapshotV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "topic3.agent-task-snapshot.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "task_version": {
+          "minimum": 1,
+          "title": "Task Version",
+          "type": "integer"
+        },
+        "blueprint_id": {
+          "format": "uuid",
+          "title": "Blueprint Id",
+          "type": "string"
+        },
+        "blueprint_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Blueprint Version",
+          "type": "string"
+        },
+        "agent": {
+          "$ref": "#/$defs/SourceAgent"
+        },
+        "resource_type": {
+          "$ref": "#/$defs/ResourceType"
+        },
+        "state": {
+          "$ref": "#/$defs/AgentTaskState"
+        },
+        "attempt": {
+          "maximum": 8,
+          "minimum": 0,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "max_attempts": {
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        },
+        "request_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "result_sha256": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 64,
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Sha256"
+        },
+        "candidate_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Id"
+        },
+        "candidate_version": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Version"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        }
+      },
+      "required": [
+        "schema_version",
+        "task_id",
+        "task_version",
+        "blueprint_id",
+        "blueprint_version",
+        "agent",
+        "resource_type",
+        "state",
+        "attempt",
+        "max_attempts",
+        "request_sha256"
+      ],
+      "title": "Topic3AgentTaskSnapshotV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.generation-session.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "generation_session_id": {
+      "format": "uuid",
+      "title": "Generation Session Id",
+      "type": "string"
+    },
+    "session_version": {
+      "minimum": 1,
+      "title": "Session Version",
+      "type": "integer"
+    },
+    "parent_session_snapshot_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Session Snapshot Id"
+    },
+    "learner_ref": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Learner Ref",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Course Id",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/GenerationSessionState"
+    },
+    "blueprint_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Blueprint Id"
+    },
+    "blueprint_version": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Blueprint Version"
+    },
+    "requested_resources": {
+      "items": {
+        "$ref": "#/$defs/ResourceType"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Requested Resources",
+      "type": "array"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/Topic3AgentTaskSnapshotV1"
+      },
+      "maxItems": 64,
+      "title": "Tasks",
+      "type": "array"
+    },
+    "candidate_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Candidate Ids",
+      "type": "array"
+    },
+    "content_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generation_session_id",
+    "session_version",
+    "learner_ref",
+    "course_id",
+    "state",
+    "requested_resources",
+    "content_sha256",
+    "created_at"
+  ],
+  "title": "Topic3GenerationSessionV1",
+  "type": "object"
+}

@@ -6,6 +6,17 @@ type UUID string
 
 type DateTime string
 
+type AgentTaskState string
+
+const (
+	AgentTaskStatePENDING   AgentTaskState = "PENDING"
+	AgentTaskStateRUNNING   AgentTaskState = "RUNNING"
+	AgentTaskStateSUCCEEDED AgentTaskState = "SUCCEEDED"
+	AgentTaskStateFAILED    AgentTaskState = "FAILED"
+	AgentTaskStateSKIPPED   AgentTaskState = "SKIPPED"
+	AgentTaskStateCANCELLED AgentTaskState = "CANCELLED"
+)
+
 type ArtifactObjectRefV1 struct {
 	SchemaVersion    string   `json:"schema_version"`
 	StorageNamespace string   `json:"storage_namespace"`
@@ -130,6 +141,24 @@ type CandidateV1 struct {
 	CreatedAt DateTime `json:"created_at"`
 }
 
+type CodeFileV1 struct {
+	Path       string `json:"path"`
+	Language   string `json:"language"`
+	Content    string `json:"content"`
+	Entrypoint *bool  `json:"entrypoint,omitempty"`
+}
+
+type CodeSandboxContentV1 struct {
+	SchemaVersion        string            `json:"schema_version"`
+	Title                string            `json:"title"`
+	Objective            string            `json:"objective"`
+	Files                []CodeFileV1      `json:"files"`
+	Parameters           map[string]string `json:"parameters,omitempty"`
+	ExpectedObservations []string          `json:"expected_observations"`
+	ResultAnalysis       string            `json:"result_analysis"`
+	SafetyNotes          []string          `json:"safety_notes,omitempty"`
+}
+
 type CourseStatus string
 
 const (
@@ -182,6 +211,34 @@ const (
 	ErrorSeverityCRITICAL ErrorSeverity = "CRITICAL"
 )
 
+type ExtensionContentV1 struct {
+	SchemaVersion       string                `json:"schema_version"`
+	Title               string                `json:"title"`
+	Resources           []ExtensionResourceV1 `json:"resources"`
+	RecommendedSequence []string              `json:"recommended_sequence"`
+}
+
+type ExtensionResourceV1 struct {
+	ResourceId       string   `json:"resource_id"`
+	ResourceKind     string   `json:"resource_kind"`
+	Title            string   `json:"title"`
+	Summary          string   `json:"summary"`
+	RelevanceToKpIds []string `json:"relevance_to_kp_ids"`
+	CitationText     string   `json:"citation_text"`
+	SourceUrl        *string  `json:"source_url,omitempty"`
+}
+
+type GenerationSessionState string
+
+const (
+	GenerationSessionStatePLANNED   GenerationSessionState = "PLANNED"
+	GenerationSessionStateRUNNING   GenerationSessionState = "RUNNING"
+	GenerationSessionStateCOMPLETED GenerationSessionState = "COMPLETED"
+	GenerationSessionStatePARTIAL   GenerationSessionState = "PARTIAL"
+	GenerationSessionStateFAILED    GenerationSessionState = "FAILED"
+	GenerationSessionStateCANCELLED GenerationSessionState = "CANCELLED"
+)
+
 type GoldenQuestionType string
 
 const (
@@ -200,6 +257,33 @@ const (
 	KnowledgePointStatusACTIVE     KnowledgePointStatus = "ACTIVE"
 	KnowledgePointStatusDEPRECATED KnowledgePointStatus = "DEPRECATED"
 )
+
+type LecturerContentV1 struct {
+	SchemaVersion        string              `json:"schema_version"`
+	Title                string              `json:"title"`
+	LearningObjectives   []string            `json:"learning_objectives"`
+	Sections             []LecturerSectionV1 `json:"sections"`
+	Summary              []string            `json:"summary"`
+	MisconceptionAlerts  []string            `json:"misconception_alerts,omitempty"`
+	PersonalizationNotes []string            `json:"personalization_notes,omitempty"`
+}
+
+type LecturerDepth string
+
+const (
+	LecturerDepthFOUNDATION   LecturerDepth = "FOUNDATION"
+	LecturerDepthEXAMFOCUS    LecturerDepth = "EXAM_FOCUS"
+	LecturerDepthPOSTGRADUATE LecturerDepth = "POSTGRADUATE"
+	LecturerDepthENGINEERING  LecturerDepth = "ENGINEERING"
+)
+
+type LecturerSectionV1 struct {
+	SectionId   string        `json:"section_id"`
+	Title       string        `json:"title"`
+	Depth       LecturerDepth `json:"depth"`
+	Markdown    string        `json:"markdown"`
+	TargetKpIds []string      `json:"target_kp_ids"`
+}
 
 type LiteToolDefinitionV1 struct {
 	Name        string         `json:"name"`
@@ -224,6 +308,29 @@ const (
 	MessagePriorityNORMAL   MessagePriority = "NORMAL"
 	MessagePriorityLOW      MessagePriority = "LOW"
 )
+
+type MindMapContentV1 struct {
+	SchemaVersion string          `json:"schema_version"`
+	Direction     string          `json:"direction"`
+	Nodes         []MindMapNodeV1 `json:"nodes"`
+	Edges         []MindMapEdgeV1 `json:"edges,omitempty"`
+	Mermaid       string          `json:"mermaid"`
+}
+
+type MindMapEdgeV1 struct {
+	SourceNodeId string `json:"source_node_id"`
+	TargetNodeId string `json:"target_node_id"`
+	Relation     string `json:"relation"`
+}
+
+type MindMapNodeV1 struct {
+	NodeId    string  `json:"node_id"`
+	KpId      string  `json:"kp_id"`
+	Label     string  `json:"label"`
+	Mastery   float64 `json:"mastery"`
+	State     string  `json:"state"`
+	Collapsed *bool   `json:"collapsed,omitempty"`
+}
 
 type MisconceptionSeverity string
 
@@ -374,6 +481,26 @@ const (
 	StreamFragmentTypeEND      StreamFragmentType = "END"
 	StreamFragmentTypeSNAPSHOT StreamFragmentType = "SNAPSHOT"
 )
+
+type TesterContentV1 struct {
+	SchemaVersion        string             `json:"schema_version"`
+	Title                string             `json:"title"`
+	TotalScore           float64            `json:"total_score"`
+	Questions            []TesterQuestionV1 `json:"questions"`
+	DiagnosticDimensions []string           `json:"diagnostic_dimensions"`
+}
+
+type TesterQuestionV1 struct {
+	QuestionId               string   `json:"question_id"`
+	QuestionType             string   `json:"question_type"`
+	Difficulty               float64  `json:"difficulty"`
+	TargetKpIds              []string `json:"target_kp_ids"`
+	PromptMarkdown           string   `json:"prompt_markdown"`
+	StandardAnswer           string   `json:"standard_answer"`
+	SolutionSteps            []string `json:"solution_steps"`
+	MisconceptionDiagnostics []string `json:"misconception_diagnostics,omitempty"`
+	Score                    float64  `json:"score"`
+}
 
 type TextbookMappingType string
 
@@ -861,6 +988,40 @@ type Topic2StudentProfileV1 struct {
 	CreatedAt                 DateTime                 `json:"created_at"`
 }
 
+type Topic3AgentTaskSnapshotV1 struct {
+	SchemaVersion    string         `json:"schema_version"`
+	TaskId           UUID           `json:"task_id"`
+	TaskVersion      int64          `json:"task_version"`
+	BlueprintId      UUID           `json:"blueprint_id"`
+	BlueprintVersion string         `json:"blueprint_version"`
+	Agent            SourceAgent    `json:"agent"`
+	ResourceType     ResourceType   `json:"resource_type"`
+	State            AgentTaskState `json:"state"`
+	Attempt          int64          `json:"attempt"`
+	MaxAttempts      int64          `json:"max_attempts"`
+	RequestSha256    string         `json:"request_sha256"`
+	ResultSha256     *string        `json:"result_sha256,omitempty"`
+	CandidateId      *UUID          `json:"candidate_id,omitempty"`
+	CandidateVersion *int64         `json:"candidate_version,omitempty"`
+	ErrorCode        *string        `json:"error_code,omitempty"`
+	StartedAt        *DateTime      `json:"started_at,omitempty"`
+	CompletedAt      *DateTime      `json:"completed_at,omitempty"`
+}
+
+type Topic3BlueprintStepV1 struct {
+	SchemaVersion       string       `json:"schema_version"`
+	TaskId              UUID         `json:"task_id"`
+	Ordinal             int64        `json:"ordinal"`
+	Agent               SourceAgent  `json:"agent"`
+	ResourceType        ResourceType `json:"resource_type"`
+	DependencyTaskIds   []UUID       `json:"dependency_task_ids,omitempty"`
+	ProviderAlias       string       `json:"provider_alias"`
+	PromptBundleVersion string       `json:"prompt_bundle_version"`
+	TimeoutSeconds      float64      `json:"timeout_seconds"`
+	MaxAttempts         *int64       `json:"max_attempts,omitempty"`
+	ActivationReasons   []string     `json:"activation_reasons"`
+}
+
 type Topic3EnvelopeV1 struct {
 	// Frozen public Envelope wire version.
 	SchemaVersion *string `json:"schema_version,omitempty"`
@@ -900,6 +1061,76 @@ type Topic3EnvelopeV1 struct {
 	Error *ErrorReceiptV1 `json:"error,omitempty"`
 	// Agent-specific versioned payload; validated by the owning payload schema.
 	Payload map[string]any `json:"payload,omitempty"`
+}
+
+// Topic3ExecutionBlueprintV1 Immutable, replayable execution plan selected from frozen Topic 1/2 inputs.
+type Topic3ExecutionBlueprintV1 struct {
+	SchemaVersion               string                  `json:"schema_version"`
+	BlueprintId                 UUID                    `json:"blueprint_id"`
+	BlueprintVersion            string                  `json:"blueprint_version"`
+	GenerationSessionId         UUID                    `json:"generation_session_id"`
+	GenerationSessionVersion    int64                   `json:"generation_session_version"`
+	Topic1GraphSnapshotId       UUID                    `json:"topic1_graph_snapshot_id"`
+	Topic1GraphVersion          int64                   `json:"topic1_graph_version"`
+	Topic1GraphSha256           string                  `json:"topic1_graph_sha256"`
+	Topic2ProfileId             UUID                    `json:"topic2_profile_id"`
+	Topic2ProfileVersion        int64                   `json:"topic2_profile_version"`
+	Topic2PathSnapshotId        UUID                    `json:"topic2_path_snapshot_id"`
+	Topic2PathVersion           int64                   `json:"topic2_path_version"`
+	PersonalizationPolicyDigest string                  `json:"personalization_policy_digest"`
+	TargetKpIds                 []string                `json:"target_kp_ids"`
+	MaxParallelism              int64                   `json:"max_parallelism"`
+	AllowPartial                bool                    `json:"allow_partial"`
+	ActivationPolicyVersion     string                  `json:"activation_policy_version"`
+	Steps                       []Topic3BlueprintStepV1 `json:"steps"`
+	BlueprintSha256             string                  `json:"blueprint_sha256"`
+	CreatedAt                   DateTime                `json:"created_at"`
+}
+
+// Topic3GenerationCommandV1 Trusted command that starts one immutable multi-agent generation workflow.
+type Topic3GenerationCommandV1 struct {
+	SchemaVersion       string         `json:"schema_version"`
+	OperationId         UUID           `json:"operation_id"`
+	GenerationSessionId UUID           `json:"generation_session_id"`
+	LearnerRef          string         `json:"learner_ref"`
+	CourseId            string         `json:"course_id"`
+	TargetKpIds         []string       `json:"target_kp_ids"`
+	RequestedResources  []ResourceType `json:"requested_resources"`
+	LecturerDepth       *LecturerDepth `json:"lecturer_depth,omitempty"`
+	LearningGoal        string         `json:"learning_goal"`
+	Locale              *string        `json:"locale,omitempty"`
+	MaxParallelism      *int64         `json:"max_parallelism,omitempty"`
+	AllowPartial        *bool          `json:"allow_partial,omitempty"`
+	RequestedAt         DateTime       `json:"requested_at"`
+}
+
+type Topic3GenerationResultV1 struct {
+	SchemaVersion       string                      `json:"schema_version"`
+	GenerationSessionId UUID                        `json:"generation_session_id"`
+	SessionVersion      int64                       `json:"session_version"`
+	State               GenerationSessionState      `json:"state"`
+	Blueprint           Topic3ExecutionBlueprintV1  `json:"blueprint"`
+	Tasks               []Topic3AgentTaskSnapshotV1 `json:"tasks"`
+	Candidates          []CandidateV1               `json:"candidates,omitempty"`
+	FailedAgents        []SourceAgent               `json:"failed_agents,omitempty"`
+	CompletedAt         DateTime                    `json:"completed_at"`
+}
+
+type Topic3GenerationSessionV1 struct {
+	SchemaVersion           string                      `json:"schema_version"`
+	GenerationSessionId     UUID                        `json:"generation_session_id"`
+	SessionVersion          int64                       `json:"session_version"`
+	ParentSessionSnapshotId *UUID                       `json:"parent_session_snapshot_id,omitempty"`
+	LearnerRef              string                      `json:"learner_ref"`
+	CourseId                string                      `json:"course_id"`
+	State                   GenerationSessionState      `json:"state"`
+	BlueprintId             *UUID                       `json:"blueprint_id,omitempty"`
+	BlueprintVersion        *string                     `json:"blueprint_version,omitempty"`
+	RequestedResources      []ResourceType              `json:"requested_resources"`
+	Tasks                   []Topic3AgentTaskSnapshotV1 `json:"tasks,omitempty"`
+	CandidateIds            []UUID                      `json:"candidate_ids,omitempty"`
+	ContentSha256           string                      `json:"content_sha256"`
+	CreatedAt               DateTime                    `json:"created_at"`
 }
 
 type VerificationAcceptedPayloadV1 struct {

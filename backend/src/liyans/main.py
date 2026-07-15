@@ -27,6 +27,17 @@ from liyans.domains.topic2.path_planning import AdaptivePathPlanner
 from liyans.domains.topic2.postgres_repository import PostgresTopic2Repository
 from liyans.domains.topic2.profiling import SixDimensionProfileEngine
 from liyans.domains.topic2.service import Topic2Service
+from liyans.domains.topic3.agents import Topic3AgentRegistry
+from liyans.domains.topic3.blueprint import ImmutableBlueprintPlanner
+from liyans.domains.topic3.orchestrator import TOPIC3_WORKFLOW_TASK, Topic3Orchestrator
+from liyans.domains.topic3.outbox import (
+    DOMAIN_OUTBOX_EVENT_TYPES,
+    DurableOutboxSSEBridge,
+    Topic3WorkflowOutboxConsumer,
+)
+from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
+from liyans.domains.topic3.service import Topic3Service
+from liyans.domains.topic3.streaming import Topic3StreamCoordinator
 from liyans.infrastructure.database import (
     DatabaseHealthProbe,
     DatabaseSessionManager,
@@ -54,6 +65,7 @@ from liyans.infrastructure.streaming.postgres_notifications import (
 from liyans.infrastructure.streaming.postgres_replay import PostgresSSEReplayLog
 from liyans.infrastructure.streaming.sse import ReplayCursorCodec, SSEBroker
 from liyans.infrastructure.tasks.queue import AsyncTaskQueue
+from liyans.providers import build_topic3_provider_registry
 
 
 @asynccontextmanager
@@ -85,7 +97,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
 
         async def apply_provider_policy(snapshot: ConfigSnapshot) -> None:
-            app.state.provider_policy = ProviderPolicyRegistry.from_document(snapshot.document)
+            policy = ProviderPolicyRegistry.from_document(snapshot.document)
+            app.state.provider_policy = policy
+            topic3_registry = getattr(app.state, "topic3_provider_registry", None)
+            if topic3_registry is not None:
+                topic3_registry.update_policy(policy)
 
         async def audit_config_rejection(path: Path, exc: Exception) -> None:
             await audit.record(
@@ -175,12 +191,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 retry_max_seconds=settings.outbox_publisher_retry_max_seconds,
                 metrics=metrics,
             )
-            await publisher.start()
-            resources.push_async_callback(publisher.close)
             app.state.outbox_publisher = publisher
         task_queue = AsyncTaskQueue(worker_count=settings.task_worker_count)
-        await task_queue.start()
-        resources.push_async_callback(task_queue.close)
         app.state.task_queue = task_queue
         replay_log = PostgresSSEReplayLog(
             database,
@@ -208,6 +220,45 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             resources.push_async_callback(bridge.close)
             app.state.sse_notification_bridge = bridge
         app.state.sse_cursor_codec = ReplayCursorCodec(settings.sse_cursor_secret.encode("utf-8"))
+        topic3_provider_registry = build_topic3_provider_registry(
+            settings,
+            app.state.provider_policy,
+        )
+        resources.push_async_callback(topic3_provider_registry.close)
+        app.state.topic3_provider_registry = topic3_provider_registry
+        topic3_repository = PostgresTopic3Repository()
+        app.state.topic3_service = Topic3Service(
+            database,
+            topic3_repository,
+            app.state.outbox,
+            instance_id=settings.service_instance_id,
+        )
+        app.state.topic3_orchestrator = Topic3Orchestrator(
+            database,
+            topic1_repository,
+            app.state.topic2_orchestrator,
+            app.state.topic3_service,
+            ImmutableBlueprintPlanner(),
+            Topic3AgentRegistry(topic3_provider_registry),
+            Topic3StreamCoordinator(app.state.sse_broker),
+        )
+        task_queue.register(
+            TOPIC3_WORKFLOW_TASK,
+            app.state.topic3_orchestrator.handle_queue_task,
+            circuit_failure_threshold=3,
+        )
+        message_bus.register(
+            "topic3.workflow.created",
+            Topic3WorkflowOutboxConsumer(app.state.topic3_orchestrator, task_queue),
+        )
+        outbox_sse_bridge = DurableOutboxSSEBridge(app.state.sse_broker)
+        for event_type in DOMAIN_OUTBOX_EVENT_TYPES:
+            message_bus.register(event_type, outbox_sse_bridge)
+        await task_queue.start()
+        resources.push_async_callback(task_queue.close)
+        if app.state.outbox_publisher is not None:
+            await app.state.outbox_publisher.start()
+            resources.push_async_callback(app.state.outbox_publisher.close)
         yield
 
 

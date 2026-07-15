@@ -1,0 +1,111 @@
+{
+  "$defs": {
+    "CodeFileV1": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_./-]+$",
+          "title": "Path",
+          "type": "string"
+        },
+        "language": {
+          "enum": [
+            "python",
+            "matlab"
+          ],
+          "title": "Language",
+          "type": "string"
+        },
+        "content": {
+          "maxLength": 65536,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "entrypoint": {
+          "default": false,
+          "title": "Entrypoint",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "language",
+        "content"
+      ],
+      "title": "CodeFileV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.code-sandbox-content.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "objective": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Objective",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/CodeFileV1"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "parameters": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Parameters",
+      "type": "object"
+    },
+    "expected_observations": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Expected Observations",
+      "type": "array"
+    },
+    "result_analysis": {
+      "maxLength": 8192,
+      "minLength": 1,
+      "title": "Result Analysis",
+      "type": "string"
+    },
+    "safety_notes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Safety Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "title",
+    "objective",
+    "files",
+    "expected_observations",
+    "result_analysis"
+  ],
+  "title": "CodeSandboxContentV1",
+  "type": "object"
+}

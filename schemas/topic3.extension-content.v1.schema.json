@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "ExtensionResourceV1": {
+      "additionalProperties": false,
+      "properties": {
+        "resource_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "resource_kind": {
+          "enum": [
+            "ENGINEERING",
+            "PAPER",
+            "RESEARCH",
+            "INDUSTRY",
+            "COMPETITION"
+          ],
+          "title": "Resource Kind",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "relevance_to_kp_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Relevance To Kp Ids",
+          "type": "array"
+        },
+        "citation_text": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Citation Text",
+          "type": "string"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        }
+      },
+      "required": [
+        "resource_id",
+        "resource_kind",
+        "title",
+        "summary",
+        "relevance_to_kp_ids",
+        "citation_text"
+      ],
+      "title": "ExtensionResourceV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "topic3.extension-content.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "resources": {
+      "items": {
+        "$ref": "#/$defs/ExtensionResourceV1"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Resources",
+      "type": "array"
+    },
+    "recommended_sequence": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Recommended Sequence",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "title",
+    "resources",
+    "recommended_sequence"
+  ],
+  "title": "ExtensionContentV1",
+  "type": "object"
+}
