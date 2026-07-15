@@ -1,20 +1,21 @@
 # Topic 1 自动控制原理知识拓扑阶段验收报告
 
-## 1. 当前结论
+## 1. 最终结论
 
 | 属性 | 结果 |
 |---|---|
 | Phase 1.1 | `ACCEPTED`，底层冻结 |
 | Topic 1 本地功能与数据库验收 | 通过 |
-| Topic 1 当前状态 | `REMOTE_PENDING` |
-| Topic 2 | `LOCKED` |
+| Topic 1 当前状态 | `ACCEPTED` |
+| Topic 1 接受提交 | `7eb9b940ed10dbca09c62d2caed809245e75ae5b` |
+| Topic 2 | `UNLOCKED` |
 | 实现分支 | `codex/topic1-knowledge-topology` |
 | 基础提交 | `4af95302cd3e7321f2e8738e03581597d51f82c6` |
 | 远端必需状态 | `Release quality redline` |
 
 Topic 1 的契约、迁移、Repository、领域算法、REST API、Provider 边界、种子图谱、
-自动化测试和无跳过 Windows Release 门禁已完成本地验收。远端分支 CI、受保护主干合并
-及 main CI 尚需闭环，因此本报告暂不签发 Topic 2 解锁。
+自动化测试、无跳过 Windows Release 门禁、远端分支/PR/main 三次 CI 和服务端保护复核
+已经全部闭环。Topic 1 从本报告生效后冻结，Topic 2 正式解锁。
 
 ## 2. 实现资产验收
 
@@ -112,10 +113,33 @@ Topic 1 的契约、迁移、Repository、领域算法、REST API、Provider 边
 - 未实现或提前启动 Topic 2、Topic 3 Agent runtime、Topic 4 Verifier runtime 或前端业务层。
 - Provider 范围仍严格限制为讯飞星火、讯飞代码和 SeeDance，本阶段只预留星火文本解析协议。
 
-## 6. 剩余验收闸门
+## 6. 远端正式验收证据
 
-1. 提交并推送 `codex/topic1-knowledge-topology`。
-2. 远端分支与 PR 的 `Release quality redline` 全绿。
-3. 通过受保护 PR 合并至 `main`，禁止直接推送或 force-push。
-4. 验证 main 对应远端 CI 全绿并复核保护规则仍为 Active。
-5. 把 `acceptance-status.json` 更新为 `ACCEPTED`，冻结 Topic 1 并签发 Topic 2 解锁凭证。
+| 阶段 | Commit / PR | Run ID | Redline Job | 结果 |
+|---|---|---:|---:|---|
+| 功能分支 push | `691d4fa511b210c2cda5cd8294b81dd88615abd1` | `29421028846` | `87371628927` | success |
+| Pull request | `#10` | `29421252666` | `87372190927` | success |
+| main merge | `7eb9b940ed10dbca09c62d2caed809245e75ae5b` | `29421543279` | `87373314978` | success |
+
+仓库只有一个管理员/CODEOWNER，GitHub 禁止最后推送者自我批准。两个远端门禁全绿后，
+合并仅在受控窗口内临时移除 Classic 的 review 子规则；严格状态检查、管理员约束、PR
+路径、线性历史、禁止 force-push/删除、main Ruleset 和标签 Ruleset 全程保留。合并后
+`configure-repository-protection.ps1` 在 `finally` 中恢复完整 review 规则。
+
+恢复后 API 回读确认至少 1 个批准、CODEOWNER、dismiss stale、last-push approval、严格
+状态检查和管理员约束全部开启；直接 push、force-push、删除 main、删除受保护标签四类
+探针全部被 GitHub 拒绝，远端 main 保持上述接受提交不变。
+
+## 7. 冻结与解锁判定
+
+以下 Topic 1 资产从 `ACCEPTED` 起不可侵入式修改：
+
+- Alembic `20260715_0004` 及 9 张 Topic 1 表的租户/RLS/不可变约束；
+- 11 个四端契约及 `topic1.graph-changed.v1` 事件语义；
+- Repository、SERIALIZABLE 事务、幂等、审计、快照与 Outbox 原子顺序；
+- DAG、层级、权重、难度等级、稳定排序和快照摘要规则；
+- REST 路径、OIDC scopes、导入上限和 Spark-only Provider 边界。
+
+后续只允许兼容式扩展。Topic 2 可读取版本化快照、知识点难度、拓扑层级、易错点和黄金
+题库，禁止反向修改 Topic 1 数据语义或绕过 `snapshot_id + graph_version + content_sha256`
+证据绑定。
