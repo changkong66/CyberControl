@@ -51,6 +51,12 @@
 - `tools/validate_sbom_policy.py`
 - `tools/github/configure-repository-protection.ps1`
 - `tools/github/verify-remote-quality-gate.ps1`
+- `tools/github/set-gh-token.ps1`
+- `tools/validate_commit_messages.py`
+- `tools/windows/start-local.ps1`
+- `tools/windows/stop-local.ps1`
+- `docs/engineering/repository-governance.md`
+- `docs/engineering/windows-environment-reproduction.md`
 
 ## 6. 核心自动化测试
 

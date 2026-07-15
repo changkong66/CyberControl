@@ -159,6 +159,12 @@ try {
         "sync", "--frozen", "--all-packages", "--all-extras"
     ) -Description "uv frozen synchronization"
 
+    Write-Gate "Conventional Commit subject policy"
+    Invoke-Native -Executable $Uv -Arguments @(
+        "run", "--frozen", "python", "tools/validate_commit_messages.py",
+        "--head", "HEAD"
+    ) -Description "commit subject validation"
+
     Write-Gate "Ruff static and format redlines"
     Invoke-Native -Executable $Uv -Arguments @("run", "--frozen", "ruff", "check", ".") `
         -Description "Ruff static analysis"

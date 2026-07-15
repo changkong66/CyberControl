@@ -56,18 +56,20 @@ available to the workflow.
 ### 3.1 Python, contracts, and unit tests
 
 1. Validate `uv.lock` without mutation.
-2. Validate every workflow expression and job dependency with checksum-pinned
+2. Validate every pushed or pull-request commit subject against the repository
+   Conventional Commit policy using the full immutable Git history.
+3. Validate every workflow expression and job dependency with checksum-pinned
    Actionlint before any release gate can become the protected status.
-3. Recreate every workspace package and extra from the frozen lock.
-4. Run strict repository-wide Ruff lint and format checks with zero findings.
-5. Regenerate JSON Schema, TypeScript, and Go contracts from canonical Pydantic
+4. Recreate every workspace package and extra from the frozen lock.
+5. Run strict repository-wide Ruff lint and format checks with zero findings.
+6. Regenerate JSON Schema, TypeScript, and Go contracts from canonical Pydantic
    models. `gofmt` is part of deterministic generation.
-6. Validate the frozen provider and Responses Lite baseline.
-7. Reject any Git difference under generated contract paths.
-8. Run all non-PostgreSQL tests.
+7. Validate the frozen provider and Responses Lite baseline.
+8. Reject any Git difference under generated contract paths.
+9. Run all non-PostgreSQL tests.
 
-Redline: zero lint findings, zero formatting changes, zero generated drift, and a
-100% passing unit suite.
+Redline: zero commit-policy/lint findings, zero formatting changes, zero generated
+drift, and a 100% passing unit suite.
 
 ### 3.2 PostgreSQL 16 integration and migration gate
 

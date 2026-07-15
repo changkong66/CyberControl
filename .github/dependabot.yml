@@ -10,7 +10,7 @@ updates:
     open-pull-requests-limit: 5
     rebase-strategy: auto
     commit-message:
-      prefix: deps(python)
+      prefix: chore(deps-python)
     groups:
       python-minor-patch:
         patterns:
@@ -29,7 +29,7 @@ updates:
     open-pull-requests-limit: 5
     rebase-strategy: auto
     commit-message:
-      prefix: deps(frontend)
+      prefix: chore(deps-frontend)
     groups:
       frontend-minor-patch:
         patterns:
@@ -48,7 +48,7 @@ updates:
     open-pull-requests-limit: 3
     rebase-strategy: auto
     commit-message:
-      prefix: deps(go)
+      prefix: chore(deps-go)
 
   - package-ecosystem: github-actions
     directory: /
@@ -60,7 +60,7 @@ updates:
     open-pull-requests-limit: 5
     rebase-strategy: auto
     commit-message:
-      prefix: deps(ci)
+      prefix: chore(deps-ci)
     groups:
       actions-minor-patch:
         patterns:
@@ -79,4 +79,4 @@ updates:
     open-pull-requests-limit: 3
     rebase-strategy: auto
     commit-message:
-      prefix: deps(container)
+      prefix: chore(deps-container)

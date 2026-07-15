@@ -1,37 +1,103 @@
-# Liyan
+# 立言 CyberControl
 
-Liyan is an automation-course personalized learning platform built with a
-Vue 3 frontend and a Python 3.11/FastAPI backend. Topic 3 shared Envelope
-contracts and the executable engineering foundation are now implemented.
+面向《自动控制原理》等自动化专业核心课程的个性化教学多智能体平台。系统使用
+Python 3.11、全异步 FastAPI、SQLAlchemy Async、PostgreSQL RLS、Vue 3、Tailwind
+CSS 与持久化 SSE，业务 AI Provider 严格限制为讯飞星火文本、讯飞代码和 SeeDance。
 
-## Repository layout
+仓库地址：<https://github.com/changkong66/CyberControl>
+
+## 当前工程边界
+
+- Phase 1.1 提供多租户可信身份、异步事务、Outbox、全局幂等、审计哈希链、Artifact
+  持久化和 SSE 回放恢复等生产底座。
+- Topic 1/2 的设计契约保持冻结；业务实现只能在 Phase 1.1 的远端验收状态为
+  `ACCEPTED` 后按顺序解锁。
+- Topic 3 的 Envelope/Block/Candidate 语义、五大 Agent 正向生成协议和 SSE 收口协议
+  不允许被下游实现反向修改。
+- Topic 4 的 Verifier 与 C1-C12 仅能扩展反向核验和修正链路。
+
+权威阶段状态见
+[`docs/phase-1.1/acceptance-status.json`](docs/phase-1.1/acceptance-status.json)。
+
+## 目录结构
 
 ```text
-backend/                    FastAPI control plane and domain modules
-frontend/                   Vue 3 application
-packages/contracts-python/  Canonical Python/Pydantic wire contracts
-packages/contracts-ts/      Generated TypeScript contract package
-config/                     Versioned non-secret policy configuration
-docs/                       Architecture baseline, ADRs, and implementation roadmap
-infra/                      Local and production deployment assets
-tests/                      Cross-system contract, security, load, and E2E tests
-tools/                      Contract export and repository automation
+backend/                    FastAPI 服务、领域层和基础设施适配器
+frontend/                   Vue 3 前端工程
+packages/contracts-python/  Pydantic 契约唯一事实源
+packages/contracts-ts/      自动生成的 TypeScript 契约
+packages/contracts-go/      自动生成的 Go 契约
+schemas/                    自动生成的 JSON Schema
+config/                     非敏感 Provider 与运行策略
+docs/                       ADR、专题冻结设计、工程和验收文档
+infra/                      Docker、PostgreSQL 初始化与部署资产
+tools/                      契约、质量门禁、GitHub 和 Windows 自动化脚本
 ```
 
-## Frozen engineering decisions
+## Windows 一键启动
 
-- Python 3.11, FastAPI, and fully asynchronous I/O.
-- Vue 3 Composition API, Tailwind CSS, and SSE.
-- A modular control-plane backend with isolated retrieval and sandbox workers.
-- Canonical contracts are authored in Pydantic and exported to JSON Schema and
-  TypeScript. Hand-maintained duplicate wire types are prohibited.
-- Business AI providers are restricted to the approved XFYun/SeeDance aliases
-  in `config/providers.toml`.
-- No additional external embedding provider is approved. RAG starts with local
-  BM25, formula signatures, knowledge-graph expansion, and deterministic
-  feature-hash vectors in Faiss.
+前置条件：Docker Desktop 已启动，默认 `5432` 和 `8000` 端口空闲。
 
-See `docs/roadmap/implementation-sequence.md` for the implementation order.
-See `docs/topic3/envelope-and-infrastructure.md` for the Topic 3 freeze.
-See `docs/operations/windows-toolchain-validation.md` for Windows Go/Ruff setup
-and the current toolchain acceptance record.
+```powershell
+& .\tools\windows\start-local.ps1
+```
+
+端口冲突时显式指定：
+
+```powershell
+& .\tools\windows\start-local.ps1 -PostgresPort 55433 -ApiPort 18000
+```
+
+停止服务并保留数据卷：
+
+```powershell
+& .\tools\windows\stop-local.ps1
+```
+
+停止服务并删除本地 Compose 数据卷：
+
+```powershell
+& .\tools\windows\stop-local.ps1 -RemoveVolumes
+```
+
+开发 Compose 不内置 OIDC Provider，因此 `/health/live` 应返回 `200`，而
+`/health/ready` 在身份提供方未配置时按 fail-closed 规则返回 `503`。
+
+## 可复现开发环境
+
+```powershell
+& .\tools\windows\sync-python-environment.ps1
+pnpm --dir frontend install --frozen-lockfile
+```
+
+完整 Windows 环境、PostgreSQL 测试角色和质量门禁操作见
+[`docs/engineering/windows-environment-reproduction.md`](docs/engineering/windows-environment-reproduction.md)。
+
+## 质量红线
+
+```powershell
+& .\tools\windows\run-quality-gates.ps1
+```
+
+无参数运行才是本地发布等价验收。任何 `-Skip*` 参数仅用于故障诊断，不能作为验收
+证据。远端合并必须通过 GitHub Actions 的 **Release quality redline**，覆盖：
+
+- Conventional Commit 校验、Actionlint、Ruff 和冻结契约漂移；
+- PostgreSQL 迁移往返、RLS/事务/恢复集成测试和覆盖率红线；
+- Go fmt/vet/race/test/build 与 Vue/TypeScript/Vite；
+- Python/Node 审计、CycloneDX SBOM、许可证策略；
+- 非 root 最小容器、Trivy 和完整 Git 历史 Gitleaks。
+
+## 分支与贡献
+
+`main` 是受保护发布基线。功能开发使用 `codex/*`、`feature/*`、`fix/*`、
+`security/*` 或 `release/*` 分支，通过 PR 合并。提交和 PR 标题必须符合 Conventional
+Commits。完整策略见 [`CONTRIBUTING.md`](CONTRIBUTING.md) 和
+[`docs/engineering/repository-governance.md`](docs/engineering/repository-governance.md)。
+
+## 关键冻结文档
+
+- [`docs/roadmap/implementation-sequence.md`](docs/roadmap/implementation-sequence.md)
+- [`docs/topic3/envelope-and-infrastructure.md`](docs/topic3/envelope-and-infrastructure.md)
+- [`docs/engineering/ci-quality-gates.md`](docs/engineering/ci-quality-gates.md)
+- [`docs/phase-1.1/final-acceptance-report.md`](docs/phase-1.1/final-acceptance-report.md)

@@ -32,6 +32,7 @@ jobs:
       - name: Check out immutable source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Install Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -52,6 +53,14 @@ jobs:
         run: |
           uv lock --check
           uv sync --frozen --all-packages --all-extras
+      - name: Enforce Conventional Commit subjects
+        env:
+          COMMIT_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          COMMIT_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: >-
+          uv run --frozen python tools/validate_commit_messages.py
+          --base "$COMMIT_BASE"
+          --head "$COMMIT_HEAD"
       - name: Validate GitHub Actions syntax and expressions
         env:
           ACTIONLINT_ARCHIVE_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8

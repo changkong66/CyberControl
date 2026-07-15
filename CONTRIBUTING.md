@@ -25,6 +25,10 @@ Use Conventional Commits:
 Allowed types are `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`,
 `ci`, `chore`, `security`, and `revert`. Every commit must be independently
 buildable or explicitly marked as a mechanical/generated artifact update.
+The complete subject must not exceed 100 characters. `WIP`, `fixup!`, and
+`squash!` commits are rejected by the remote quality gate. Pull request titles
+must follow the same format because protected `main` uses squash or rebase
+history only.
 
 ## Versioning
 
@@ -42,3 +46,7 @@ The protected branch requires the aggregated **Release quality redline** status
 defined in `.github/workflows/quality-gates.yml`. Windows contributors can reproduce
 the release-equivalent suite with `tools/windows/run-quality-gates.ps1`; runs using
 any skip switch are diagnostic only.
+
+Repository ownership is enforced by `.github/CODEOWNERS`. Changes to contracts,
+infrastructure, provider policy, migrations, ADRs, or security boundaries require
+the configured Code Owner review in addition to the normal approval count.
