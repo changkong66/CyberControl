@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import gzip
 import hashlib
+import json
 import math
 import re
 import threading
@@ -68,6 +70,39 @@ class HybridSearchResult:
     degraded_reason_codes: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class SerializedHybridShard:
+    ordinal: int
+    first_position: int
+    vector_count: int
+    faiss_payload: bytes
+    faiss_sha256: str
+    bm25_payload: bytes
+    bm25_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class HybridShardPayload:
+    ordinal: int
+    first_position: int
+    vector_count: int
+    faiss_payload: bytes | None
+    faiss_sha256: str
+    bm25_payload: bytes | None
+    bm25_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class IndexRestoreReport:
+    rebuilt_faiss_shards: tuple[int, ...]
+    rebuilt_bm25_shards: tuple[int, ...]
+    degraded_reason_codes: tuple[str, ...]
+
+    @property
+    def recovery_required(self) -> bool:
+        return bool(self.rebuilt_faiss_shards or self.rebuilt_bm25_shards)
+
+
 class DeterministicTokenizer:
     def tokenize(self, value: str) -> tuple[str, ...]:
         normalized = unicodedata.normalize("NFKC", value).lower()
@@ -86,13 +121,25 @@ class BM25Index:
         *,
         k1: float = 1.5,
         b: float = 0.75,
+        max_document_frequency_ratio: float = 0.2,
+        max_query_terms: int = 16,
     ) -> None:
         if not documents:
             raise ValueError("BM25 requires at least one document")
-        if k1 <= 0 or not 0 <= b <= 1:
+        if not math.isfinite(k1) or not math.isfinite(b) or k1 <= 0 or not 0 <= b <= 1:
             raise ValueError("invalid BM25 parameters")
+        if (
+            not math.isfinite(max_document_frequency_ratio)
+            or not 0 < max_document_frequency_ratio <= 1
+        ):
+            raise ValueError("invalid BM25 document-frequency ratio")
+        if not 1 <= max_query_terms <= 128:
+            raise ValueError("invalid BM25 query-term limit")
         self._k1 = k1
         self._b = b
+        self._max_document_frequency_ratio = max_document_frequency_ratio
+        self._max_query_terms = max_query_terms
+        self._document_count = len(documents)
         self._document_lengths = np.asarray(
             [len(document) for document in documents], dtype=np.float32
         )
@@ -112,11 +159,23 @@ class BM25Index:
         if top_k < 1:
             return []
         scores: dict[int, float] = defaultdict(float)
-        for token, query_frequency in Counter(query_tokens).items():
+        candidates = [
+            (token, query_frequency, self._postings[token])
+            for token, query_frequency in Counter(query_tokens).items()
+            if token in self._postings
+        ]
+        candidates.sort(key=lambda item: (len(item[2]), item[0]))
+        selective = [
+            item
+            for item in candidates
+            if len(item[2]) / self._document_count <= self._max_document_frequency_ratio
+        ]
+        selected = (selective or candidates[:1])[: self._max_query_terms]
+        for token, query_frequency, postings in selected:
             idf = self._idf.get(token)
             if idf is None:
                 continue
-            for document_index, frequency in self._postings[token]:
+            for document_index, frequency in postings:
                 length = float(self._document_lengths[document_index])
                 denominator = frequency + self._k1 * (
                     1.0 - self._b + self._b * length / self._average_length
@@ -124,6 +183,98 @@ class BM25Index:
                 score = idf * (frequency * (self._k1 + 1.0)) / denominator
                 scores[document_index] += score * (1.0 + math.log(query_frequency))
         return sorted(scores.items(), key=lambda item: (-item[1], item[0]))[:top_k]
+
+    def serialize(self) -> tuple[bytes, str]:
+        document = {
+            "schema_version": "topic4.bm25-shard.v1",
+            "k1": self._k1,
+            "b": self._b,
+            "max_document_frequency_ratio": self._max_document_frequency_ratio,
+            "max_query_terms": self._max_query_terms,
+            "document_lengths": [int(value) for value in self._document_lengths],
+            "postings": {
+                token: [[document_index, frequency] for document_index, frequency in postings]
+                for token, postings in sorted(self._postings.items())
+            },
+        }
+        raw = json.dumps(
+            document,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        payload = gzip.compress(raw, compresslevel=6, mtime=0)
+        return payload, hashlib.sha256(payload).hexdigest()
+
+    @classmethod
+    def restore(cls, payload: bytes, expected_sha256: str) -> BM25Index:
+        if hashlib.sha256(payload).hexdigest() != expected_sha256:
+            raise RetrievalIndexError("BM25 shard digest mismatch")
+        try:
+            document = json.loads(gzip.decompress(payload))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RetrievalIndexError("BM25 shard payload is invalid") from exc
+        if (
+            not isinstance(document, dict)
+            or document.get("schema_version") != "topic4.bm25-shard.v1"
+        ):
+            raise RetrievalIndexError("BM25 shard schema is unsupported")
+        lengths = document.get("document_lengths")
+        raw_postings = document.get("postings")
+        if not isinstance(lengths, list) or not lengths or not isinstance(raw_postings, dict):
+            raise RetrievalIndexError("BM25 shard structure is invalid")
+        if any(not isinstance(value, int) or value < 0 for value in lengths):
+            raise RetrievalIndexError("BM25 shard document lengths are invalid")
+        postings: dict[str, tuple[tuple[int, int], ...]] = {}
+        for token, raw_items in raw_postings.items():
+            if not isinstance(token, str) or not isinstance(raw_items, list):
+                raise RetrievalIndexError("BM25 shard postings are invalid")
+            items: list[tuple[int, int]] = []
+            for raw_item in raw_items:
+                if (
+                    not isinstance(raw_item, list)
+                    or len(raw_item) != 2
+                    or not all(isinstance(value, int) for value in raw_item)
+                ):
+                    raise RetrievalIndexError("BM25 shard posting entry is invalid")
+                document_index, frequency = raw_item
+                if not 0 <= document_index < len(lengths) or frequency < 1:
+                    raise RetrievalIndexError("BM25 shard posting value is outside its range")
+                if items and document_index <= items[-1][0]:
+                    raise RetrievalIndexError("BM25 shard postings are not strictly ordered")
+                items.append((document_index, frequency))
+            postings[token] = tuple(items)
+        instance = cls.__new__(cls)
+        try:
+            instance._k1 = float(document.get("k1", 1.5))
+            instance._b = float(document.get("b", 0.75))
+            instance._max_document_frequency_ratio = float(
+                document.get("max_document_frequency_ratio", 0.2)
+            )
+            instance._max_query_terms = int(document.get("max_query_terms", 16))
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise RetrievalIndexError("BM25 shard parameters are invalid") from exc
+        if (
+            not math.isfinite(instance._k1)
+            or not math.isfinite(instance._b)
+            or not math.isfinite(instance._max_document_frequency_ratio)
+            or instance._k1 <= 0
+            or not 0 <= instance._b <= 1
+            or not 0 < instance._max_document_frequency_ratio <= 1
+            or not 1 <= instance._max_query_terms <= 128
+        ):
+            raise RetrievalIndexError("BM25 shard parameters are invalid")
+        instance._document_lengths = np.asarray(lengths, dtype=np.float32)
+        instance._average_length = float(max(1.0, instance._document_lengths.mean()))
+        instance._postings = postings
+        count = len(lengths)
+        instance._document_count = count
+        instance._idf = {
+            token: math.log(1.0 + (count - len(items) + 0.5) / (len(items) + 0.5))
+            for token, items in postings.items()
+        }
+        return instance
 
 
 class HashedLexicalVectorizer:
@@ -200,6 +351,8 @@ class FaissIndexShard:
             raise RetrievalIndexError("Faiss shard dimension does not match ADR-0005")
         if index.ntotal != len(positions):
             raise RetrievalIndexError("Faiss shard position count is inconsistent")
+        if index.metric_type != faiss.METRIC_INNER_PRODUCT:
+            raise RetrievalIndexError("Faiss shard must use inner-product similarity")
         self.index = index
         self.positions = positions.astype(np.int64, copy=False)
 
@@ -207,7 +360,20 @@ class FaissIndexShard:
     def build(cls, vectors: np.ndarray, positions: np.ndarray) -> FaissIndexShard:
         if vectors.ndim != 2 or vectors.shape[1] != 2048:
             raise ValueError("Faiss vectors must have shape (n, 2048)")
-        index = faiss.IndexFlatIP(2048)
+        if len(vectors) != len(positions):
+            raise ValueError("Faiss vectors and positions must have the same length")
+        if len(vectors) >= 2048:
+            index = faiss.IndexHNSWSQ(
+                2048,
+                faiss.ScalarQuantizer.QT_8bit,
+                16,
+                faiss.METRIC_INNER_PRODUCT,
+            )
+            index.hnsw.efConstruction = 40
+            index.hnsw.efSearch = 64
+            index.train(np.ascontiguousarray(vectors, dtype=np.float32))
+        else:
+            index = faiss.IndexFlatIP(2048)
         if len(vectors):
             index.add(np.ascontiguousarray(vectors, dtype=np.float32))
         return cls(index, positions)
@@ -232,8 +398,24 @@ class FaissIndexShard:
             index = faiss.deserialize_index(np.frombuffer(payload, dtype=np.uint8))
             restored = cls(index, positions)
             return restored, False
-        except (RuntimeError, ValueError, RetrievalIndexError):
+        except (AssertionError, RuntimeError, ValueError, RetrievalIndexError):
             return cls.build(vectors, positions), True
+
+    @classmethod
+    def restore(
+        cls,
+        payload: bytes,
+        expected_sha256: str,
+        *,
+        positions: np.ndarray,
+    ) -> FaissIndexShard:
+        if hashlib.sha256(payload).hexdigest() != expected_sha256:
+            raise RetrievalIndexError("Faiss shard digest mismatch")
+        try:
+            index = faiss.deserialize_index(np.frombuffer(payload, dtype=np.uint8))
+        except (AssertionError, RuntimeError, ValueError) as exc:
+            raise RetrievalIndexError("Faiss shard payload is invalid") from exc
+        return cls(index, positions)
 
     def search(self, query: np.ndarray, *, top_k: int) -> list[tuple[int, float]]:
         if top_k < 1 or self.index.ntotal == 0:
@@ -263,53 +445,143 @@ class LocalHybridIndex:
         graph_expander: TopicGraphExpander,
         shard_size: int = 25_000,
     ) -> None:
-        if not entries:
-            raise ValueError("hybrid index requires at least one corpus entry")
-        if not 1 <= shard_size <= 1_000_000:
-            raise ValueError("invalid Faiss shard size")
-        if any(entry.chunk.tenant_id != tenant_id for entry in entries):
-            raise ValueError("cross-tenant chunk detected during index build")
-        if any(
-            entry.chunk.knowledge_base_version_id != knowledge_base_version_id for entry in entries
-        ):
-            raise ValueError("chunk belongs to a different knowledge-base version")
-        ordered = tuple(
-            sorted(
-                entries,
-                key=lambda entry: (entry.chunk.vector_ordinal, str(entry.chunk.knowledge_chunk_id)),
-            )
+        ordered = self._validate_entries(
+            tenant_id,
+            knowledge_base_version_id,
+            entries,
+            shard_size,
         )
-        ordinals = [entry.chunk.vector_ordinal for entry in ordered]
-        if len(ordinals) != len(set(ordinals)):
-            raise ValueError("knowledge chunk vector ordinals must be unique")
+        self._initialize_common(
+            tenant_id=tenant_id,
+            course_id=course_id,
+            knowledge_base_version_id=knowledge_base_version_id,
+            entries=ordered,
+            tokenizer=tokenizer,
+            vectorizer=vectorizer,
+            graph_expander=graph_expander,
+            shard_size=shard_size,
+        )
+        bm25_shards: list[tuple[BM25Index, np.ndarray]] = []
+        faiss_shards: list[FaissIndexShard | None] = []
+        degraded: list[str] = []
+        for start in range(0, len(ordered), shard_size):
+            stop = min(start + shard_size, len(ordered))
+            shard_entries = ordered[start:stop]
+            positions = np.arange(start, stop, dtype=np.int64)
+            bm25_shards.append(
+                (
+                    BM25Index(
+                        tuple(
+                            tokenizer.tokenize(entry.chunk.normalized_text)
+                            for entry in shard_entries
+                        )
+                    ),
+                    positions,
+                )
+            )
+            try:
+                vectors = vectorizer.matrix(
+                    [entry.chunk.normalized_text for entry in shard_entries]
+                )
+                faiss_shards.append(FaissIndexShard.build(vectors, positions))
+            except (AssertionError, MemoryError, RuntimeError, ValueError):
+                faiss_shards.append(None)
+                degraded.append(f"FAISS_BUILD_DEGRADED_SHARD_{len(faiss_shards) - 1}")
+        self._bm25_shards = tuple(bm25_shards)
+        self._faiss_shards = tuple(faiss_shards)
+        self._base_degraded_reason_codes = tuple(degraded)
 
-        self.tenant_id = tenant_id
-        self.course_id = course_id
-        self.knowledge_base_version_id = knowledge_base_version_id
-        self.entries = ordered
-        self._tokenizer = tokenizer
-        self._vectorizer = vectorizer
-        self._graph_expander = graph_expander
-        self._bm25 = BM25Index(
-            tuple(tokenizer.tokenize(entry.chunk.normalized_text) for entry in ordered)
+    @classmethod
+    def restore(
+        cls,
+        *,
+        tenant_id: str,
+        course_id: str,
+        knowledge_base_version_id: UUID,
+        entries: tuple[CorpusEntry, ...],
+        tokenizer: DeterministicTokenizer,
+        vectorizer: HashedLexicalVectorizer,
+        graph_expander: TopicGraphExpander,
+        payloads: tuple[HybridShardPayload, ...],
+        shard_size: int = 25_000,
+    ) -> tuple[LocalHybridIndex, IndexRestoreReport]:
+        ordered = cls._validate_entries(
+            tenant_id,
+            knowledge_base_version_id,
+            entries,
+            shard_size,
         )
-        self._vectors = vectorizer.matrix([entry.chunk.normalized_text for entry in ordered])
-        self._faiss_shards = tuple(
-            FaissIndexShard.build(
-                self._vectors[start : start + shard_size],
-                np.arange(start, min(start + shard_size, len(ordered)), dtype=np.int64),
+        if not payloads:
+            raise RetrievalIndexError("index restore requires at least one shard payload")
+        instance = cls.__new__(cls)
+        instance._initialize_common(
+            tenant_id=tenant_id,
+            course_id=course_id,
+            knowledge_base_version_id=knowledge_base_version_id,
+            entries=ordered,
+            tokenizer=tokenizer,
+            vectorizer=vectorizer,
+            graph_expander=graph_expander,
+            shard_size=shard_size,
+        )
+        bm25_shards: list[tuple[BM25Index, np.ndarray]] = []
+        faiss_shards: list[FaissIndexShard | None] = []
+        rebuilt_bm25: list[int] = []
+        rebuilt_faiss: list[int] = []
+        degraded: list[str] = []
+        expected_start = 0
+        for expected_ordinal, payload in enumerate(sorted(payloads, key=lambda item: item.ordinal)):
+            if payload.ordinal != expected_ordinal or payload.first_position != expected_start:
+                raise RetrievalIndexError("index shard manifest positions are not contiguous")
+            stop = expected_start + payload.vector_count
+            if payload.vector_count < 1 or stop > len(ordered):
+                raise RetrievalIndexError("index shard manifest vector count is invalid")
+            shard_entries = ordered[expected_start:stop]
+            positions = np.arange(expected_start, stop, dtype=np.int64)
+            documents = tuple(
+                tokenizer.tokenize(entry.chunk.normalized_text) for entry in shard_entries
             )
-            for start in range(0, len(ordered), shard_size)
+            try:
+                if payload.bm25_payload is None:
+                    raise RetrievalIndexError("BM25 shard artifact is unavailable")
+                bm25 = BM25Index.restore(payload.bm25_payload, payload.bm25_sha256)
+                if len(bm25._document_lengths) != payload.vector_count:
+                    raise RetrievalIndexError("BM25 shard document count is inconsistent")
+            except RetrievalIndexError:
+                bm25 = BM25Index(documents)
+                rebuilt_bm25.append(payload.ordinal)
+            bm25_shards.append((bm25, positions))
+
+            try:
+                if payload.faiss_payload is None:
+                    raise RetrievalIndexError("Faiss shard artifact is unavailable")
+                faiss_shard = FaissIndexShard.restore(
+                    payload.faiss_payload,
+                    payload.faiss_sha256,
+                    positions=positions,
+                )
+            except RetrievalIndexError:
+                try:
+                    vectors = vectorizer.matrix(
+                        [entry.chunk.normalized_text for entry in shard_entries]
+                    )
+                    faiss_shard = FaissIndexShard.build(vectors, positions)
+                    rebuilt_faiss.append(payload.ordinal)
+                except (AssertionError, MemoryError, RuntimeError, ValueError):
+                    faiss_shard = None
+                    degraded.append(f"FAISS_MEMORY_DEGRADED_SHARD_{payload.ordinal}")
+            faiss_shards.append(faiss_shard)
+            expected_start = stop
+        if expected_start != len(ordered):
+            raise RetrievalIndexError("index shard manifest does not cover the corpus")
+        instance._bm25_shards = tuple(bm25_shards)
+        instance._faiss_shards = tuple(faiss_shards)
+        instance._base_degraded_reason_codes = tuple(degraded)
+        return instance, IndexRestoreReport(
+            rebuilt_faiss_shards=tuple(rebuilt_faiss),
+            rebuilt_bm25_shards=tuple(rebuilt_bm25),
+            degraded_reason_codes=tuple(degraded),
         )
-        graph_postings: dict[str, set[int]] = defaultdict(set)
-        formula_postings: dict[UUID, set[int]] = defaultdict(set)
-        for position, entry in enumerate(ordered):
-            for knowledge_point_id in entry.chunk.topic1_knowledge_point_ids:
-                graph_postings[knowledge_point_id].add(position)
-            for formula_signature_id in entry.chunk.formula_signature_ids:
-                formula_postings[formula_signature_id].add(position)
-        self._graph_postings = {key: frozenset(value) for key, value in graph_postings.items()}
-        self._formula_postings = {key: frozenset(value) for key, value in formula_postings.items()}
 
     def search(self, plan: QueryPlanV1) -> HybridSearchResult:
         if plan.tenant_id != self.tenant_id:
@@ -322,10 +594,20 @@ class LocalHybridIndex:
         query_tokens = self._tokenizer.tokenize(query_text)
 
         step = perf_counter()
-        bm25 = self._bm25.search(query_tokens, top_k=plan.top_k_bm25)
+        bm25 = _top_results(
+            (
+                (int(positions[local_position]), score)
+                for index, positions in self._bm25_shards
+                for local_position, score in index.search(
+                    query_tokens,
+                    top_k=plan.top_k_bm25,
+                )
+            ),
+            plan.top_k_bm25,
+        )
         bm25_ms = _elapsed_ms(step)
 
-        degraded: list[str] = []
+        degraded: list[str] = list(self._base_degraded_reason_codes)
         step = perf_counter()
         try:
             query_vector = self._vectorizer.vectorize(query_text)
@@ -333,11 +615,14 @@ class LocalHybridIndex:
                 (
                     result
                     for shard in self._faiss_shards
+                    if shard is not None
                     for result in shard.search(query_vector, top_k=plan.top_k_vector)
                 ),
                 plan.top_k_vector,
             )
-        except (RuntimeError, RetrievalIndexError):
+            if not vector_results and any(shard is None for shard in self._faiss_shards):
+                degraded.append("FAISS_UNAVAILABLE")
+        except (AssertionError, RuntimeError, RetrievalIndexError, ValueError):
             vector_results = []
             degraded.append("FAISS_SEARCH_FAILED")
         vector_ms = _elapsed_ms(step)
@@ -364,11 +649,95 @@ class LocalHybridIndex:
                 fusion_ms=fusion_ms,
                 total_ms=total_ms,
             ),
-            degraded_reason_codes=tuple(degraded),
+            degraded_reason_codes=tuple(dict.fromkeys(degraded)),
         )
 
     def serialized_faiss_shards(self) -> tuple[tuple[bytes, str], ...]:
-        return tuple(shard.serialize() for shard in self._faiss_shards)
+        if any(shard is None for shard in self._faiss_shards):
+            raise RetrievalIndexError("degraded Faiss shards cannot be persisted as ready")
+        return tuple(shard.serialize() for shard in self._faiss_shards if shard is not None)
+
+    def serialized_shards(self) -> tuple[SerializedHybridShard, ...]:
+        serialized: list[SerializedHybridShard] = []
+        for ordinal, ((bm25, positions), faiss_shard) in enumerate(
+            zip(self._bm25_shards, self._faiss_shards, strict=True)
+        ):
+            if faiss_shard is None:
+                raise RetrievalIndexError("degraded Faiss shards cannot be persisted as ready")
+            faiss_payload, faiss_digest = faiss_shard.serialize()
+            bm25_payload, bm25_digest = bm25.serialize()
+            serialized.append(
+                SerializedHybridShard(
+                    ordinal=ordinal,
+                    first_position=int(positions[0]),
+                    vector_count=len(positions),
+                    faiss_payload=faiss_payload,
+                    faiss_sha256=faiss_digest,
+                    bm25_payload=bm25_payload,
+                    bm25_sha256=bm25_digest,
+                )
+            )
+        return tuple(serialized)
+
+    @staticmethod
+    def _validate_entries(
+        tenant_id: str,
+        knowledge_base_version_id: UUID,
+        entries: tuple[CorpusEntry, ...],
+        shard_size: int,
+    ) -> tuple[CorpusEntry, ...]:
+        if not entries:
+            raise ValueError("hybrid index requires at least one corpus entry")
+        if not 1 <= shard_size <= 1_000_000:
+            raise ValueError("invalid Faiss shard size")
+        if any(entry.chunk.tenant_id != tenant_id for entry in entries):
+            raise ValueError("cross-tenant chunk detected during index build")
+        if any(
+            entry.chunk.knowledge_base_version_id != knowledge_base_version_id for entry in entries
+        ):
+            raise ValueError("chunk belongs to a different knowledge-base version")
+        ordered = tuple(
+            sorted(
+                entries,
+                key=lambda entry: (entry.chunk.vector_ordinal, str(entry.chunk.knowledge_chunk_id)),
+            )
+        )
+        ordinals = [entry.chunk.vector_ordinal for entry in ordered]
+        if len(ordinals) != len(set(ordinals)):
+            raise ValueError("knowledge chunk vector ordinals must be unique")
+        if ordinals != list(range(len(ordered))):
+            raise ValueError("knowledge chunk vector ordinals must be contiguous from zero")
+        return ordered
+
+    def _initialize_common(
+        self,
+        *,
+        tenant_id: str,
+        course_id: str,
+        knowledge_base_version_id: UUID,
+        entries: tuple[CorpusEntry, ...],
+        tokenizer: DeterministicTokenizer,
+        vectorizer: HashedLexicalVectorizer,
+        graph_expander: TopicGraphExpander,
+        shard_size: int,
+    ) -> None:
+        self.tenant_id = tenant_id
+        self.course_id = course_id
+        self.knowledge_base_version_id = knowledge_base_version_id
+        self.entries = entries
+        self.shard_size = shard_size
+        self._tokenizer = tokenizer
+        self._vectorizer = vectorizer
+        self._graph_expander = graph_expander
+        graph_postings: dict[str, set[int]] = defaultdict(set)
+        formula_postings: dict[UUID, set[int]] = defaultdict(set)
+        for position, entry in enumerate(entries):
+            for knowledge_point_id in entry.chunk.topic1_knowledge_point_ids:
+                graph_postings[knowledge_point_id].add(position)
+            for formula_signature_id in entry.chunk.formula_signature_ids:
+                formula_postings[formula_signature_id].add(position)
+        self._graph_postings = {key: frozenset(value) for key, value in graph_postings.items()}
+        self._formula_postings = {key: frozenset(value) for key, value in formula_postings.items()}
 
     def _graph_results(self, plan: QueryPlanV1) -> list[tuple[int, float]]:
         if not plan.graph_seed_knowledge_point_ids or plan.top_k_graph == 0:

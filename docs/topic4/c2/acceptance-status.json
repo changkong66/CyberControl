@@ -1,0 +1,51 @@
+{
+  "schema_version": "topic4.c2.acceptance-status.v1",
+  "topic": "Topic4",
+  "module": "C2",
+  "status": "CHECKPOINT_READY",
+  "overall_topic4_status": "IN_PROGRESS",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "scope": "local-first authoritative hybrid RAG",
+  "frozen_dependencies": [
+    "Phase1.1",
+    "Topic1",
+    "Topic2",
+    "Topic3",
+    "Topic4 C1"
+  ],
+  "quality": {
+    "full_regression_passed": 269,
+    "full_regression_skipped": 2,
+    "full_coverage_percent": 90.32,
+    "database_restart_probe_passed": 1,
+    "topic4_c2_recovery_cases_passed": 6,
+    "trivy_findings": 0,
+    "gitleaks_findings": 0,
+    "p95_retrieval_ms_100k": 11.933,
+    "p95_limit_ms": 200.0,
+    "peak_working_set_mb_100k": 1298.797
+  },
+  "implemented_assets": [
+    "deterministic source ingestion and bounded chunking",
+    "BM25 shard persistence and high-frequency-term control",
+    "2048-dimensional signed lexical hash vectorization",
+    "Faiss sharded index persistence and integrity restore",
+    "Topic1 graph and formula-signature retrieval channels",
+    "tenant-scoped PostgreSQL repositories",
+    "SERIALIZABLE idempotent lifecycle and retrieval transactions",
+    "append-only evidence and audit/Outbox integration",
+    "activation CAS and concurrent self-healing",
+    "100k-scale deterministic performance benchmark"
+  ],
+  "not_unlocked": [
+    "C3-C7",
+    "C8",
+    "C9-C11",
+    "C12",
+    "Topic4 API and worker wiring",
+    "frontend"
+  ],
+  "next_gate": "C3-C7 vertical professional verification",
+  "generated_at": "2026-07-16T17:00:00+08:00"
+}

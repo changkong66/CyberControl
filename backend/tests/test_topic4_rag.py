@@ -16,6 +16,7 @@ from liyans.domains.knowledge.retrieval import (
     FaissIndexShard,
     HashedLexicalVectorizer,
     HotReloadableRAGIndex,
+    HybridShardPayload,
     LocalHybridIndex,
     RetrievalIndexError,
     TopicGraphExpander,
@@ -220,6 +221,38 @@ def test_faiss_corruption_rebuilds_without_external_access() -> None:
     )
     assert healed
     assert rebuilt.index.ntotal == 2
+
+
+def test_bm25_corruption_rebuilds_from_immutable_corpus() -> None:
+    index = _index()
+    serialized = index.serialized_shards()
+    payloads = tuple(
+        HybridShardPayload(
+            ordinal=shard.ordinal,
+            first_position=shard.first_position,
+            vector_count=shard.vector_count,
+            faiss_payload=shard.faiss_payload,
+            faiss_sha256=shard.faiss_sha256,
+            bm25_payload=b"corrupted-bm25" if shard.ordinal == 0 else shard.bm25_payload,
+            bm25_sha256=shard.bm25_sha256,
+        )
+        for shard in serialized
+    )
+    restored, report = LocalHybridIndex.restore(
+        tenant_id=TENANT_ID,
+        course_id=COURSE_ID,
+        knowledge_base_version_id=KB_VERSION_ID,
+        entries=index.entries,
+        tokenizer=DeterministicTokenizer(),
+        vectorizer=HashedLexicalVectorizer(DeterministicTokenizer()),
+        graph_expander=TopicGraphExpander(graph_snapshot()),
+        payloads=payloads,
+        shard_size=2,
+    )
+
+    assert report.rebuilt_bm25_shards == (0,)
+    assert report.rebuilt_faiss_shards == ()
+    assert restored.search(_plan()).evidence
 
 
 def test_hot_reload_atomically_switches_active_version() -> None:
