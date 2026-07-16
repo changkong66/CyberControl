@@ -2,10 +2,11 @@
 
 ## 1. Final Decision
 
-C12 is **ACCEPTED** on `codex/topic4-verifier-runtime` at verified remote
-commit `7ffcc0bd49664b8b13604926c5c1980a2feb35ce`. GitHub Actions Run
-`29531563951` completed successfully with all eight jobs green. The final
-frontend unlock certificate is issued only after this remote result.
+C12 is **ACCEPTED** on `codex/topic4-verifier-runtime`. The implementation
+commit `7ffcc0bd49664b8b13604926c5c1980a2feb35ce` passed implementation Run
+`29531563951`, and the final archive commit
+`0ae8fc7685e88c6f61e5ff6babc00403774cd1ac` passed archive Run `29531925104`.
+Both runs completed successfully with all eight jobs green.
 
 ## 2. Delivered Assets
 
@@ -53,7 +54,8 @@ pass for the C12 source and tests. The remote PostgreSQL evidence package
 reported **424 tests with 1 existing database-restart probe skipped** and
 global Python coverage of **90.88 percent**, above the `90.54` redline.
 
-The remote job matrix completed 8/8 successfully:
+The remote job matrix completed 8/8 successfully on both the implementation
+and archive runs:
 
 - Python, contracts, and unit tests;
 - PostgreSQL 16 integration and coverage;

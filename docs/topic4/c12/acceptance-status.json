@@ -33,6 +33,8 @@
     "diff_check": "passed",
     "local_postgres_integration": "not run: LIYAN_TEST_* URLs are not configured",
     "remote_ci": "passed",
+    "implementation_remote_run_id": 29531563951,
+    "archive_remote_run_id": 29531925104,
     "remote_postgres_rls": "passed",
     "remote_publish_transaction": "passed",
     "remote_artifacts": [
@@ -51,9 +53,9 @@
   },
   "remote_acceptance": {
     "status": "completed",
-    "run_id": 29531563951,
-    "head_sha": "7ffcc0bd49664b8b13604926c5c1980a2feb35ce",
+    "run_id": 29531925104,
+    "head_sha": "0ae8fc7685e88c6f61e5ff6babc00403774cd1ac",
     "conclusion": "success",
-    "url": "https://github.com/changkong66/CyberControl/actions/runs/29531563951"
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29531925104"
   }
 }

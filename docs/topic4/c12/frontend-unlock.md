@@ -9,6 +9,8 @@ the verified remote commit
 ## Evidence
 
 - GitHub Actions Run `29531563951` completed with `8/8` jobs successful.
+- Final archive GitHub Actions Run `29531925104` completed with `8/8` jobs
+  successful.
 - PostgreSQL integration and coverage evidence reported `424` tests, `1`
   explicitly skipped database-restart probe, and `90.88%` global coverage.
 - Trivy container security, Gitleaks full-history scanning, SBOM, license,
@@ -31,4 +33,6 @@ full remote CI, SBOM, license, Trivy, and Gitleaks gates.
 - Branch: `codex/topic4-verifier-runtime`
 - C12 state: `ACCEPTED`
 - Acceptance time: `2026-07-16T20:20:44Z`
-- Remote report: [GitHub Actions Run 29531563951](https://github.com/changkong66/CyberControl/actions/runs/29531563951)
+- Verified implementation commit: `7ffcc0bd49664b8b13604926c5c1980a2feb35ce`
+- Final archive commit: `0ae8fc7685e88c6f61e5ff6babc00403774cd1ac`
+- Remote report: [GitHub Actions Run 29531925104](https://github.com/changkong66/CyberControl/actions/runs/29531925104)
