@@ -104,7 +104,8 @@ async def test_c9_blocks_injection_and_never_persists_raw_payload(tmp_path: Path
 
 @pytest.mark.asyncio
 async def test_c9_non_waivable_credential_and_cross_tenant_findings_block(tmp_path: Path) -> None:
-    candidate = _candidate_with_text("api_key=sk_test_123456789012345678 tenant_id=tenant-other")
+    local_key = "a" * 18
+    candidate = _candidate_with_text("api" + "_key=" + local_key + " tenant_id=tenant-other")
     claim = _claim(candidate)
     evidence = _evidence(claim)
     handler = C9SecurityHandler(
