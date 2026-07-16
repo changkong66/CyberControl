@@ -1,11 +1,14 @@
 {
   "topic": "TOPIC4",
   "module": "C12_ATOMIC_RELEASE_GATE",
-  "state": "IMPLEMENTED_PENDING_REMOTE",
+  "state": "ACCEPTED",
   "branch": "codex/topic4-verifier-runtime",
   "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
-  "parent_checkpoint": "7dd8220",
+  "parent_checkpoint": "7dd822055df46b0428fefd1e8a40010901fb886f",
   "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T20:20:44Z",
+  "local_implementation_checkpoint": "46d771f",
+  "verified_commit": "7ffcc0bd49664b8b13604926c5c1980a2feb35ce",
   "implemented": [
     "one-time release authorization validation",
     "Candidate, report, request, and artifact SHA binding",
@@ -21,23 +24,36 @@
   "verification": {
     "dedicated_tests": "11 passed",
     "release_package_coverage_percent": 87.0,
+    "remote_test_count": 424,
+    "remote_skipped_count": 1,
+    "remote_global_coverage_percent": 90.88,
+    "coverage_redline": "passed (>= 90.54)",
     "ruff": "passed",
     "format": "passed",
     "diff_check": "passed",
     "local_postgres_integration": "not run: LIYAN_TEST_* URLs are not configured",
-    "remote_ci": "pending",
-    "remote_postgres_rls": "pending",
-    "remote_publish_performance": "pending"
+    "remote_ci": "passed",
+    "remote_postgres_rls": "passed",
+    "remote_publish_transaction": "passed",
+    "remote_artifacts": [
+      "python-postgres-test-evidence",
+      "container-security-evidence",
+      "secret-scan-evidence",
+      "python-supply-chain",
+      "frontend-sbom",
+      "go-contract-evidence"
+    ],
+    "remote_jobs": "8/8 successful"
   },
   "unlock": {
-    "frontend": false,
-    "final_topic4_acceptance": false
+    "frontend": true,
+    "final_topic4_acceptance": true
   },
-  "required_before_acceptance": [
-    "remote implementation CI all green",
-    "PostgreSQL SERIALIZABLE, foreign-key, RLS, Outbox, and rollback tests",
-    "global coverage at or above the Topic4 redline",
-    "Trivy, Gitleaks, SBOM, license, Ruff, Go, and TS/Vue gates green",
-    "archive commit and remote acceptance report"
-  ]
+  "remote_acceptance": {
+    "status": "completed",
+    "run_id": 29531563951,
+    "head_sha": "7ffcc0bd49664b8b13604926c5c1980a2feb35ce",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29531563951"
+  }
 }

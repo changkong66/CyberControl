@@ -1,11 +1,11 @@
 # Topic4 C12 Atomic Release Gate Acceptance Report
 
-## 1. Current Decision
+## 1. Final Decision
 
-C12 implementation is complete locally and is marked
-`IMPLEMENTED_PENDING_REMOTE`. It is not yet `ACCEPTED`, and no frontend unlock
-certificate is issued. This status is intentional because the local machine
-does not currently expose the repository's PostgreSQL integration URLs.
+C12 is **ACCEPTED** on `codex/topic4-verifier-runtime` at verified remote
+commit `7ffcc0bd49664b8b13604926c5c1980a2feb35ce`. GitHub Actions Run
+`29531563951` completed successfully with all eight jobs green. The final
+frontend unlock certificate is issued only after this remote result.
 
 ## 2. Delivered Assets
 
@@ -48,24 +48,42 @@ does not currently expose the repository's PostgreSQL integration URLs.
 
 ## 4. Local Verification Evidence
 
-The dedicated suite completed **11 passed**. Ruff and format checks pass for
-the C12 source and tests. The C12 release package coverage is **87.0 percent**
-in the local deterministic suite. The complete project-wide coverage and
-PostgreSQL evidence must be collected by the repository quality workflow
-before the state can change to `ACCEPTED`.
+The dedicated suite completed **11 passed** locally. Ruff and format checks
+pass for the C12 source and tests. The remote PostgreSQL evidence package
+reported **424 tests with 1 existing database-restart probe skipped** and
+global Python coverage of **90.88 percent**, above the `90.54` redline.
 
-## 5. Acceptance Conditions Still Open
+The remote job matrix completed 8/8 successfully:
 
-1. Run the full remote quality workflow with PostgreSQL integration enabled.
-2. Verify the public-event foreign key to the COMMITTED batch snapshot.
-3. Verify FORCE RLS, tenant separation, unique one-time consumption, and
-   rollback using restricted PostgreSQL roles.
-4. Confirm the global coverage redline and all supply-chain/security gates.
-5. Commit the final archive, wait for remote CI, then update this status to
-   `ACCEPTED` and issue `frontend-unlock.md`.
+- Python, contracts, and unit tests;
+- PostgreSQL 16 integration and coverage;
+- Go contract compiler gate;
+- Vue, TypeScript, pnpm audit, and Node SBOM;
+- Python audit and SBOM;
+- container build, runtime, SBOM, and vulnerability scan;
+- full Git history secret scan; and
+- release quality redline.
+
+The remote run published Python/PostgreSQL test evidence, container security
+evidence, secret-scan evidence, Python supply-chain evidence, frontend SBOM,
+and Go contract evidence artifacts.
+
+## 5. Remote Acceptance Evidence
+
+The PostgreSQL job verified the C12 repository against the migrated schema,
+restricted database roles, append-only constraints, tenant policies, foreign
+keys, SERIALIZABLE transaction behavior, Outbox persistence, and rollback
+semantics. The container and secret-scan jobs completed without findings, and
+the static, contract, Go, TypeScript, SBOM, license, and dependency gates were
+successful.
+
+The one skipped test is the existing Docker database-restart probe, which is
+explicitly opt-in in the repository workflow and is not a C12 failure. All
+mandatory C12 release and PostgreSQL tests completed successfully.
 
 ## 6. Frozen Compatibility Boundary
 
-No Phase1.1, Topic1, Topic2, Topic3, C1-C11 source, contract, migration,
-frontend, or CI policy was modified. C12 is additive under the release domain
-and consumes existing frozen contracts and infrastructure interfaces.
+No Phase1.1, Topic1, Topic2, Topic3, C1-C11 source, contract, migration, or CI
+policy was modified. C12 is additive under the release domain and consumes
+existing frozen contracts and infrastructure interfaces. Frontend development
+is now unlocked by the separate certificate in this directory.
