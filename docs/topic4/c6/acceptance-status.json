@@ -1,0 +1,79 @@
+{
+  "topic": "TOPIC4",
+  "module": "C6_CODE",
+  "state": "ACCEPTED",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "13d35a74a411bf4838233f2752f148d3ada403d9",
+  "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T16:17:48Z",
+  "verified_commit": "272478f10bca56645f14577c81b682584cdf1b9c",
+  "implemented": [
+    "immutable Topic3 CodeSandboxContentV1 reconstruction from the exact Claim JSON pointer",
+    "bounded Python AST and MATLAB syntax analysis without executing Candidate source",
+    "approved dependency allow-list and dangerous capability detection",
+    "bounded loops, numeric literals, AST size, time-grid, randomness, and resource-abuse checks",
+    "static transfer-function pole analysis and stability-claim contradiction detection",
+    "explicit NOT_RUN and POLICY_BLOCKED sandbox execution states",
+    "C6 CodeArtifactV1, CodeDependencyV1, SandboxPolicyV1, NumericAssertionResultV1, and CodeVerificationResultV1 emission",
+    "tenant, Claim, Candidate, Trace, knowledge-base, Topic1 snapshot, evidence, and SHA integrity enforcement",
+    "C1 BoundedModuleExecutor-compatible deterministic ModuleFinding output",
+    "canonical immutable SHA-addressed source and result artifacts",
+    "dedicated C6 unit, boundary, tenant-isolation, evidence, and executor compatibility tests"
+  ],
+  "verification": {
+    "c6_targeted_tests": "20 passed",
+    "c6_targeted_package_coverage_percent": 93.38,
+    "topic4_c1_to_c6_regression": "128 passed",
+    "deterministic_unit_suite": "316 passed, 1 skipped, 52 deselected",
+    "global_postgres_suite": "367 passed, 2 skipped",
+    "global_coverage_percent": 90.79,
+    "global_coverage_redline": "passed (>= 90.54% baseline and >= 90% gate)",
+    "alembic_round_trip": "passed (head -> base -> head, head 20260716_0009)",
+    "model_drift": "passed (no new migration operations)",
+    "ruff": "passed (check and format)",
+    "python_compile": "passed",
+    "contract_drift": "passed",
+    "go_gate": "passed (gofmt, mod verify, vet, race, build)",
+    "typescript_vue_build": "passed",
+    "node_audit": "passed (no known vulnerabilities)",
+    "python_dependency_audit": "passed (no known vulnerabilities)",
+    "sbom_license_policy": "passed",
+    "container_runtime": "passed (non-root 10001:10001, minimal runtime, liveness)",
+    "trivy": "passed (Alpine and Python inventory, all severity findings zero)",
+    "gitleaks_history": "passed (44 commits, zero leaks)",
+    "gitleaks_working_tree": "passed (zero leaks)",
+    "security_scans": "passed locally and remotely",
+    "expected_skips": [
+      "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
+      "Windows symbolic-link capability test unavailable"
+    ]
+  },
+  "checkpoint": {
+    "implementation_commit": "272478f10bca56645f14577c81b682584cdf1b9c",
+    "commit_subject": "feat(topic4): implement C6 code verification runtime",
+    "commit_pending": false,
+    "remote_ci_pending": false,
+    "remote_ci_run_id": 29514876119,
+    "remote_ci_conclusion": "success",
+    "remote_ci_url": "https://github.com/changkong66/CyberControl/actions/runs/29514876119"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29514876119,
+    "head_sha": "272478f10bca56645f14577c81b682584cdf1b9c",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29514876119"
+  },
+  "unlock": {
+    "c5": true,
+    "c6": true,
+    "c7": true,
+    "c8": false,
+    "c9_c11": false,
+    "c12": false,
+    "frontend": false
+  }
+}
