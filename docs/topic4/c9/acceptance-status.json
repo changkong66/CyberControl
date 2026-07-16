@@ -1,0 +1,39 @@
+{
+  "topic": "TOPIC4",
+  "module": "C9_SECURITY",
+  "state": "LOCAL_CANDIDATE",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "839257aa043da8d2fc773442a6209dd1bc96430e",
+  "status_as_of": "2026-07-16",
+  "implemented": [
+    "deterministic prompt-injection detection",
+    "credential, malware, exfiltration, content-policy, and cross-tenant reference detection",
+    "tenant, Candidate, Claim, Trace, evidence, and canonical SHA binding",
+    "bounded scan limits and deterministic finding identities",
+    "raw-content exclusion from immutable result artifacts",
+    "C1-compatible ModuleFinding output",
+    "C1 BoundedModuleExecutor compatibility"
+  ],
+  "verification": {
+    "dedicated_tests": "6 passed",
+    "package_coverage_percent": 90.0,
+    "ruff": "passed",
+    "diff_check": "passed",
+    "remote_ci": "pending",
+    "global_coverage": "pending full regression"
+  },
+  "unlock": {
+    "c9": true,
+    "c10": false,
+    "c11": false,
+    "c12": false,
+    "frontend": false
+  },
+  "remote_acceptance": {
+    "status": "PENDING",
+    "run_id": null,
+    "head_sha": null,
+    "url": null
+  }
+}
