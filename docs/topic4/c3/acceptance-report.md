@@ -1,11 +1,15 @@
-# C3 Academic Verification Checkpoint Report
+# C3 Academic Verification Acceptance Report
 
 ## Current State
 
-The C3 implementation is a checkpoint, not a Topic4 acceptance. It is isolated on
+The C3 implementation is accepted as an isolated vertical module on
 `codex/topic4-verifier-runtime` and adds only new academic-domain code, tests, runtime
 dependencies, and documentation. Phase1.1, Topic1, Topic2, Topic3, C1, and C2
 semantics remain unchanged.
+
+The accepted code checkpoint is `78935de20699036b3db04032ea62241dc548b76a`.
+GitHub Actions Run `29496695774` reproduced the release quality workflow for that
+exact commit and completed successfully.
 
 ## Delivered Behavior
 
@@ -59,14 +63,13 @@ The following local gates were reproduced with the locked project toolchain:
 - Gitleaks v8.30.1 history scan covered 38 commits and the working-tree scan; both
   reported zero leaks
 
-The local evidence is sufficient for this C3 checkpoint, but it is not a module
-acceptance. Remote CI reproduction and review remain mandatory before the state can
-become `ACCEPTED`.
+The local and remote evidence together satisfy the C3 module acceptance gate. This
+does not accept the overall Topic4 runtime: C4-C12 remain independently locked and
+must be accepted in their prescribed order.
 
-## Remaining Gate
+## Next Gate
 
-1. Push the checkpoint branch and wait for the remote release quality workflow to
-   reproduce the local gates.
-2. Reconcile remote evidence and mark C3 `ACCEPTED` only after the checkpoint is
-   reviewed and the remote workflow is green.
-3. Only after C3 is accepted may C4 development begin.
+1. Start C4 Mermaid graph and dependency verification from the accepted C3 commit.
+2. Preserve all Phase1.1, Topic1, Topic2, Topic3, C1, C2, and C3 contracts and
+   persistence semantics; use compatibility-only extensions.
+3. Keep C5-C12 and frontend locked until their preceding acceptance gates pass.

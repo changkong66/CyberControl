@@ -1,11 +1,13 @@
 {
   "topic": "TOPIC4",
   "module": "C3_ACADEMIC",
-  "state": "CHECKPOINT_READY",
+  "state": "ACCEPTED",
   "branch": "codex/topic4-verifier-runtime",
   "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
   "parent_checkpoint": "c8e4009",
   "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T12:04:53Z",
+  "verified_commit": "78935de20699036b3db04032ea62241dc548b76a",
   "implemented": [
     "bounded SymPy formula parser and deterministic extraction",
     "symbolic and conservative numeric formula equivalence",
@@ -37,7 +39,7 @@
     "trivy": "passed (no fixable high or critical vulnerabilities)",
     "gitleaks_history": "passed (38 commits, zero leaks)",
     "gitleaks_working_tree": "passed (zero leaks)",
-    "security_scans": "passed locally; remote checkpoint CI pending",
+    "security_scans": "passed locally and remotely",
     "expected_skips": [
       "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
       "Windows symbolic-link test unavailable"
@@ -47,10 +49,21 @@
     "local_gate_commit": "self (C3 checkpoint commit)",
     "commit_subject": "feat(topic4): implement C3 academic verification runtime",
     "commit_pending": false,
-    "remote_ci_pending": true
+    "remote_ci_pending": false,
+    "remote_ci_run_id": 29496695774,
+    "remote_ci_conclusion": "success",
+    "remote_ci_url": "https://github.com/changkong66/CyberControl/actions/runs/29496695774"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29496695774,
+    "head_sha": "78935de20699036b3db04032ea62241dc548b76a",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29496695774"
   },
   "unlock": {
-    "c4": false,
+    "c4": true,
     "c5": false,
     "c6": false,
     "c7": false,
