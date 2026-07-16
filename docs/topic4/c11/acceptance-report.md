@@ -2,10 +2,11 @@
 
 ## 1. Decision
 
-The C11 implementation is a **local acceptance candidate** on
-`codex/topic4-verifier-runtime`. Formal acceptance is pending the remote
-Release Quality Gates run for the implementation checkpoint. C12 and frontend
-development remain locked.
+The C11 implementation is **ACCEPTED** on `codex/topic4-verifier-runtime`.
+The verified remote commit is
+`360455ea1895fe8f36f29ea106333df7e9e46d67`. GitHub Actions Release Quality
+Gates Run `29528397986` completed with all eight jobs successful. C12 is now
+unlocked; frontend development remains locked.
 
 ## 2. Delivered scope
 
@@ -46,8 +47,11 @@ The dedicated C11 suite completed **10 passed** with **90.0 percent** package
 coverage. It covers clean support, prohibited licenses, open high
 vulnerabilities, tenant and SBOM hash mismatch, missing evidence, non-code
 claims, C1 executor compatibility, loader/policy boundaries, empty SBOM
-findings, and stable error-code mapping. Full repository coverage and remote
-security gates remain required for acceptance.
+findings, and stable error-code mapping. The remote PostgreSQL 16 suite
+completed **412 passed and 1 expected skip**; global Python and contract
+coverage was **90.93 percent**. Alembic round-trip and model-drift checks
+passed at head `20260716_0009`. Gitleaks, Trivy, SBOM/license, dependency,
+Ruff, Go, and TS/Vue gates all passed.
 
 ## 5. Compatibility boundary
 
@@ -57,6 +61,6 @@ additive code under `backend/src/liyans/domains/compliance`.
 
 ## 6. Unlock decision
 
-C12 remains locked until this C11 implementation checkpoint and its independent
-remote acceptance are complete. Frontend development remains locked until the
-complete Topic4 C12 release gate and final Topic4 acceptance are complete.
+C12 is unlocked after this remote acceptance. Frontend development remains
+locked until the complete Topic4 C12 release gate and final Topic4 acceptance
+are complete.
