@@ -1,0 +1,62 @@
+{
+  "topic": "TOPIC4",
+  "module": "C3_ACADEMIC",
+  "state": "CHECKPOINT_READY",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "c8e4009",
+  "status_as_of": "2026-07-16",
+  "implemented": [
+    "bounded SymPy formula parser and deterministic extraction",
+    "symbolic and conservative numeric formula equivalence",
+    "derivation chain validation",
+    "continuous/discrete/state-space stability analysis",
+    "versioned theorem condition registry and verifier",
+    "numeric unit normalization and assertion comparison",
+    "claim-level evidence coverage and conflict detection",
+    "C2 PostgreSQL latest-bundle evidence adapter",
+    "C1 BoundedModuleExecutor-compatible handler",
+    "SHA-bound immutable result artifacts"
+  ],
+  "verification": {
+    "c3_targeted_tests": "35 passed",
+    "c3_targeted_coverage_percent": 90.14,
+    "ruff": "passed",
+    "python_compile": "passed",
+    "global_postgres_suite": "304 passed, 2 skipped",
+    "global_coverage_percent": 90.37,
+    "global_coverage_redline": "passed (>= 90%)",
+    "alembic_round_trip": "passed (head -> base -> head, head 20260716_0009)",
+    "contract_drift": "passed",
+    "go_gate": "passed (gofmt, mod verify, vet, race, build)",
+    "typescript_vue_build": "passed",
+    "node_audit": "passed (no known vulnerabilities)",
+    "python_dependency_audit": "passed (no known vulnerabilities)",
+    "sbom_license_policy": "passed",
+    "container_runtime": "passed (non-root 10001:10001 and liveness)",
+    "trivy": "passed (no fixable high or critical vulnerabilities)",
+    "gitleaks_history": "passed (38 commits, zero leaks)",
+    "gitleaks_working_tree": "passed (zero leaks)",
+    "security_scans": "passed locally; remote checkpoint CI pending",
+    "expected_skips": [
+      "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
+      "Windows symbolic-link test unavailable"
+    ]
+  },
+  "checkpoint": {
+    "local_gate_commit": "self (C3 checkpoint commit)",
+    "commit_subject": "feat(topic4): implement C3 academic verification runtime",
+    "commit_pending": false,
+    "remote_ci_pending": true
+  },
+  "unlock": {
+    "c4": false,
+    "c5": false,
+    "c6": false,
+    "c7": false,
+    "c8": false,
+    "c9_c11": false,
+    "c12": false,
+    "frontend": false
+  }
+}

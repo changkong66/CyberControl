@@ -588,20 +588,18 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "liyans-contracts" },
+    { name = "numpy" },
     { name = "orjson" },
     { name = "prometheus-client" },
     { name = "pydantic-settings" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "starlette" },
+    { name = "sympy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.optional-dependencies]
-academic = [
-    { name = "numpy" },
-    { name = "sympy" },
-]
 dev = [
     { name = "coverage" },
     { name = "cyclonedx-bom" },
@@ -629,7 +627,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28,<0.29" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.120,<7" },
     { name = "liyans-contracts", editable = "packages/contracts-python" },
-    { name = "numpy", marker = "extra == 'academic'", specifier = ">=2.1,<3" },
+    { name = "numpy", specifier = ">=2.1,<3" },
     { name = "numpy", marker = "extra == 'retrieval'", specifier = ">=2.1,<3" },
     { name = "orjson", specifier = ">=3.10,<4" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.9,<3" },
@@ -642,11 +640,11 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9,<1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0,<3" },
     { name = "starlette", specifier = ">=1.3.1,<1.4" },
-    { name = "sympy", marker = "extra == 'academic'", specifier = ">=1.13,<2" },
+    { name = "sympy", specifier = ">=1.13,<2" },
     { name = "testcontainers", extras = ["postgres"], marker = "extra == 'dev'", specifier = ">=4.10,<5" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.51,<0.52" },
 ]
-provides-extras = ["academic", "retrieval", "dev"]
+provides-extras = ["retrieval", "dev"]
 
 [[package]]
 name = "liyans-contracts"
