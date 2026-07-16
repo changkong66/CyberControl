@@ -1,0 +1,40 @@
+{
+  "topic": "TOPIC4",
+  "module": "C11_COMPLIANCE",
+  "state": "LOCAL_CANDIDATE",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "703608b0a03aa0014b982b26ce5a1ab5bc03d294",
+  "status_as_of": "2026-07-16",
+  "implemented": [
+    "tenant-bound CodeArtifact, SBOM, vulnerability, provenance, and evidence validation",
+    "CycloneDX format and canonical SHA verification",
+    "SBOM dependency completeness checks",
+    "commercial-compatible license allowlist and prohibited-license blocking",
+    "open high/critical vulnerability and non-waivable accepted-risk blocking",
+    "reproducible build provenance binding",
+    "non-code NOT_APPLICABLE handling",
+    "C1-compatible ModuleFinding and executor integration"
+  ],
+  "verification": {
+    "dedicated_tests": "10 passed",
+    "package_coverage_percent": 90.0,
+    "ruff": "passed",
+    "diff_check": "passed",
+    "remote_ci": "pending",
+    "global_coverage": "pending full regression"
+  },
+  "unlock": {
+    "c9": true,
+    "c10": true,
+    "c11": true,
+    "c12": false,
+    "frontend": false
+  },
+  "remote_acceptance": {
+    "status": "PENDING",
+    "run_id": null,
+    "head_sha": null,
+    "url": null
+  }
+}
