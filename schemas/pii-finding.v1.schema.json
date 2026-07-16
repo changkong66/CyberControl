@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "FindingSeverity": {
+      "enum": [
+        "INFO",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "FindingSeverity",
+      "type": "string"
+    },
+    "PIIType": {
+      "enum": [
+        "NAME",
+        "PHONE",
+        "EMAIL",
+        "NATIONAL_ID",
+        "STUDENT_ID",
+        "ADDRESS",
+        "BIOMETRIC",
+        "CREDENTIAL",
+        "OTHER"
+      ],
+      "title": "PIIType",
+      "type": "string"
+    },
+    "PrivacyAction": {
+      "enum": [
+        "ALLOW",
+        "TOKENIZE",
+        "REDACT",
+        "BLOCK"
+      ],
+      "title": "PrivacyAction",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "pii-finding.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pii_finding_id": {
+      "format": "uuid",
+      "title": "Pii Finding Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "block_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Block Id",
+      "type": "string"
+    },
+    "json_pointer": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Json Pointer",
+      "type": "string"
+    },
+    "pii_type": {
+      "$ref": "#/$defs/PIIType"
+    },
+    "severity": {
+      "$ref": "#/$defs/FindingSeverity"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "action": {
+      "$ref": "#/$defs/PrivacyAction"
+    },
+    "original_value_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Original Value Sha256",
+      "type": "string"
+    },
+    "non_waivable": {
+      "title": "Non Waivable",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "pii_finding_id",
+    "verification_id",
+    "candidate_id",
+    "candidate_version",
+    "block_id",
+    "json_pointer",
+    "pii_type",
+    "severity",
+    "confidence",
+    "action",
+    "original_value_sha256",
+    "non_waivable"
+  ],
+  "title": "PIIFindingV1",
+  "type": "object"
+}

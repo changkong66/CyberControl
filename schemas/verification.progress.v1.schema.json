@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "VerificationState": {
+      "enum": [
+        "ACCEPTED",
+        "SNAPSHOT_VALIDATING",
+        "CLAIM_EXTRACTING",
+        "CLAIMS_READY",
+        "MODULE_DISPATCHING",
+        "VERIFYING",
+        "AGGREGATING",
+        "REVISION_PLANNING",
+        "REVISION_WAITING",
+        "REVERIFYING",
+        "RELEASE_PENDING",
+        "RELEASED",
+        "BLOCKED",
+        "REVIEW_REQUIRED",
+        "FAILED",
+        "EXPIRED",
+        "CANCELLED"
+      ],
+      "title": "VerificationState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "verification.progress.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/VerificationState"
+    },
+    "state_version": {
+      "minimum": 1,
+      "title": "State Version",
+      "type": "integer"
+    },
+    "completed_modules": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Completed Modules",
+      "type": "integer"
+    },
+    "total_modules": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Total Modules",
+      "type": "integer"
+    },
+    "progress_percent": {
+      "maximum": 100.0,
+      "minimum": 0.0,
+      "title": "Progress Percent",
+      "type": "number"
+    },
+    "current_stage": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Current Stage",
+      "type": "string"
+    },
+    "revision_round": {
+      "maximum": 2,
+      "minimum": 0,
+      "title": "Revision Round",
+      "type": "integer"
+    },
+    "deadline_at": {
+      "format": "date-time",
+      "title": "Deadline At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "verification_id",
+    "state",
+    "state_version",
+    "completed_modules",
+    "total_modules",
+    "progress_percent",
+    "current_stage",
+    "revision_round",
+    "deadline_at"
+  ],
+  "title": "VerificationProgressV1",
+  "type": "object"
+}

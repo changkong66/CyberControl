@@ -1,0 +1,325 @@
+{
+  "$defs": {
+    "QuizItemType": {
+      "enum": [
+        "CONCEPT",
+        "TRUE_FALSE",
+        "CALCULATION",
+        "ENGINEERING_APPLICATION",
+        "MISCONCEPTION"
+      ],
+      "title": "QuizItemType",
+      "type": "string"
+    },
+    "QuizOptionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "quiz-option.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "option_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Option Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "option_id",
+        "text"
+      ],
+      "title": "QuizOptionV1",
+      "type": "object"
+    },
+    "QuizSolutionStepV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "quiz-solution-step.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "explanation": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "formula_claim_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Formula Claim Id"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "ordinal",
+        "explanation"
+      ],
+      "title": "QuizSolutionStepV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "quiz-item.verifier-ir.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "quiz_item_verifier_ir_id": {
+      "format": "uuid",
+      "title": "Quiz Item Verifier Ir Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "question_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Question Id",
+      "type": "string"
+    },
+    "item_type": {
+      "$ref": "#/$defs/QuizItemType"
+    },
+    "stem": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "title": "Stem",
+      "type": "string"
+    },
+    "options": {
+      "items": {
+        "$ref": "#/$defs/QuizOptionV1"
+      },
+      "maxItems": 32,
+      "title": "Options",
+      "type": "array"
+    },
+    "expected_answer": {
+      "maxLength": 8192,
+      "minLength": 1,
+      "title": "Expected Answer",
+      "type": "string"
+    },
+    "solution_steps": {
+      "items": {
+        "$ref": "#/$defs/QuizSolutionStepV1"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Solution Steps",
+      "type": "array"
+    },
+    "misconception_codes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "title": "Misconception Codes",
+      "type": "array"
+    },
+    "topic1_knowledge_point_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Topic1 Knowledge Point Ids",
+      "type": "array"
+    },
+    "difficulty": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Difficulty",
+      "type": "number"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "quiz_item_verifier_ir_id",
+    "verification_id",
+    "claim_id",
+    "question_id",
+    "item_type",
+    "stem",
+    "expected_answer",
+    "solution_steps",
+    "topic1_knowledge_point_ids",
+    "difficulty"
+  ],
+  "title": "QuizItemVerifierIRV1",
+  "type": "object"
+}

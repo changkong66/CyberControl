@@ -1,0 +1,108 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "tokenized-value.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tokenized_value_id": {
+      "format": "uuid",
+      "title": "Tokenized Value Id",
+      "type": "string"
+    },
+    "pii_finding_id": {
+      "format": "uuid",
+      "title": "Pii Finding Id",
+      "type": "string"
+    },
+    "token": {
+      "pattern": "^tok_[A-Za-z0-9_-]{16,128}$",
+      "title": "Token",
+      "type": "string"
+    },
+    "original_value_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Original Value Sha256",
+      "type": "string"
+    },
+    "vault_reference": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Vault Reference",
+      "type": "string"
+    },
+    "key_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Key Version",
+      "type": "string"
+    },
+    "reversible": {
+      "title": "Reversible",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "tokenized_value_id",
+    "pii_finding_id",
+    "token",
+    "original_value_sha256",
+    "vault_reference",
+    "key_version",
+    "reversible"
+  ],
+  "title": "TokenizedValueV1",
+  "type": "object"
+}

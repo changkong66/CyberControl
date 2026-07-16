@@ -1,0 +1,123 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "formula-signature.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "formula_signature_id": {
+      "format": "uuid",
+      "title": "Formula Signature Id",
+      "type": "string"
+    },
+    "source_document_version_id": {
+      "format": "uuid",
+      "title": "Source Document Version Id",
+      "type": "string"
+    },
+    "section_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Section Id",
+      "type": "string"
+    },
+    "canonical_expression": {
+      "maxLength": 8192,
+      "minLength": 1,
+      "title": "Canonical Expression",
+      "type": "string"
+    },
+    "symbol_arity": {
+      "maximum": 1024,
+      "minimum": 0,
+      "title": "Symbol Arity",
+      "type": "integer"
+    },
+    "operator_multiset": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Operator Multiset",
+      "type": "object"
+    },
+    "dimensional_signature": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dimensional Signature"
+    },
+    "signature_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Signature Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "formula_signature_id",
+    "source_document_version_id",
+    "section_id",
+    "canonical_expression",
+    "symbol_arity",
+    "signature_sha256"
+  ],
+  "title": "FormulaSignatureV1",
+  "type": "object"
+}

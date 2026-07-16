@@ -1,0 +1,337 @@
+{
+  "$defs": {
+    "GraphRelation": {
+      "enum": [
+        "PREREQUISITE",
+        "CONTAINS",
+        "DERIVES",
+        "CONTRASTS",
+        "APPLIES_TO"
+      ],
+      "title": "GraphRelation",
+      "type": "string"
+    },
+    "VerifierGraphEdgeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "verifier-graph-edge.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "edge_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Edge Id",
+          "type": "string"
+        },
+        "source_node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Node Id",
+          "type": "string"
+        },
+        "target_node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Target Node Id",
+          "type": "string"
+        },
+        "relation": {
+          "$ref": "#/$defs/GraphRelation"
+        },
+        "directed": {
+          "title": "Directed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "edge_id",
+        "source_node_id",
+        "target_node_id",
+        "relation",
+        "directed"
+      ],
+      "title": "VerifierGraphEdgeV1",
+      "type": "object"
+    },
+    "VerifierGraphNodeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "verifier-graph-node.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "topic1_knowledge_point_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic1 Knowledge Point Id"
+        },
+        "node_type": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Node Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "node_id",
+        "label",
+        "node_type"
+      ],
+      "title": "VerifierGraphNodeV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "verifier.graph-ir.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "verifier_graph_ir_id": {
+      "format": "uuid",
+      "title": "Verifier Graph Ir Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "block_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Block Id",
+      "type": "string"
+    },
+    "mermaid_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Mermaid Version",
+      "type": "string"
+    },
+    "direction": {
+      "enum": [
+        "TB",
+        "TD",
+        "BT",
+        "RL",
+        "LR"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/VerifierGraphNodeV1"
+      },
+      "maxItems": 4096,
+      "minItems": 1,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/VerifierGraphEdgeV1"
+      },
+      "maxItems": 16384,
+      "title": "Edges",
+      "type": "array"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "verifier_graph_ir_id",
+    "verification_id",
+    "claim_id",
+    "candidate_id",
+    "candidate_version",
+    "block_id",
+    "mermaid_version",
+    "direction",
+    "nodes"
+  ],
+  "title": "VerifierGraphIRV1",
+  "type": "object"
+}

@@ -1,0 +1,345 @@
+{
+  "$defs": {
+    "ArtifactObjectRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "artifact.object.ref.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "storage_namespace": {
+          "const": "verification-artifacts",
+          "title": "Storage Namespace",
+          "type": "string"
+        },
+        "object_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9/_\\-.]{0,511}$",
+          "title": "Object Key",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "application/x-ndjson",
+            "text/markdown",
+            "text/plain",
+            "application/octet-stream"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_encoding": {
+          "enum": [
+            "identity",
+            "gzip"
+          ],
+          "title": "Content Encoding",
+          "type": "string"
+        },
+        "byte_size": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "storage_namespace",
+        "object_key",
+        "media_type",
+        "content_encoding",
+        "byte_size",
+        "sha256",
+        "created_at"
+      ],
+      "title": "ArtifactObjectRefV1",
+      "type": "object"
+    },
+    "IndexBuildState": {
+      "enum": [
+        "BUILDING",
+        "READY",
+        "FAILED",
+        "CORRUPTED",
+        "RETIRED"
+      ],
+      "title": "IndexBuildState",
+      "type": "string"
+    },
+    "IndexShardManifestV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "index-shard-manifest.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "shard_id": {
+          "format": "uuid",
+          "title": "Shard Id",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "first_vector_ordinal": {
+          "minimum": 0,
+          "title": "First Vector Ordinal",
+          "type": "integer"
+        },
+        "vector_count": {
+          "minimum": 1,
+          "title": "Vector Count",
+          "type": "integer"
+        },
+        "faiss_artifact": {
+          "$ref": "#/$defs/ArtifactObjectRefV1"
+        },
+        "faiss_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Faiss Sha256",
+          "type": "string"
+        },
+        "bm25_artifact": {
+          "$ref": "#/$defs/ArtifactObjectRefV1"
+        },
+        "bm25_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Bm25 Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "shard_id",
+        "ordinal",
+        "first_vector_ordinal",
+        "vector_count",
+        "faiss_artifact",
+        "faiss_sha256",
+        "bm25_artifact",
+        "bm25_sha256"
+      ],
+      "title": "IndexShardManifestV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "index-build-manifest.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "index_build_manifest_id": {
+      "format": "uuid",
+      "title": "Index Build Manifest Id",
+      "type": "string"
+    },
+    "knowledge_base_version_id": {
+      "format": "uuid",
+      "title": "Knowledge Base Version Id",
+      "type": "string"
+    },
+    "embedding_profile_id": {
+      "format": "uuid",
+      "title": "Embedding Profile Id",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/IndexBuildState"
+    },
+    "chunk_count": {
+      "minimum": 0,
+      "title": "Chunk Count",
+      "type": "integer"
+    },
+    "shard_count": {
+      "minimum": 0,
+      "title": "Shard Count",
+      "type": "integer"
+    },
+    "shards": {
+      "items": {
+        "$ref": "#/$defs/IndexShardManifestV1"
+      },
+      "maxItems": 4096,
+      "title": "Shards",
+      "type": "array"
+    },
+    "graph_snapshot_id": {
+      "format": "uuid",
+      "title": "Graph Snapshot Id",
+      "type": "string"
+    },
+    "graph_snapshot_version": {
+      "minimum": 1,
+      "title": "Graph Snapshot Version",
+      "type": "integer"
+    },
+    "toolchain_manifest_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Toolchain Manifest Version",
+      "type": "string"
+    },
+    "built_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Built At"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "index_build_manifest_id",
+    "knowledge_base_version_id",
+    "embedding_profile_id",
+    "state",
+    "chunk_count",
+    "shard_count",
+    "graph_snapshot_id",
+    "graph_snapshot_version",
+    "toolchain_manifest_version"
+  ],
+  "title": "IndexBuildManifestV1",
+  "type": "object"
+}

@@ -1,0 +1,154 @@
+{
+  "$defs": {
+    "SourceLifecycle": {
+      "enum": [
+        "DRAFT",
+        "APPROVED",
+        "ACTIVE",
+        "SUPERSEDED",
+        "REVOKED"
+      ],
+      "title": "SourceLifecycle",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "knowledge-base.version.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "knowledge_base_version_id": {
+      "format": "uuid",
+      "title": "Knowledge Base Version Id",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Version",
+      "type": "string"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/SourceLifecycle"
+    },
+    "source_document_version_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 65536,
+      "minItems": 1,
+      "title": "Source Document Version Ids",
+      "type": "array"
+    },
+    "graph_snapshot_id": {
+      "format": "uuid",
+      "title": "Graph Snapshot Id",
+      "type": "string"
+    },
+    "graph_snapshot_version": {
+      "minimum": 1,
+      "title": "Graph Snapshot Version",
+      "type": "integer"
+    },
+    "index_build_manifest_id": {
+      "format": "uuid",
+      "title": "Index Build Manifest Id",
+      "type": "string"
+    },
+    "embedding_profile_id": {
+      "format": "uuid",
+      "title": "Embedding Profile Id",
+      "type": "string"
+    },
+    "activated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Activated At"
+    },
+    "retired_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retired At"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "knowledge_base_version_id",
+    "version",
+    "lifecycle",
+    "source_document_version_ids",
+    "graph_snapshot_id",
+    "graph_snapshot_version",
+    "index_build_manifest_id",
+    "embedding_profile_id"
+  ],
+  "title": "KnowledgeBaseVersionV1",
+  "type": "object"
+}

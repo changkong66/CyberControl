@@ -1,0 +1,158 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "knowledge-chunk.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "knowledge_chunk_id": {
+      "format": "uuid",
+      "title": "Knowledge Chunk Id",
+      "type": "string"
+    },
+    "knowledge_base_version_id": {
+      "format": "uuid",
+      "title": "Knowledge Base Version Id",
+      "type": "string"
+    },
+    "source_document_version_id": {
+      "format": "uuid",
+      "title": "Source Document Version Id",
+      "type": "string"
+    },
+    "document_ir_id": {
+      "format": "uuid",
+      "title": "Document Ir Id",
+      "type": "string"
+    },
+    "section_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Section Id",
+      "type": "string"
+    },
+    "chunk_ordinal": {
+      "minimum": 0,
+      "title": "Chunk Ordinal",
+      "type": "integer"
+    },
+    "normalized_text": {
+      "maxLength": 32768,
+      "minLength": 1,
+      "title": "Normalized Text",
+      "type": "string"
+    },
+    "content_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "token_count": {
+      "maximum": 16384,
+      "minimum": 1,
+      "title": "Token Count",
+      "type": "integer"
+    },
+    "topic1_knowledge_point_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "title": "Topic1 Knowledge Point Ids",
+      "type": "array"
+    },
+    "formula_signature_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "title": "Formula Signature Ids",
+      "type": "array"
+    },
+    "lexical_terms": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8192,
+      "title": "Lexical Terms",
+      "type": "array"
+    },
+    "embedding_profile_id": {
+      "format": "uuid",
+      "title": "Embedding Profile Id",
+      "type": "string"
+    },
+    "vector_ordinal": {
+      "minimum": 0,
+      "title": "Vector Ordinal",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "knowledge_chunk_id",
+    "knowledge_base_version_id",
+    "source_document_version_id",
+    "document_ir_id",
+    "section_id",
+    "chunk_ordinal",
+    "normalized_text",
+    "content_sha256",
+    "token_count",
+    "embedding_profile_id",
+    "vector_ordinal"
+  ],
+  "title": "KnowledgeChunkV1",
+  "type": "object"
+}

@@ -320,5 +320,418 @@
     "visibility": "internal",
     "compatibility": "strict-v1",
     "file": "release.authorization.v1.schema.json"
+  },
+  {
+    "schema_name": "verification.progress.v1",
+    "owner": "c1-verification",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "verification.progress.v1.schema.json"
+  },
+  {
+    "schema_name": "claim.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "claim.v1.schema.json"
+  },
+  {
+    "schema_name": "claim.risk.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "claim.risk.v1.schema.json"
+  },
+  {
+    "schema_name": "module-dispatch-plan.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "module-dispatch-plan.v1.schema.json"
+  },
+  {
+    "schema_name": "module-run.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "module-run.v1.schema.json"
+  },
+  {
+    "schema_name": "module-run.result.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "module-run.result.v1.schema.json"
+  },
+  {
+    "schema_name": "claim.verdict.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "claim.verdict.v1.schema.json"
+  },
+  {
+    "schema_name": "aggregation.result.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "aggregation.result.v1.schema.json"
+  },
+  {
+    "schema_name": "revision.request.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "revision.request.v1.schema.json"
+  },
+  {
+    "schema_name": "revision.response.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "revision.response.v1.schema.json"
+  },
+  {
+    "schema_name": "verification.report.v1",
+    "owner": "c1-verification",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "verification.report.v1.schema.json"
+  },
+  {
+    "schema_name": "publication-batch.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "publication-batch.v1.schema.json"
+  },
+  {
+    "schema_name": "public.stream.event.v1",
+    "owner": "c1-verification",
+    "visibility": "shared",
+    "compatibility": "strict-v1",
+    "file": "public.stream.event.v1.schema.json"
+  },
+  {
+    "schema_name": "audit-event.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "audit-event.v1.schema.json"
+  },
+  {
+    "schema_name": "evidence-chain-manifest.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "evidence-chain-manifest.v1.schema.json"
+  },
+  {
+    "schema_name": "human-review.task.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "human-review.task.v1.schema.json"
+  },
+  {
+    "schema_name": "human-review.decision.v1",
+    "owner": "c1-verification",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "human-review.decision.v1.schema.json"
+  },
+  {
+    "schema_name": "source.document.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "source.document.v1.schema.json"
+  },
+  {
+    "schema_name": "source.document.version.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "source.document.version.v1.schema.json"
+  },
+  {
+    "schema_name": "document-ir.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "document-ir.v1.schema.json"
+  },
+  {
+    "schema_name": "knowledge-chunk.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "knowledge-chunk.v1.schema.json"
+  },
+  {
+    "schema_name": "formula-signature.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "formula-signature.v1.schema.json"
+  },
+  {
+    "schema_name": "embedding-profile.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "embedding-profile.v1.schema.json"
+  },
+  {
+    "schema_name": "index-build-manifest.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "index-build-manifest.v1.schema.json"
+  },
+  {
+    "schema_name": "knowledge-base.version.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "knowledge-base.version.v1.schema.json"
+  },
+  {
+    "schema_name": "query-plan.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "query-plan.v1.schema.json"
+  },
+  {
+    "schema_name": "evidence.ref.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "evidence.ref.v1.schema.json"
+  },
+  {
+    "schema_name": "evidence.bundle.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "evidence.bundle.v1.schema.json"
+  },
+  {
+    "schema_name": "retrieval.request.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "retrieval.request.v1.schema.json"
+  },
+  {
+    "schema_name": "retrieval.response.v1",
+    "owner": "c2-knowledge",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "retrieval.response.v1.schema.json"
+  },
+  {
+    "schema_name": "formula-ir.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "formula-ir.v1.schema.json"
+  },
+  {
+    "schema_name": "formula-equivalence.result.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "formula-equivalence.result.v1.schema.json"
+  },
+  {
+    "schema_name": "derivation-check.result.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "derivation-check.result.v1.schema.json"
+  },
+  {
+    "schema_name": "stability-model.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "stability-model.v1.schema.json"
+  },
+  {
+    "schema_name": "stability-check.result.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "stability-check.result.v1.schema.json"
+  },
+  {
+    "schema_name": "theorem-registry.entry.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "theorem-registry.entry.v1.schema.json"
+  },
+  {
+    "schema_name": "theorem-check.result.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "theorem-check.result.v1.schema.json"
+  },
+  {
+    "schema_name": "fact-synthesis.request.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "fact-synthesis.request.v1.schema.json"
+  },
+  {
+    "schema_name": "fact-synthesis.result.v1",
+    "owner": "c3-academic",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "fact-synthesis.result.v1.schema.json"
+  },
+  {
+    "schema_name": "verifier.graph-ir.v1",
+    "owner": "c4-graph",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "verifier.graph-ir.v1.schema.json"
+  },
+  {
+    "schema_name": "graph-verification.result.v1",
+    "owner": "c4-graph",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "graph-verification.result.v1.schema.json"
+  },
+  {
+    "schema_name": "quiz-item.verifier-ir.v1",
+    "owner": "c5-quiz",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "quiz-item.verifier-ir.v1.schema.json"
+  },
+  {
+    "schema_name": "quiz-verification.result.v1",
+    "owner": "c5-quiz",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "quiz-verification.result.v1.schema.json"
+  },
+  {
+    "schema_name": "code-artifact.v1",
+    "owner": "c6-code",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "code-artifact.v1.schema.json"
+  },
+  {
+    "schema_name": "sandbox-policy.v1",
+    "owner": "c6-code",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "sandbox-policy.v1.schema.json"
+  },
+  {
+    "schema_name": "code-verification.result.v1",
+    "owner": "c6-code",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "code-verification.result.v1.schema.json"
+  },
+  {
+    "schema_name": "extension-resource.v1",
+    "owner": "c7-extension",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "extension-resource.v1.schema.json"
+  },
+  {
+    "schema_name": "extension-verification.result.v1",
+    "owner": "c7-extension",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "extension-verification.result.v1.schema.json"
+  },
+  {
+    "schema_name": "revision-cycle.v1",
+    "owner": "c8-revision",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "revision-cycle.v1.schema.json"
+  },
+  {
+    "schema_name": "revision-plan.v1",
+    "owner": "c8-revision",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "revision-plan.v1.schema.json"
+  },
+  {
+    "schema_name": "revision-patch.v1",
+    "owner": "c8-revision",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "revision-patch.v1.schema.json"
+  },
+  {
+    "schema_name": "security-finding.v1",
+    "owner": "c9-security",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "security-finding.v1.schema.json"
+  },
+  {
+    "schema_name": "pii-finding.v1",
+    "owner": "c10-privacy",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "pii-finding.v1.schema.json"
+  },
+  {
+    "schema_name": "tokenized-value.v1",
+    "owner": "c10-privacy",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "tokenized-value.v1.schema.json"
+  },
+  {
+    "schema_name": "privacy-tenant.result.v1",
+    "owner": "c10-privacy",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "privacy-tenant.result.v1.schema.json"
+  },
+  {
+    "schema_name": "sbom-manifest.v1",
+    "owner": "c11-compliance",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "sbom-manifest.v1.schema.json"
+  },
+  {
+    "schema_name": "vulnerability-record.v1",
+    "owner": "c11-compliance",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "vulnerability-record.v1.schema.json"
+  },
+  {
+    "schema_name": "build-provenance.v1",
+    "owner": "c11-compliance",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "build-provenance.v1.schema.json"
+  },
+  {
+    "schema_name": "system-acceptance-report.v1",
+    "owner": "c12-qa",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "system-acceptance-report.v1.schema.json"
   }
 ]

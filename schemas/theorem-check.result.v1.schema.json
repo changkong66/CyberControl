@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "TheoremConditionResultV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "theorem-condition-result.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "condition_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "satisfied": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Satisfied"
+        },
+        "evidence_ref_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Evidence Ref Ids",
+          "type": "array"
+        },
+        "reason": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "condition_id",
+        "satisfied",
+        "reason"
+      ],
+      "title": "TheoremConditionResultV1",
+      "type": "object"
+    },
+    "VerificationVerdict": {
+      "enum": [
+        "SUPPORTED",
+        "PARTIALLY_SUPPORTED",
+        "CONTRADICTED",
+        "INSUFFICIENT_EVIDENCE",
+        "UNSAFE",
+        "NOT_APPLICABLE",
+        "ERROR"
+      ],
+      "title": "VerificationVerdict",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "theorem-check.result.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "theorem_check_result_id": {
+      "format": "uuid",
+      "title": "Theorem Check Result Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "theorem_registry_entry_id": {
+      "format": "uuid",
+      "title": "Theorem Registry Entry Id",
+      "type": "string"
+    },
+    "condition_results": {
+      "items": {
+        "$ref": "#/$defs/TheoremConditionResultV1"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Condition Results",
+      "type": "array"
+    },
+    "conclusion_supported": {
+      "title": "Conclusion Supported",
+      "type": "boolean"
+    },
+    "verdict": {
+      "$ref": "#/$defs/VerificationVerdict"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "theorem_check_result_id",
+    "verification_id",
+    "claim_id",
+    "theorem_registry_entry_id",
+    "condition_results",
+    "conclusion_supported",
+    "verdict",
+    "confidence"
+  ],
+  "title": "TheoremCheckResultV1",
+  "type": "object"
+}

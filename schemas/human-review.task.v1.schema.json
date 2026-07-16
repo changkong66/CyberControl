@@ -1,0 +1,171 @@
+{
+  "$defs": {
+    "ReviewTaskState": {
+      "enum": [
+        "OPEN",
+        "CLAIMED",
+        "DECIDED",
+        "EXPIRED",
+        "CANCELLED"
+      ],
+      "title": "ReviewTaskState",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "human-review.task.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "review_task_id": {
+      "format": "uuid",
+      "title": "Review Task Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "candidate_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Sha256",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/ReviewTaskState"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel"
+    },
+    "reason_codes": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Z][A-Z0-9_.-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Reason Codes",
+      "type": "array"
+    },
+    "claim_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "minItems": 1,
+      "title": "Claim Ids",
+      "type": "array"
+    },
+    "assigned_role": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Assigned Role",
+      "type": "string"
+    },
+    "due_at": {
+      "format": "date-time",
+      "title": "Due At",
+      "type": "string"
+    },
+    "non_waivable_finding_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "title": "Non Waivable Finding Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "review_task_id",
+    "verification_id",
+    "candidate_id",
+    "candidate_version",
+    "candidate_sha256",
+    "state",
+    "risk_level",
+    "reason_codes",
+    "claim_ids",
+    "assigned_role",
+    "due_at"
+  ],
+  "title": "HumanReviewTaskV1",
+  "type": "object"
+}

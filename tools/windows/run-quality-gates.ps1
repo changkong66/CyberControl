@@ -249,7 +249,7 @@ try {
     ) -Description "Python unit tests"
 
     if (-not $SkipPostgresIntegration) {
-        Write-Gate "PostgreSQL migrations, integration suite, and 89 percent coverage"
+        Write-Gate "PostgreSQL migrations, integration suite, and 90 percent coverage"
         if (
             -not $env:LIYAN_TEST_DATABASE_URL -or
             -not $env:LIYAN_TEST_MIGRATION_DATABASE_URL -or
@@ -292,7 +292,7 @@ try {
             "--cov=packages/contracts-python/src/liyans_contracts",
             "--cov-report=term-missing",
             "--cov-report=xml:artifacts/coverage/python-coverage.xml",
-            "--cov-fail-under=89"
+            "--cov-fail-under=90"
         ) -Description "PostgreSQL full regression and coverage"
     }
 

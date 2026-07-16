@@ -1,0 +1,183 @@
+{
+  "$defs": {
+    "FindingSeverity": {
+      "enum": [
+        "INFO",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "FindingSeverity",
+      "type": "string"
+    },
+    "SecurityDisposition": {
+      "enum": [
+        "ALLOW",
+        "REDACT",
+        "REVIEW",
+        "BLOCK"
+      ],
+      "title": "SecurityDisposition",
+      "type": "string"
+    },
+    "SecurityFindingCategory": {
+      "enum": [
+        "PROMPT_INJECTION",
+        "EXPOSED_CREDENTIAL",
+        "MALWARE",
+        "UNSAFE_CODE",
+        "CONTENT_POLICY",
+        "CROSS_TENANT_REFERENCE",
+        "DATA_EXFILTRATION"
+      ],
+      "title": "SecurityFindingCategory",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "security-finding.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "security_finding_id": {
+      "format": "uuid",
+      "title": "Security Finding Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "block_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Block Id"
+    },
+    "category": {
+      "$ref": "#/$defs/SecurityFindingCategory"
+    },
+    "severity": {
+      "$ref": "#/$defs/FindingSeverity"
+    },
+    "disposition": {
+      "$ref": "#/$defs/SecurityDisposition"
+    },
+    "detector": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Detector",
+      "type": "string"
+    },
+    "detector_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Detector Version",
+      "type": "string"
+    },
+    "evidence_fingerprint_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Evidence Fingerprint Sha256",
+      "type": "string"
+    },
+    "reason_code": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "non_waivable": {
+      "title": "Non Waivable",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "security_finding_id",
+    "verification_id",
+    "candidate_id",
+    "candidate_version",
+    "category",
+    "severity",
+    "disposition",
+    "detector",
+    "detector_version",
+    "evidence_fingerprint_sha256",
+    "reason_code",
+    "non_waivable"
+  ],
+  "title": "SecurityFindingV1",
+  "type": "object"
+}

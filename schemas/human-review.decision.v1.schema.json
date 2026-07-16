@@ -1,0 +1,217 @@
+{
+  "$defs": {
+    "ArtifactObjectRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "artifact.object.ref.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "storage_namespace": {
+          "const": "verification-artifacts",
+          "title": "Storage Namespace",
+          "type": "string"
+        },
+        "object_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9/_\\-.]{0,511}$",
+          "title": "Object Key",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "application/x-ndjson",
+            "text/markdown",
+            "text/plain",
+            "application/octet-stream"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_encoding": {
+          "enum": [
+            "identity",
+            "gzip"
+          ],
+          "title": "Content Encoding",
+          "type": "string"
+        },
+        "byte_size": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "storage_namespace",
+        "object_key",
+        "media_type",
+        "content_encoding",
+        "byte_size",
+        "sha256",
+        "created_at"
+      ],
+      "title": "ArtifactObjectRefV1",
+      "type": "object"
+    },
+    "ReviewDecision": {
+      "enum": [
+        "APPROVE",
+        "APPROVE_WITH_DISCLOSURE",
+        "REVISE",
+        "BLOCK"
+      ],
+      "title": "ReviewDecision",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "human-review.decision.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "review_decision_id": {
+      "format": "uuid",
+      "title": "Review Decision Id",
+      "type": "string"
+    },
+    "review_task_id": {
+      "format": "uuid",
+      "title": "Review Task Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "decision": {
+      "$ref": "#/$defs/ReviewDecision"
+    },
+    "reviewer_subject_ref": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Reviewer Subject Ref",
+      "type": "string"
+    },
+    "rationale_artifact": {
+      "$ref": "#/$defs/ArtifactObjectRefV1"
+    },
+    "rationale_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Rationale Sha256",
+      "type": "string"
+    },
+    "disclosure_codes": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Z][A-Z0-9_.-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Disclosure Codes",
+      "type": "array"
+    },
+    "waived_finding_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "title": "Waived Finding Ids",
+      "type": "array"
+    },
+    "decided_at": {
+      "format": "date-time",
+      "title": "Decided At",
+      "type": "string"
+    },
+    "decision_context": {
+      "additionalProperties": true,
+      "title": "Decision Context",
+      "type": "object"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "review_decision_id",
+    "review_task_id",
+    "verification_id",
+    "decision",
+    "reviewer_subject_ref",
+    "rationale_artifact",
+    "rationale_sha256",
+    "decided_at"
+  ],
+  "title": "HumanReviewDecisionV1",
+  "type": "object"
+}

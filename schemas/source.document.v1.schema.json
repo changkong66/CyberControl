@@ -1,0 +1,156 @@
+{
+  "$defs": {
+    "SourceAuthorityTier": {
+      "enum": [
+        "PRIMARY_STANDARD",
+        "AUTHORITATIVE_TEXTBOOK",
+        "PEER_REVIEWED",
+        "OFFICIAL_DOCUMENTATION",
+        "CURATED_INTERNAL"
+      ],
+      "title": "SourceAuthorityTier",
+      "type": "string"
+    },
+    "SourceLifecycle": {
+      "enum": [
+        "DRAFT",
+        "APPROVED",
+        "ACTIVE",
+        "SUPERSEDED",
+        "REVOKED"
+      ],
+      "title": "SourceLifecycle",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "source.document.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_document_id": {
+      "format": "uuid",
+      "title": "Source Document Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "title": "Authors",
+      "type": "array"
+    },
+    "publisher": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Publisher",
+      "type": "string"
+    },
+    "authority_tier": {
+      "$ref": "#/$defs/SourceAuthorityTier"
+    },
+    "source_type": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Source Type",
+      "type": "string"
+    },
+    "canonical_citation": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Canonical Citation",
+      "type": "string"
+    },
+    "license_expression": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "License Expression",
+      "type": "string"
+    },
+    "course_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Course Id",
+      "type": "string"
+    },
+    "locale": {
+      "const": "zh-CN",
+      "title": "Locale",
+      "type": "string"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/SourceLifecycle"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "source_document_id",
+    "title",
+    "publisher",
+    "authority_tier",
+    "source_type",
+    "canonical_citation",
+    "license_expression",
+    "course_id",
+    "locale",
+    "lifecycle"
+  ],
+  "title": "SourceDocumentV1",
+  "type": "object"
+}

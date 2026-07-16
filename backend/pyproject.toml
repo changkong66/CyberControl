@@ -24,6 +24,7 @@ academic = [
   "sympy>=1.13,<2",
 ]
 retrieval = [
+  "faiss-cpu>=1.9,<2",
   "numpy>=2.1,<3",
 ]
 dev = [

@@ -1,0 +1,369 @@
+{
+  "$defs": {
+    "EvidenceBundleV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "evidence.bundle.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "evidence_bundle_id": {
+          "format": "uuid",
+          "title": "Evidence Bundle Id",
+          "type": "string"
+        },
+        "verification_id": {
+          "format": "uuid",
+          "title": "Verification Id",
+          "type": "string"
+        },
+        "claim_id": {
+          "format": "uuid",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "query_plan_id": {
+          "format": "uuid",
+          "title": "Query Plan Id",
+          "type": "string"
+        },
+        "knowledge_base_version_id": {
+          "format": "uuid",
+          "title": "Knowledge Base Version Id",
+          "type": "string"
+        },
+        "evidence_ref_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 512,
+          "title": "Evidence Ref Ids",
+          "type": "array"
+        },
+        "coverage_score": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Coverage Score",
+          "type": "number"
+        },
+        "conflicting_evidence": {
+          "title": "Conflicting Evidence",
+          "type": "boolean"
+        },
+        "retrieval_timing": {
+          "$ref": "#/$defs/RetrievalTimingV1"
+        },
+        "retrieval_pipeline_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Retrieval Pipeline Version",
+          "type": "string"
+        },
+        "degraded_reason_codes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Degraded Reason Codes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "evidence_bundle_id",
+        "verification_id",
+        "claim_id",
+        "query_plan_id",
+        "knowledge_base_version_id",
+        "coverage_score",
+        "conflicting_evidence",
+        "retrieval_timing",
+        "retrieval_pipeline_version"
+      ],
+      "title": "EvidenceBundleV1",
+      "type": "object"
+    },
+    "RetrievalStatus": {
+      "enum": [
+        "SUCCEEDED",
+        "DEGRADED",
+        "FAILED"
+      ],
+      "title": "RetrievalStatus",
+      "type": "string"
+    },
+    "RetrievalTimingV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "retrieval-timing.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "bm25_ms": {
+          "minimum": 0,
+          "title": "Bm25 Ms",
+          "type": "integer"
+        },
+        "vector_ms": {
+          "minimum": 0,
+          "title": "Vector Ms",
+          "type": "integer"
+        },
+        "graph_ms": {
+          "minimum": 0,
+          "title": "Graph Ms",
+          "type": "integer"
+        },
+        "formula_ms": {
+          "minimum": 0,
+          "title": "Formula Ms",
+          "type": "integer"
+        },
+        "fusion_ms": {
+          "minimum": 0,
+          "title": "Fusion Ms",
+          "type": "integer"
+        },
+        "total_ms": {
+          "minimum": 0,
+          "title": "Total Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "bm25_ms",
+        "vector_ms",
+        "graph_ms",
+        "formula_ms",
+        "fusion_ms",
+        "total_ms"
+      ],
+      "title": "RetrievalTimingV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "retrieval.response.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "retrieval_response_id": {
+      "format": "uuid",
+      "title": "Retrieval Response Id",
+      "type": "string"
+    },
+    "retrieval_request_id": {
+      "format": "uuid",
+      "title": "Retrieval Request Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RetrievalStatus"
+    },
+    "evidence_bundle": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EvidenceBundleV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "index_build_manifest_id": {
+      "format": "uuid",
+      "title": "Index Build Manifest Id",
+      "type": "string"
+    },
+    "elapsed_ms": {
+      "minimum": 0,
+      "title": "Elapsed Ms",
+      "type": "integer"
+    },
+    "degraded_reason_codes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Degraded Reason Codes",
+      "type": "array"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "retrieval_response_id",
+    "retrieval_request_id",
+    "verification_id",
+    "claim_id",
+    "status",
+    "index_build_manifest_id",
+    "elapsed_ms",
+    "completed_at"
+  ],
+  "title": "RetrievalResponseV1",
+  "type": "object"
+}

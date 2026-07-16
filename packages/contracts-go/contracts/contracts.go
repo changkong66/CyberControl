@@ -6,6 +6,35 @@ type UUID string
 
 type DateTime string
 
+type AcceptanceDecision string
+
+const (
+	AcceptanceDecisionACCEPTED AcceptanceDecision = "ACCEPTED"
+	AcceptanceDecisionREJECTED AcceptanceDecision = "REJECTED"
+)
+
+type AcceptanceGateResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable        bool                `json:"immutable"`
+	SchemaVersion    string              `json:"schema_version"`
+	GateCode         string              `json:"gate_code"`
+	Status           GateStatus          `json:"status"`
+	MetricValues     map[string]float64  `json:"metric_values,omitempty"`
+	EvidenceArtifact ArtifactObjectRefV1 `json:"evidence_artifact"`
+	EvidenceSha256   string              `json:"evidence_sha256"`
+	FailureCodes     []string            `json:"failure_codes,omitempty"`
+}
+
 type AgentTaskState string
 
 const (
@@ -17,6 +46,47 @@ const (
 	AgentTaskStateCANCELLED AgentTaskState = "CANCELLED"
 )
 
+type AggregateDecision string
+
+const (
+	AggregateDecisionRELEASE               AggregateDecision = "RELEASE"
+	AggregateDecisionRELEASEWITHDISCLOSURE AggregateDecision = "RELEASE_WITH_DISCLOSURE"
+	AggregateDecisionREVISE                AggregateDecision = "REVISE"
+	AggregateDecisionREVIEWREQUIRED        AggregateDecision = "REVIEW_REQUIRED"
+	AggregateDecisionBLOCK                 AggregateDecision = "BLOCK"
+)
+
+type AggregationResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable           bool              `json:"immutable"`
+	SchemaVersion       string            `json:"schema_version"`
+	AggregationResultId UUID              `json:"aggregation_result_id"`
+	VerificationId      UUID              `json:"verification_id"`
+	CandidateId         UUID              `json:"candidate_id"`
+	CandidateVersion    int64             `json:"candidate_version"`
+	CandidateSha256     string            `json:"candidate_sha256"`
+	Decision            AggregateDecision `json:"decision"`
+	ClaimVerdictIds     []UUID            `json:"claim_verdict_ids"`
+	SupportedCount      int64             `json:"supported_count"`
+	ContradictedCount   int64             `json:"contradicted_count"`
+	InsufficientCount   int64             `json:"insufficient_count"`
+	UnsafeCount         int64             `json:"unsafe_count"`
+	OverallConfidence   float64           `json:"overall_confidence"`
+	RevisionBlockIds    []string          `json:"revision_block_ids,omitempty"`
+	DisclosureCodes     []string          `json:"disclosure_codes,omitempty"`
+	PolicyVersion       string            `json:"policy_version"`
+}
+
 type ArtifactObjectRefV1 struct {
 	SchemaVersion    string   `json:"schema_version"`
 	StorageNamespace string   `json:"storage_namespace"`
@@ -26,6 +96,33 @@ type ArtifactObjectRefV1 struct {
 	ByteSize         int64    `json:"byte_size"`
 	Sha256           string   `json:"sha256"`
 	CreatedAt        DateTime `json:"created_at"`
+}
+
+type AuditEventV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool                `json:"immutable"`
+	SchemaVersion        string              `json:"schema_version"`
+	AuditEventId         UUID                `json:"audit_event_id"`
+	AggregateType        string              `json:"aggregate_type"`
+	AggregateId          UUID                `json:"aggregate_id"`
+	Action               string              `json:"action"`
+	ActorSubjectRef      string              `json:"actor_subject_ref"`
+	PayloadArtifact      ArtifactObjectRefV1 `json:"payload_artifact"`
+	PayloadSha256        string              `json:"payload_sha256"`
+	PreviousAuditEventId *UUID               `json:"previous_audit_event_id,omitempty"`
+	PreviousChainSha256  *string             `json:"previous_chain_sha256,omitempty"`
+	ChainSha256          string              `json:"chain_sha256"`
+	OccurredAt           DateTime            `json:"occurred_at"`
 }
 
 type AuthoritySourceRefV1 struct {
@@ -88,6 +185,34 @@ type BlockV1 struct {
 	CreatedAt DateTime `json:"created_at"`
 }
 
+type BuildProvenanceV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool                `json:"immutable"`
+	SchemaVersion            string              `json:"schema_version"`
+	BuildProvenanceId        UUID                `json:"build_provenance_id"`
+	CodeArtifactId           UUID                `json:"code_artifact_id"`
+	BuilderId                string              `json:"builder_id"`
+	BuilderVersion           string              `json:"builder_version"`
+	ToolchainManifestVersion string              `json:"toolchain_manifest_version"`
+	SourceSha256             string              `json:"source_sha256"`
+	BuildOutputArtifact      ArtifactObjectRefV1 `json:"build_output_artifact"`
+	BuildOutputSha256        string              `json:"build_output_sha256"`
+	SbomManifestId           UUID                `json:"sbom_manifest_id"`
+	SandboxPolicyId          UUID                `json:"sandbox_policy_id"`
+	Reproducible             bool                `json:"reproducible"`
+	BuildCommandSha256       string              `json:"build_command_sha256"`
+}
+
 type CandidateProvenanceV1 struct {
 	// Owning Topic 3 generation agent.
 	Agent SourceAgent `json:"agent"`
@@ -141,12 +266,169 @@ type CandidateV1 struct {
 	CreatedAt DateTime `json:"created_at"`
 }
 
+type ClaimKind string
+
+const (
+	ClaimKindTEXT      ClaimKind = "TEXT"
+	ClaimKindFORMULA   ClaimKind = "FORMULA"
+	ClaimKindGRAPH     ClaimKind = "GRAPH"
+	ClaimKindQUIZ      ClaimKind = "QUIZ"
+	ClaimKindCODE      ClaimKind = "CODE"
+	ClaimKindEXTENSION ClaimKind = "EXTENSION"
+)
+
+type ClaimRiskV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable        bool                 `json:"immutable"`
+	SchemaVersion    string               `json:"schema_version"`
+	RiskId           UUID                 `json:"risk_id"`
+	VerificationId   UUID                 `json:"verification_id"`
+	ClaimId          UUID                 `json:"claim_id"`
+	Level            RiskLevel            `json:"level"`
+	Score            float64              `json:"score"`
+	AcademicImpact   float64              `json:"academic_impact"`
+	LearnerHarm      float64              `json:"learner_harm"`
+	Uncertainty      float64              `json:"uncertainty"`
+	Irreversibility  float64              `json:"irreversibility"`
+	ExternalAction   float64              `json:"external_action"`
+	MandatoryModules []VerificationModule `json:"mandatory_modules"`
+	ReasonCodes      []string             `json:"reason_codes"`
+	PolicyVersion    string               `json:"policy_version"`
+}
+
+type ClaimV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable           bool             `json:"immutable"`
+	SchemaVersion       string           `json:"schema_version"`
+	ClaimId             UUID             `json:"claim_id"`
+	VerificationId      UUID             `json:"verification_id"`
+	CandidateId         UUID             `json:"candidate_id"`
+	CandidateVersion    int64            `json:"candidate_version"`
+	CandidateSha256     string           `json:"candidate_sha256"`
+	BlockId             string           `json:"block_id"`
+	ClaimKind           ClaimKind        `json:"claim_kind"`
+	ClaimSubtype        string           `json:"claim_subtype"`
+	Statement           string           `json:"statement"`
+	NormalizedStatement string           `json:"normalized_statement"`
+	JsonPointer         string           `json:"json_pointer"`
+	Ordinal             int64            `json:"ordinal"`
+	SourceSpanStart     int64            `json:"source_span_start"`
+	SourceSpanEnd       int64            `json:"source_span_end"`
+	ClaimSha256         string           `json:"claim_sha256"`
+	ExtractionMethod    ExtractionMethod `json:"extraction_method"`
+	DependentClaimIds   []UUID           `json:"dependent_claim_ids,omitempty"`
+}
+
+type ClaimVerdictV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable       bool                `json:"immutable"`
+	SchemaVersion   string              `json:"schema_version"`
+	ClaimVerdictId  UUID                `json:"claim_verdict_id"`
+	VerificationId  UUID                `json:"verification_id"`
+	ClaimId         UUID                `json:"claim_id"`
+	Verdict         VerificationVerdict `json:"verdict"`
+	Confidence      float64             `json:"confidence"`
+	ModuleResultIds []UUID              `json:"module_result_ids"`
+	EvidenceRefIds  []UUID              `json:"evidence_ref_ids,omitempty"`
+	ReasonCodes     []string            `json:"reason_codes,omitempty"`
+	DisclosureCodes []string            `json:"disclosure_codes,omitempty"`
+	NonWaivable     bool                `json:"non_waivable"`
+}
+
+type CodeArtifactV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable        bool                `json:"immutable"`
+	SchemaVersion    string              `json:"schema_version"`
+	CodeArtifactId   UUID                `json:"code_artifact_id"`
+	VerificationId   UUID                `json:"verification_id"`
+	ClaimId          UUID                `json:"claim_id"`
+	CandidateId      UUID                `json:"candidate_id"`
+	CandidateVersion int64               `json:"candidate_version"`
+	BlockId          string              `json:"block_id"`
+	Language         CodeLanguage        `json:"language"`
+	SourceArtifact   ArtifactObjectRefV1 `json:"source_artifact"`
+	SourceSha256     string              `json:"source_sha256"`
+	Entrypoint       string              `json:"entrypoint"`
+	Dependencies     []CodeDependencyV1  `json:"dependencies,omitempty"`
+	ExpectedOutputs  []string            `json:"expected_outputs,omitempty"`
+}
+
+type CodeDependencyV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable       bool    `json:"immutable"`
+	SchemaVersion   string  `json:"schema_version"`
+	Name            string  `json:"name"`
+	Version         *string `json:"version,omitempty"`
+	PackageUrl      *string `json:"package_url,omitempty"`
+	DeclaredLicense *string `json:"declared_license,omitempty"`
+}
+
 type CodeFileV1 struct {
 	Path       string `json:"path"`
 	Language   string `json:"language"`
 	Content    string `json:"content"`
 	Entrypoint *bool  `json:"entrypoint,omitempty"`
 }
+
+type CodeLanguage string
+
+const (
+	CodeLanguageMATLAB         CodeLanguage = "MATLAB"
+	CodeLanguagePYTHON         CodeLanguage = "PYTHON"
+	CodeLanguageSIMULINKSCRIPT CodeLanguage = "SIMULINK_SCRIPT"
+	CodeLanguageIEC61131ST     CodeLanguage = "IEC61131_ST"
+	CodeLanguageCMCU           CodeLanguage = "C_MCU"
+)
 
 type CodeSandboxContentV1 struct {
 	SchemaVersion        string            `json:"schema_version"`
@@ -157,6 +439,39 @@ type CodeSandboxContentV1 struct {
 	ExpectedObservations []string          `json:"expected_observations"`
 	ResultAnalysis       string            `json:"result_analysis"`
 	SafetyNotes          []string          `json:"safety_notes,omitempty"`
+}
+
+type CodeVerificationResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool                       `json:"immutable"`
+	SchemaVersion            string                     `json:"schema_version"`
+	CodeVerificationResultId UUID                       `json:"code_verification_result_id"`
+	VerificationId           UUID                       `json:"verification_id"`
+	ClaimId                  UUID                       `json:"claim_id"`
+	CodeArtifactId           UUID                       `json:"code_artifact_id"`
+	SandboxPolicyId          UUID                       `json:"sandbox_policy_id"`
+	SyntaxValid              bool                       `json:"syntax_valid"`
+	StaticAnalysisPassed     bool                       `json:"static_analysis_passed"`
+	ExecutionState           SandboxExecutionState      `json:"execution_state"`
+	ExitCode                 *int64                     `json:"exit_code,omitempty"`
+	StdoutArtifact           *ArtifactObjectRefV1       `json:"stdout_artifact,omitempty"`
+	StderrArtifact           *ArtifactObjectRefV1       `json:"stderr_artifact,omitempty"`
+	StdoutSha256             *string                    `json:"stdout_sha256,omitempty"`
+	StderrSha256             *string                    `json:"stderr_sha256,omitempty"`
+	NumericAssertions        []NumericAssertionResultV1 `json:"numeric_assertions,omitempty"`
+	FindingCodes             []string                   `json:"finding_codes,omitempty"`
+	Verdict                  VerificationVerdict        `json:"verdict"`
+	Confidence               float64                    `json:"confidence"`
 }
 
 type CourseStatus string
@@ -183,6 +498,130 @@ type DeliveryMetadataV1 struct {
 	// UTC expiry after which the message must not be executed.
 	ExpiresAt *DateTime `json:"expires_at,omitempty"`
 }
+
+type DerivationCheckResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                `json:"immutable"`
+	SchemaVersion           string              `json:"schema_version"`
+	DerivationCheckResultId UUID                `json:"derivation_check_result_id"`
+	VerificationId          UUID                `json:"verification_id"`
+	ClaimId                 UUID                `json:"claim_id"`
+	Steps                   []DerivationStepV1  `json:"steps"`
+	FirstInvalidOrdinal     *int64              `json:"first_invalid_ordinal,omitempty"`
+	ConclusionFormulaIrId   UUID                `json:"conclusion_formula_ir_id"`
+	Verdict                 VerificationVerdict `json:"verdict"`
+	Confidence              float64             `json:"confidence"`
+}
+
+type DerivationStepV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable         bool    `json:"immutable"`
+	SchemaVersion     string  `json:"schema_version"`
+	Ordinal           int64   `json:"ordinal"`
+	FormulaIrId       UUID    `json:"formula_ir_id"`
+	RuleName          string  `json:"rule_name"`
+	ValidFromPrevious bool    `json:"valid_from_previous"`
+	FindingCode       *string `json:"finding_code,omitempty"`
+}
+
+type DocumentIRV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                  `json:"immutable"`
+	SchemaVersion           string                `json:"schema_version"`
+	DocumentIrId            UUID                  `json:"document_ir_id"`
+	SourceDocumentVersionId UUID                  `json:"source_document_version_id"`
+	ParserVersion           string                `json:"parser_version"`
+	Sections                []DocumentSectionIRV1 `json:"sections"`
+	DocumentIrArtifact      ArtifactObjectRefV1   `json:"document_ir_artifact"`
+	DocumentIrSha256        string                `json:"document_ir_sha256"`
+}
+
+type DocumentSectionIRV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                `json:"immutable"`
+	SchemaVersion           string              `json:"schema_version"`
+	SectionId               string              `json:"section_id"`
+	ParentSectionId         *string             `json:"parent_section_id,omitempty"`
+	Ordinal                 int64               `json:"ordinal"`
+	Title                   string              `json:"title"`
+	JsonPointer             string              `json:"json_pointer"`
+	TextArtifact            ArtifactObjectRefV1 `json:"text_artifact"`
+	TextSha256              string              `json:"text_sha256"`
+	FormulaSignatureIds     []UUID              `json:"formula_signature_ids,omitempty"`
+	Topic1KnowledgePointIds []string            `json:"topic1_knowledge_point_ids,omitempty"`
+}
+
+type EmbeddingProfileV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable          bool   `json:"immutable"`
+	SchemaVersion      string `json:"schema_version"`
+	EmbeddingProfileId UUID   `json:"embedding_profile_id"`
+	Algorithm          string `json:"algorithm"`
+	Dimension          int64  `json:"dimension"`
+	TokenizerVersion   string `json:"tokenizer_version"`
+	HashSeedVersion    string `json:"hash_seed_version"`
+	Normalization      string `json:"normalization"`
+	SignedHashing      bool   `json:"signed_hashing"`
+	NetworkAccess      bool   `json:"network_access"`
+}
+
+type EquivalenceMethod string
+
+const (
+	EquivalenceMethodSYMBOLIC EquivalenceMethod = "SYMBOLIC"
+	EquivalenceMethodNUMERIC  EquivalenceMethod = "NUMERIC"
+	EquivalenceMethodHYBRID   EquivalenceMethod = "HYBRID"
+)
 
 type ErrorReceiptV1 struct {
 	// Wire version for the standard Topic 3 error receipt.
@@ -211,12 +650,124 @@ const (
 	ErrorSeverityCRITICAL ErrorSeverity = "CRITICAL"
 )
 
+type EvidenceBundleV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool              `json:"immutable"`
+	SchemaVersion            string            `json:"schema_version"`
+	EvidenceBundleId         UUID              `json:"evidence_bundle_id"`
+	VerificationId           UUID              `json:"verification_id"`
+	ClaimId                  UUID              `json:"claim_id"`
+	QueryPlanId              UUID              `json:"query_plan_id"`
+	KnowledgeBaseVersionId   UUID              `json:"knowledge_base_version_id"`
+	EvidenceRefIds           []UUID            `json:"evidence_ref_ids,omitempty"`
+	CoverageScore            float64           `json:"coverage_score"`
+	ConflictingEvidence      bool              `json:"conflicting_evidence"`
+	RetrievalTiming          RetrievalTimingV1 `json:"retrieval_timing"`
+	RetrievalPipelineVersion string            `json:"retrieval_pipeline_version"`
+	DegradedReasonCodes      []string          `json:"degraded_reason_codes,omitempty"`
+}
+
+type EvidenceChainItemV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable           bool    `json:"immutable"`
+	SchemaVersion       string  `json:"schema_version"`
+	EvidenceRefId       UUID    `json:"evidence_ref_id"`
+	Sequence            int64   `json:"sequence"`
+	EvidenceSha256      string  `json:"evidence_sha256"`
+	PreviousChainSha256 *string `json:"previous_chain_sha256,omitempty"`
+	ChainSha256         string  `json:"chain_sha256"`
+}
+
+type EvidenceChainManifestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                  `json:"immutable"`
+	SchemaVersion           string                `json:"schema_version"`
+	EvidenceChainManifestId UUID                  `json:"evidence_chain_manifest_id"`
+	VerificationId          UUID                  `json:"verification_id"`
+	ReportId                UUID                  `json:"report_id"`
+	Items                   []EvidenceChainItemV1 `json:"items"`
+	RootChainSha256         string                `json:"root_chain_sha256"`
+}
+
+type EvidenceRefV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                `json:"immutable"`
+	SchemaVersion           string              `json:"schema_version"`
+	EvidenceRefId           UUID                `json:"evidence_ref_id"`
+	VerificationId          UUID                `json:"verification_id"`
+	ClaimId                 UUID                `json:"claim_id"`
+	KnowledgeBaseVersionId  UUID                `json:"knowledge_base_version_id"`
+	KnowledgeChunkId        UUID                `json:"knowledge_chunk_id"`
+	SourceDocumentId        UUID                `json:"source_document_id"`
+	SourceDocumentVersionId UUID                `json:"source_document_version_id"`
+	SectionId               string              `json:"section_id"`
+	Citation                string              `json:"citation"`
+	Excerpt                 string              `json:"excerpt"`
+	ExcerptSha256           string              `json:"excerpt_sha256"`
+	Bm25Score               *float64            `json:"bm25_score,omitempty"`
+	VectorScore             *float64            `json:"vector_score,omitempty"`
+	GraphScore              *float64            `json:"graph_score,omitempty"`
+	FormulaScore            *float64            `json:"formula_score,omitempty"`
+	FusedScore              float64             `json:"fused_score"`
+	SourceAuthorityTier     SourceAuthorityTier `json:"source_authority_tier"`
+}
+
 type ExtensionContentV1 struct {
 	SchemaVersion       string                `json:"schema_version"`
 	Title               string                `json:"title"`
 	Resources           []ExtensionResourceV1 `json:"resources"`
 	RecommendedSequence []string              `json:"recommended_sequence"`
 }
+
+type ExtensionResourceType string
+
+const (
+	ExtensionResourceTypePAPER                 ExtensionResourceType = "PAPER"
+	ExtensionResourceTypeSTANDARD              ExtensionResourceType = "STANDARD"
+	ExtensionResourceTypeENGINEERINGCASE       ExtensionResourceType = "ENGINEERING_CASE"
+	ExtensionResourceTypeOFFICIALDOCUMENTATION ExtensionResourceType = "OFFICIAL_DOCUMENTATION"
+	ExtensionResourceTypeDATASET               ExtensionResourceType = "DATASET"
+)
 
 type ExtensionResourceV1 struct {
 	ResourceId       string   `json:"resource_id"`
@@ -227,6 +778,195 @@ type ExtensionResourceV1 struct {
 	CitationText     string   `json:"citation_text"`
 	SourceUrl        *string  `json:"source_url,omitempty"`
 }
+
+type ExtensionVerificationResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                     bool                `json:"immutable"`
+	SchemaVersion                 string              `json:"schema_version"`
+	ExtensionVerificationResultId UUID                `json:"extension_verification_result_id"`
+	VerificationId                UUID                `json:"verification_id"`
+	ClaimId                       UUID                `json:"claim_id"`
+	ExtensionResourceId           UUID                `json:"extension_resource_id"`
+	SourcePresentInApprovedCorpus bool                `json:"source_present_in_approved_corpus"`
+	CitationValid                 bool                `json:"citation_valid"`
+	LicenseCompatible             bool                `json:"license_compatible"`
+	KnowledgeRelevance            float64             `json:"knowledge_relevance"`
+	TemporalValidity              *bool               `json:"temporal_validity"`
+	FindingCodes                  []string            `json:"finding_codes,omitempty"`
+	EvidenceRefIds                []UUID              `json:"evidence_ref_ids,omitempty"`
+	Verdict                       VerificationVerdict `json:"verdict"`
+	Confidence                    float64             `json:"confidence"`
+}
+
+type ExtractionMethod string
+
+const (
+	ExtractionMethodDETERMINISTIC   ExtractionMethod = "DETERMINISTIC"
+	ExtractionMethodSPARKSTRUCTURED ExtractionMethod = "SPARK_STRUCTURED"
+	ExtractionMethodHYBRID          ExtractionMethod = "HYBRID"
+)
+
+type FactSynthesisRequestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool     `json:"immutable"`
+	SchemaVersion          string   `json:"schema_version"`
+	FactSynthesisRequestId UUID     `json:"fact_synthesis_request_id"`
+	VerificationId         UUID     `json:"verification_id"`
+	ClaimId                UUID     `json:"claim_id"`
+	EvidenceBundleId       UUID     `json:"evidence_bundle_id"`
+	DeterministicResultIds []UUID   `json:"deterministic_result_ids,omitempty"`
+	ProviderAlias          string   `json:"provider_alias"`
+	PromptBundleVersion    string   `json:"prompt_bundle_version"`
+	ResponseSchemaVersion  string   `json:"response_schema_version"`
+	DeadlineAt             DateTime `json:"deadline_at"`
+}
+
+type FactSynthesisResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool                `json:"immutable"`
+	SchemaVersion          string              `json:"schema_version"`
+	FactSynthesisResultId  UUID                `json:"fact_synthesis_result_id"`
+	FactSynthesisRequestId UUID                `json:"fact_synthesis_request_id"`
+	VerificationId         UUID                `json:"verification_id"`
+	ClaimId                UUID                `json:"claim_id"`
+	Verdict                VerificationVerdict `json:"verdict"`
+	Confidence             float64             `json:"confidence"`
+	SupportedStatement     *string             `json:"supported_statement,omitempty"`
+	ContradictionSummary   *string             `json:"contradiction_summary,omitempty"`
+	EvidenceRefIds         []UUID              `json:"evidence_ref_ids,omitempty"`
+	ProviderRequestId      string              `json:"provider_request_id"`
+	ProviderResponseSha256 string              `json:"provider_response_sha256"`
+	CompletedAt            DateTime            `json:"completed_at"`
+}
+
+type FindingSeverity string
+
+const (
+	FindingSeverityINFO     FindingSeverity = "INFO"
+	FindingSeverityLOW      FindingSeverity = "LOW"
+	FindingSeverityMEDIUM   FindingSeverity = "MEDIUM"
+	FindingSeverityHIGH     FindingSeverity = "HIGH"
+	FindingSeverityCRITICAL FindingSeverity = "CRITICAL"
+)
+
+type FormulaEquivalenceResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                  bool                      `json:"immutable"`
+	SchemaVersion              string                    `json:"schema_version"`
+	FormulaEquivalenceResultId UUID                      `json:"formula_equivalence_result_id"`
+	VerificationId             UUID                      `json:"verification_id"`
+	ClaimId                    UUID                      `json:"claim_id"`
+	LeftFormulaIrId            UUID                      `json:"left_formula_ir_id"`
+	RightFormulaIrId           UUID                      `json:"right_formula_ir_id"`
+	Equivalent                 bool                      `json:"equivalent"`
+	Method                     EquivalenceMethod         `json:"method"`
+	Tolerance                  float64                   `json:"tolerance"`
+	SampledPoints              int64                     `json:"sampled_points"`
+	Counterexamples            []NumericCounterexampleV1 `json:"counterexamples,omitempty"`
+	Verdict                    VerificationVerdict       `json:"verdict"`
+	Confidence                 float64                   `json:"confidence"`
+	ToolchainVersion           string                    `json:"toolchain_version"`
+}
+
+type FormulaIRV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable           bool              `json:"immutable"`
+	SchemaVersion       string            `json:"schema_version"`
+	FormulaIrId         UUID              `json:"formula_ir_id"`
+	VerificationId      UUID              `json:"verification_id"`
+	ClaimId             UUID              `json:"claim_id"`
+	OriginalExpression  string            `json:"original_expression"`
+	CanonicalExpression string            `json:"canonical_expression"`
+	LhsExpression       *string           `json:"lhs_expression,omitempty"`
+	RhsExpression       *string           `json:"rhs_expression,omitempty"`
+	Symbols             map[string]string `json:"symbols,omitempty"`
+	Assumptions         []string          `json:"assumptions,omitempty"`
+	Units               map[string]string `json:"units,omitempty"`
+	ParserVersion       string            `json:"parser_version"`
+	ExpressionSha256    string            `json:"expression_sha256"`
+}
+
+type FormulaSignatureV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool             `json:"immutable"`
+	SchemaVersion           string           `json:"schema_version"`
+	FormulaSignatureId      UUID             `json:"formula_signature_id"`
+	SourceDocumentVersionId UUID             `json:"source_document_version_id"`
+	SectionId               string           `json:"section_id"`
+	CanonicalExpression     string           `json:"canonical_expression"`
+	SymbolArity             int64            `json:"symbol_arity"`
+	OperatorMultiset        map[string]int64 `json:"operator_multiset,omitempty"`
+	DimensionalSignature    *string          `json:"dimensional_signature,omitempty"`
+	SignatureSha256         string           `json:"signature_sha256"`
+}
+
+type GateStatus string
+
+const (
+	GateStatusPASSED  GateStatus = "PASSED"
+	GateStatusFAILED  GateStatus = "FAILED"
+	GateStatusSKIPPED GateStatus = "SKIPPED"
+)
 
 type GenerationSessionState string
 
@@ -249,6 +989,219 @@ const (
 	GoldenQuestionTypeDESIGN         GoldenQuestionType = "DESIGN"
 	GoldenQuestionTypeSIMULATION     GoldenQuestionType = "SIMULATION"
 )
+
+type GraphRelation string
+
+const (
+	GraphRelationPREREQUISITE GraphRelation = "PREREQUISITE"
+	GraphRelationCONTAINS     GraphRelation = "CONTAINS"
+	GraphRelationDERIVES      GraphRelation = "DERIVES"
+	GraphRelationCONTRASTS    GraphRelation = "CONTRASTS"
+	GraphRelationAPPLIESTO    GraphRelation = "APPLIES_TO"
+)
+
+type GraphVerificationResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                   bool                `json:"immutable"`
+	SchemaVersion               string              `json:"schema_version"`
+	GraphVerificationResultId   UUID                `json:"graph_verification_result_id"`
+	VerificationId              UUID                `json:"verification_id"`
+	ClaimId                     UUID                `json:"claim_id"`
+	VerifierGraphIrId           UUID                `json:"verifier_graph_ir_id"`
+	SyntaxValid                 bool                `json:"syntax_valid"`
+	NodeIdsUnique               bool                `json:"node_ids_unique"`
+	EdgeEndpointsValid          bool                `json:"edge_endpoints_valid"`
+	PrerequisiteSubgraphAcyclic bool                `json:"prerequisite_subgraph_acyclic"`
+	UnknownTopic1NodeIds        []string            `json:"unknown_topic1_node_ids,omitempty"`
+	InvalidEdgeIds              []string            `json:"invalid_edge_ids,omitempty"`
+	TopologyMismatchCodes       []string            `json:"topology_mismatch_codes,omitempty"`
+	EvidenceRefIds              []UUID              `json:"evidence_ref_ids,omitempty"`
+	Verdict                     VerificationVerdict `json:"verdict"`
+	Confidence                  float64             `json:"confidence"`
+}
+
+type HumanReviewDecisionV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable          bool                `json:"immutable"`
+	SchemaVersion      string              `json:"schema_version"`
+	ReviewDecisionId   UUID                `json:"review_decision_id"`
+	ReviewTaskId       UUID                `json:"review_task_id"`
+	VerificationId     UUID                `json:"verification_id"`
+	Decision           ReviewDecision      `json:"decision"`
+	ReviewerSubjectRef string              `json:"reviewer_subject_ref"`
+	RationaleArtifact  ArtifactObjectRefV1 `json:"rationale_artifact"`
+	RationaleSha256    string              `json:"rationale_sha256"`
+	DisclosureCodes    []string            `json:"disclosure_codes,omitempty"`
+	WaivedFindingIds   []UUID              `json:"waived_finding_ids,omitempty"`
+	DecidedAt          DateTime            `json:"decided_at"`
+	DecisionContext    map[string]any      `json:"decision_context,omitempty"`
+}
+
+type HumanReviewTaskV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable             bool            `json:"immutable"`
+	SchemaVersion         string          `json:"schema_version"`
+	ReviewTaskId          UUID            `json:"review_task_id"`
+	VerificationId        UUID            `json:"verification_id"`
+	CandidateId           UUID            `json:"candidate_id"`
+	CandidateVersion      int64           `json:"candidate_version"`
+	CandidateSha256       string          `json:"candidate_sha256"`
+	State                 ReviewTaskState `json:"state"`
+	RiskLevel             RiskLevel       `json:"risk_level"`
+	ReasonCodes           []string        `json:"reason_codes"`
+	ClaimIds              []UUID          `json:"claim_ids"`
+	AssignedRole          string          `json:"assigned_role"`
+	DueAt                 DateTime        `json:"due_at"`
+	NonWaivableFindingIds []UUID          `json:"non_waivable_finding_ids,omitempty"`
+}
+
+type IndexBuildManifestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool                   `json:"immutable"`
+	SchemaVersion            string                 `json:"schema_version"`
+	IndexBuildManifestId     UUID                   `json:"index_build_manifest_id"`
+	KnowledgeBaseVersionId   UUID                   `json:"knowledge_base_version_id"`
+	EmbeddingProfileId       UUID                   `json:"embedding_profile_id"`
+	State                    IndexBuildState        `json:"state"`
+	ChunkCount               int64                  `json:"chunk_count"`
+	ShardCount               int64                  `json:"shard_count"`
+	Shards                   []IndexShardManifestV1 `json:"shards,omitempty"`
+	GraphSnapshotId          UUID                   `json:"graph_snapshot_id"`
+	GraphSnapshotVersion     int64                  `json:"graph_snapshot_version"`
+	ToolchainManifestVersion string                 `json:"toolchain_manifest_version"`
+	BuiltAt                  *DateTime              `json:"built_at,omitempty"`
+	FailureCode              *string                `json:"failure_code,omitempty"`
+}
+
+type IndexBuildState string
+
+const (
+	IndexBuildStateBUILDING  IndexBuildState = "BUILDING"
+	IndexBuildStateREADY     IndexBuildState = "READY"
+	IndexBuildStateFAILED    IndexBuildState = "FAILED"
+	IndexBuildStateCORRUPTED IndexBuildState = "CORRUPTED"
+	IndexBuildStateRETIRED   IndexBuildState = "RETIRED"
+)
+
+type IndexShardManifestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable          bool                `json:"immutable"`
+	SchemaVersion      string              `json:"schema_version"`
+	ShardId            UUID                `json:"shard_id"`
+	Ordinal            int64               `json:"ordinal"`
+	FirstVectorOrdinal int64               `json:"first_vector_ordinal"`
+	VectorCount        int64               `json:"vector_count"`
+	FaissArtifact      ArtifactObjectRefV1 `json:"faiss_artifact"`
+	FaissSha256        string              `json:"faiss_sha256"`
+	Bm25Artifact       ArtifactObjectRefV1 `json:"bm25_artifact"`
+	Bm25Sha256         string              `json:"bm25_sha256"`
+}
+
+type KnowledgeBaseVersionV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool            `json:"immutable"`
+	SchemaVersion            string          `json:"schema_version"`
+	KnowledgeBaseVersionId   UUID            `json:"knowledge_base_version_id"`
+	Version                  string          `json:"version"`
+	Lifecycle                SourceLifecycle `json:"lifecycle"`
+	SourceDocumentVersionIds []UUID          `json:"source_document_version_ids"`
+	GraphSnapshotId          UUID            `json:"graph_snapshot_id"`
+	GraphSnapshotVersion     int64           `json:"graph_snapshot_version"`
+	IndexBuildManifestId     UUID            `json:"index_build_manifest_id"`
+	EmbeddingProfileId       UUID            `json:"embedding_profile_id"`
+	ActivatedAt              *DateTime       `json:"activated_at,omitempty"`
+	RetiredAt                *DateTime       `json:"retired_at,omitempty"`
+}
+
+type KnowledgeChunkV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool     `json:"immutable"`
+	SchemaVersion           string   `json:"schema_version"`
+	KnowledgeChunkId        UUID     `json:"knowledge_chunk_id"`
+	KnowledgeBaseVersionId  UUID     `json:"knowledge_base_version_id"`
+	SourceDocumentVersionId UUID     `json:"source_document_version_id"`
+	DocumentIrId            UUID     `json:"document_ir_id"`
+	SectionId               string   `json:"section_id"`
+	ChunkOrdinal            int64    `json:"chunk_ordinal"`
+	NormalizedText          string   `json:"normalized_text"`
+	ContentSha256           string   `json:"content_sha256"`
+	TokenCount              int64    `json:"token_count"`
+	Topic1KnowledgePointIds []string `json:"topic1_knowledge_point_ids,omitempty"`
+	FormulaSignatureIds     []UUID   `json:"formula_signature_ids,omitempty"`
+	LexicalTerms            []string `json:"lexical_terms,omitempty"`
+	EmbeddingProfileId      UUID     `json:"embedding_profile_id"`
+	VectorOrdinal           int64    `json:"vector_ordinal"`
+}
 
 type KnowledgePointStatus string
 
@@ -341,6 +1294,207 @@ const (
 	MisconceptionSeverityCRITICAL MisconceptionSeverity = "CRITICAL"
 )
 
+type ModuleDispatchItemV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable         bool               `json:"immutable"`
+	SchemaVersion     string             `json:"schema_version"`
+	DispatchItemId    UUID               `json:"dispatch_item_id"`
+	ClaimId           UUID               `json:"claim_id"`
+	Module            VerificationModule `json:"module"`
+	Required          bool               `json:"required"`
+	Priority          int64              `json:"priority"`
+	DependencyItemIds []UUID             `json:"dependency_item_ids,omitempty"`
+	TimeoutMs         int64              `json:"timeout_ms"`
+	MaxAttempts       int64              `json:"max_attempts"`
+}
+
+type ModuleDispatchPlanV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable      bool                   `json:"immutable"`
+	SchemaVersion  string                 `json:"schema_version"`
+	DispatchPlanId UUID                   `json:"dispatch_plan_id"`
+	VerificationId UUID                   `json:"verification_id"`
+	ClaimIds       []UUID                 `json:"claim_ids"`
+	Items          []ModuleDispatchItemV1 `json:"items"`
+	MaxParallelism int64                  `json:"max_parallelism"`
+	PolicyVersion  string                 `json:"policy_version"`
+	PlanSha256     string                 `json:"plan_sha256"`
+}
+
+type ModuleRunResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable      bool                `json:"immutable"`
+	SchemaVersion  string              `json:"schema_version"`
+	ModuleResultId UUID                `json:"module_result_id"`
+	ModuleRunId    UUID                `json:"module_run_id"`
+	VerificationId UUID                `json:"verification_id"`
+	ClaimId        UUID                `json:"claim_id"`
+	Module         VerificationModule  `json:"module"`
+	Verdict        VerificationVerdict `json:"verdict"`
+	Confidence     float64             `json:"confidence"`
+	EvidenceRefIds []UUID              `json:"evidence_ref_ids,omitempty"`
+	FindingCodes   []string            `json:"finding_codes,omitempty"`
+	ResultArtifact ArtifactObjectRefV1 `json:"result_artifact"`
+	ResultSha256   string              `json:"result_sha256"`
+	Deterministic  bool                `json:"deterministic"`
+}
+
+type ModuleRunState string
+
+const (
+	ModuleRunStatePENDING   ModuleRunState = "PENDING"
+	ModuleRunStateRUNNING   ModuleRunState = "RUNNING"
+	ModuleRunStateSUCCEEDED ModuleRunState = "SUCCEEDED"
+	ModuleRunStateFAILED    ModuleRunState = "FAILED"
+	ModuleRunStateTIMEDOUT  ModuleRunState = "TIMED_OUT"
+	ModuleRunStateSKIPPED   ModuleRunState = "SKIPPED"
+	ModuleRunStateCANCELLED ModuleRunState = "CANCELLED"
+)
+
+type ModuleRunV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable        bool               `json:"immutable"`
+	SchemaVersion    string             `json:"schema_version"`
+	ModuleRunId      UUID               `json:"module_run_id"`
+	VerificationId   UUID               `json:"verification_id"`
+	DispatchPlanId   UUID               `json:"dispatch_plan_id"`
+	DispatchItemId   UUID               `json:"dispatch_item_id"`
+	ClaimId          UUID               `json:"claim_id"`
+	Module           VerificationModule `json:"module"`
+	State            ModuleRunState     `json:"state"`
+	Attempt          int64              `json:"attempt"`
+	MaxAttempts      int64              `json:"max_attempts"`
+	InputSha256      string             `json:"input_sha256"`
+	WorkerInstanceId *string            `json:"worker_instance_id,omitempty"`
+	StartedAt        *DateTime          `json:"started_at,omitempty"`
+	CompletedAt      *DateTime          `json:"completed_at,omitempty"`
+	ErrorCode        *string            `json:"error_code,omitempty"`
+}
+
+type NumericAssertionResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable     bool     `json:"immutable"`
+	SchemaVersion string   `json:"schema_version"`
+	AssertionId   string   `json:"assertion_id"`
+	Passed        bool     `json:"passed"`
+	Actual        *float64 `json:"actual,omitempty"`
+	Expected      *float64 `json:"expected,omitempty"`
+	Tolerance     *float64 `json:"tolerance,omitempty"`
+}
+
+type NumericCounterexampleV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable     bool               `json:"immutable"`
+	SchemaVersion string             `json:"schema_version"`
+	Assignments   map[string]float64 `json:"assignments"`
+	LeftValue     float64            `json:"left_value"`
+	RightValue    float64            `json:"right_value"`
+	AbsoluteError float64            `json:"absolute_error"`
+	RelativeError float64            `json:"relative_error"`
+}
+
+type PIIFindingV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable           bool            `json:"immutable"`
+	SchemaVersion       string          `json:"schema_version"`
+	PiiFindingId        UUID            `json:"pii_finding_id"`
+	VerificationId      UUID            `json:"verification_id"`
+	CandidateId         UUID            `json:"candidate_id"`
+	CandidateVersion    int64           `json:"candidate_version"`
+	BlockId             string          `json:"block_id"`
+	JsonPointer         string          `json:"json_pointer"`
+	PiiType             PIIType         `json:"pii_type"`
+	Severity            FindingSeverity `json:"severity"`
+	Confidence          float64         `json:"confidence"`
+	Action              PrivacyAction   `json:"action"`
+	OriginalValueSha256 string          `json:"original_value_sha256"`
+	NonWaivable         bool            `json:"non_waivable"`
+}
+
+type PIIType string
+
+const (
+	PIITypeNAME       PIIType = "NAME"
+	PIITypePHONE      PIIType = "PHONE"
+	PIITypeEMAIL      PIIType = "EMAIL"
+	PIITypeNATIONALID PIIType = "NATIONAL_ID"
+	PIITypeSTUDENTID  PIIType = "STUDENT_ID"
+	PIITypeADDRESS    PIIType = "ADDRESS"
+	PIITypeBIOMETRIC  PIIType = "BIOMETRIC"
+	PIITypeCREDENTIAL PIIType = "CREDENTIAL"
+	PIITypeOTHER      PIIType = "OTHER"
+)
+
 type PrerequisiteType string
 
 const (
@@ -348,6 +1502,43 @@ const (
 	PrerequisiteTypeRECOMMENDED PrerequisiteType = "RECOMMENDED"
 	PrerequisiteTypeSUPPORTING  PrerequisiteType = "SUPPORTING"
 )
+
+type PrivacyAction string
+
+const (
+	PrivacyActionALLOW    PrivacyAction = "ALLOW"
+	PrivacyActionTOKENIZE PrivacyAction = "TOKENIZE"
+	PrivacyActionREDACT   PrivacyAction = "REDACT"
+	PrivacyActionBLOCK    PrivacyAction = "BLOCK"
+)
+
+type PrivacyTenantResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                 bool                 `json:"immutable"`
+	SchemaVersion             string               `json:"schema_version"`
+	PrivacyTenantResultId     UUID                 `json:"privacy_tenant_result_id"`
+	VerificationId            UUID                 `json:"verification_id"`
+	CandidateId               UUID                 `json:"candidate_id"`
+	CandidateVersion          int64                `json:"candidate_version"`
+	CandidateSha256           string               `json:"candidate_sha256"`
+	TenantBoundaryValid       bool                 `json:"tenant_boundary_valid"`
+	PiiFindingIds             []UUID               `json:"pii_finding_ids,omitempty"`
+	TokenizedValueIds         []UUID               `json:"tokenized_value_ids,omitempty"`
+	RedactedCandidateArtifact *ArtifactObjectRefV1 `json:"redacted_candidate_artifact,omitempty"`
+	RedactedCandidateSha256   *string              `json:"redacted_candidate_sha256,omitempty"`
+	PolicyVersion             string               `json:"policy_version"`
+	Verdict                   VerificationVerdict  `json:"verdict"`
+}
 
 type ProducerMetadataV1 struct {
 	// Producing Topic 3 agent; null for platform infrastructure events.
@@ -360,7 +1551,217 @@ type ProducerMetadataV1 struct {
 	BuildVersion string `json:"build_version"`
 }
 
+type PublicStreamEventV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable          bool                `json:"immutable"`
+	SchemaVersion      string              `json:"schema_version"`
+	PublicEventId      UUID                `json:"public_event_id"`
+	PublicationBatchId UUID                `json:"publication_batch_id"`
+	AuthorizationId    UUID                `json:"authorization_id"`
+	StreamId           UUID                `json:"stream_id"`
+	Sequence           int64               `json:"sequence"`
+	EventType          string              `json:"event_type"`
+	PayloadArtifact    ArtifactObjectRefV1 `json:"payload_artifact"`
+	PayloadSha256      string              `json:"payload_sha256"`
+	EmittedAt          DateTime            `json:"emitted_at"`
+}
+
+type PublicationBatchV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool                  `json:"immutable"`
+	SchemaVersion        string                `json:"schema_version"`
+	PublicationBatchId   UUID                  `json:"publication_batch_id"`
+	AuthorizationId      UUID                  `json:"authorization_id"`
+	VerificationId       UUID                  `json:"verification_id"`
+	ReportId             UUID                  `json:"report_id"`
+	CandidateId          UUID                  `json:"candidate_id"`
+	CandidateVersion     int64                 `json:"candidate_version"`
+	CandidateSha256      string                `json:"candidate_sha256"`
+	State                PublicationState      `json:"state"`
+	PublicArtifacts      []ArtifactObjectRefV1 `json:"public_artifacts,omitempty"`
+	OutboxEventIds       []UUID                `json:"outbox_event_ids,omitempty"`
+	PublicStreamEventIds []UUID                `json:"public_stream_event_ids,omitempty"`
+	CommittedAt          *DateTime             `json:"committed_at,omitempty"`
+	FailureCode          *string               `json:"failure_code,omitempty"`
+}
+
+type PublicationState string
+
+const (
+	PublicationStatePENDING   PublicationState = "PENDING"
+	PublicationStateCOMMITTED PublicationState = "COMMITTED"
+	PublicationStateFAILED    PublicationState = "FAILED"
+)
+
+type QueryPlanV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                  bool     `json:"immutable"`
+	SchemaVersion              string   `json:"schema_version"`
+	QueryPlanId                UUID     `json:"query_plan_id"`
+	VerificationId             UUID     `json:"verification_id"`
+	ClaimId                    UUID     `json:"claim_id"`
+	KnowledgeBaseVersionId     UUID     `json:"knowledge_base_version_id"`
+	LexicalQueries             []string `json:"lexical_queries"`
+	GraphSeedKnowledgePointIds []string `json:"graph_seed_knowledge_point_ids,omitempty"`
+	FormulaSignatureIds        []UUID   `json:"formula_signature_ids,omitempty"`
+	TopKBm25                   int64    `json:"top_k_bm25"`
+	TopKVector                 int64    `json:"top_k_vector"`
+	TopKGraph                  int64    `json:"top_k_graph"`
+	TopKFormula                int64    `json:"top_k_formula"`
+	FinalTopK                  int64    `json:"final_top_k"`
+	FusionMethod               string   `json:"fusion_method"`
+	TenantFilterRequired       bool     `json:"tenant_filter_required"`
+	TimeoutMs                  int64    `json:"timeout_ms"`
+}
+
+type QuizItemType string
+
+const (
+	QuizItemTypeCONCEPT                QuizItemType = "CONCEPT"
+	QuizItemTypeTRUEFALSE              QuizItemType = "TRUE_FALSE"
+	QuizItemTypeCALCULATION            QuizItemType = "CALCULATION"
+	QuizItemTypeENGINEERINGAPPLICATION QuizItemType = "ENGINEERING_APPLICATION"
+	QuizItemTypeMISCONCEPTION          QuizItemType = "MISCONCEPTION"
+)
+
+type QuizItemVerifierIRV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                 `json:"immutable"`
+	SchemaVersion           string               `json:"schema_version"`
+	QuizItemVerifierIrId    UUID                 `json:"quiz_item_verifier_ir_id"`
+	VerificationId          UUID                 `json:"verification_id"`
+	ClaimId                 UUID                 `json:"claim_id"`
+	QuestionId              string               `json:"question_id"`
+	ItemType                QuizItemType         `json:"item_type"`
+	Stem                    string               `json:"stem"`
+	Options                 []QuizOptionV1       `json:"options,omitempty"`
+	ExpectedAnswer          string               `json:"expected_answer"`
+	SolutionSteps           []QuizSolutionStepV1 `json:"solution_steps"`
+	MisconceptionCodes      []string             `json:"misconception_codes,omitempty"`
+	Topic1KnowledgePointIds []string             `json:"topic1_knowledge_point_ids"`
+	Difficulty              float64              `json:"difficulty"`
+}
+
+type QuizOptionV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable     bool   `json:"immutable"`
+	SchemaVersion string `json:"schema_version"`
+	OptionId      string `json:"option_id"`
+	Text          string `json:"text"`
+}
+
+type QuizSolutionStepV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable      bool   `json:"immutable"`
+	SchemaVersion  string `json:"schema_version"`
+	Ordinal        int64  `json:"ordinal"`
+	Explanation    string `json:"explanation"`
+	FormulaClaimId *UUID  `json:"formula_claim_id,omitempty"`
+}
+
+type QuizVerificationResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool                `json:"immutable"`
+	SchemaVersion            string              `json:"schema_version"`
+	QuizVerificationResultId UUID                `json:"quiz_verification_result_id"`
+	VerificationId           UUID                `json:"verification_id"`
+	ClaimId                  UUID                `json:"claim_id"`
+	QuizItemVerifierIrId     UUID                `json:"quiz_item_verifier_ir_id"`
+	StemUnambiguous          bool                `json:"stem_unambiguous"`
+	AnswerCorrect            *bool               `json:"answer_correct"`
+	SolutionCoherent         bool                `json:"solution_coherent"`
+	DistractorsValid         *bool               `json:"distractors_valid"`
+	DiagnosisMappingValid    bool                `json:"diagnosis_mapping_valid"`
+	ComputedAnswer           *string             `json:"computed_answer,omitempty"`
+	FindingCodes             []string            `json:"finding_codes,omitempty"`
+	EvidenceRefIds           []UUID              `json:"evidence_ref_ids,omitempty"`
+	Verdict                  VerificationVerdict `json:"verdict"`
+	Confidence               float64             `json:"confidence"`
+}
+
 type ReleaseAuthorizationPayloadV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable        bool     `json:"immutable"`
 	SchemaVersion    string   `json:"schema_version"`
 	AuthorizationId  UUID     `json:"authorization_id"`
 	VerificationId   UUID     `json:"verification_id"`
@@ -417,6 +1818,313 @@ type ResponsesLiteRequestV1 struct {
 	TimeoutMs       int64                  `json:"timeout_ms"`
 }
 
+type RetrievalRequestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable          bool        `json:"immutable"`
+	SchemaVersion      string      `json:"schema_version"`
+	RetrievalRequestId UUID        `json:"retrieval_request_id"`
+	VerificationId     UUID        `json:"verification_id"`
+	ClaimId            UUID        `json:"claim_id"`
+	QueryPlan          QueryPlanV1 `json:"query_plan"`
+	DeadlineAt         DateTime    `json:"deadline_at"`
+}
+
+type RetrievalResponseV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool              `json:"immutable"`
+	SchemaVersion        string            `json:"schema_version"`
+	RetrievalResponseId  UUID              `json:"retrieval_response_id"`
+	RetrievalRequestId   UUID              `json:"retrieval_request_id"`
+	VerificationId       UUID              `json:"verification_id"`
+	ClaimId              UUID              `json:"claim_id"`
+	Status               RetrievalStatus   `json:"status"`
+	EvidenceBundle       *EvidenceBundleV1 `json:"evidence_bundle,omitempty"`
+	IndexBuildManifestId UUID              `json:"index_build_manifest_id"`
+	ElapsedMs            int64             `json:"elapsed_ms"`
+	DegradedReasonCodes  []string          `json:"degraded_reason_codes,omitempty"`
+	CompletedAt          DateTime          `json:"completed_at"`
+}
+
+type RetrievalStatus string
+
+const (
+	RetrievalStatusSUCCEEDED RetrievalStatus = "SUCCEEDED"
+	RetrievalStatusDEGRADED  RetrievalStatus = "DEGRADED"
+	RetrievalStatusFAILED    RetrievalStatus = "FAILED"
+)
+
+type RetrievalTimingV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable     bool   `json:"immutable"`
+	SchemaVersion string `json:"schema_version"`
+	Bm25Ms        int64  `json:"bm25_ms"`
+	VectorMs      int64  `json:"vector_ms"`
+	GraphMs       int64  `json:"graph_ms"`
+	FormulaMs     int64  `json:"formula_ms"`
+	FusionMs      int64  `json:"fusion_ms"`
+	TotalMs       int64  `json:"total_ms"`
+}
+
+type ReviewDecision string
+
+const (
+	ReviewDecisionAPPROVE               ReviewDecision = "APPROVE"
+	ReviewDecisionAPPROVEWITHDISCLOSURE ReviewDecision = "APPROVE_WITH_DISCLOSURE"
+	ReviewDecisionREVISE                ReviewDecision = "REVISE"
+	ReviewDecisionBLOCK                 ReviewDecision = "BLOCK"
+)
+
+type ReviewTaskState string
+
+const (
+	ReviewTaskStateOPEN      ReviewTaskState = "OPEN"
+	ReviewTaskStateCLAIMED   ReviewTaskState = "CLAIMED"
+	ReviewTaskStateDECIDED   ReviewTaskState = "DECIDED"
+	ReviewTaskStateEXPIRED   ReviewTaskState = "EXPIRED"
+	ReviewTaskStateCANCELLED ReviewTaskState = "CANCELLED"
+)
+
+type RevisionCycleState string
+
+const (
+	RevisionCycleStatePLANNED    RevisionCycleState = "PLANNED"
+	RevisionCycleStateLOCKED     RevisionCycleState = "LOCKED"
+	RevisionCycleStateGENERATING RevisionCycleState = "GENERATING"
+	RevisionCycleStateCOMPLETED  RevisionCycleState = "COMPLETED"
+	RevisionCycleStateFAILED     RevisionCycleState = "FAILED"
+	RevisionCycleStateCANCELLED  RevisionCycleState = "CANCELLED"
+)
+
+type RevisionCycleV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool               `json:"immutable"`
+	SchemaVersion        string             `json:"schema_version"`
+	RevisionCycleId      UUID               `json:"revision_cycle_id"`
+	VerificationId       UUID               `json:"verification_id"`
+	ParentVerificationId UUID               `json:"parent_verification_id"`
+	CandidateId          UUID               `json:"candidate_id"`
+	BaseCandidateVersion int64              `json:"base_candidate_version"`
+	BaseCandidateSha256  string             `json:"base_candidate_sha256"`
+	RevisionRound        int64              `json:"revision_round"`
+	State                RevisionCycleState `json:"state"`
+	LockToken            UUID               `json:"lock_token"`
+	LockOwner            string             `json:"lock_owner"`
+	LockExpiresAt        DateTime           `json:"lock_expires_at"`
+	CompletedAt          *DateTime          `json:"completed_at,omitempty"`
+}
+
+type RevisionOperation string
+
+const (
+	RevisionOperationREPLACEBLOCK RevisionOperation = "REPLACE_BLOCK"
+	RevisionOperationREMOVEBLOCK  RevisionOperation = "REMOVE_BLOCK"
+)
+
+type RevisionPatchV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                  bool                 `json:"immutable"`
+	SchemaVersion              string               `json:"schema_version"`
+	RevisionPatchId            UUID                 `json:"revision_patch_id"`
+	RevisionPlanId             UUID                 `json:"revision_plan_id"`
+	BlockId                    string               `json:"block_id"`
+	Operation                  RevisionOperation    `json:"operation"`
+	BaseBlockSha256            string               `json:"base_block_sha256"`
+	ReplacementArtifact        *ArtifactObjectRefV1 `json:"replacement_artifact,omitempty"`
+	ReplacementSha256          *string              `json:"replacement_sha256,omitempty"`
+	TargetContentSchemaVersion string               `json:"target_content_schema_version"`
+	ReasonClaimIds             []UUID               `json:"reason_claim_ids"`
+}
+
+type RevisionPlanV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool                `json:"immutable"`
+	SchemaVersion        string              `json:"schema_version"`
+	RevisionPlanId       UUID                `json:"revision_plan_id"`
+	RevisionCycleId      UUID                `json:"revision_cycle_id"`
+	VerificationId       UUID                `json:"verification_id"`
+	CandidateId          UUID                `json:"candidate_id"`
+	BaseCandidateVersion int64               `json:"base_candidate_version"`
+	BaseCandidateSha256  string              `json:"base_candidate_sha256"`
+	RevisionRound        int64               `json:"revision_round"`
+	TargetAgent          SourceAgent         `json:"target_agent"`
+	AffectedClaimIds     []UUID              `json:"affected_claim_ids"`
+	AffectedBlockIds     []string            `json:"affected_block_ids"`
+	PatchIds             []UUID              `json:"patch_ids"`
+	InstructionsArtifact ArtifactObjectRefV1 `json:"instructions_artifact"`
+	InstructionsSha256   string              `json:"instructions_sha256"`
+	PromptBundleVersion  string              `json:"prompt_bundle_version"`
+}
+
+type RevisionRequestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool                `json:"immutable"`
+	SchemaVersion            string              `json:"schema_version"`
+	RevisionRequestId        UUID                `json:"revision_request_id"`
+	VerificationId           UUID                `json:"verification_id"`
+	ParentVerificationId     UUID                `json:"parent_verification_id"`
+	OriginalCandidateId      UUID                `json:"original_candidate_id"`
+	OriginalCandidateVersion int64               `json:"original_candidate_version"`
+	OriginalCandidateSha256  string              `json:"original_candidate_sha256"`
+	TargetAgent              SourceAgent         `json:"target_agent"`
+	RevisionRound            int64               `json:"revision_round"`
+	BlockIds                 []string            `json:"block_ids"`
+	ClaimIds                 []UUID              `json:"claim_ids"`
+	InstructionsArtifact     ArtifactObjectRefV1 `json:"instructions_artifact"`
+	InstructionsSha256       string              `json:"instructions_sha256"`
+	DeadlineAt               DateTime            `json:"deadline_at"`
+}
+
+type RevisionResponseV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                `json:"immutable"`
+	SchemaVersion           string              `json:"schema_version"`
+	RevisionResponseId      UUID                `json:"revision_response_id"`
+	RevisionRequestId       UUID                `json:"revision_request_id"`
+	ChildVerificationId     UUID                `json:"child_verification_id"`
+	RevisedCandidateId      UUID                `json:"revised_candidate_id"`
+	RevisedCandidateVersion int64               `json:"revised_candidate_version"`
+	RevisedCandidateSha256  string              `json:"revised_candidate_sha256"`
+	ChangedBlockIds         []string            `json:"changed_block_ids"`
+	ResponseArtifact        ArtifactObjectRefV1 `json:"response_artifact"`
+	ResponseSha256          string              `json:"response_sha256"`
+	CompletedAt             DateTime            `json:"completed_at"`
+}
+
+type RiskLevel string
+
+const (
+	RiskLevelLOW      RiskLevel = "LOW"
+	RiskLevelMEDIUM   RiskLevel = "MEDIUM"
+	RiskLevelHIGH     RiskLevel = "HIGH"
+	RiskLevelCRITICAL RiskLevel = "CRITICAL"
+)
+
+type SBOMComponentV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable       bool     `json:"immutable"`
+	SchemaVersion   string   `json:"schema_version"`
+	ComponentId     UUID     `json:"component_id"`
+	Name            string   `json:"name"`
+	Version         string   `json:"version"`
+	PackageUrl      *string  `json:"package_url,omitempty"`
+	Licenses        []string `json:"licenses,omitempty"`
+	ComponentSha256 *string  `json:"component_sha256,omitempty"`
+}
+
+type SBOMManifestV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable      bool                `json:"immutable"`
+	SchemaVersion  string              `json:"schema_version"`
+	SbomManifestId UUID                `json:"sbom_manifest_id"`
+	CodeArtifactId UUID                `json:"code_artifact_id"`
+	Format         string              `json:"format"`
+	SpecVersion    string              `json:"spec_version"`
+	SerialNumber   string              `json:"serial_number"`
+	Components     []SBOMComponentV1   `json:"components,omitempty"`
+	SbomArtifact   ArtifactObjectRefV1 `json:"sbom_artifact"`
+	SbomSha256     string              `json:"sbom_sha256"`
+}
+
 type SSEChunkV1 struct {
 	// Topic 3 internal streaming fragment version.
 	SchemaVersion string `json:"schema_version"`
@@ -446,6 +2154,95 @@ type SSEChunkV1 struct {
 	EmittedAt DateTime `json:"emitted_at"`
 }
 
+type SandboxExecutionState string
+
+const (
+	SandboxExecutionStateNOTRUN        SandboxExecutionState = "NOT_RUN"
+	SandboxExecutionStateSUCCEEDED     SandboxExecutionState = "SUCCEEDED"
+	SandboxExecutionStateFAILED        SandboxExecutionState = "FAILED"
+	SandboxExecutionStateTIMEDOUT      SandboxExecutionState = "TIMED_OUT"
+	SandboxExecutionStatePOLICYBLOCKED SandboxExecutionState = "POLICY_BLOCKED"
+)
+
+type SandboxPolicyV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool         `json:"immutable"`
+	SchemaVersion          string       `json:"schema_version"`
+	SandboxPolicyId        UUID         `json:"sandbox_policy_id"`
+	Language               CodeLanguage `json:"language"`
+	PolicyVersion          string       `json:"policy_version"`
+	RuntimeImageDigest     string       `json:"runtime_image_digest"`
+	NetworkAccess          bool         `json:"network_access"`
+	RootFilesystemReadOnly bool         `json:"root_filesystem_read_only"`
+	MemoryLimitMb          int64        `json:"memory_limit_mb"`
+	CpuQuotaMillis         int64        `json:"cpu_quota_millis"`
+	PidsLimit              int64        `json:"pids_limit"`
+	TimeoutMs              int64        `json:"timeout_ms"`
+	AllowedCommands        []string     `json:"allowed_commands,omitempty"`
+	DeniedCommands         []string     `json:"denied_commands,omitempty"`
+	SyscallProfileSha256   string       `json:"syscall_profile_sha256"`
+}
+
+type SecurityDisposition string
+
+const (
+	SecurityDispositionALLOW  SecurityDisposition = "ALLOW"
+	SecurityDispositionREDACT SecurityDisposition = "REDACT"
+	SecurityDispositionREVIEW SecurityDisposition = "REVIEW"
+	SecurityDispositionBLOCK  SecurityDisposition = "BLOCK"
+)
+
+type SecurityFindingCategory string
+
+const (
+	SecurityFindingCategoryPROMPTINJECTION      SecurityFindingCategory = "PROMPT_INJECTION"
+	SecurityFindingCategoryEXPOSEDCREDENTIAL    SecurityFindingCategory = "EXPOSED_CREDENTIAL"
+	SecurityFindingCategoryMALWARE              SecurityFindingCategory = "MALWARE"
+	SecurityFindingCategoryUNSAFECODE           SecurityFindingCategory = "UNSAFE_CODE"
+	SecurityFindingCategoryCONTENTPOLICY        SecurityFindingCategory = "CONTENT_POLICY"
+	SecurityFindingCategoryCROSSTENANTREFERENCE SecurityFindingCategory = "CROSS_TENANT_REFERENCE"
+	SecurityFindingCategoryDATAEXFILTRATION     SecurityFindingCategory = "DATA_EXFILTRATION"
+)
+
+type SecurityFindingV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                 bool                    `json:"immutable"`
+	SchemaVersion             string                  `json:"schema_version"`
+	SecurityFindingId         UUID                    `json:"security_finding_id"`
+	VerificationId            UUID                    `json:"verification_id"`
+	CandidateId               UUID                    `json:"candidate_id"`
+	CandidateVersion          int64                   `json:"candidate_version"`
+	BlockId                   *string                 `json:"block_id,omitempty"`
+	Category                  SecurityFindingCategory `json:"category"`
+	Severity                  FindingSeverity         `json:"severity"`
+	Disposition               SecurityDisposition     `json:"disposition"`
+	Detector                  string                  `json:"detector"`
+	DetectorVersion           string                  `json:"detector_version"`
+	EvidenceFingerprintSha256 string                  `json:"evidence_fingerprint_sha256"`
+	ReasonCode                string                  `json:"reason_code"`
+	NonWaivable               bool                    `json:"non_waivable"`
+}
+
 type SourceAgent string
 
 const (
@@ -454,6 +2251,79 @@ const (
 	SourceAgentTester      SourceAgent = "Tester"
 	SourceAgentCodeSandbox SourceAgent = "CodeSandbox"
 	SourceAgentExtension   SourceAgent = "Extension"
+)
+
+type SourceAuthorityTier string
+
+const (
+	SourceAuthorityTierPRIMARYSTANDARD       SourceAuthorityTier = "PRIMARY_STANDARD"
+	SourceAuthorityTierAUTHORITATIVETEXTBOOK SourceAuthorityTier = "AUTHORITATIVE_TEXTBOOK"
+	SourceAuthorityTierPEERREVIEWED          SourceAuthorityTier = "PEER_REVIEWED"
+	SourceAuthorityTierOFFICIALDOCUMENTATION SourceAuthorityTier = "OFFICIAL_DOCUMENTATION"
+	SourceAuthorityTierCURATEDINTERNAL       SourceAuthorityTier = "CURATED_INTERNAL"
+)
+
+type SourceDocumentV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable         bool                `json:"immutable"`
+	SchemaVersion     string              `json:"schema_version"`
+	SourceDocumentId  UUID                `json:"source_document_id"`
+	Title             string              `json:"title"`
+	Authors           []string            `json:"authors,omitempty"`
+	Publisher         string              `json:"publisher"`
+	AuthorityTier     SourceAuthorityTier `json:"authority_tier"`
+	SourceType        string              `json:"source_type"`
+	CanonicalCitation string              `json:"canonical_citation"`
+	LicenseExpression string              `json:"license_expression"`
+	CourseId          string              `json:"course_id"`
+	Locale            string              `json:"locale"`
+	Lifecycle         SourceLifecycle     `json:"lifecycle"`
+}
+
+type SourceDocumentVersionV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                `json:"immutable"`
+	SchemaVersion           string              `json:"schema_version"`
+	SourceDocumentVersionId UUID                `json:"source_document_version_id"`
+	SourceDocumentId        UUID                `json:"source_document_id"`
+	Version                 string              `json:"version"`
+	ContentArtifact         ArtifactObjectRefV1 `json:"content_artifact"`
+	ContentSha256           string              `json:"content_sha256"`
+	ParserVersion           string              `json:"parser_version"`
+	PublishedOn             *string             `json:"published_on,omitempty"`
+	EffectiveFrom           DateTime            `json:"effective_from"`
+	EffectiveUntil          *DateTime           `json:"effective_until,omitempty"`
+	Lifecycle               SourceLifecycle     `json:"lifecycle"`
+}
+
+type SourceLifecycle string
+
+const (
+	SourceLifecycleDRAFT      SourceLifecycle = "DRAFT"
+	SourceLifecycleAPPROVED   SourceLifecycle = "APPROVED"
+	SourceLifecycleACTIVE     SourceLifecycle = "ACTIVE"
+	SourceLifecycleSUPERSEDED SourceLifecycle = "SUPERSEDED"
+	SourceLifecycleREVOKED    SourceLifecycle = "REVOKED"
 )
 
 type SourceSnapshotRefV1 struct {
@@ -473,6 +2343,76 @@ type SourceSnapshotRefV1 struct {
 	BlockManifest         []BlockSnapshotManifestItemV1 `json:"block_manifest"`
 }
 
+type StabilityCheckResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool                `json:"immutable"`
+	SchemaVersion          string              `json:"schema_version"`
+	StabilityCheckResultId UUID                `json:"stability_check_result_id"`
+	VerificationId         UUID                `json:"verification_id"`
+	ClaimId                UUID                `json:"claim_id"`
+	StabilityModelId       UUID                `json:"stability_model_id"`
+	Conclusion             StabilityConclusion `json:"conclusion"`
+	Method                 string              `json:"method"`
+	Poles                  []string            `json:"poles,omitempty"`
+	CriterionValues        map[string]float64  `json:"criterion_values,omitempty"`
+	Counterexample         map[string]any      `json:"counterexample,omitempty"`
+	Verdict                VerificationVerdict `json:"verdict"`
+	Confidence             float64             `json:"confidence"`
+}
+
+type StabilityConclusion string
+
+const (
+	StabilityConclusionSTABLE        StabilityConclusion = "STABLE"
+	StabilityConclusionUNSTABLE      StabilityConclusion = "UNSTABLE"
+	StabilityConclusionMARGINAL      StabilityConclusion = "MARGINAL"
+	StabilityConclusionINDETERMINATE StabilityConclusion = "INDETERMINATE"
+)
+
+type StabilityDomain string
+
+const (
+	StabilityDomainCONTINUOUS StabilityDomain = "CONTINUOUS"
+	StabilityDomainDISCRETE   StabilityDomain = "DISCRETE"
+)
+
+type StabilityModelV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                   `json:"immutable"`
+	SchemaVersion           string                 `json:"schema_version"`
+	StabilityModelId        UUID                   `json:"stability_model_id"`
+	VerificationId          UUID                   `json:"verification_id"`
+	ClaimId                 UUID                   `json:"claim_id"`
+	Domain                  StabilityDomain        `json:"domain"`
+	Representation          string                 `json:"representation"`
+	NumeratorCoefficients   []float64              `json:"numerator_coefficients,omitempty"`
+	DenominatorCoefficients []float64              `json:"denominator_coefficients,omitempty"`
+	StateSpaceMatrices      map[string][][]float64 `json:"state_space_matrices,omitempty"`
+	SampleTimeSeconds       *float64               `json:"sample_time_seconds,omitempty"`
+	Assumptions             []string               `json:"assumptions,omitempty"`
+	ModelSha256             string                 `json:"model_sha256"`
+}
+
 type StreamFragmentType string
 
 const (
@@ -481,6 +2421,40 @@ const (
 	StreamFragmentTypeEND      StreamFragmentType = "END"
 	StreamFragmentTypeSNAPSHOT StreamFragmentType = "SNAPSHOT"
 )
+
+type SystemAcceptanceReportV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                    bool                     `json:"immutable"`
+	SchemaVersion                string                   `json:"schema_version"`
+	SystemAcceptanceReportId     UUID                     `json:"system_acceptance_report_id"`
+	BuildCommitSha256            string                   `json:"build_commit_sha256"`
+	BuildVersion                 string                   `json:"build_version"`
+	GateResults                  []AcceptanceGateResultV1 `json:"gate_results"`
+	PythonCoveragePercent        float64                  `json:"python_coverage_percent"`
+	ConcurrentVerifications      int64                    `json:"concurrent_verifications"`
+	RetrievalP95Ms               float64                  `json:"retrieval_p95_ms"`
+	PublicationP95Ms             float64                  `json:"publication_p95_ms"`
+	CrossTenantLeaks             int64                    `json:"cross_tenant_leaks"`
+	AuthorizationReplaySuccesses int64                    `json:"authorization_replay_successes"`
+	CriticalVulnerabilities      int64                    `json:"critical_vulnerabilities"`
+	HighVulnerabilities          int64                    `json:"high_vulnerabilities"`
+	OpenP0Defects                int64                    `json:"open_p0_defects"`
+	OpenP1Defects                int64                    `json:"open_p1_defects"`
+	FlakyCoreTests               int64                    `json:"flaky_core_tests"`
+	Decision                     AcceptanceDecision       `json:"decision"`
+	ReportArtifact               ArtifactObjectRefV1      `json:"report_artifact"`
+	ReportSha256                 string                   `json:"report_sha256"`
+}
 
 type TesterContentV1 struct {
 	SchemaVersion        string             `json:"schema_version"`
@@ -510,6 +2484,117 @@ const (
 	TextbookMappingTypeEXAMPLE    TextbookMappingType = "EXAMPLE"
 	TextbookMappingTypeEXERCISE   TextbookMappingType = "EXERCISE"
 )
+
+type TheoremCheckResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool                       `json:"immutable"`
+	SchemaVersion          string                     `json:"schema_version"`
+	TheoremCheckResultId   UUID                       `json:"theorem_check_result_id"`
+	VerificationId         UUID                       `json:"verification_id"`
+	ClaimId                UUID                       `json:"claim_id"`
+	TheoremRegistryEntryId UUID                       `json:"theorem_registry_entry_id"`
+	ConditionResults       []TheoremConditionResultV1 `json:"condition_results"`
+	ConclusionSupported    bool                       `json:"conclusion_supported"`
+	Verdict                VerificationVerdict        `json:"verdict"`
+	Confidence             float64                    `json:"confidence"`
+}
+
+type TheoremConditionResultV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable      bool   `json:"immutable"`
+	SchemaVersion  string `json:"schema_version"`
+	ConditionId    string `json:"condition_id"`
+	Satisfied      *bool  `json:"satisfied"`
+	EvidenceRefIds []UUID `json:"evidence_ref_ids,omitempty"`
+	Reason         string `json:"reason"`
+}
+
+type TheoremConditionV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable     bool   `json:"immutable"`
+	SchemaVersion string `json:"schema_version"`
+	ConditionId   string `json:"condition_id"`
+	Statement     string `json:"statement"`
+	Mandatory     bool   `json:"mandatory"`
+}
+
+type TheoremRegistryEntryV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool                 `json:"immutable"`
+	SchemaVersion          string               `json:"schema_version"`
+	TheoremRegistryEntryId UUID                 `json:"theorem_registry_entry_id"`
+	TheoremKey             string               `json:"theorem_key"`
+	Name                   string               `json:"name"`
+	Domain                 string               `json:"domain"`
+	Statement              string               `json:"statement"`
+	Conditions             []TheoremConditionV1 `json:"conditions"`
+	Conclusion             string               `json:"conclusion"`
+	SourceEvidenceRefIds   []UUID               `json:"source_evidence_ref_ids"`
+	RegistryVersion        string               `json:"registry_version"`
+}
+
+type TokenizedValueV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable           bool   `json:"immutable"`
+	SchemaVersion       string `json:"schema_version"`
+	TokenizedValueId    UUID   `json:"tokenized_value_id"`
+	PiiFindingId        UUID   `json:"pii_finding_id"`
+	Token               string `json:"token"`
+	OriginalValueSha256 string `json:"original_value_sha256"`
+	VaultReference      string `json:"vault_reference"`
+	KeyVersion          string `json:"key_version"`
+	Reversible          bool   `json:"reversible"`
+}
 
 type Topic1ApiEnvelopeV1 struct {
 	SchemaVersion *string        `json:"schema_version,omitempty"`
@@ -1134,6 +3219,18 @@ type Topic3GenerationSessionV1 struct {
 }
 
 type VerificationAcceptedPayloadV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool                  `json:"immutable"`
 	SchemaVersion          string                `json:"schema_version"`
 	VerificationId         UUID                  `json:"verification_id"`
 	IdempotencyKey         string                `json:"idempotency_key"`
@@ -1149,6 +3246,18 @@ type VerificationAcceptedPayloadV1 struct {
 }
 
 type VerificationBindingV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                    bool   `json:"immutable"`
 	SchemaVersion                string `json:"schema_version"`
 	StateMachineVersion          string `json:"state_machine_version"`
 	VerifierBuildVersion         string `json:"verifier_build_version"`
@@ -1174,6 +3283,20 @@ type VerificationContextV1 struct {
 	PersonalizationPolicyDigest string               `json:"personalization_policy_digest"`
 }
 
+type VerificationModule string
+
+const (
+	VerificationModuleC2RAG         VerificationModule = "C2_RAG"
+	VerificationModuleC3ACADEMIC    VerificationModule = "C3_ACADEMIC"
+	VerificationModuleC4GRAPH       VerificationModule = "C4_GRAPH"
+	VerificationModuleC5QUIZ        VerificationModule = "C5_QUIZ"
+	VerificationModuleC6CODE        VerificationModule = "C6_CODE"
+	VerificationModuleC7EXTENSION   VerificationModule = "C7_EXTENSION"
+	VerificationModuleC9SECURITY    VerificationModule = "C9_SECURITY"
+	VerificationModuleC10PRIVACY    VerificationModule = "C10_PRIVACY"
+	VerificationModuleC11COMPLIANCE VerificationModule = "C11_COMPLIANCE"
+)
+
 type VerificationProfile string
 
 const (
@@ -1182,7 +3305,74 @@ const (
 	VerificationProfileCODESTRICT VerificationProfile = "CODE_STRICT"
 )
 
+type VerificationProgressV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable        bool              `json:"immutable"`
+	SchemaVersion    string            `json:"schema_version"`
+	VerificationId   UUID              `json:"verification_id"`
+	State            VerificationState `json:"state"`
+	StateVersion     int64             `json:"state_version"`
+	CompletedModules int64             `json:"completed_modules"`
+	TotalModules     int64             `json:"total_modules"`
+	ProgressPercent  float64           `json:"progress_percent"`
+	CurrentStage     string            `json:"current_stage"`
+	RevisionRound    int64             `json:"revision_round"`
+	DeadlineAt       DateTime          `json:"deadline_at"`
+}
+
+type VerificationReportV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                `json:"immutable"`
+	SchemaVersion           string              `json:"schema_version"`
+	ReportId                UUID                `json:"report_id"`
+	VerificationId          UUID                `json:"verification_id"`
+	CandidateId             UUID                `json:"candidate_id"`
+	CandidateVersion        int64               `json:"candidate_version"`
+	CandidateSha256         string              `json:"candidate_sha256"`
+	KnowledgeBaseVersion    string              `json:"knowledge_base_version"`
+	AggregationResultId     UUID                `json:"aggregation_result_id"`
+	Decision                AggregateDecision   `json:"decision"`
+	ClaimVerdictIds         []UUID              `json:"claim_verdict_ids"`
+	EvidenceChainManifestId UUID                `json:"evidence_chain_manifest_id"`
+	ReportArtifact          ArtifactObjectRefV1 `json:"report_artifact"`
+	ReportSha256            string              `json:"report_sha256"`
+	PolicyVersion           string              `json:"policy_version"`
+	CompletedAt             DateTime            `json:"completed_at"`
+}
+
 type VerificationRequestPayloadV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                bool                  `json:"immutable"`
 	SchemaVersion            string                `json:"schema_version"`
 	VerificationId           UUID                  `json:"verification_id"`
 	IdempotencyKey           string                `json:"idempotency_key"`
@@ -1219,6 +3409,18 @@ const (
 )
 
 type VerificationStateChangedPayloadV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable      bool               `json:"immutable"`
 	SchemaVersion  string             `json:"schema_version"`
 	VerificationId UUID               `json:"verification_id"`
 	PreviousState  *VerificationState `json:"previous_state"`
@@ -1237,4 +3439,150 @@ const (
 	VerificationTriggerMANUALREVERIFY            VerificationTrigger = "MANUAL_REVERIFY"
 	VerificationTriggerKNOWLEDGEBASEREVALIDATION VerificationTrigger = "KNOWLEDGE_BASE_REVALIDATION"
 	VerificationTriggerPOLICYREVALIDATION        VerificationTrigger = "POLICY_REVALIDATION"
+)
+
+type VerificationVerdict string
+
+const (
+	VerificationVerdictSUPPORTED            VerificationVerdict = "SUPPORTED"
+	VerificationVerdictPARTIALLYSUPPORTED   VerificationVerdict = "PARTIALLY_SUPPORTED"
+	VerificationVerdictCONTRADICTED         VerificationVerdict = "CONTRADICTED"
+	VerificationVerdictINSUFFICIENTEVIDENCE VerificationVerdict = "INSUFFICIENT_EVIDENCE"
+	VerificationVerdictUNSAFE               VerificationVerdict = "UNSAFE"
+	VerificationVerdictNOTAPPLICABLE        VerificationVerdict = "NOT_APPLICABLE"
+	VerificationVerdictERROR                VerificationVerdict = "ERROR"
+)
+
+type VerifierExtensionResourceV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable               bool                  `json:"immutable"`
+	SchemaVersion           string                `json:"schema_version"`
+	ExtensionResourceId     UUID                  `json:"extension_resource_id"`
+	VerificationId          UUID                  `json:"verification_id"`
+	ClaimId                 UUID                  `json:"claim_id"`
+	ResourceType            ExtensionResourceType `json:"resource_type"`
+	Title                   string                `json:"title"`
+	Authors                 []string              `json:"authors,omitempty"`
+	Publisher               string                `json:"publisher"`
+	PublicationDate         *string               `json:"publication_date,omitempty"`
+	Identifier              *string               `json:"identifier,omitempty"`
+	CanonicalUri            *string               `json:"canonical_uri,omitempty"`
+	CanonicalCitation       string                `json:"canonical_citation"`
+	CitationSha256          string                `json:"citation_sha256"`
+	LicenseExpression       string                `json:"license_expression"`
+	Topic1KnowledgePointIds []string              `json:"topic1_knowledge_point_ids"`
+	SourceEvidenceRefIds    []UUID                `json:"source_evidence_ref_ids"`
+}
+
+type VerifierGraphEdgeV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable     bool          `json:"immutable"`
+	SchemaVersion string        `json:"schema_version"`
+	EdgeId        string        `json:"edge_id"`
+	SourceNodeId  string        `json:"source_node_id"`
+	TargetNodeId  string        `json:"target_node_id"`
+	Relation      GraphRelation `json:"relation"`
+	Directed      bool          `json:"directed"`
+}
+
+type VerifierGraphIRV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable         bool                  `json:"immutable"`
+	SchemaVersion     string                `json:"schema_version"`
+	VerifierGraphIrId UUID                  `json:"verifier_graph_ir_id"`
+	VerificationId    UUID                  `json:"verification_id"`
+	ClaimId           UUID                  `json:"claim_id"`
+	CandidateId       UUID                  `json:"candidate_id"`
+	CandidateVersion  int64                 `json:"candidate_version"`
+	BlockId           string                `json:"block_id"`
+	MermaidVersion    string                `json:"mermaid_version"`
+	Direction         string                `json:"direction"`
+	Nodes             []VerifierGraphNodeV1 `json:"nodes"`
+	Edges             []VerifierGraphEdgeV1 `json:"edges,omitempty"`
+}
+
+type VerifierGraphNodeV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable              bool   `json:"immutable"`
+	SchemaVersion          string `json:"schema_version"`
+	NodeId                 string `json:"node_id"`
+	Label                  string `json:"label"`
+	Topic1KnowledgePointId *UUID  `json:"topic1_knowledge_point_id,omitempty"`
+	NodeType               string `json:"node_type"`
+}
+
+type VulnerabilityRecordV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable             bool                `json:"immutable"`
+	SchemaVersion         string              `json:"schema_version"`
+	VulnerabilityRecordId UUID                `json:"vulnerability_record_id"`
+	SbomManifestId        UUID                `json:"sbom_manifest_id"`
+	ComponentId           UUID                `json:"component_id"`
+	AdvisoryId            string              `json:"advisory_id"`
+	Severity              FindingSeverity     `json:"severity"`
+	CvssScore             *float64            `json:"cvss_score,omitempty"`
+	AffectedRange         *string             `json:"affected_range,omitempty"`
+	FixedVersion          *string             `json:"fixed_version,omitempty"`
+	Status                VulnerabilityStatus `json:"status"`
+	NonWaivable           bool                `json:"non_waivable"`
+}
+
+type VulnerabilityStatus string
+
+const (
+	VulnerabilityStatusOPEN         VulnerabilityStatus = "OPEN"
+	VulnerabilityStatusNOTAFFECTED  VulnerabilityStatus = "NOT_AFFECTED"
+	VulnerabilityStatusMITIGATED    VulnerabilityStatus = "MITIGATED"
+	VulnerabilityStatusFIXED        VulnerabilityStatus = "FIXED"
+	VulnerabilityStatusACCEPTEDRISK VulnerabilityStatus = "ACCEPTED_RISK"
 )
