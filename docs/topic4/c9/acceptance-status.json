@@ -1,11 +1,14 @@
 {
   "topic": "TOPIC4",
   "module": "C9_SECURITY",
-  "state": "LOCAL_CANDIDATE",
+  "state": "ACCEPTED",
   "branch": "codex/topic4-verifier-runtime",
   "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
   "parent_checkpoint": "839257aa043da8d2fc773442a6209dd1bc96430e",
   "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T18:54:52Z",
+  "local_implementation_checkpoints": ["4990a4f", "cae53d2", "5ecb7bf"],
+  "verified_commit": "ddc6dd4f8b452b00fad343e7049a400319f3794d",
   "implemented": [
     "deterministic prompt-injection detection",
     "credential, malware, exfiltration, content-policy, and cross-tenant reference detection",
@@ -20,20 +23,28 @@
     "package_coverage_percent": 90.0,
     "ruff": "passed",
     "diff_check": "passed",
-    "remote_ci": "pending",
-    "global_coverage": "pending full regression"
+    "remote_ci": "passed",
+    "global_coverage_percent": 90.95,
+    "global_coverage_redline": "passed (>= 90)",
+    "full_postgres_suite": "396 passed, 1 skipped",
+    "alembic_round_trip": "passed (head 20260716_0009)",
+    "model_drift": "passed",
+    "gitleaks_history": "passed (zero leaks with exact synthetic-fixture allowlist)",
+    "trivy": "passed (zero findings)",
+    "remote_jobs": "8/8 successful"
   },
   "unlock": {
     "c9": true,
-    "c10": false,
+    "c10": true,
     "c11": false,
     "c12": false,
     "frontend": false
   },
   "remote_acceptance": {
-    "status": "PENDING",
-    "run_id": null,
-    "head_sha": null,
-    "url": null
+    "status": "completed",
+    "run_id": 29525812332,
+    "head_sha": "ddc6dd4f8b452b00fad343e7049a400319f3794d",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29525812332"
   }
 }

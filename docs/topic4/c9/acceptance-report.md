@@ -2,10 +2,11 @@
 
 ## 1. Decision
 
-The C9 implementation is a **local acceptance candidate** on
-`codex/topic4-verifier-runtime`. Formal C9 acceptance remains pending until
-the implementation checkpoint and its remote Release Quality Gates run are
-verified. C10, C11, C12, and frontend development remain locked.
+The C9 implementation is **ACCEPTED** on `codex/topic4-verifier-runtime`.
+The verified remote commit is
+`ddc6dd4f8b452b00fad343e7049a400319f3794d`. GitHub Actions Release Quality
+Gates Run `29525812332` completed with all eight jobs successful. C10 is now
+unlocked; C11, C12, and frontend development remain locked.
 
 ## 2. Delivered implementation
 
@@ -44,8 +45,10 @@ artifact replay, prompt injection blocking, raw-payload exclusion, non-waivable
 credential and cross-tenant findings, cross-tenant evidence rejection, missing
 evidence, deterministic bounded scanning, and the frozen C1 executor boundary.
 The dedicated C9 package coverage is **90.0 percent**. Full repository
-coverage and all supply-chain/container gates are still required before remote
-acceptance.
+The remote PostgreSQL 16 suite completed **396 passed and 1 expected skip**;
+global Python and contract coverage was **90.95 percent**. The Alembic
+round-trip and model-drift checks passed at head `20260716_0009`. Gitleaks,
+Trivy, SBOM/license, dependency, Ruff, Go, and TS/Vue gates all passed.
 
 ## 5. Compatibility boundary
 
@@ -56,7 +59,6 @@ artifact store and C1 execution protocol.
 
 ## 6. Next unlock decision
 
-C10 may begin only after this C9 implementation checkpoint passes the remote
-quality workflow and the C9 acceptance archive is verified. C11 remains locked
-until C10 is independently accepted. C12 remains locked until C9, C10, and C11
-are all formally accepted.
+C10 is unlocked after this remote acceptance. C11 remains locked until C10 is
+independently accepted. C12 remains locked until C9, C10, and C11 are all
+formally accepted.
