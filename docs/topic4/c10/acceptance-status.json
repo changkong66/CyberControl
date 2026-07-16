@@ -1,0 +1,39 @@
+{
+  "topic": "TOPIC4",
+  "module": "C10_PRIVACY",
+  "state": "LOCAL_CANDIDATE",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "2c388ef0e20da93891eef400e930fbb009e15196",
+  "status_as_of": "2026-07-16",
+  "implemented": [
+    "deterministic local PII detection",
+    "trusted source tenant proof and evidence binding",
+    "non-waivable national ID, biometric, and credential blocking",
+    "deterministic non-reversible email, phone, and student ID tokenization",
+    "name and address redaction",
+    "immutable PII, token, privacy result, and redacted artifact output",
+    "C1-compatible ModuleFinding and executor integration"
+  ],
+  "verification": {
+    "dedicated_tests": "6 passed",
+    "package_coverage_percent": 92.0,
+    "ruff": "passed",
+    "diff_check": "passed",
+    "remote_ci": "pending",
+    "global_coverage": "pending full regression"
+  },
+  "unlock": {
+    "c9": true,
+    "c10": true,
+    "c11": false,
+    "c12": false,
+    "frontend": false
+  },
+  "remote_acceptance": {
+    "status": "PENDING",
+    "run_id": null,
+    "head_sha": null,
+    "url": null
+  }
+}
