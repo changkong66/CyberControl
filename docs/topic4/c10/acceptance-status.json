@@ -1,11 +1,14 @@
 {
   "topic": "TOPIC4",
   "module": "C10_PRIVACY",
-  "state": "LOCAL_CANDIDATE",
+  "state": "ACCEPTED",
   "branch": "codex/topic4-verifier-runtime",
   "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
   "parent_checkpoint": "2c388ef0e20da93891eef400e930fbb009e15196",
   "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T19:10:29Z",
+  "local_implementation_checkpoint": "9ff8ae6",
+  "verified_commit": "2d90a268800a686c17ad5b914c543c7f69f0bb20",
   "implemented": [
     "deterministic local PII detection",
     "trusted source tenant proof and evidence binding",
@@ -20,20 +23,28 @@
     "package_coverage_percent": 92.0,
     "ruff": "passed",
     "diff_check": "passed",
-    "remote_ci": "pending",
-    "global_coverage": "pending full regression"
+    "remote_ci": "passed",
+    "global_coverage_percent": 90.97,
+    "global_coverage_redline": "passed (>= 90)",
+    "full_postgres_suite": "402 passed, 1 skipped",
+    "alembic_round_trip": "passed (head 20260716_0009)",
+    "model_drift": "passed",
+    "gitleaks_history": "passed",
+    "trivy": "passed (zero findings)",
+    "remote_jobs": "8/8 successful"
   },
   "unlock": {
     "c9": true,
     "c10": true,
-    "c11": false,
+    "c11": true,
     "c12": false,
     "frontend": false
   },
   "remote_acceptance": {
-    "status": "PENDING",
-    "run_id": null,
-    "head_sha": null,
-    "url": null
+    "status": "completed",
+    "run_id": 29526860801,
+    "head_sha": "2d90a268800a686c17ad5b914c543c7f69f0bb20",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29526860801"
   }
 }
