@@ -1,0 +1,43 @@
+{
+  "topic": "TOPIC4",
+  "module": "C12_ATOMIC_RELEASE_GATE",
+  "state": "IMPLEMENTED_PENDING_REMOTE",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "7dd8220",
+  "status_as_of": "2026-07-16",
+  "implemented": [
+    "one-time release authorization validation",
+    "Candidate, report, request, and artifact SHA binding",
+    "FULL and FULL_WITH_DISCLOSURE block authorization policy",
+    "content-addressed public Candidate and event artifacts",
+    "deterministic in-memory atomic publication adapter",
+    "SERIALIZABLE PostgreSQL publication repository",
+    "append-only authorization consumption and publication snapshots",
+    "audit hash-chain and transactional Outbox publication event",
+    "complete immutable batch/event replay validation",
+    "fail-closed expiry, replay, tenant, payload, and object-store checks"
+  ],
+  "verification": {
+    "dedicated_tests": "11 passed",
+    "release_package_coverage_percent": 87.0,
+    "ruff": "passed",
+    "format": "passed",
+    "diff_check": "passed",
+    "local_postgres_integration": "not run: LIYAN_TEST_* URLs are not configured",
+    "remote_ci": "pending",
+    "remote_postgres_rls": "pending",
+    "remote_publish_performance": "pending"
+  },
+  "unlock": {
+    "frontend": false,
+    "final_topic4_acceptance": false
+  },
+  "required_before_acceptance": [
+    "remote implementation CI all green",
+    "PostgreSQL SERIALIZABLE, foreign-key, RLS, Outbox, and rollback tests",
+    "global coverage at or above the Topic4 redline",
+    "Trivy, Gitleaks, SBOM, license, Ruff, Go, and TS/Vue gates green",
+    "archive commit and remote acceptance report"
+  ]
+}
