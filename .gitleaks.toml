@@ -22,3 +22,13 @@ paths = [
   '''(^|[\\/])\.coverage$''',
   '''\.tsbuildinfo$''',
 ]
+
+[[allowlists]]
+description = "Historical synthetic Stripe-shaped C9 fixture; exact value is not a credential"
+regexTarget = "match"
+regexes = [
+  '''^sk_test_123456789012345678$''',
+]
+paths = [
+  '''(^|[\\/])backend[\\/]tests[\\/]test_topic4_c9_security\.py$''',
+]
