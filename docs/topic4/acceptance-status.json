@@ -6,7 +6,14 @@
   "protected_main_base": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
   "implementation_commit": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
   "accepted_at_utc": "2026-07-18T06:43:58Z",
-  "mainline_merge_state": "PENDING_PROTECTED_PULL_REQUEST",
+  "mainline_merge_state": "MERGED_PROTECTED_MAIN",
+  "mainline_merge": {
+    "pull_request": 16,
+    "method": "SQUASH",
+    "merged_at_utc": "2026-07-18T09:38:25Z",
+    "main_commit": "190ed863c13f8f71d909b6083b929c899e4db69f",
+    "url": "https://github.com/changkong66/CyberControl/pull/16"
+  },
   "modules": {
     "C1": "ACCEPTED",
     "C2": "ACCEPTED",
@@ -32,6 +39,7 @@
     "tests_passed": 428,
     "tests_skipped": 1,
     "tests_failed": 0,
+    "coverage_hard_threshold_percent": 90.0,
     "coverage_percent": 91.19,
     "topic4_tests": 201,
     "concurrent_verifications": 200,
@@ -55,10 +63,25 @@
     "artifact_count": 6,
     "url": "https://github.com/changkong66/CyberControl/actions/runs/29634407475"
   },
+  "mainline_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29639495363,
+    "head_sha": "190ed863c13f8f71d909b6083b929c899e4db69f",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29639495363"
+  },
   "frontend": {
     "business_code_started": false,
     "unlock_preconditions_met": true,
-    "unlock_active": false,
-    "activation_condition": "merge the approved Topic4 pull request into protected main"
+    "unlock_active": true,
+    "development_branch": "codex/frontend-workbench",
+    "activation_condition": "Topic4 merged into protected main with Release Quality Gates passing",
+    "activation_condition_satisfied": true
+  },
+  "project_phase": {
+    "current": "PHASE6_FRONTEND_INTEGRATION",
+    "phase7_system_acceptance": "PENDING"
   }
 }

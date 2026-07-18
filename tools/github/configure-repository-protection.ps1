@@ -11,7 +11,10 @@ param(
 
     [string]$MainRulesetName = "main-release-governance",
 
-    [string]$TagRulesetName = "immutable-release-tags"
+    [string]$TagRulesetName = "immutable-release-tags",
+
+    [ValidateSet("Solo", "Team")]
+    [string]$MaintenanceMode = "Solo"
 )
 
 $ErrorActionPreference = "Stop"
@@ -116,6 +119,10 @@ if (-not $repositoryState.permissions.admin) {
     throw "The current GitHub credential does not have repository administration permission."
 }
 
+$RequiredApprovingReviewCount = if ($MaintenanceMode -eq "Solo") { 0 } else { 1 }
+$RequireCodeOwnerReview = $MaintenanceMode -eq "Team"
+$RequireLastPushApproval = $MaintenanceMode -eq "Team"
+
 $classicProtection = @{
     required_status_checks = @{
         strict = $true
@@ -129,9 +136,9 @@ $classicProtection = @{
     enforce_admins = $true
     required_pull_request_reviews = @{
         dismiss_stale_reviews = $true
-        require_code_owner_reviews = $true
-        required_approving_review_count = 1
-        require_last_push_approval = $true
+        require_code_owner_reviews = $RequireCodeOwnerReview
+        required_approving_review_count = $RequiredApprovingReviewCount
+        require_last_push_approval = $RequireLastPushApproval
     }
     restrictions = $null
     required_linear_history = $true
@@ -169,9 +176,9 @@ $mainRuleset = @{
             parameters = @{
                 allowed_merge_methods = @("squash", "rebase")
                 dismiss_stale_reviews_on_push = $true
-                require_code_owner_review = $true
-                require_last_push_approval = $true
-                required_approving_review_count = 1
+                require_code_owner_review = $RequireCodeOwnerReview
+                require_last_push_approval = $RequireLastPushApproval
+                required_approving_review_count = $RequiredApprovingReviewCount
                 required_review_thread_resolution = $true
             }
         },
@@ -205,7 +212,10 @@ $tagRuleset = @{
     )
 }
 
-if ($PSCmdlet.ShouldProcess("$Repository/$Branch", "Apply Classic and Repository Ruleset redlines")) {
+if ($PSCmdlet.ShouldProcess(
+    "$Repository/$Branch",
+    "Apply Classic and Repository Ruleset redlines in $MaintenanceMode mode"
+)) {
     Invoke-GitHubJson -Method PUT `
         -Uri "$ApiRoot/branches/$EncodedBranch/protection" `
         -Body $classicProtection | Out-Null
@@ -241,12 +251,12 @@ if ($null -eq $reviewPolicy) {
     throw "Classic pull-request review protection is absent."
 }
 if (
-    $reviewPolicy.required_approving_review_count -lt 1 -or
-    -not $reviewPolicy.require_code_owner_reviews -or
+    [int]$reviewPolicy.required_approving_review_count -ne $RequiredApprovingReviewCount -or
+    [bool]$reviewPolicy.require_code_owner_reviews -ne $RequireCodeOwnerReview -or
     -not $reviewPolicy.dismiss_stale_reviews -or
-    -not $reviewPolicy.require_last_push_approval
+    [bool]$reviewPolicy.require_last_push_approval -ne $RequireLastPushApproval
 ) {
-    throw "One or more required Classic pull-request review controls remain disabled."
+    throw "Classic pull-request review controls do not match MaintenanceMode '$MaintenanceMode'."
 }
 
 $rulesetResponse = Invoke-GitHubJson -Method GET -Uri "$ApiRoot/rulesets"
@@ -283,6 +293,42 @@ foreach ($ruleType in $requiredMainRuleTypes) {
         throw "Main ruleset is missing required rule '$ruleType'."
     }
 }
+$verifiedMainPullRequestRules = @(
+    $verifiedMain.rules | Where-Object { $_.type -eq "pull_request" }
+)
+if ($verifiedMainPullRequestRules.Count -ne 1) {
+    throw "Main ruleset must contain exactly one pull-request rule."
+}
+$verifiedMainPullRequestParameters = $verifiedMainPullRequestRules[0].parameters
+$verifiedMergeMethods = @($verifiedMainPullRequestParameters.allowed_merge_methods)
+if (
+    $verifiedMergeMethods.Count -ne 2 -or
+    $verifiedMergeMethods -notcontains "squash" -or
+    $verifiedMergeMethods -notcontains "rebase" -or
+    -not $verifiedMainPullRequestParameters.dismiss_stale_reviews_on_push -or
+    -not $verifiedMainPullRequestParameters.required_review_thread_resolution -or
+    [int]$verifiedMainPullRequestParameters.required_approving_review_count -ne $RequiredApprovingReviewCount -or
+    [bool]$verifiedMainPullRequestParameters.require_code_owner_review -ne $RequireCodeOwnerReview -or
+    [bool]$verifiedMainPullRequestParameters.require_last_push_approval -ne $RequireLastPushApproval
+) {
+    throw "Main ruleset pull-request controls do not match MaintenanceMode '$MaintenanceMode'."
+}
+$verifiedMainStatusRules = @(
+    $verifiedMain.rules | Where-Object { $_.type -eq "required_status_checks" }
+)
+if ($verifiedMainStatusRules.Count -ne 1) {
+    throw "Main ruleset must contain exactly one required-status-checks rule."
+}
+$verifiedMainStatusParameters = $verifiedMainStatusRules[0].parameters
+$verifiedMainStatusContexts = @(
+    $verifiedMainStatusParameters.required_status_checks | ForEach-Object { $_.context }
+)
+if (
+    -not $verifiedMainStatusParameters.strict_required_status_checks_policy -or
+    $verifiedMainStatusContexts -notcontains $RequiredContext
+) {
+    throw "Main ruleset does not strictly require '$RequiredContext'."
+}
 $tagRuleTypes = @($verifiedTag.rules | ForEach-Object { $_.type })
 if ($tagRuleTypes -notcontains "deletion" -or $tagRuleTypes -notcontains "non_fast_forward") {
     throw "Tag ruleset does not block deletion and non-fast-forward updates."
@@ -298,10 +344,11 @@ if (
 }
 
 $evidence = [ordered]@{
-    schema_version = "phase1.1.repository-protection.v2"
+    schema_version = "phase1.1.repository-protection.v3"
     repository = $Repository
     visibility = $repositoryState.visibility
     branch = $Branch
+    maintenance_mode = $MaintenanceMode
     required_context = $RequiredContext
     classic = [ordered]@{
         strict_status_checks = $verifiedClassic.required_status_checks.strict
@@ -322,6 +369,9 @@ $evidence = [ordered]@{
             name = $verifiedMain.name
             enforcement = $verifiedMain.enforcement
             rule_types = $mainRuleTypes
+            required_approving_reviews = $verifiedMainPullRequestParameters.required_approving_review_count
+            code_owner_reviews_required = $verifiedMainPullRequestParameters.require_code_owner_review
+            last_push_approval_required = $verifiedMainPullRequestParameters.require_last_push_approval
             bypass_actors = @($verifiedMain.bypass_actors)
         }
         tags = [ordered]@{

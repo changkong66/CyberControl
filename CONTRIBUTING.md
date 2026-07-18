@@ -5,6 +5,10 @@
 `main` is the release baseline. Direct feature development on `main` is
 prohibited after the initial repository baseline. Repository hosting must require
 pull requests, passing quality gates, resolved review threads, and linear history.
+The current repository uses the documented `Solo` maintenance mode: approval
+count, mandatory Code Owner review, and last-push approval are disabled because
+the sole maintainer cannot approve their own pull request. All other protections,
+including administrator enforcement, remain mandatory.
 
 ## Branch names
 
@@ -45,8 +49,11 @@ migration validation, dependency vulnerability checks, and SBOM generation.
 The protected branch requires the aggregated **Release quality redline** status
 defined in `.github/workflows/quality-gates.yml`. Windows contributors can reproduce
 the release-equivalent suite with `tools/windows/run-quality-gates.ps1`; runs using
-any skip switch are diagnostic only.
+any skip switch are diagnostic only. The configured Python coverage threshold is
+90%; higher acceptance observations do not silently change that hard threshold.
 
-Repository ownership is enforced by `.github/CODEOWNERS`. Changes to contracts,
-infrastructure, provider policy, migrations, ADRs, or security boundaries require
-the configured Code Owner review in addition to the normal approval count.
+`.github/CODEOWNERS` remains the authoritative ownership map. In `Solo` mode it is
+retained for responsibility and audit traceability but is not a mandatory approval
+gate. Repositories that gain an independent reviewer must apply `Team` mode with
+`tools/github/configure-repository-protection.ps1`; Team mode restores one approval,
+mandatory Code Owner review, and last-push approval without changing other gates.
