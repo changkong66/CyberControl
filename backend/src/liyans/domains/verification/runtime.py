@@ -15,7 +15,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from typing import Any
-from uuid import UUID, uuid5
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from liyans_contracts.artifacts import (
     ArtifactObjectRefV1,
@@ -25,9 +25,24 @@ from liyans_contracts.artifacts import (
 from liyans_contracts.common import canonical_sha256
 from liyans_contracts.enums import VerificationProfile, VerificationTrigger
 from liyans_contracts.topic3 import CandidateStatus, CandidateV1
-from liyans_contracts.topic4_c1 import ClaimV1, ModuleDispatchPlanV1
+from liyans_contracts.topic4_c1 import (
+    ClaimV1,
+    HumanReviewDecisionV1,
+    HumanReviewTaskV1,
+    ModuleDispatchPlanV1,
+    ReviewDecision,
+    ReviewTaskState,
+)
 from liyans_contracts.topic4_c2 import RetrievalResponseV1
-from liyans_contracts.topic4_common import VerificationModule, VerificationVerdict
+from liyans_contracts.topic4_c12 import (
+    PublicationCommitCommandV2,
+    ReleaseDerivationCommandV2,
+)
+from liyans_contracts.topic4_common import (
+    AggregateDecision,
+    VerificationModule,
+    VerificationVerdict,
+)
 from liyans_contracts.verification import (
     ReleaseAuthorizationPayloadV1,
     VerificationContextV1,
@@ -46,6 +61,10 @@ from liyans.domains.code.evidence_source import PostgresCodeEvidenceSource
 from liyans.domains.code.handler import C6CodeHandler
 from liyans.domains.compliance.evidence_source import ComplianceEvidenceBundle
 from liyans.domains.compliance.handler import C11ComplianceHandler
+from liyans.domains.compliance.service import (
+    ComplianceEvidenceError,
+    ComplianceEvidenceService,
+)
 from liyans.domains.extension.evidence_source import PostgresExtensionEvidenceSource
 from liyans.domains.extension.handler import C7ExtensionHandler
 from liyans.domains.graph.evidence_source import PostgresGraphEvidenceSource
@@ -57,6 +76,7 @@ from liyans.domains.privacy.handler import C10PrivacyHandler
 from liyans.domains.quiz.evidence_source import PostgresQuizEvidenceSource
 from liyans.domains.quiz.handler import C5QuizHandler
 from liyans.domains.release.engine import (
+    AuthorizationConflictError,
     C12ReleaseService,
     PublicationRequest,
     PublicationResult,
@@ -75,8 +95,9 @@ from liyans.domains.verification.execution import (
     ModuleFinding,
     VerificationModuleHandler,
 )
+from liyans.domains.verification.models import Topic4HumanReviewTaskModel
 from liyans.domains.verification.postgres_repository import PostgresVerificationRepository
-from liyans.domains.verification.records import build_topic4_record
+from liyans.domains.verification.records import build_topic4_record, record_integrity_valid
 from liyans.domains.verification.release_models import (
     Topic4PublicationBatchModel,
     Topic4PublicStreamEventModel,
@@ -367,6 +388,7 @@ class Topic4Runtime:
         instance_id: str,
         task_queue: AsyncTaskQueue | None = None,
         prompt_bundle_version: str = "topic4-prompts-v1",
+        compliance_service: ComplianceEvidenceService | None = None,
     ) -> None:
         self.database = database
         self.verification_service = verification_service
@@ -384,6 +406,7 @@ class Topic4Runtime:
         self.instance_id = instance_id
         self.prompt_bundle_version = prompt_bundle_version
         self.task_queue = task_queue
+        self.compliance_service = compliance_service
         self._ready = False
         self._locks: dict[tuple[str, UUID], asyncio.Lock] = {}
 
@@ -574,6 +597,136 @@ class Topic4Runtime:
                 session, context.tenant_id, claim_id
             )
 
+    async def import_compliance(self, command: Any) -> Any:
+        if self.compliance_service is None:
+            raise LiyanError(
+                ErrorCode.DATABASE_UNAVAILABLE,
+                "The Topic 4 compliance evidence service is unavailable.",
+                category=ErrorCategory.DATABASE,
+                status_code=503,
+            )
+        return await self.compliance_service.import_package(command)
+
+    async def compliance_package(self, verification_id: UUID | None, claim_id: UUID) -> Any:
+        if self.compliance_service is None:
+            raise LiyanError(
+                ErrorCode.DATABASE_UNAVAILABLE,
+                "The Topic 4 compliance evidence service is unavailable.",
+                category=ErrorCategory.DATABASE,
+                status_code=503,
+            )
+        if verification_id is None:
+            return await self.compliance_service.package_for_claim_id(claim_id)
+        return await self.compliance_service.package_for_claim(verification_id, claim_id)
+
+    async def review_tasks(self, state: ReviewTaskState) -> list[HumanReviewTaskV1]:
+        context = current_tenant()
+        async with self.database.transaction(context=current_session_context()) as session:
+            result = await session.execute(
+                select(Topic4HumanReviewTaskModel)
+                .where(Topic4HumanReviewTaskModel.tenant_id == context.tenant_id)
+                .order_by(
+                    Topic4HumanReviewTaskModel.review_task_id,
+                    Topic4HumanReviewTaskModel.task_version.desc(),
+                )
+            )
+            latest: dict[UUID, HumanReviewTaskV1] = {}
+            for row in result.scalars():
+                latest.setdefault(
+                    row.review_task_id,
+                    HumanReviewTaskV1.model_validate(row.task_document),
+                )
+        return [task for task in latest.values() if task.state == state]
+
+    async def submit_review(
+        self,
+        *,
+        review_task_id: UUID,
+        verification_id: UUID,
+        decision: ReviewDecision,
+        rationale: str,
+        disclosure_codes: list[str],
+        waived_finding_ids: list[UUID],
+        expected_task_version: int,
+        expected_state_version: int,
+        idempotency_key: str,
+    ) -> Any:
+        context = current_tenant()
+        now = datetime.now(UTC)
+        rationale_document = {
+            "schema_version": "human-review.rationale.v1",
+            "trace_id": context.trace_id,
+            "tenant_id": context.tenant_id,
+            "review_task_id": str(review_task_id),
+            "verification_id": str(verification_id),
+            "decision": decision.value,
+            "rationale": rationale,
+            "disclosure_codes": list(disclosure_codes),
+            "waived_finding_ids": [str(item) for item in waived_finding_ids],
+            "expected_task_version": expected_task_version,
+            "expected_state_version": expected_state_version,
+        }
+        content = json.dumps(
+            rationale_document,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        digest = canonical_sha256(rationale_document)
+        key = f"human-review/{verification_id}/{review_task_id}/{digest}.json"
+        stored = await self.artifact_store.put(
+            tenant_id=context.tenant_id,
+            storage_namespace="verification-artifacts",
+            object_key=key,
+            content=content,
+        )
+        if stored.sha256 != digest or stored.byte_size != len(content):
+            raise LiyanError(
+                ErrorCode.TOPIC4_INTEGRITY_FAILED,
+                "Human review rationale artifact integrity failed.",
+                category=ErrorCategory.DATABASE,
+                status_code=500,
+            )
+        rationale_artifact = ArtifactObjectRefV1(
+            schema_version="artifact.object.ref.v1",
+            storage_namespace="verification-artifacts",
+            object_key=key,
+            media_type="application/json",
+            content_encoding="identity",
+            byte_size=stored.byte_size,
+            sha256=stored.sha256,
+            created_at=now,
+        )
+        review_decision = build_topic4_record(
+            HumanReviewDecisionV1,
+            trace_id=context.trace_id,
+            tenant_id=context.tenant_id,
+            version_cas=expected_task_version + 1,
+            created_at=now,
+            immutable=True,
+            schema_version="human-review.decision.v1",
+            review_decision_id=uuid5(
+                NAMESPACE_URL,
+                f"topic4:review:{context.tenant_id}:{idempotency_key}",
+            ),
+            review_task_id=review_task_id,
+            verification_id=verification_id,
+            decision=decision,
+            reviewer_subject_ref=context.subject_ref,
+            rationale_artifact=rationale_artifact,
+            rationale_sha256=stored.sha256,
+            disclosure_codes=disclosure_codes,
+            waived_finding_ids=waived_finding_ids,
+            decided_at=now,
+            decision_context={"idempotency_key_sha256": canonical_sha256({"key": idempotency_key})},
+        )
+        return await self.verification_service.submit_human_review(
+            review_decision,
+            expected_task_version=expected_task_version,
+            expected_state_version=expected_state_version,
+            idempotency_key=idempotency_key,
+        )
+
     async def claims(self, verification_id: UUID) -> list[ClaimV1]:
         context = current_tenant()
         async with self.database.transaction(context=current_session_context()) as session:
@@ -756,10 +909,300 @@ class Topic4Runtime:
     async def issue_authorization(
         self, authorization: ReleaseAuthorizationPayloadV1
     ) -> ReleaseAuthorizationPayloadV1:
+        await self._validate_persisted_release_authority(authorization, require_pending=True)
         return await self.release_service.issue_authorization(authorization)
 
+    async def validate_authorization(self, authorization: ReleaseAuthorizationPayloadV1) -> None:
+        await self._validate_persisted_release_authority(authorization, require_pending=True)
+
     async def publish(self, request: PublicationRequest) -> PublicationResult:
+        await self._validate_persisted_release_authority(
+            request.authorization,
+            report=request.report,
+            candidate=request.candidate,
+            require_pending=False,
+        )
         return await self.release_service.publish(request)
+
+    async def derive_release_authorization(
+        self,
+        command: ReleaseDerivationCommandV2,
+        *,
+        idempotency_key: str,
+    ) -> ReleaseAuthorizationPayloadV1:
+        context = current_tenant()
+        expected_key_sha = canonical_sha256({"idempotency_key": idempotency_key})
+        if (
+            command.tenant_id != context.tenant_id
+            or command.trace_id != context.trace_id
+            or command.idempotency_key_sha256 != expected_key_sha
+            or not record_integrity_valid(command)
+        ):
+            raise ReleaseError("C12 v2 derivation command does not match trusted context")
+        authorization_id = uuid5(
+            NAMESPACE_URL,
+            f"topic4:c12:derive:{context.tenant_id}:{idempotency_key}",
+        )
+        existing = await self.release_service.get_authorization(authorization_id)
+        if existing is not None:
+            if existing.verification_id != command.verification_id:
+                raise ReleaseError(
+                    "C12 v2 Idempotency-Key was reused for a different verification"
+                ) from None
+            expected_blocks = await self._requested_release_blocks(
+                command.verification_id,
+                command.requested_block_ids,
+            )
+            if (
+                existing.release_mode != command.requested_release_mode
+                or existing.allowed_block_ids != expected_blocks
+                or int((existing.expires_at - existing.issued_at).total_seconds())
+                != command.ttl_seconds
+            ):
+                raise ReleaseError(
+                    "C12 v2 Idempotency-Key was reused with different release content"
+                ) from None
+            return existing
+        report, candidate, aggregation, state = await self._release_authority(
+            command.verification_id
+        )
+        if state.change.current_state != VerificationState.RELEASE_PENDING:
+            raise ReleaseError("C12 authorization derivation requires RELEASE_PENDING state")
+        expected_decision = (
+            AggregateDecision.RELEASE
+            if command.requested_release_mode == "FULL"
+            else AggregateDecision.RELEASE_WITH_DISCLOSURE
+        )
+        if report.decision != expected_decision or aggregation.decision != expected_decision:
+            raise ReleaseError("C12 requested release mode disagrees with persisted decisions")
+        allowed_blocks = await self._requested_release_blocks(
+            command.verification_id,
+            command.requested_block_ids,
+            candidate=candidate,
+        )
+        disclosure_codes = (
+            list(aggregation.disclosure_codes)
+            if command.requested_release_mode == "FULL_WITH_DISCLOSURE"
+            else []
+        )
+        now = datetime.now(UTC)
+        authorization = build_topic4_record(
+            ReleaseAuthorizationPayloadV1,
+            trace_id=context.trace_id,
+            tenant_id=context.tenant_id,
+            version_cas=1,
+            created_at=now,
+            immutable=True,
+            schema_version="release.authorization.v1",
+            authorization_id=authorization_id,
+            verification_id=command.verification_id,
+            report_id=report.report_id,
+            candidate_id=candidate.candidate_id,
+            candidate_version=candidate.candidate_version,
+            candidate_sha256=candidate.candidate_sha256,
+            release_mode=command.requested_release_mode,
+            allowed_block_ids=allowed_blocks,
+            disclosure_codes=disclosure_codes,
+            report_sha256=report.report_sha256,
+            issued_at=now,
+            expires_at=now + timedelta(seconds=command.ttl_seconds),
+            one_time_use=True,
+        )
+        await self._validate_persisted_release_authority(
+            authorization,
+            report=report,
+            candidate=candidate,
+            state=state,
+        )
+        try:
+            return await self.release_service.issue_authorization(authorization)
+        except AuthorizationConflictError:
+            existing = await self.release_service.get_authorization(authorization_id)
+            if existing is None:
+                raise
+            if existing.verification_id != command.verification_id:
+                raise ReleaseError(
+                    "C12 v2 Idempotency-Key was reused for a different verification"
+                ) from None
+            expected_blocks = await self._requested_release_blocks(
+                command.verification_id,
+                command.requested_block_ids,
+            )
+            if (
+                existing.release_mode != command.requested_release_mode
+                or existing.allowed_block_ids != expected_blocks
+                or int((existing.expires_at - existing.issued_at).total_seconds())
+                != command.ttl_seconds
+            ):
+                raise ReleaseError(
+                    "C12 v2 Idempotency-Key was reused with different release content"
+                ) from None
+            return existing
+
+    async def commit_release_v2(
+        self,
+        command: PublicationCommitCommandV2,
+        *,
+        idempotency_key: str,
+    ) -> PublicationResult:
+        context = current_tenant()
+        expected_key_sha = canonical_sha256({"idempotency_key": idempotency_key})
+        if (
+            command.tenant_id != context.tenant_id
+            or command.trace_id != context.trace_id
+            or command.idempotency_key_sha256 != expected_key_sha
+            or not record_integrity_valid(command)
+        ):
+            raise ReleaseError("C12 v2 commit command does not match trusted context")
+        authorization = await self.release_service.get_authorization(command.authorization_id)
+        if authorization is None:
+            raise ReleaseError("C12 authorization does not exist in the current tenant")
+        report, candidate, _aggregation, _state = await self._release_authority(
+            authorization.verification_id
+        )
+        if (
+            report.report_id != authorization.report_id
+            or candidate.candidate_id != authorization.candidate_id
+            or candidate.candidate_version != authorization.candidate_version
+        ):
+            raise ReleaseError("C12 authorization authority changed")
+        await self._validate_persisted_release_authority(
+            authorization,
+            report=report,
+            candidate=candidate,
+            state=_state,
+            require_pending=False,
+        )
+        request_document = {
+            "publication": {
+                "authorization_id": str(authorization.authorization_id),
+                "verification_id": str(authorization.verification_id),
+                "report_id": str(authorization.report_id),
+                "candidate_id": str(authorization.candidate_id),
+                "candidate_version": authorization.candidate_version,
+                "candidate_sha256": authorization.candidate_sha256,
+                "report_sha256": authorization.report_sha256,
+                "allowed_block_ids": authorization.allowed_block_ids,
+            },
+            "commit_command_id": str(command.commit_command_id),
+            "idempotency_key_sha256": command.idempotency_key_sha256,
+        }
+        request = PublicationRequest(
+            authorization=authorization,
+            report=report,
+            candidate=candidate,
+            request_document=request_document,
+            request_sha256=canonical_sha256(request_document),
+            subject_ref=context.subject_ref,
+        )
+        return await self.release_service.publish(request)
+
+    async def _release_authority(self, verification_id: UUID):
+        context = current_tenant()
+        async with self.database.transaction(context=current_session_context()) as session:
+            report = await self.verification_repository.latest_report(
+                session, context.tenant_id, verification_id
+            )
+            aggregation = await self.verification_repository.latest_aggregation(
+                session, context.tenant_id, verification_id
+            )
+            state = await self.verification_repository.latest_state(
+                session, context.tenant_id, verification_id
+            )
+            if report is None or aggregation is None or state is None:
+                raise ReleaseError("C12 persisted report, aggregation, or state is missing")
+            candidate_record = await self.topic3_repository.get_candidate(
+                session,
+                context.tenant_id,
+                report.candidate_id,
+                report.candidate_version,
+            )
+        if candidate_record is None:
+            raise ReleaseError("C12 persisted Candidate is missing")
+        return report, candidate_record.candidate, aggregation, state
+
+    async def _validate_persisted_release_authority(
+        self,
+        authorization: ReleaseAuthorizationPayloadV1,
+        *,
+        report: Any | None = None,
+        candidate: CandidateV1 | None = None,
+        state: Any | None = None,
+        require_pending: bool = False,
+    ) -> None:
+        context = current_tenant()
+        (
+            persisted_report,
+            persisted_candidate,
+            aggregation,
+            persisted_state,
+        ) = await self._release_authority(authorization.verification_id)
+        report = persisted_report if report is None else report
+        candidate = persisted_candidate if candidate is None else candidate
+        state = persisted_state if state is None else state
+        if (
+            authorization.tenant_id != context.tenant_id
+            or not record_integrity_valid(authorization)
+            or not record_integrity_valid(report)
+            or not record_integrity_valid(aggregation)
+            or persisted_report.model_dump(mode="json") != report.model_dump(mode="json")
+            or persisted_candidate.model_dump(mode="json") != candidate.model_dump(mode="json")
+            or (require_pending and state.change.current_state != VerificationState.RELEASE_PENDING)
+            or authorization.verification_id != report.verification_id
+            or authorization.report_id != report.report_id
+            or authorization.candidate_id != candidate.candidate_id
+            or authorization.candidate_version != candidate.candidate_version
+            or authorization.candidate_sha256 != candidate.candidate_sha256
+            or authorization.report_sha256 != report.report_sha256
+            or report.report_artifact.sha256 != report.report_sha256
+            or report.aggregation_result_id != aggregation.aggregation_result_id
+            or aggregation.verification_id != report.verification_id
+            or aggregation.candidate_id != candidate.candidate_id
+            or aggregation.candidate_version != candidate.candidate_version
+            or aggregation.candidate_sha256 != candidate.candidate_sha256
+            or canonical_sha256(candidate.model_dump(mode="json", exclude={"candidate_sha256"}))
+            != candidate.candidate_sha256
+        ):
+            raise ReleaseError("C12 request does not match persisted release authority")
+        expected_decision = (
+            AggregateDecision.RELEASE
+            if authorization.release_mode == "FULL"
+            else AggregateDecision.RELEASE_WITH_DISCLOSURE
+        )
+        if report.decision != expected_decision or aggregation.decision != expected_decision:
+            raise ReleaseError("C12 release mode disagrees with persisted decision")
+        block_ids = {block.block_id for block in candidate.blocks}
+        allowed = set(authorization.allowed_block_ids)
+        if not allowed or not allowed <= block_ids:
+            raise ReleaseError("C12 authorization contains a non-persisted block")
+        if authorization.release_mode == "FULL" and allowed != block_ids:
+            raise ReleaseError("C12 FULL authorization does not cover the persisted Candidate")
+        expected_disclosures = (
+            list(aggregation.disclosure_codes)
+            if authorization.release_mode == "FULL_WITH_DISCLOSURE"
+            else []
+        )
+        if authorization.disclosure_codes != expected_disclosures:
+            raise ReleaseError("C12 authorization disclosure binding does not match aggregation")
+
+    async def _requested_release_blocks(
+        self,
+        verification_id: UUID,
+        requested_block_ids: list[str],
+        *,
+        candidate: CandidateV1 | None = None,
+    ) -> list[str]:
+        if candidate is None:
+            _report, candidate, _aggregation, _state = await self._release_authority(
+                verification_id
+            )
+        all_blocks = [block.block_id for block in candidate.blocks]
+        if not requested_block_ids:
+            return all_blocks
+        requested = set(requested_block_ids)
+        if not requested <= set(all_blocks):
+            raise ReleaseError("C12 requested block set exceeds persisted Candidate blocks")
+        return [block_id for block_id in all_blocks if block_id in requested]
 
     async def revision(
         self,
@@ -1138,6 +1581,7 @@ def build_topic4_handlers(
     retrieval_service: KnowledgeRetrievalService,
     artifact_store: ArtifactObjectStore,
     metrics: Topic4RuntimeMetrics,
+    compliance_service: ComplianceEvidenceService | None = None,
 ) -> dict[VerificationModule, VerificationModuleHandler]:
     evidence = CandidateEvidenceSource(database, knowledge_repository, topic3_repository)
     handlers: dict[VerificationModule, VerificationModuleHandler] = {
@@ -1185,7 +1629,7 @@ def build_topic4_handlers(
         VerificationModule.C9_SECURITY: C9SecurityHandler(evidence.security, artifact_store),
         VerificationModule.C10_PRIVACY: C10PrivacyHandler(evidence.privacy, artifact_store),
         VerificationModule.C11_COMPLIANCE: C11ComplianceHandler(
-            evidence.compliance,
+            evidence.compliance if compliance_service is None else compliance_service,
             artifact_store,
         ),
     }
@@ -1195,6 +1639,13 @@ def build_topic4_handlers(
 def map_topic4_error(exc: Exception) -> LiyanError:
     if isinstance(exc, LiyanError):
         return exc
+    if isinstance(exc, ComplianceEvidenceError):
+        return LiyanError(
+            ErrorCode.TOPIC4_INTEGRITY_FAILED,
+            "The Topic 4 compliance evidence failed its trusted integrity checks.",
+            category=ErrorCategory.CONTRACT,
+            status_code=409,
+        )
     if isinstance(exc, (ReleaseError, RevisionError, AggregationError)):
         return LiyanError(
             ErrorCode.TOPIC4_RELEASE_DENIED

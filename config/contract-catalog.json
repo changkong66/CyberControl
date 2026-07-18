@@ -109,6 +109,10 @@
     {"schema_name":"sbom-manifest.v1","owner":"c11-compliance","status":"CODED_TOPIC4_FROZEN"},
     {"schema_name":"vulnerability-record.v1","owner":"c11-compliance","status":"CODED_TOPIC4_FROZEN"},
     {"schema_name":"build-provenance.v1","owner":"c11-compliance","status":"CODED_TOPIC4_FROZEN"},
+    {"schema_name":"compliance-evidence-import.command.v1","owner":"c11-compliance","status":"CODED_TOPIC4_FROZEN"},
+    {"schema_name":"compliance-evidence.package.v1","owner":"c11-compliance","status":"CODED_TOPIC4_FROZEN"},
+    {"schema_name":"release.derivation.command.v2","owner":"c12-qa","status":"CODED_TOPIC4_FROZEN"},
+    {"schema_name":"publication.commit.command.v2","owner":"c12-qa","status":"CODED_TOPIC4_FROZEN"},
     {"schema_name":"system-acceptance-report.v1","owner":"c12-qa","status":"CODED_TOPIC4_FROZEN"}
   ]
 }

@@ -1,0 +1,106 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "release.derivation.command.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "derivation_command_id": {
+      "format": "uuid",
+      "title": "Derivation Command Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "requested_release_mode": {
+      "enum": [
+        "FULL",
+        "FULL_WITH_DISCLOSURE"
+      ],
+      "title": "Requested Release Mode",
+      "type": "string"
+    },
+    "requested_block_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2048,
+      "title": "Requested Block Ids",
+      "type": "array"
+    },
+    "ttl_seconds": {
+      "maximum": 300,
+      "minimum": 1,
+      "title": "Ttl Seconds",
+      "type": "integer"
+    },
+    "idempotency_key_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Idempotency Key Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "derivation_command_id",
+    "verification_id",
+    "requested_release_mode",
+    "ttl_seconds",
+    "idempotency_key_sha256"
+  ],
+  "title": "ReleaseDerivationCommandV2",
+  "type": "object"
+}

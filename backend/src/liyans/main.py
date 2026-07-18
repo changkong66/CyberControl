@@ -20,6 +20,7 @@ from liyans.api.topic1_limits import Topic1ImportBodyLimitMiddleware
 from liyans.core.config import ConfigSnapshot, HotReloadingTomlConfig
 from liyans.core.provider_policy import ProviderPolicyRegistry
 from liyans.core.settings import get_settings
+from liyans.domains.compliance.service import ComplianceBuilderPolicy, ComplianceEvidenceService
 from liyans.domains.knowledge.artifact_writer import KnowledgeArtifactWriter
 from liyans.domains.knowledge.postgres_repository import PostgresKnowledgeRepository
 from liyans.domains.knowledge.retrieval import HotReloadableRAGIndex
@@ -316,6 +317,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 policy_version="topic4-policy-v1",
             ),
         )
+        compliance_service = ComplianceEvidenceService(
+            database,
+            verification_repository,
+            knowledge_repository,
+            artifact_store,
+            app.state.outbox,
+            ComplianceBuilderPolicy.load(settings.compliance_builder_policy_path),
+            instance_id=settings.service_instance_id,
+        )
+        app.state.topic4_compliance_service = compliance_service
         topic4_metrics = Topic4RuntimeMetrics(metrics.registry)
         handlers = build_topic4_handlers(
             database=database,
@@ -326,11 +337,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             retrieval_service=retrieval_service,
             artifact_store=artifact_store,
             metrics=topic4_metrics,
+            compliance_service=compliance_service,
         )
         release_service = C12ReleaseService(
             PostgresAtomicReleaseRepository(
                 database,
                 app.state.outbox,
+                verification_repository,
+                topic3_repository,
                 instance_id=settings.service_instance_id,
             ),
             artifact_store,
@@ -358,6 +372,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             topic4_metrics,
             instance_id=settings.service_instance_id,
             task_queue=task_queue,
+            compliance_service=compliance_service,
         )
         app.state.topic4_runtime = topic4_runtime
         app.state.topic4_verification_service = verification_service

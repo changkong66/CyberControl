@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
+from liyans_contracts.artifacts import ArtifactObjectRefV1
 from liyans_contracts.common import canonical_sha256
 from liyans_contracts.enums import ResourceType, VerificationTrigger
-from liyans_contracts.topic4_common import VerificationModule
+from liyans_contracts.topic4_common import ClaimKind, VerificationModule, VerificationVerdict
 from liyans_contracts.verification import ReleaseAuthorizationPayloadV1, VerificationState
 from prometheus_client import CollectorRegistry
 from topic3_support import generation_command
@@ -33,7 +34,11 @@ from liyans.domains.topic3.orchestrator import Topic3Orchestrator
 from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
 from liyans.domains.topic3.service import Topic3Service
 from liyans.domains.topic3.streaming import Topic3StreamCoordinator
-from liyans.domains.verification.execution import BoundedModuleExecutor
+from liyans.domains.verification.execution import (
+    BoundedModuleExecutor,
+    ModuleExecutionContext,
+    ModuleFinding,
+)
 from liyans.domains.verification.postgres_repository import PostgresVerificationRepository
 from liyans.domains.verification.records import build_topic4_record
 from liyans.domains.verification.reporting import (
@@ -298,6 +303,7 @@ async def finalize_release_report(
     fixture: Topic4RuntimeFixture,
     *,
     verification_id: UUID | None = None,
+    handler_overrides: dict[VerificationModule, object] | None = None,
 ):
     request = await fixture.runtime._request_for_candidate(
         fixture.candidate,
@@ -322,8 +328,12 @@ async def finalize_release_report(
         reason_code="MODULE_EXECUTION_STARTED",
         idempotency_key=f"topic4:release:verify:{request.verification_id.hex}",
     )
+    handlers: dict[VerificationModule, object] = {
+        module: _NotApplicableHandler() for module in VerificationModule
+    }
+    handlers.update(handler_overrides or {})
     bundle = await BoundedModuleExecutor(
-        {module: _NotApplicableHandler() for module in VerificationModule},
+        handlers,
         worker_instance_id="topic4-release-fixture-worker",
         retry_backoff_ms=0,
     ).execute(
@@ -343,6 +353,43 @@ async def finalize_release_report(
         idempotency_key=f"topic4:release:finalize:{request.verification_id.hex}",
     )
     return request, finalized
+
+
+class PartiallySupportedHandler:
+    def __init__(self, partial_claim_kinds: frozenset[ClaimKind] | None = None) -> None:
+        self._partial_claim_kinds = partial_claim_kinds
+
+    async def verify(self, context: ModuleExecutionContext) -> ModuleFinding:
+        if (
+            self._partial_claim_kinds is not None
+            and context.claim.claim_kind not in self._partial_claim_kinds
+        ):
+            return await _NotApplicableHandler().verify(context)
+        digest = canonical_sha256(
+            {
+                "claim_id": str(context.claim.claim_id),
+                "module": context.dispatch_item.module.value,
+                "verdict": "PARTIALLY_SUPPORTED",
+            }
+        )
+        return ModuleFinding(
+            verdict=VerificationVerdict.PARTIALLY_SUPPORTED,
+            confidence=0.8,
+            evidence_ref_ids=(),
+            finding_codes=("FIXTURE_PARTIAL_SUPPORT",),
+            result_artifact=ArtifactObjectRefV1(
+                schema_version="artifact.object.ref.v1",
+                storage_namespace="verification-artifacts",
+                object_key=f"topic4/tests/module-results/{context.module_run_id}.json",
+                media_type="application/json",
+                content_encoding="identity",
+                byte_size=2,
+                sha256=digest,
+                created_at=datetime.now(UTC),
+            ),
+            result_sha256=digest,
+            deterministic=True,
+        )
 
 
 def build_release_authorization(
@@ -372,7 +419,7 @@ def build_release_authorization(
         disclosure_codes=[],
         report_sha256=report.report_sha256,
         issued_at=issued_at,
-        expires_at=expires_at or issued_at + timedelta(hours=1),
+        expires_at=expires_at or issued_at + timedelta(minutes=5),
         one_time_use=True,
     )
 

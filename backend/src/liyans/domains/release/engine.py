@@ -44,6 +44,9 @@ class PublicationIntegrityError(ReleaseError):
     pass
 
 
+MAX_AUTHORIZATION_TTL_SECONDS = 300
+
+
 @dataclass(frozen=True, slots=True)
 class PublicationRequest:
     authorization: ReleaseAuthorizationPayloadV1
@@ -62,6 +65,11 @@ class PublicationResult:
 
 
 class AtomicReleaseRepository(Protocol):
+    async def get_authorization(
+        self,
+        authorization_id: UUID,
+    ) -> ReleaseAuthorizationPayloadV1 | None: ...
+
     async def issue_authorization(
         self,
         authorization: ReleaseAuthorizationPayloadV1,
@@ -93,6 +101,10 @@ class ReleasePolicy:
             raise PublicationIntegrityError("C12 authorization must be one-time use")
         if authorization.expires_at <= authorization.issued_at:
             raise PublicationIntegrityError("C12 authorization expiry window is invalid")
+        if (
+            authorization.expires_at - authorization.issued_at
+        ).total_seconds() > MAX_AUTHORIZATION_TTL_SECONDS:
+            raise PublicationIntegrityError("C12 authorization TTL exceeds the server limit")
         if authorization.expires_at <= now:
             raise AuthorizationExpiredError("C12 authorization is already expired")
         if not authorization.allowed_block_ids:
@@ -171,8 +183,26 @@ class ReleasePolicy:
             "report_sha256": authorization.report_sha256,
             "allowed_block_ids": authorization.allowed_block_ids,
         }
-        if request.request_document != expected_document:
+        if request.request_document == expected_document:
+            expected_request_sha256 = canonical_sha256(expected_document)
+        elif request.request_document.get("publication") == expected_document:
+            if set(request.request_document) != {
+                "publication",
+                "commit_command_id",
+                "idempotency_key_sha256",
+            }:
+                raise PublicationIntegrityError("C12 v2 request extension contains unknown fields")
+            extension = {
+                key: request.request_document.get(key)
+                for key in ("commit_command_id", "idempotency_key_sha256")
+            }
+            if not all(isinstance(value, str) and value for value in extension.values()):
+                raise PublicationIntegrityError("C12 v2 request extension is incomplete")
+            expected_request_sha256 = canonical_sha256(request.request_document)
+        else:
             raise PublicationIntegrityError("C12 request document binding mismatch")
+        if request.request_sha256 != expected_request_sha256:
+            raise PublicationIntegrityError("C12 request SHA does not match its binding document")
 
     @staticmethod
     def public_document(candidate: CandidateV1, allowed_block_ids: list[str]) -> dict[str, Any]:
@@ -201,6 +231,11 @@ class C12ReleaseService:
     ) -> None:
         self._repository = repository
         self._artifact_store = artifact_store
+
+    async def get_authorization(
+        self, authorization_id: UUID
+    ) -> ReleaseAuthorizationPayloadV1 | None:
+        return await self._repository.get_authorization(authorization_id)
 
     async def issue_authorization(
         self,
@@ -301,6 +336,11 @@ class InMemoryAtomicReleaseRepository:
                 dict(authorization_document),
             )
             return authorization
+
+    async def get_authorization(self, authorization_id: UUID):
+        async with self._lock:
+            stored = self._authorizations.get(authorization_id)
+            return None if stored is None else stored[0]
 
     async def consume_and_publish(self, request, public_artifact, event_artifact):
         async with self._lock:

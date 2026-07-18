@@ -407,6 +407,78 @@ export interface CodeVerificationResultV1 {
   "confidence": number
 }
 
+export interface ComplianceBuildProvenanceInputV1 {
+  "builder_id": string
+  "builder_version": string
+  "toolchain_manifest_version": string
+  "source_sha256": string
+  "build_output_document": {  }
+  "sandbox_policy_id": string
+  "reproducible": boolean
+  "build_command_sha256": string
+}
+
+export interface ComplianceEvidenceImportCommandV1 {
+  /** Root trace propagated from Topic 3 ingestion. */
+  "trace_id": string
+  /** Trusted server-side tenant boundary. */
+  "tenant_id": string
+  /** Optimistic concurrency version. */
+  "version_cas": number
+  /** Canonical immutable record digest. */
+  "record_sha256": string
+  /** UTC record creation time. */
+  "created_at": string
+  /** Records are append-only once emitted. */
+  "immutable": true
+  "schema_version": "compliance-evidence-import.command.v1"
+  "import_command_id": string
+  "verification_id": string
+  "claim_id": string
+  "sbom_document": {  }
+  "vulnerability_records"?: Array<ComplianceVulnerabilityInputV1>
+  "provenance_document": ComplianceBuildProvenanceInputV1
+  "idempotency_key_sha256": string
+}
+
+export interface ComplianceEvidencePackageV1 {
+  /** Root trace propagated from Topic 3 ingestion. */
+  "trace_id": string
+  /** Trusted server-side tenant boundary. */
+  "tenant_id": string
+  /** Optimistic concurrency version. */
+  "version_cas": number
+  /** Canonical immutable record digest. */
+  "record_sha256": string
+  /** UTC record creation time. */
+  "created_at": string
+  /** Records are append-only once emitted. */
+  "immutable": true
+  "schema_version": "compliance-evidence.package.v1"
+  "compliance_evidence_package_id": string
+  "import_command_id": string
+  "verification_id": string
+  "claim_id": string
+  "code_artifact": CodeArtifactV1
+  "sbom_manifest": SBOMManifestV1
+  "vulnerabilities"?: Array<VulnerabilityRecordV1>
+  "provenance": BuildProvenanceV1
+  "evidence_refs"?: Array<EvidenceRefV1>
+  "policy_version": string
+  "expires_at": string
+}
+
+export interface ComplianceVulnerabilityInputV1 {
+  "component_bom_ref": string
+  "advisory_id": string
+  "severity": FindingSeverity
+  "cvss_score"?: number | null
+  "affected_range"?: string | null
+  "fixed_version"?: string | null
+  "status": VulnerabilityStatus
+  "non_waivable"?: boolean
+}
+
 export type CourseStatus = "DRAFT" | "ACTIVE" | "ARCHIVED"
 
 export interface DeliveryMetadataV1 {
@@ -1389,6 +1461,25 @@ export interface PublicationBatchV1 {
   "failure_code"?: string | null
 }
 
+export interface PublicationCommitCommandV2 {
+  /** Root trace propagated from Topic 3 ingestion. */
+  "trace_id": string
+  /** Trusted server-side tenant boundary. */
+  "tenant_id": string
+  /** Optimistic concurrency version. */
+  "version_cas": number
+  /** Canonical immutable record digest. */
+  "record_sha256": string
+  /** UTC record creation time. */
+  "created_at": string
+  /** Records are append-only once emitted. */
+  "immutable": true
+  "schema_version": "publication.commit.command.v2"
+  "commit_command_id": string
+  "authorization_id": string
+  "idempotency_key_sha256": string
+}
+
 export type PublicationState = "PENDING" | "COMMITTED" | "FAILED"
 
 export interface QueryPlanV1 {
@@ -1546,6 +1637,28 @@ export interface ReleaseAuthorizationPayloadV1 {
   "issued_at": string
   "expires_at": string
   "one_time_use": true
+}
+
+export interface ReleaseDerivationCommandV2 {
+  /** Root trace propagated from Topic 3 ingestion. */
+  "trace_id": string
+  /** Trusted server-side tenant boundary. */
+  "tenant_id": string
+  /** Optimistic concurrency version. */
+  "version_cas": number
+  /** Canonical immutable record digest. */
+  "record_sha256": string
+  /** UTC record creation time. */
+  "created_at": string
+  /** Records are append-only once emitted. */
+  "immutable": true
+  "schema_version": "release.derivation.command.v2"
+  "derivation_command_id": string
+  "verification_id": string
+  "requested_release_mode": "FULL" | "FULL_WITH_DISCLOSURE"
+  "requested_block_ids"?: Array<string>
+  "ttl_seconds": number
+  "idempotency_key_sha256": string
 }
 
 export interface ResourceMetadataV1 {

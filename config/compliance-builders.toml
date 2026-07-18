@@ -1,0 +1,7 @@
+policy_version = "topic4-compliance-builders-v1"
+max_evidence_age_seconds = 86400
+
+[[builders]]
+builder_id = "liyans-local-python-evidence"
+builder_version = "1.0.0"
+toolchain_manifest_version = "topic4-toolchain-v1"

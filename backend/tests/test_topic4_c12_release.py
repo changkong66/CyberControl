@@ -122,7 +122,7 @@ def _authorization(
         disclosure_codes=disclosure_codes or [],
         report_sha256=report.report_sha256,
         issued_at=issued_at,
-        expires_at=expires_at or issued_at + timedelta(hours=1),
+        expires_at=expires_at or issued_at + timedelta(minutes=5),
         one_time_use=True,
     )
 
@@ -223,13 +223,13 @@ async def test_c12_rejects_expired_authorization_and_invalid_block(tmp_path: Pat
     authorization = _authorization(
         candidate,
         report,
-        issued_at=NOW - timedelta(hours=2),
+        issued_at=NOW - timedelta(seconds=300),
         expires_at=expired_at,
     )
     service, _, _ = await _service(tmp_path)
 
     with tenant_scope(_context()):
-        await service.issue_authorization(authorization, now=NOW - timedelta(hours=2))
+        await service.issue_authorization(authorization, now=NOW - timedelta(seconds=300))
         with pytest.raises(AuthorizationExpiredError):
             await service.publish(_request(authorization, report, candidate), now=NOW)
 

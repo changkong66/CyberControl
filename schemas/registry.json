@@ -728,6 +728,34 @@
     "file": "build-provenance.v1.schema.json"
   },
   {
+    "schema_name": "compliance-evidence-import.command.v1",
+    "owner": "c11-compliance",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "compliance-evidence-import.command.v1.schema.json"
+  },
+  {
+    "schema_name": "compliance-evidence.package.v1",
+    "owner": "c11-compliance",
+    "visibility": "internal",
+    "compatibility": "strict-v1",
+    "file": "compliance-evidence.package.v1.schema.json"
+  },
+  {
+    "schema_name": "release.derivation.command.v2",
+    "owner": "c12-qa",
+    "visibility": "internal",
+    "compatibility": "strict-v2",
+    "file": "release.derivation.command.v2.schema.json"
+  },
+  {
+    "schema_name": "publication.commit.command.v2",
+    "owner": "c12-qa",
+    "visibility": "internal",
+    "compatibility": "strict-v2",
+    "file": "publication.commit.command.v2.schema.json"
+  },
+  {
     "schema_name": "system-acceptance-report.v1",
     "owner": "c12-qa",
     "visibility": "internal",
