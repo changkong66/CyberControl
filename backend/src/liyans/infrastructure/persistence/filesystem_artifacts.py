@@ -83,9 +83,7 @@ class FileSystemArtifactObjectStore:
         target = self._root / tenant_partition / namespace
         for part in logical_key.parts:
             target /= part
-        resolved_parent = target.parent.resolve()
-        if self._root != resolved_parent and self._root not in resolved_parent.parents:
-            raise self._invalid_path("The artifact object key escapes the storage root.")
+        self._assert_existing_ancestor_within_root(target.parent)
         return target
 
     def _put_atomic(self, target: Path, content: bytes, digest: str) -> bool:
@@ -163,6 +161,17 @@ class FileSystemArtifactObjectStore:
             current = current.parent
         if current.is_symlink():
             raise self._invalid_path("Artifact storage root cannot be a symbolic link.")
+
+    def _assert_existing_ancestor_within_root(self, directory: Path) -> None:
+        current = directory
+        while current != self._root and not current.exists():
+            current = current.parent
+        try:
+            resolved = current.resolve(strict=True)
+        except OSError as exc:
+            raise self._invalid_path("The artifact path cannot be resolved safely.") from exc
+        if self._root != resolved and self._root not in resolved.parents:
+            raise self._invalid_path("The artifact object key escapes the storage root.")
 
     @staticmethod
     def _fsync_directory(directory: Path) -> None:

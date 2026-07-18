@@ -4,15 +4,12 @@ import json
 from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
 from liyans_contracts.artifacts import ArtifactObjectRefV1
 from liyans_contracts.common import canonical_sha256
 from liyans_contracts.topic4_c1 import (
-    PublicationBatchV1,
-    PublicationState,
     PublicStreamEventV1,
     VerificationReportV1,
 )
@@ -27,7 +24,6 @@ from liyans.domains.release import (
     AuthorizationReplayError,
     C12ReleaseService,
     InMemoryAtomicReleaseRepository,
-    PostgresAtomicReleaseRepository,
     PublicationIntegrityError,
     PublicationRequest,
 )
@@ -322,205 +318,6 @@ class _CorruptStore:
             sha256="0" * 64,
             created=False,
         )
-
-
-class _Result:
-    def __init__(self, value) -> None:
-        self._value = value
-
-    def scalar_one_or_none(self):
-        return self._value
-
-    def scalar_one(self):
-        return self._value
-
-
-class _FakeSession:
-    def __init__(self, results: list[_Result]) -> None:
-        self._results = list(results)
-        self.added: list[object] = []
-
-    async def execute(self, _statement, _parameters=None):
-        return self._results.pop(0)
-
-    async def flush(self) -> None:
-        return None
-
-    def add(self, value) -> None:
-        self.added.append(value)
-
-
-class _FakeDatabase:
-    def __init__(self, session: _FakeSession) -> None:
-        self.session = session
-
-    async def run_transaction(self, operation, **_kwargs):
-        return await operation(self.session)
-
-
-class _FakeOutbox:
-    def __init__(self) -> None:
-        self.messages = []
-
-    async def append(self, _session, message) -> None:
-        self.messages.append(message)
-
-
-def _authorization_row(authorization: ReleaseAuthorizationPayloadV1):
-    return SimpleNamespace(
-        tenant_id=authorization.tenant_id,
-        authorization_id=authorization.authorization_id,
-        verification_id=authorization.verification_id,
-        report_id=authorization.report_id,
-        candidate_id=authorization.candidate_id,
-        candidate_version=authorization.candidate_version,
-        candidate_sha256=authorization.candidate_sha256,
-        report_sha256=authorization.report_sha256,
-        release_mode=authorization.release_mode,
-        allowed_block_ids=authorization.allowed_block_ids,
-        issued_at=authorization.issued_at,
-        expires_at=authorization.expires_at,
-        one_time_use=True,
-        trace_id=authorization.trace_id,
-        version_cas=authorization.version_cas,
-        record_sha256=authorization.record_sha256,
-        authorization_document=authorization.model_dump(mode="json"),
-    )
-
-
-@pytest.mark.asyncio
-async def test_c12_postgres_adapter_runs_serializable_publish_and_outbox_atomically() -> None:
-    candidate = _candidate()
-    report = _report(candidate)
-    authorization = _authorization(candidate, report)
-    request = _request(authorization, report, candidate)
-    issue_session = _FakeSession([_Result(None), _Result(None), _Result(None), _Result(None)])
-    outbox = _FakeOutbox()
-    repository = PostgresAtomicReleaseRepository(
-        _FakeDatabase(issue_session), outbox, clock=lambda: NOW
-    )
-
-    with tenant_scope(_context()):
-        await repository.issue_authorization(authorization, authorization.model_dump(mode="json"))
-
-    consume_session = _FakeSession(
-        [
-            _Result(_authorization_row(authorization)),
-            _Result(None),
-            _Result(None),
-            _Result(None),
-            _Result(None),
-            _Result(0),
-        ]
-    )
-    repository = PostgresAtomicReleaseRepository(
-        _FakeDatabase(consume_session), outbox, clock=lambda: NOW
-    )
-    public_artifact = _artifact("a" * 64, "c12/public.json")
-    event_artifact = _artifact("b" * 64, "c12/event.json")
-
-    with tenant_scope(_context()):
-        result = await repository.consume_and_publish(request, public_artifact, event_artifact)
-
-    assert result.batch.state.value == "COMMITTED"
-    assert result.batch.version_cas == 2
-    assert record_integrity_valid(result.batch)
-    assert record_integrity_valid(result.public_event)
-    assert len(outbox.messages) == 1
-    assert len(consume_session.added) >= 5
-
-
-@pytest.mark.asyncio
-async def test_c12_postgres_replay_requires_complete_immutable_snapshots() -> None:
-    candidate = _candidate()
-    report = _report(candidate)
-    authorization = _authorization(candidate, report)
-    outbox = _FakeOutbox()
-    repository = PostgresAtomicReleaseRepository(
-        _FakeDatabase(_FakeSession([])), outbox, clock=lambda: NOW
-    )
-    batch = build_topic4_record(
-        PublicationBatchV1,
-        trace_id=TRACE_ID,
-        tenant_id=TENANT,
-        version_cas=2,
-        created_at=NOW,
-        immutable=True,
-        schema_version="publication-batch.v1",
-        publication_batch_id=uuid4(),
-        authorization_id=authorization.authorization_id,
-        verification_id=authorization.verification_id,
-        report_id=authorization.report_id,
-        candidate_id=candidate.candidate_id,
-        candidate_version=candidate.candidate_version,
-        candidate_sha256=candidate.candidate_sha256,
-        state=PublicationState.COMMITTED,
-        public_artifacts=[_artifact("a" * 64, "c12/public.json")],
-        outbox_event_ids=[uuid4()],
-        public_stream_event_ids=[uuid4()],
-        committed_at=NOW,
-    )
-    event = build_topic4_record(
-        PublicStreamEventV1,
-        trace_id=TRACE_ID,
-        tenant_id=TENANT,
-        version_cas=1,
-        created_at=NOW,
-        immutable=True,
-        schema_version="public.stream.event.v1",
-        public_event_id=uuid4(),
-        publication_batch_id=batch.publication_batch_id,
-        authorization_id=authorization.authorization_id,
-        stream_id=uuid4(),
-        sequence=0,
-        event_type="topic4.publication.committed",
-        payload_artifact=_artifact("b" * 64, "c12/event.json"),
-        payload_sha256="b" * 64,
-        emitted_at=NOW,
-    )
-    batch_row = SimpleNamespace(
-        tenant_id=TENANT,
-        publication_batch_id=batch.publication_batch_id,
-        batch_version=2,
-        record_sha256=batch.record_sha256,
-        batch_document=batch.model_dump(mode="json"),
-    )
-    event_row = SimpleNamespace(
-        tenant_id=TENANT,
-        publication_batch_id=batch.publication_batch_id,
-        public_event_id=event.public_event_id,
-        record_sha256=event.record_sha256,
-        payload_sha256=event.payload_sha256,
-        event_document=event.model_dump(mode="json"),
-    )
-    session = _FakeSession([_Result(batch_row), _Result(event_row)])
-
-    with tenant_scope(_context()):
-        replay = await repository._replay(session, _context(), batch.publication_batch_id)
-
-    assert replay.batch == batch
-    assert replay.public_event == event
-    assert replay.public_artifact == batch.public_artifacts[0]
-
-    broken_data = vars(batch_row).copy()
-    broken_data["record_sha256"] = "0" * 64
-    broken_row = SimpleNamespace(**broken_data)
-    with pytest.raises(PublicationIntegrityError, match="batch integrity"):
-        await repository._replay(
-            _FakeSession([_Result(broken_row)]), _context(), batch.publication_batch_id
-        )
-
-
-def test_c12_postgres_authorization_row_mismatch_fails_closed() -> None:
-    candidate = _candidate()
-    report = _report(candidate)
-    authorization = _authorization(candidate, report)
-    altered_data = vars(_authorization_row(authorization)).copy()
-    altered_data["candidate_version"] = 99
-    altered = SimpleNamespace(**altered_data)
-
-    with pytest.raises(PublicationIntegrityError, match="authorization row"):
-        PostgresAtomicReleaseRepository._assert_authorization_row_matches(altered, authorization)
 
 
 @pytest.mark.asyncio

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from typing import Any, Protocol
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
@@ -86,6 +88,7 @@ from .state_machine import InvalidVerificationTransition, VerificationStateMachi
 IDEMPOTENCY_RETENTION = timedelta(days=1)
 OUTBOX_RETENTION = timedelta(days=7)
 IDEMPOTENCY_KEY_PATTERN = re.compile(r"^[A-Za-z0-9:_\-.]{32,160}$")
+TENANT_MUTATION_LOCK_STRIPES = 256
 MutationCallback = Callable[[AsyncSession, TenantContext], Awaitable[dict[str, Any]]]
 
 
@@ -198,6 +201,9 @@ class VerificationService:
             AggregationPolicy(versions.policy_version)
         )
         self._report_builder = report_builder
+        self._tenant_mutation_locks = tuple(
+            asyncio.Lock() for _ in range(TENANT_MUTATION_LOCK_STRIPES)
+        )
 
     async def accept_verification(
         self,
@@ -1323,6 +1329,8 @@ class VerificationService:
         context = current_tenant()
 
         async def transaction(session: AsyncSession) -> dict[str, Any]:
+            # Serialize before the first table read so the audit predecessor is in this snapshot.
+            await self._lock(session, f"audit:{context.tenant_id}")
             duplicate = await self._reserve_idempotency(
                 session, context, idempotency_key, operation, digest
             )
@@ -1333,12 +1341,13 @@ class VerificationService:
             return result
 
         try:
-            return await self._database.run_transaction(
-                transaction,
-                context=current_session_context(),
-                isolation=TransactionIsolation.SERIALIZABLE,
-                retry_policy=TransactionRetryPolicy(max_attempts=3),
-            )
+            async with self._tenant_mutation_lock(context.tenant_id):
+                return await self._database.run_transaction(
+                    transaction,
+                    context=current_session_context(),
+                    isolation=TransactionIsolation.SERIALIZABLE,
+                    retry_policy=TransactionRetryPolicy(max_attempts=8),
+                )
         except IntegrityError as exc:
             sqlstate = getattr(exc.orig, "sqlstate", None) or getattr(exc.orig, "pgcode", None)
             if sqlstate == "23505":
@@ -1352,6 +1361,11 @@ class VerificationService:
             raise self._integrity_error(
                 "The Topic 4 mutation violates a persistence constraint."
             ) from exc
+
+    def _tenant_mutation_lock(self, tenant_id: str) -> asyncio.Lock:
+        digest = sha256(tenant_id.encode("utf-8")).digest()
+        stripe = int.from_bytes(digest[:8], "big") % len(self._tenant_mutation_locks)
+        return self._tenant_mutation_locks[stripe]
 
     async def _reserve_idempotency(
         self,

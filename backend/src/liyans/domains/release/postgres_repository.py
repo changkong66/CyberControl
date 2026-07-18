@@ -84,13 +84,11 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
                 session, f"c12:authorization:{context.tenant_id}:{authorization.authorization_id}"
             )
             result = await session.execute(
-                select(Topic4ReleaseAuthorizationModel)
-                .where(
+                select(Topic4ReleaseAuthorizationModel).where(
                     Topic4ReleaseAuthorizationModel.tenant_id == context.tenant_id,
                     Topic4ReleaseAuthorizationModel.authorization_id
                     == authorization.authorization_id,
                 )
-                .with_for_update()
             )
             existing = result.scalar_one_or_none()
             if existing is not None:
@@ -147,6 +145,10 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
         assert_tenant(request.authorization.tenant_id)
 
         async def operation(session: AsyncSession) -> PublicationResult:
+            await self._lock(
+                session,
+                (f"c12:authorization:{context.tenant_id}:{request.authorization.authorization_id}"),
+            )
             authorization = await self._authorization(
                 session, context, request.authorization.authorization_id
             )
@@ -309,12 +311,10 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
     @staticmethod
     async def _authorization(session, context, authorization_id):
         result = await session.execute(
-            select(Topic4ReleaseAuthorizationModel)
-            .where(
+            select(Topic4ReleaseAuthorizationModel).where(
                 Topic4ReleaseAuthorizationModel.tenant_id == context.tenant_id,
                 Topic4ReleaseAuthorizationModel.authorization_id == authorization_id,
             )
-            .with_for_update()
         )
         return result.scalar_one_or_none()
 

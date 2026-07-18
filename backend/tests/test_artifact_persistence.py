@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from hashlib import sha256
 
@@ -37,6 +38,28 @@ async def test_filesystem_artifact_store_is_immutable_and_idempotent(tmp_path) -
     assert created.created is True
     assert duplicate.created is False
     assert restored == content
+
+
+@pytest.mark.asyncio
+async def test_filesystem_artifact_store_handles_concurrent_content_addressed_writes(
+    tmp_path,
+) -> None:
+    store = FileSystemArtifactObjectStore(tmp_path)
+    content = b"concurrent-immutable-publication"
+    writes = await asyncio.gather(
+        *(
+            store.put(
+                tenant_id="tenant-concurrent",
+                storage_namespace="verification-artifacts",
+                object_key="c12/public/verification/authorization/content.json",
+                content=content,
+            )
+            for _ in range(200)
+        )
+    )
+
+    assert sum(result.created for result in writes) == 1
+    assert {result.sha256 for result in writes} == {sha256(content).hexdigest()}
 
 
 @pytest.mark.asyncio

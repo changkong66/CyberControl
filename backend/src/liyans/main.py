@@ -15,10 +15,20 @@ from liyans.api.routes.metrics import router as metrics_router
 from liyans.api.routes.topic1 import router as topic1_router
 from liyans.api.routes.topic2 import router as topic2_router
 from liyans.api.routes.topic3 import router as topic3_router
+from liyans.api.routes.topic4 import router as topic4_router
 from liyans.api.topic1_limits import Topic1ImportBodyLimitMiddleware
 from liyans.core.config import ConfigSnapshot, HotReloadingTomlConfig
 from liyans.core.provider_policy import ProviderPolicyRegistry
 from liyans.core.settings import get_settings
+from liyans.domains.knowledge.artifact_writer import KnowledgeArtifactWriter
+from liyans.domains.knowledge.postgres_repository import PostgresKnowledgeRepository
+from liyans.domains.knowledge.retrieval import HotReloadableRAGIndex
+from liyans.domains.knowledge.retrieval_service import KnowledgeRetrievalService
+from liyans.domains.knowledge.transactions import KnowledgeTransactionCoordinator
+from liyans.domains.release.engine import C12ReleaseService
+from liyans.domains.release.postgres_repository import PostgresAtomicReleaseRepository
+from liyans.domains.revision.engine import RevisionEngine
+from liyans.domains.revision.postgres_repository import PostgresRevisionRepository
 from liyans.domains.topic1.postgres_repository import PostgresTopic1Repository
 from liyans.domains.topic1.service import MAX_IMPORT_HTTP_BYTES, Topic1Service
 from liyans.domains.topic2.memory import EbbinghausMemoryEngine
@@ -38,6 +48,22 @@ from liyans.domains.topic3.outbox import (
 from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
 from liyans.domains.topic3.service import Topic3Service
 from liyans.domains.topic3.streaming import Topic3StreamCoordinator
+from liyans.domains.verification.execution import BoundedModuleExecutor
+from liyans.domains.verification.postgres_repository import PostgresVerificationRepository
+from liyans.domains.verification.reporting import (
+    TransactionalVerificationArtifactWriter,
+    VerificationReportBuilder,
+)
+from liyans.domains.verification.runtime import (
+    TOPIC4_VERIFICATION_TASK,
+    Topic3CandidateVerificationConsumer,
+    Topic4PublicationSSEConsumer,
+    Topic4Runtime,
+    Topic4RuntimeMetrics,
+    build_topic4_handlers,
+)
+from liyans.domains.verification.service import VerificationService, VerifierRuntimeVersions
+from liyans.domains.verification.state_machine import VerificationStateMachine
 from liyans.infrastructure.database import (
     DatabaseHealthProbe,
     DatabaseSessionManager,
@@ -158,13 +184,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             EbbinghausMemoryEngine(),
             AdaptivePathPlanner(),
         )
+        artifact_repository = PostgresArtifactRepository(database)
+        artifact_store = FileSystemArtifactObjectStore(
+            settings.artifact_root,
+            max_object_bytes=settings.artifact_max_object_bytes,
+        )
+        app.state.artifact_store = artifact_store
         app.state.artifact_service = ArtifactService(
             database,
-            PostgresArtifactRepository(database),
-            FileSystemArtifactObjectStore(
-                settings.artifact_root,
-                max_object_bytes=settings.artifact_max_object_bytes,
-            ),
+            artifact_repository,
+            artifact_store,
             outbox=app.state.outbox,
         )
         app.state.outbox_publisher = None
@@ -200,6 +229,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             max_event_bytes=settings.sse_event_max_bytes,
             max_replay_events=settings.sse_replay_capacity,
         )
+        app.state.sse_replay_log = replay_log
         app.state.sse_broker = SSEBroker(
             replay_log,
             subscriber_queue_size=settings.sse_subscriber_queue_size,
@@ -242,14 +272,119 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             Topic3AgentRegistry(topic3_provider_registry),
             Topic3StreamCoordinator(app.state.sse_broker),
         )
+
+        verification_repository = PostgresVerificationRepository()
+        knowledge_repository = PostgresKnowledgeRepository()
+        knowledge_transactions = KnowledgeTransactionCoordinator(
+            database,
+            app.state.outbox,
+            instance_id=settings.service_instance_id,
+            build_version="topic4-c2-v1",
+        )
+        retrieval_service = KnowledgeRetrievalService(
+            database,
+            knowledge_repository,
+            topic1_repository,
+            KnowledgeArtifactWriter(artifact_repository, artifact_store),
+            knowledge_transactions,
+            HotReloadableRAGIndex(),
+        )
+        verification_service = VerificationService(
+            database,
+            verification_repository,
+            topic3_repository,
+            app.state.outbox,
+            VerificationStateMachine(),
+            VerifierRuntimeVersions(
+                state_machine_version="c1-state-machine-v1",
+                verifier_build_version="topic4-runtime-v1",
+                policy_version="topic4-policy-v1",
+                prompt_bundle_version="topic4-prompts-v1",
+                retrieval_pipeline_version="local-hybrid-rag-v1",
+                knowledge_base_version="topic1-authority-v1",
+                toolchain_manifest_version="topic4-toolchain-v1",
+                content_security_policy_version="c9-content-security-policy-v1",
+                license_policy_version="c11-supply-chain-policy-v1",
+            ),
+            instance_id=settings.service_instance_id,
+            report_builder=VerificationReportBuilder(
+                TransactionalVerificationArtifactWriter(
+                    artifact_repository,
+                    artifact_store,
+                ),
+                knowledge_base_version="topic1-authority-v1",
+                policy_version="topic4-policy-v1",
+            ),
+        )
+        topic4_metrics = Topic4RuntimeMetrics(metrics.registry)
+        handlers = build_topic4_handlers(
+            database=database,
+            verification_service=verification_service,
+            knowledge_repository=knowledge_repository,
+            topic1_repository=topic1_repository,
+            topic3_repository=topic3_repository,
+            retrieval_service=retrieval_service,
+            artifact_store=artifact_store,
+            metrics=topic4_metrics,
+        )
+        release_service = C12ReleaseService(
+            PostgresAtomicReleaseRepository(
+                database,
+                app.state.outbox,
+                instance_id=settings.service_instance_id,
+            ),
+            artifact_store,
+        )
+        topic4_runtime = Topic4Runtime(
+            database,
+            verification_service,
+            verification_repository,
+            retrieval_service,
+            knowledge_repository,
+            topic1_repository,
+            topic3_repository,
+            RevisionEngine(
+                PostgresRevisionRepository(topic3_repository),
+                topic3_repository,
+                artifact_store,
+            ),
+            release_service,
+            artifact_store,
+            app.state.outbox,
+            BoundedModuleExecutor(
+                handlers,
+                worker_instance_id=settings.service_instance_id,
+            ),
+            topic4_metrics,
+            instance_id=settings.service_instance_id,
+            task_queue=task_queue,
+        )
+        app.state.topic4_runtime = topic4_runtime
+        app.state.topic4_verification_service = verification_service
+        app.state.topic4_retrieval_service = retrieval_service
+        app.state.topic4_release_service = release_service
+        app.state.topic4_metrics = topic4_metrics
         task_queue.register(
             TOPIC3_WORKFLOW_TASK,
             app.state.topic3_orchestrator.handle_queue_task,
             circuit_failure_threshold=3,
         )
+        task_queue.register(
+            TOPIC4_VERIFICATION_TASK,
+            topic4_runtime.handle_queue_task,
+            circuit_failure_threshold=3,
+        )
         message_bus.register(
             "topic3.workflow.created",
             Topic3WorkflowOutboxConsumer(app.state.topic3_orchestrator, task_queue),
+        )
+        message_bus.register(
+            "topic3.workflow.finalized",
+            Topic3CandidateVerificationConsumer(topic4_runtime, app.state.topic3_service),
+        )
+        message_bus.register(
+            "topic4.publication.committed",
+            Topic4PublicationSSEConsumer(app.state.sse_broker, topic4_metrics),
         )
         outbox_sse_bridge = DurableOutboxSSEBridge(app.state.sse_broker)
         for event_type in DOMAIN_OUTBOX_EVENT_TYPES:
@@ -259,6 +394,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if app.state.outbox_publisher is not None:
             await app.state.outbox_publisher.start()
             resources.push_async_callback(app.state.outbox_publisher.close)
+        topic4_runtime.mark_ready()
+        topic4_metrics.ready.set(1)
         yield
 
 
@@ -284,6 +421,7 @@ def create_app() -> FastAPI:
     application.include_router(topic1_router)
     application.include_router(topic2_router)
     application.include_router(topic3_router)
+    application.include_router(topic4_router)
     return application
 
 

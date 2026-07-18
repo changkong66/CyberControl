@@ -22,9 +22,9 @@ from .test_postgres_topic4_knowledge import (
 pytestmark = pytest.mark.integration
 
 
-def _restart_database_container() -> None:
+def _restart_database_container(container_name: str) -> None:
     subprocess.run(
-        ["docker", "restart", "liyans-topic4-c1"],
+        ["docker", "restart", container_name],
         check=True,
         capture_output=True,
         text=True,
@@ -33,7 +33,7 @@ def _restart_database_container() -> None:
     deadline = time.monotonic() + 120
     while time.monotonic() < deadline:
         probe = subprocess.run(
-            ["docker", "inspect", "--format", "{{.State.Health.Status}}", "liyans-topic4-c1"],
+            ["docker", "inspect", "--format", "{{.State.Health.Status}}", container_name],
             check=True,
             capture_output=True,
             text=True,
@@ -52,6 +52,9 @@ async def test_c2_database_restart_preserves_active_index_and_manifest(
 ) -> None:
     if os.getenv("LIYAN_RUN_DATABASE_RESTART_TEST") != "1":
         pytest.skip("set LIYAN_RUN_DATABASE_RESTART_TEST=1 to execute the Docker restart probe")
+    container_name = os.getenv("LIYAN_TEST_DATABASE_CONTAINER")
+    if not container_name:
+        pytest.fail("LIYAN_TEST_DATABASE_CONTAINER is required for the restart probe")
     database, _migrator, context = postgres_runtime
     artifact_root = tmp_path / "artifacts"
     with tenant_scope(context):
@@ -74,7 +77,7 @@ async def test_c2_database_restart_preserves_active_index_and_manifest(
             idempotency_key="topic4-c2-restart-build-000000000001",
         )
         await database.close()
-        _restart_database_container()
+        _restart_database_container(container_name)
 
         restarted_database = DatabaseSessionManager(
             create_database_engine(

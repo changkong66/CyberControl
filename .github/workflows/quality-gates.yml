@@ -147,6 +147,9 @@ jobs:
           uv run --frozen alembic -c backend/alembic.ini current --check-heads
           uv run --frozen alembic -c backend/alembic.ini check
       - name: Run full suite against PostgreSQL with coverage redline
+        env:
+          LIYAN_RUN_DATABASE_RESTART_TEST: "1"
+          LIYAN_TEST_DATABASE_CONTAINER: ${{ job.services.postgres.id }}
         run: |
           mkdir -p artifacts/test-results artifacts/coverage
           uv run --frozen pytest -q -rs \
