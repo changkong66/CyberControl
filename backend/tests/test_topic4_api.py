@@ -282,11 +282,12 @@ def _install_runtime(
 async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None:
     candidate = _candidate()
     report = _report(candidate)
+    issued_at = datetime.now(UTC)
     authorization = _authorization(
         candidate,
         report,
-        issued_at=datetime.now(UTC),
-        expires_at=datetime.now(UTC) + timedelta(minutes=5),
+        issued_at=issued_at,
+        expires_at=issued_at + timedelta(minutes=5),
     )
     claim = DeterministicClaimExtractor().extract(
         candidate,
