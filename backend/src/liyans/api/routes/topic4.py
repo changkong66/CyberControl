@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any, cast
-from uuid import UUID, uuid4
+from typing import Annotated, Any, Literal, cast
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.responses import StreamingResponse
@@ -16,18 +16,32 @@ from liyans_contracts.envelope import (
     Topic3EnvelopeV1,
 )
 from liyans_contracts.topic3 import CandidateV1
-from liyans_contracts.topic4_c1 import ClaimV1, RevisionRequestV1, VerificationReportV1
+from liyans_contracts.topic4_c1 import (
+    ClaimV1,
+    ReasonCode,
+    ReviewDecision,
+    ReviewTaskState,
+    RevisionRequestV1,
+    VerificationReportV1,
+)
 from liyans_contracts.topic4_c8 import RevisionPatchV1
+from liyans_contracts.topic4_c11 import (
+    ComplianceBuildProvenanceInputV1,
+    ComplianceEvidenceImportCommandV1,
+    ComplianceVulnerabilityInputV1,
+)
+from liyans_contracts.topic4_c12 import PublicationCommitCommandV2, ReleaseDerivationCommandV2
 from liyans_contracts.verification import (
     ReleaseAuthorizationPayloadV1,
     VerificationRequestPayloadV1,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from liyans.api.auth import require_scopes
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import current_tenant, tenant_scope
 from liyans.domains.release.engine import PublicationRequest, ReleasePolicy
+from liyans.domains.verification.records import build_topic4_record
 from liyans.domains.verification.runtime import Topic4Runtime, map_topic4_error
 from liyans.infrastructure.streaming.sse import encode_sse_frame
 
@@ -58,6 +72,46 @@ class PublicationCommand(BaseModel):
 
 class PublicationBatchCommand(BaseModel):
     publications: list[PublicationCommand] = Field(min_length=1, max_length=100)
+
+
+class ComplianceEvidenceImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    verification_id: UUID
+    claim_id: UUID
+    sbom_document: dict[str, Any]
+    vulnerability_records: list[ComplianceVulnerabilityInputV1] = Field(
+        default_factory=list,
+        max_length=65_536,
+    )
+    provenance_document: ComplianceBuildProvenanceInputV1
+
+
+class ReleaseDerivationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    verification_id: UUID
+    requested_release_mode: Literal["FULL", "FULL_WITH_DISCLOSURE"]
+    requested_block_ids: list[str] = Field(default_factory=list, max_length=2048)
+    ttl_seconds: int = Field(default=300, ge=1, le=300)
+
+
+class PublicationCommitRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    authorization_id: UUID
+
+
+class HumanReviewDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    review_task_id: UUID
+    decision: ReviewDecision
+    rationale: str = Field(min_length=1, max_length=65_536)
+    disclosure_codes: list[ReasonCode] = Field(default_factory=list, max_length=32)
+    waived_finding_ids: list[UUID] = Field(default_factory=list, max_length=4096)
+    expected_task_version: int = Field(ge=1)
+    expected_state_version: int = Field(ge=1)
 
 
 def topic4_runtime(request: Request) -> Topic4Runtime:
@@ -267,6 +321,79 @@ async def get_report(request: Request, verification_id: UUID) -> dict[str, Any]:
 
 
 @router.post(
+    "/compliance/packages",
+    response_model=Topic3EnvelopeV1,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scopes("topic4:compliance:write"))],
+)
+async def import_compliance_package(
+    request: Request,
+    body: ComplianceEvidenceImportRequest,
+    idempotency_key: IdempotencyKey,
+) -> dict[str, Any]:
+    context = current_tenant()
+    now = datetime.now(UTC)
+    command = build_topic4_record(
+        ComplianceEvidenceImportCommandV1,
+        trace_id=context.trace_id,
+        tenant_id=context.tenant_id,
+        version_cas=1,
+        created_at=now,
+        immutable=True,
+        schema_version="compliance-evidence-import.command.v1",
+        import_command_id=uuid5(
+            NAMESPACE_URL,
+            f"topic4:c11:{context.tenant_id}:{idempotency_key}",
+        ),
+        verification_id=body.verification_id,
+        claim_id=body.claim_id,
+        sbom_document=body.sbom_document,
+        vulnerability_records=body.vulnerability_records,
+        provenance_document=body.provenance_document,
+        idempotency_key_sha256=canonical_sha256({"idempotency_key": idempotency_key}),
+    )
+    try:
+        package = await topic4_runtime(request).import_compliance(command)
+    except Exception as exc:
+        raise map_topic4_error(exc) from exc
+    return response_envelope(
+        request,
+        "topic4.api.compliance.package.imported",
+        {"package": package.model_dump(mode="json")},
+        correlation_id=body.verification_id,
+    )
+
+
+@router.get(
+    "/compliance/claims/{claim_id}",
+    response_model=Topic3EnvelopeV1,
+    dependencies=[Depends(require_scopes("topic4:compliance:read"))],
+)
+async def get_compliance_package(
+    request: Request,
+    claim_id: UUID,
+    verification_id: Annotated[UUID | None, Query()] = None,
+) -> dict[str, Any]:
+    try:
+        package = await topic4_runtime(request).compliance_package(verification_id, claim_id)
+    except Exception as exc:
+        raise map_topic4_error(exc) from exc
+    if package is None:
+        raise LiyanError(
+            ErrorCode.TOPIC4_NOT_FOUND,
+            "The C11 compliance evidence package is not available.",
+            category=ErrorCategory.CONTRACT,
+            status_code=404,
+        )
+    return response_envelope(
+        request,
+        "topic4.api.compliance.package.result",
+        {"package": package.model_dump(mode="json")},
+        correlation_id=verification_id,
+    )
+
+
+@router.post(
     "/rag/retrieve",
     response_model=Topic3EnvelopeV1,
     dependencies=[Depends(require_scopes("topic4:rag:read"))],
@@ -377,6 +504,7 @@ async def release_history(
 @router.post(
     "/release/authorizations/validate",
     response_model=Topic3EnvelopeV1,
+    deprecated=True,
     dependencies=[Depends(require_scopes("topic4:release:read"))],
 )
 async def validate_authorization(
@@ -384,11 +512,8 @@ async def validate_authorization(
     body: ReleaseAuthorizationPayloadV1,
 ) -> dict[str, Any]:
     try:
-        ReleasePolicy.validate_authorization(
-            body,
-            context=current_tenant(),
-            now=datetime.now(UTC),
-        )
+        await topic4_runtime(request).validate_authorization(body)
+        ReleasePolicy.validate_authorization(body, context=current_tenant(), now=datetime.now(UTC))
     except Exception as exc:
         raise map_topic4_error(exc) from exc
     return response_envelope(
@@ -402,6 +527,7 @@ async def validate_authorization(
 @router.post(
     "/release/authorizations",
     response_model=Topic3EnvelopeV1,
+    deprecated=True,
     dependencies=[Depends(require_scopes("topic4:release:write"))],
 )
 async def issue_authorization(
@@ -445,6 +571,7 @@ def publication_request(command: PublicationCommand) -> PublicationRequest:
 @router.post(
     "/release/publications",
     response_model=Topic3EnvelopeV1,
+    deprecated=True,
     dependencies=[Depends(require_scopes("topic4:release:write"))],
 )
 async def publish(request: Request, body: PublicationCommand) -> dict[str, Any]:
@@ -465,8 +592,158 @@ async def publish(request: Request, body: PublicationCommand) -> dict[str, Any]:
 
 
 @router.post(
+    "/release/authorizations/derive",
+    response_model=Topic3EnvelopeV1,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scopes("topic4:release:write"))],
+)
+async def derive_authorization_v2(
+    request: Request,
+    body: ReleaseDerivationRequest,
+    idempotency_key: IdempotencyKey,
+) -> dict[str, Any]:
+    context = current_tenant()
+    command = build_topic4_record(
+        ReleaseDerivationCommandV2,
+        trace_id=context.trace_id,
+        tenant_id=context.tenant_id,
+        version_cas=1,
+        created_at=datetime.now(UTC),
+        immutable=True,
+        schema_version="release.derivation.command.v2",
+        derivation_command_id=uuid5(
+            NAMESPACE_URL,
+            f"topic4:c12:derivation-command:{context.tenant_id}:{idempotency_key}",
+        ),
+        verification_id=body.verification_id,
+        requested_release_mode=body.requested_release_mode,
+        requested_block_ids=body.requested_block_ids,
+        ttl_seconds=body.ttl_seconds,
+        idempotency_key_sha256=canonical_sha256({"idempotency_key": idempotency_key}),
+    )
+    try:
+        authorization = await topic4_runtime(request).derive_release_authorization(
+            command,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise map_topic4_error(exc) from exc
+    return response_envelope(
+        request,
+        "topic4.api.release-authorization.derived.v2",
+        {"authorization": authorization.model_dump(mode="json")},
+        correlation_id=body.verification_id,
+    )
+
+
+@router.post(
+    "/release/publications/commit",
+    response_model=Topic3EnvelopeV1,
+    dependencies=[Depends(require_scopes("topic4:release:write"))],
+)
+async def commit_publication_v2(
+    request: Request,
+    body: PublicationCommitRequest,
+    idempotency_key: IdempotencyKey,
+) -> dict[str, Any]:
+    context = current_tenant()
+    command = build_topic4_record(
+        PublicationCommitCommandV2,
+        trace_id=context.trace_id,
+        tenant_id=context.tenant_id,
+        version_cas=1,
+        created_at=datetime.now(UTC),
+        immutable=True,
+        schema_version="publication.commit.command.v2",
+        commit_command_id=uuid5(
+            NAMESPACE_URL,
+            f"topic4:c12:commit-command:{context.tenant_id}:{idempotency_key}",
+        ),
+        authorization_id=body.authorization_id,
+        idempotency_key_sha256=canonical_sha256({"idempotency_key": idempotency_key}),
+    )
+    try:
+        result = await topic4_runtime(request).commit_release_v2(
+            command,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise map_topic4_error(exc) from exc
+    return response_envelope(
+        request,
+        "topic4.api.publication.committed.v2",
+        {
+            "batch": result.batch.model_dump(mode="json"),
+            "public_event": result.public_event.model_dump(mode="json"),
+            "public_artifact": result.public_artifact.model_dump(mode="json"),
+            "state": "RELEASED",
+        },
+        correlation_id=body.authorization_id,
+    )
+
+
+@router.get(
+    "/reviews/tasks",
+    response_model=Topic3EnvelopeV1,
+    dependencies=[Depends(require_scopes("topic4:review:read"))],
+)
+async def list_review_tasks(
+    request: Request,
+    state: Annotated[ReviewTaskState, Query()] = ReviewTaskState.OPEN,
+) -> dict[str, Any]:
+    try:
+        tasks = await topic4_runtime(request).review_tasks(state)
+    except Exception as exc:
+        raise map_topic4_error(exc) from exc
+    return response_envelope(
+        request,
+        "topic4.api.review-tasks.result",
+        {"tasks": [task.model_dump(mode="json") for task in tasks]},
+    )
+
+
+@router.post(
+    "/verifications/{verification_id}/reviews/decisions",
+    response_model=Topic3EnvelopeV1,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scopes("topic4:review:write"))],
+)
+async def submit_review_decision(
+    request: Request,
+    verification_id: UUID,
+    body: HumanReviewDecisionRequest,
+    idempotency_key: IdempotencyKey,
+) -> dict[str, Any]:
+    try:
+        result = await topic4_runtime(request).submit_review(
+            review_task_id=body.review_task_id,
+            verification_id=verification_id,
+            decision=body.decision,
+            rationale=body.rationale,
+            disclosure_codes=body.disclosure_codes,
+            waived_finding_ids=body.waived_finding_ids,
+            expected_task_version=body.expected_task_version,
+            expected_state_version=body.expected_state_version,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise map_topic4_error(exc) from exc
+    return response_envelope(
+        request,
+        "topic4.api.review-decision.committed",
+        {
+            "decision": result.decision.model_dump(mode="json"),
+            "review_task": result.review_task.model_dump(mode="json"),
+            "state": result.state.model_dump(mode="json"),
+        },
+        correlation_id=verification_id,
+    )
+
+
+@router.post(
     "/release/publications/batch",
     response_model=Topic3EnvelopeV1,
+    deprecated=True,
     dependencies=[Depends(require_scopes("topic4:release:write"))],
 )
 async def publish_batch(request: Request, body: PublicationBatchCommand) -> dict[str, Any]:

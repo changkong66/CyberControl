@@ -13,17 +13,25 @@ from liyans_contracts.envelope import (
     Topic3EnvelopeV1,
 )
 from liyans_contracts.topic4_c1 import PublicationBatchV1, PublicationState, PublicStreamEventV1
-from liyans_contracts.verification import ReleaseAuthorizationPayloadV1
+from liyans_contracts.verification import (
+    ReleaseAuthorizationPayloadV1,
+    VerificationState,
+    VerificationStateChangedPayloadV1,
+)
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from liyans.core.tenant import assert_tenant, current_tenant
+from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
+from liyans.domains.verification.entities import VerificationStateRecord
+from liyans.domains.verification.postgres_repository import PostgresVerificationRepository
 from liyans.domains.verification.release_models import (
     Topic4PublicationBatchModel,
     Topic4PublicStreamEventModel,
     Topic4ReleaseAuthorizationConsumptionModel,
     Topic4ReleaseAuthorizationModel,
 )
+from liyans.domains.verification.state_machine import VerificationStateMachine
 from liyans.infrastructure.database.context import current_session_context
 from liyans.infrastructure.database.models import AuditEventModel, OutboxMessageModel
 from liyans.infrastructure.database.session import (
@@ -58,6 +66,8 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
         self,
         database: DatabaseSessionManager,
         outbox: PostgresOutboxRepository,
+        verification_repository: PostgresVerificationRepository | None = None,
+        topic3_repository: PostgresTopic3Repository | None = None,
         *,
         instance_id: str = "topic4-release",
         build_version: str = "topic4-c12-release-v1",
@@ -65,9 +75,28 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
     ) -> None:
         self._database = database
         self._outbox = outbox
+        self._verification_repository = verification_repository or PostgresVerificationRepository()
+        self._topic3_repository = topic3_repository or PostgresTopic3Repository()
+        self._state_machine = VerificationStateMachine()
         self._instance_id = instance_id
         self._build_version = build_version
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    async def get_authorization(
+        self,
+        authorization_id: UUID,
+    ) -> ReleaseAuthorizationPayloadV1 | None:
+        context = current_tenant()
+        async with self._database.transaction(context=current_session_context()) as session:
+            row = await self._authorization(session, context, authorization_id)
+        if row is None:
+            return None
+        try:
+            authorization = ReleaseAuthorizationPayloadV1.model_validate(row.authorization_document)
+        except ValueError as exc:
+            raise PublicationIntegrityError("C12 persisted authorization is invalid") from exc
+        self._assert_authorization_row_matches(row, authorization)
+        return authorization
 
     async def issue_authorization(self, authorization, authorization_document):
         context = current_tenant()
@@ -165,9 +194,58 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
             if consumed is not None:
                 if consumed.request_sha256 != request.request_sha256:
                     raise AuthorizationReplayError("C12 authorization replay request differs")
+                released_state = await self._verification_repository.latest_state(
+                    session,
+                    context.tenant_id,
+                    request.authorization.verification_id,
+                )
+                if (
+                    released_state is None
+                    or released_state.change.current_state != VerificationState.RELEASED
+                ):
+                    raise PublicationIntegrityError("C12 replay is missing the RELEASED state")
                 return await self._replay(session, context, consumed.publication_batch_id)
             if authorization.expires_at <= self._clock():
                 raise AuthorizationExpiredError("C12 authorization expired before consumption")
+
+            await self._lock(
+                session,
+                (
+                    f"topic4:verification:{context.tenant_id}:"
+                    f"{request.authorization.verification_id}"
+                ),
+            )
+            current_state = await self._verification_repository.latest_state(
+                session,
+                context.tenant_id,
+                request.authorization.verification_id,
+            )
+            if (
+                current_state is None
+                or current_state.change.current_state != VerificationState.RELEASE_PENDING
+            ):
+                raise PublicationIntegrityError("C12 publication requires RELEASE_PENDING state")
+            persisted_report = await self._verification_repository.latest_report(
+                session,
+                context.tenant_id,
+                request.authorization.verification_id,
+            )
+            persisted_candidate_record = await self._topic3_repository.get_candidate(
+                session,
+                context.tenant_id,
+                request.authorization.candidate_id,
+                request.authorization.candidate_version,
+            )
+            if persisted_report is None or persisted_candidate_record is None:
+                raise PublicationIntegrityError("C12 authoritative report or Candidate is missing")
+            if persisted_report.model_dump(mode="json") != request.report.model_dump(
+                mode="json"
+            ) or persisted_candidate_record.candidate.model_dump(
+                mode="json"
+            ) != request.candidate.model_dump(mode="json"):
+                raise PublicationIntegrityError(
+                    "C12 request does not match the persisted report and Candidate"
+                )
 
             batch_id = uuid5(
                 request.authorization.authorization_id, f"batch:{request.request_sha256}"
@@ -268,6 +346,38 @@ class PostgresAtomicReleaseRepository(AtomicReleaseRepository):
                 },
             )
             session.add(self._batch_row(committed, audit.event_id, 2))
+            transition = self._state_machine.transition(
+                current_state.change.current_state,
+                VerificationState.RELEASED,
+                revision_round=current_state.change.revision_round,
+            )
+            released_version = current_state.change.state_version + 1
+            released_at = self._clock()
+            released = build_topic4_record(
+                VerificationStateChangedPayloadV1,
+                trace_id=request.authorization.trace_id,
+                tenant_id=context.tenant_id,
+                version_cas=released_version,
+                created_at=released_at,
+                immutable=True,
+                schema_version="verification.state_changed.v1",
+                verification_id=request.authorization.verification_id,
+                previous_state=transition.previous_state,
+                current_state=transition.current_state,
+                state_version=released_version,
+                reason_code="PUBLICATION_COMMITTED",
+                revision_round=transition.revision_round,
+                changed_at=released_at,
+            )
+            await self._verification_repository.append_state(
+                session,
+                context.tenant_id,
+                VerificationStateRecord(
+                    state_snapshot_id=uuid5(batch_id, "released-state"),
+                    change=released,
+                ),
+                audit.event_id,
+            )
             await session.flush()
             session.add(
                 Topic4PublicStreamEventModel(

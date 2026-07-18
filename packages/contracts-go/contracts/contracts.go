@@ -474,6 +474,80 @@ type CodeVerificationResultV1 struct {
 	Confidence               float64                    `json:"confidence"`
 }
 
+// ComplianceBuildProvenanceInputV1 Untrusted provenance accepted only from an allowlisted local builder.
+type ComplianceBuildProvenanceInputV1 struct {
+	BuilderId                string         `json:"builder_id"`
+	BuilderVersion           string         `json:"builder_version"`
+	ToolchainManifestVersion string         `json:"toolchain_manifest_version"`
+	SourceSha256             string         `json:"source_sha256"`
+	BuildOutputDocument      map[string]any `json:"build_output_document"`
+	SandboxPolicyId          UUID           `json:"sandbox_policy_id"`
+	Reproducible             bool           `json:"reproducible"`
+	BuildCommandSha256       string         `json:"build_command_sha256"`
+}
+
+type ComplianceEvidenceImportCommandV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool                             `json:"immutable"`
+	SchemaVersion        string                           `json:"schema_version"`
+	ImportCommandId      UUID                             `json:"import_command_id"`
+	VerificationId       UUID                             `json:"verification_id"`
+	ClaimId              UUID                             `json:"claim_id"`
+	SbomDocument         map[string]any                   `json:"sbom_document"`
+	VulnerabilityRecords []ComplianceVulnerabilityInputV1 `json:"vulnerability_records,omitempty"`
+	ProvenanceDocument   ComplianceBuildProvenanceInputV1 `json:"provenance_document"`
+	IdempotencyKeySha256 string                           `json:"idempotency_key_sha256"`
+}
+
+type ComplianceEvidencePackageV1 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable                   bool                    `json:"immutable"`
+	SchemaVersion               string                  `json:"schema_version"`
+	ComplianceEvidencePackageId UUID                    `json:"compliance_evidence_package_id"`
+	ImportCommandId             UUID                    `json:"import_command_id"`
+	VerificationId              UUID                    `json:"verification_id"`
+	ClaimId                     UUID                    `json:"claim_id"`
+	CodeArtifact                CodeArtifactV1          `json:"code_artifact"`
+	SbomManifest                SBOMManifestV1          `json:"sbom_manifest"`
+	Vulnerabilities             []VulnerabilityRecordV1 `json:"vulnerabilities,omitempty"`
+	Provenance                  BuildProvenanceV1       `json:"provenance"`
+	EvidenceRefs                []EvidenceRefV1         `json:"evidence_refs,omitempty"`
+	PolicyVersion               string                  `json:"policy_version"`
+	ExpiresAt                   DateTime                `json:"expires_at"`
+}
+
+// ComplianceVulnerabilityInputV1 Untrusted scanner observation normalized by the C11 import service.
+type ComplianceVulnerabilityInputV1 struct {
+	ComponentBomRef string              `json:"component_bom_ref"`
+	AdvisoryId      string              `json:"advisory_id"`
+	Severity        FindingSeverity     `json:"severity"`
+	CvssScore       *float64            `json:"cvss_score,omitempty"`
+	AffectedRange   *string             `json:"affected_range,omitempty"`
+	FixedVersion    *string             `json:"fixed_version,omitempty"`
+	Status          VulnerabilityStatus `json:"status"`
+	NonWaivable     *bool               `json:"non_waivable,omitempty"`
+}
+
 type CourseStatus string
 
 const (
@@ -1605,6 +1679,25 @@ type PublicationBatchV1 struct {
 	FailureCode          *string               `json:"failure_code,omitempty"`
 }
 
+type PublicationCommitCommandV2 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool   `json:"immutable"`
+	SchemaVersion        string `json:"schema_version"`
+	CommitCommandId      UUID   `json:"commit_command_id"`
+	AuthorizationId      UUID   `json:"authorization_id"`
+	IdempotencyKeySha256 string `json:"idempotency_key_sha256"`
+}
+
 type PublicationState string
 
 const (
@@ -1776,6 +1869,28 @@ type ReleaseAuthorizationPayloadV1 struct {
 	IssuedAt         DateTime `json:"issued_at"`
 	ExpiresAt        DateTime `json:"expires_at"`
 	OneTimeUse       bool     `json:"one_time_use"`
+}
+
+type ReleaseDerivationCommandV2 struct {
+	// Root trace propagated from Topic 3 ingestion.
+	TraceId string `json:"trace_id"`
+	// Trusted server-side tenant boundary.
+	TenantId string `json:"tenant_id"`
+	// Optimistic concurrency version.
+	VersionCas int64 `json:"version_cas"`
+	// Canonical immutable record digest.
+	RecordSha256 string `json:"record_sha256"`
+	// UTC record creation time.
+	CreatedAt DateTime `json:"created_at"`
+	// Records are append-only once emitted.
+	Immutable            bool     `json:"immutable"`
+	SchemaVersion        string   `json:"schema_version"`
+	DerivationCommandId  UUID     `json:"derivation_command_id"`
+	VerificationId       UUID     `json:"verification_id"`
+	RequestedReleaseMode string   `json:"requested_release_mode"`
+	RequestedBlockIds    []string `json:"requested_block_ids,omitempty"`
+	TtlSeconds           int64    `json:"ttl_seconds"`
+	IdempotencyKeySha256 string   `json:"idempotency_key_sha256"`
 }
 
 type ResourceMetadataV1 struct {

@@ -7,7 +7,8 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 from integration.test_postgres_topic4 import _verification_request
-from liyans_contracts.topic4_c1 import ClaimV1
+from liyans_contracts.topic4_c1 import ClaimV1, ReviewTaskState
+from liyans_contracts.topic4_c11 import ComplianceBuildProvenanceInputV1
 from test_topic4_c12_release import _authorization, _report
 from test_topic4_control_plane import TENANT_ID, TRACE_ID, _candidate
 
@@ -42,6 +43,29 @@ class _StubTopic4Runtime:
         self.report = report
         self.claim = claim
         self.enqueued: list[UUID] = []
+        self.authorization = None
+        self.review_task = _Document(
+            {
+                "review_task_id": str(uuid4()),
+                "verification_id": str(report.verification_id),
+                "state": "OPEN",
+            }
+        )
+        self.review_decision = _Document(
+            {
+                "review_decision_id": str(uuid4()),
+                "verification_id": str(report.verification_id),
+                "decision": "REVISE",
+            }
+        )
+        self.compliance_package_document = _Document(
+            {
+                "compliance_evidence_package_id": str(uuid4()),
+                "verification_id": str(report.verification_id),
+                "claim_id": str(claim.claim_id),
+                "state": "IMPORTED",
+            }
+        )
 
     async def accept(self, request):
         return {
@@ -104,7 +128,42 @@ class _StubTopic4Runtime:
         )
 
     async def issue_authorization(self, authorization):
+        self.authorization = authorization
         return authorization
+
+    async def validate_authorization(self, authorization):
+        if self.authorization is not None and (
+            authorization.authorization_id != self.authorization.authorization_id
+        ):
+            raise ReleaseError("unknown authorization")
+
+    async def import_compliance(self, _command):
+        return self.compliance_package_document
+
+    async def compliance_package(self, _verification_id: UUID | None, _claim_id: UUID):
+        return self.compliance_package_document
+
+    async def derive_release_authorization(self, _command, *, idempotency_key: str):
+        del idempotency_key
+        if self.authorization is None:
+            raise ReleaseError("missing authorization fixture")
+        return self.authorization
+
+    async def commit_release_v2(self, _command, *, idempotency_key: str):
+        del idempotency_key
+        if self.authorization is None:
+            raise ReleaseError("missing authorization fixture")
+        return await self.publish(SimpleNamespace(authorization=self.authorization))
+
+    async def review_tasks(self, _state: ReviewTaskState):
+        return [self.review_task]
+
+    async def submit_review(self, **_kwargs):
+        return SimpleNamespace(
+            decision=self.review_decision,
+            review_task=self.review_task,
+            state=_Document({"current_state": "REVISION_PLANNING"}),
+        )
 
     async def publish(self, publication_request):
         return SimpleNamespace(
@@ -183,8 +242,13 @@ class _TenantAuthorizer:
         )
 
 
-def _install_runtime(app, runtime: _StubTopic4Runtime) -> None:
-    scopes = frozenset(
+def _install_runtime(
+    app,
+    runtime: _StubTopic4Runtime,
+    *,
+    scopes: frozenset[str] | None = None,
+) -> None:
+    scopes = scopes or frozenset(
         {
             "topic4:read",
             "topic4:verification:write",
@@ -198,6 +262,10 @@ def _install_runtime(app, runtime: _StubTopic4Runtime) -> None:
             "topic4:release:read",
             "topic4:release:write",
             "topic4:sse:read",
+            "topic4:review:read",
+            "topic4:review:write",
+            "topic4:compliance:read",
+            "topic4:compliance:write",
         }
     )
     app.state.token_verifier = _TokenVerifier(scopes)
@@ -218,7 +286,7 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
         candidate,
         report,
         issued_at=datetime.now(UTC),
-        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(minutes=5),
     )
     claim = DeterministicClaimExtractor().extract(
         candidate,
@@ -274,6 +342,39 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
             headers={**headers, "Idempotency-Key": "topic4-api-rag-00000000000000000001"},
             json={"claim": claim.model_dump(mode="json"), "course_id": "CRS-ATC"},
         )
+        compliance_provenance = ComplianceBuildProvenanceInputV1(
+            builder_id="liyans-local-python-evidence",
+            builder_version="1.0.0",
+            toolchain_manifest_version="topic4-toolchain-v1",
+            source_sha256="a" * 64,
+            build_output_document={"status": "verified"},
+            sandbox_policy_id=uuid4(),
+            reproducible=True,
+            build_command_sha256="b" * 64,
+        )
+        compliance = await client.post(
+            "/internal/topic4/compliance/packages",
+            headers={
+                **headers,
+                "Idempotency-Key": "topic4-api-compliance-000000000000000001",
+            },
+            json={
+                "verification_id": str(claim.verification_id),
+                "claim_id": str(claim.claim_id),
+                "sbom_document": {
+                    "bomFormat": "CycloneDX",
+                    "specVersion": "1.5",
+                    "serialNumber": "urn:uuid:topic4-api",
+                    "components": [],
+                },
+                "vulnerability_records": [],
+                "provenance_document": compliance_provenance.model_dump(mode="json"),
+            },
+        )
+        compliance_read = await client.get(
+            f"/internal/topic4/compliance/claims/{claim.claim_id}",
+            headers=headers,
+        )
         evidence = await client.get(
             f"/internal/topic4/claims/{claim.claim_id}/evidence",
             headers=headers,
@@ -292,6 +393,19 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
             headers=headers,
             json=authorization.model_dump(mode="json"),
         )
+        derived = await client.post(
+            "/internal/topic4/release/authorizations/derive",
+            headers={
+                **headers,
+                "Idempotency-Key": "topic4-api-derive-00000000000000000001",
+            },
+            json={
+                "verification_id": str(report.verification_id),
+                "requested_release_mode": "FULL",
+                "requested_block_ids": [],
+                "ttl_seconds": 120,
+            },
+        )
         publication_body = {
             "authorization": authorization.model_dump(mode="json"),
             "report": report.model_dump(mode="json"),
@@ -302,6 +416,14 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
             headers=headers,
             json=publication_body,
         )
+        committed_v2 = await client.post(
+            "/internal/topic4/release/publications/commit",
+            headers={
+                **headers,
+                "Idempotency-Key": "topic4-api-commit-00000000000000000001",
+            },
+            json={"authorization_id": str(authorization.authorization_id)},
+        )
         published_batch = await client.post(
             "/internal/topic4/release/publications/batch",
             headers=headers,
@@ -310,6 +432,26 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
         history = await client.get(
             f"/internal/topic4/release/history?verification_id={report.verification_id}&limit=20",
             headers=headers,
+        )
+        review_tasks = await client.get(
+            "/internal/topic4/reviews/tasks?state=OPEN",
+            headers=headers,
+        )
+        review_decision = await client.post(
+            f"/internal/topic4/verifications/{report.verification_id}/reviews/decisions",
+            headers={
+                **headers,
+                "Idempotency-Key": "topic4-api-review-00000000000000000001",
+            },
+            json={
+                "review_task_id": runtime.review_task._document["review_task_id"],
+                "decision": "REVISE",
+                "rationale": "The persisted finding requires a revision.",
+                "disclosure_codes": [],
+                "waived_finding_ids": [],
+                "expected_task_version": 1,
+                "expected_state_version": 1,
+            },
         )
         await app.state.sse_broker.publish(
             TENANT_ID,
@@ -328,13 +470,19 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
         trace,
         report_response,
         retrieval,
+        compliance,
+        compliance_read,
         evidence,
         revisions,
         valid,
         issued,
+        derived,
         published,
+        committed_v2,
         published_batch,
         history,
+        review_tasks,
+        review_decision,
         replay,
     )
     assert all(response.status_code < 300 for response in responses), [
@@ -344,7 +492,52 @@ async def test_topic4_api_exposes_runtime_release_and_replay_contracts() -> None
         request_payload.verification_id
     )
     assert runtime.enqueued == [request_payload.verification_id]
+    assert review_tasks.json()["payload"]["tasks"][0]["state"] == "OPEN"
+    assert review_decision.json()["payload"]["decision"]["decision"] == "REVISE"
+    assert compliance.json()["payload"]["package"]["state"] == "IMPORTED"
+    assert compliance_read.json()["payload"]["package"]["state"] == "IMPORTED"
+    assert derived.json()["payload"]["authorization"]["authorization_id"] == str(
+        authorization.authorization_id
+    )
+    assert committed_v2.json()["payload"]["state"] == "RELEASED"
     assert replay.json()["payload"]["events"][0]["event_type"] == ("topic4.publication.committed")
+
+
+@pytest.mark.asyncio
+async def test_topic4_review_routes_enforce_scope() -> None:
+    candidate = _candidate()
+    report = _report(candidate)
+    claim = DeterministicClaimExtractor().extract(
+        candidate,
+        verification_id=report.verification_id,
+        trace_id=TRACE_ID,
+        tenant_id=TENANT_ID,
+        created_at=datetime.now(UTC),
+    )[0]
+    app = create_app()
+    _install_runtime(
+        app,
+        _StubTopic4Runtime(candidate, report, claim),
+        scopes=frozenset({"topic4:review:read"}),
+    )
+    transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
+    headers = {"authorization": "Bearer topic4-token", "x-trace-id": TRACE_ID}
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post(
+            f"/internal/topic4/verifications/{report.verification_id}/reviews/decisions",
+            headers={
+                **headers,
+                "Idempotency-Key": "topic4-api-review-00000000000000000002",
+            },
+            json={
+                "review_task_id": str(uuid4()),
+                "decision": "REVISE",
+                "rationale": "not authorized",
+                "expected_task_version": 1,
+                "expected_state_version": 1,
+            },
+        )
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio

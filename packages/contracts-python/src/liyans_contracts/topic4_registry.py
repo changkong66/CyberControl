@@ -54,8 +54,18 @@ from .topic4_c7 import ExtensionVerificationResultV1, VerifierExtensionResourceV
 from .topic4_c8 import RevisionCycleV1, RevisionPatchV1, RevisionPlanV1
 from .topic4_c9 import SecurityFindingV1
 from .topic4_c10 import PIIFindingV1, PrivacyTenantResultV1, TokenizedValueV1
-from .topic4_c11 import BuildProvenanceV1, SBOMManifestV1, VulnerabilityRecordV1
-from .topic4_c12 import SystemAcceptanceReportV1
+from .topic4_c11 import (
+    BuildProvenanceV1,
+    ComplianceEvidenceImportCommandV1,
+    ComplianceEvidencePackageV1,
+    SBOMManifestV1,
+    VulnerabilityRecordV1,
+)
+from .topic4_c12 import (
+    PublicationCommitCommandV2,
+    ReleaseDerivationCommandV2,
+    SystemAcceptanceReportV1,
+)
 
 ContractSpec = tuple[str, str, str, str, type[BaseModel]]
 
@@ -297,6 +307,34 @@ TOPIC4_CONTRACT_SPECS: tuple[ContractSpec, ...] = (
         "internal",
         "strict-v1",
         BuildProvenanceV1,
+    ),
+    (
+        "compliance-evidence-import.command.v1",
+        "c11-compliance",
+        "internal",
+        "strict-v1",
+        ComplianceEvidenceImportCommandV1,
+    ),
+    (
+        "compliance-evidence.package.v1",
+        "c11-compliance",
+        "internal",
+        "strict-v1",
+        ComplianceEvidencePackageV1,
+    ),
+    (
+        "release.derivation.command.v2",
+        "c12-qa",
+        "internal",
+        "strict-v2",
+        ReleaseDerivationCommandV2,
+    ),
+    (
+        "publication.commit.command.v2",
+        "c12-qa",
+        "internal",
+        "strict-v2",
+        PublicationCommitCommandV2,
     ),
     (
         "system-acceptance-report.v1",

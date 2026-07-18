@@ -582,6 +582,20 @@ async def test_topic4_accept_transition_replay_and_tenant_isolation(
             decided_at=review_now,
             decision_context={"source": "integration-test"},
         )
+        with pytest.raises(LiyanError, match="reviewer"):
+            await c1_verifier.submit_human_review(
+                review_decision.model_copy(update={"reviewer_subject_ref": "subject:other"}),
+                expected_task_version=review_prepared.review_task.version_cas,
+                expected_state_version=review_prepared.state.state_version,
+                idempotency_key=f"topic4:review-wrong-subject:{review_request.verification_id.hex}",
+            )
+        with pytest.raises(LiyanError, match="version"):
+            await c1_verifier.submit_human_review(
+                review_decision,
+                expected_task_version=review_prepared.review_task.version_cas + 1,
+                expected_state_version=review_prepared.state.state_version,
+                idempotency_key=f"topic4:review-stale-cas:{review_request.verification_id.hex}",
+            )
         review_result = await c1_verifier.submit_human_review(
             review_decision,
             expected_task_version=review_prepared.review_task.version_cas,

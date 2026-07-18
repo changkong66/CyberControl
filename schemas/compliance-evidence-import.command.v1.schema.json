@@ -1,0 +1,273 @@
+{
+  "$defs": {
+    "ComplianceBuildProvenanceInputV1": {
+      "additionalProperties": false,
+      "description": "Untrusted provenance accepted only from an allowlisted local builder.",
+      "properties": {
+        "builder_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Builder Id",
+          "type": "string"
+        },
+        "builder_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Builder Version",
+          "type": "string"
+        },
+        "toolchain_manifest_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+          "title": "Toolchain Manifest Version",
+          "type": "string"
+        },
+        "source_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "build_output_document": {
+          "additionalProperties": true,
+          "title": "Build Output Document",
+          "type": "object"
+        },
+        "sandbox_policy_id": {
+          "format": "uuid",
+          "title": "Sandbox Policy Id",
+          "type": "string"
+        },
+        "reproducible": {
+          "title": "Reproducible",
+          "type": "boolean"
+        },
+        "build_command_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Build Command Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "builder_id",
+        "builder_version",
+        "toolchain_manifest_version",
+        "source_sha256",
+        "build_output_document",
+        "sandbox_policy_id",
+        "reproducible",
+        "build_command_sha256"
+      ],
+      "title": "ComplianceBuildProvenanceInputV1",
+      "type": "object"
+    },
+    "ComplianceVulnerabilityInputV1": {
+      "additionalProperties": false,
+      "description": "Untrusted scanner observation normalized by the C11 import service.",
+      "properties": {
+        "component_bom_ref": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Component Bom Ref",
+          "type": "string"
+        },
+        "advisory_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Advisory Id",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/FindingSeverity"
+        },
+        "cvss_score": {
+          "anyOf": [
+            {
+              "maximum": 10.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cvss Score"
+        },
+        "affected_range": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Affected Range"
+        },
+        "fixed_version": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fixed Version"
+        },
+        "status": {
+          "$ref": "#/$defs/VulnerabilityStatus"
+        },
+        "non_waivable": {
+          "default": false,
+          "title": "Non Waivable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "component_bom_ref",
+        "advisory_id",
+        "severity",
+        "status"
+      ],
+      "title": "ComplianceVulnerabilityInputV1",
+      "type": "object"
+    },
+    "FindingSeverity": {
+      "enum": [
+        "INFO",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "FindingSeverity",
+      "type": "string"
+    },
+    "VulnerabilityStatus": {
+      "enum": [
+        "OPEN",
+        "NOT_AFFECTED",
+        "MITIGATED",
+        "FIXED",
+        "ACCEPTED_RISK"
+      ],
+      "title": "VulnerabilityStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "compliance-evidence-import.command.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "import_command_id": {
+      "format": "uuid",
+      "title": "Import Command Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "sbom_document": {
+      "additionalProperties": true,
+      "title": "Sbom Document",
+      "type": "object"
+    },
+    "vulnerability_records": {
+      "items": {
+        "$ref": "#/$defs/ComplianceVulnerabilityInputV1"
+      },
+      "maxItems": 65536,
+      "title": "Vulnerability Records",
+      "type": "array"
+    },
+    "provenance_document": {
+      "$ref": "#/$defs/ComplianceBuildProvenanceInputV1"
+    },
+    "idempotency_key_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Idempotency Key Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "import_command_id",
+    "verification_id",
+    "claim_id",
+    "sbom_document",
+    "provenance_document",
+    "idempotency_key_sha256"
+  ],
+  "title": "ComplianceEvidenceImportCommandV1",
+  "type": "object"
+}

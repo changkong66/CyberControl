@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
     provider_policy_path: Path = REPOSITORY_ROOT / "config" / "providers.toml"
     provider_policy_poll_seconds: float = 2.0
+    compliance_builder_policy_path: Path = REPOSITORY_ROOT / "config" / "compliance-builders.toml"
     provider_external_enabled: bool = False
     spark_text_endpoint: str | None = None
     spark_text_api_key: str | None = Field(default=None, repr=False)

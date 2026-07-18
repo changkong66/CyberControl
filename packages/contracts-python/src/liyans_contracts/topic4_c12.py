@@ -78,3 +78,26 @@ class SystemAcceptanceReportV1(Topic4RecordV1):
         if self.decision == AcceptanceDecision.ACCEPTED and not redlines_pass:
             raise ValueError("accepted report does not satisfy Topic 4 redlines")
         return self
+
+
+class ReleaseDerivationCommandV2(Topic4RecordV1):
+    schema_version: Literal["release.derivation.command.v2"]
+    derivation_command_id: UUID
+    verification_id: UUID
+    requested_release_mode: Literal["FULL", "FULL_WITH_DISCLOSURE"]
+    requested_block_ids: list[str] = Field(default_factory=list, max_length=2048)
+    ttl_seconds: int = Field(ge=1, le=300)
+    idempotency_key_sha256: Sha256Hex
+
+    @model_validator(mode="after")
+    def validate_requested_blocks(self) -> ReleaseDerivationCommandV2:
+        if len(self.requested_block_ids) != len(set(self.requested_block_ids)):
+            raise ValueError("requested_block_ids must be unique")
+        return self
+
+
+class PublicationCommitCommandV2(Topic4RecordV1):
+    schema_version: Literal["publication.commit.command.v2"]
+    commit_command_id: UUID
+    authorization_id: UUID
+    idempotency_key_sha256: Sha256Hex
