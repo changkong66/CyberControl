@@ -29,9 +29,9 @@ SBOM, container security, and local/remote CI gates are accepted.
 - Implement profile extraction, decay, Ebbinghaus scheduling, and route planning.
 - Add deterministic and multi-tenant tests before model integration.
 
-Status: Topic 1 is completed, accepted, and frozen at
-`7eb9b940ed10dbca09c62d2caed809245e75ae5b`. Topic 2 is the active unlocked stage;
-Topic 3 and later runtimes remain locked.
+Status: completed, accepted, and frozen. The Topic 1 acceptance commit remains
+`7eb9b940ed10dbca09c62d2caed809245e75ae5b`; Topic 2 subsequently completed its
+six-dimensional profile, memory-decay, and adaptive-path runtime.
 
 ## Phase 3: Topic 3 generation plane
 
@@ -39,10 +39,17 @@ Topic 3 and later runtimes remain locked.
   the five generation agents.
 - Stage candidate bodies and implement generation-status SSE events.
 
+Status: completed, accepted, and frozen. The five-agent cluster, immutable
+blueprints, DAG orchestration, transactional Outbox, and persistent SSE runtime are
+part of the protected backend baseline.
+
 ## Phase 4: Topic 4 verifier core
 
 - Implement C1 contracts, state machine, claims, routing, module scheduler,
   aggregation, release authorization, audit, recovery, and SSE publication.
+
+Status: completed, accepted, and frozen as the C1 control plane and C12 release
+foundation.
 
 ## Phase 5: Specialist verification
 
@@ -50,14 +57,26 @@ Topic 3 and later runtimes remain locked.
 - Implement C8 revision only after specialist results are stable.
 - Implement C9-C11 as mandatory release dependencies.
 
+Status: completed, accepted, and merged through Topic 4 PR #16. C1-C12, local-only
+RAG, specialist verification, two-cycle revision, cross-cutting compliance, and the
+atomic publication gate are present on protected `main` at
+`190ed863c13f8f71d909b6083b929c899e4db69f`.
+
 ## Phase 6: Frontend integration
 
 - Implement the Vue learning workspace, generated TypeScript contracts, SSE
   reducer, Markdown/LaTeX/Mermaid rendering, quizzes, code views, review states,
   and mobile/desktop layout verification.
 
+Status: active. `codex/frontend-workbench` is created and the frontend unlock is
+active. Governance synchronization, additive trust-boundary APIs, and the frontend
+engineering foundation must land sequentially before Topic business pages begin.
+
 ## Phase 7: System acceptance
 
 - Execute C12 G0-G12 gates, golden datasets, security red-team tests, 2000 SSE
   connections, 100 concurrent verification workflows, soak, and disaster recovery.
 - Produce `SystemAcceptanceReportV1`; production release requires `ACCEPTED`.
+
+Status: pending. Topic 4 module acceptance does not satisfy the G0-G12 product-level
+acceptance gates.
