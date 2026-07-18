@@ -1,4 +1,30 @@
 services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: local-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: local-admin-only
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/cybercontrol-realm.json:/opt/keycloak/data/import/cybercontrol-realm.json:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bash",
+          "-ec",
+          "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '200 OK' <&3",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   postgres:
     image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
     environment:
@@ -31,6 +57,28 @@ services:
         condition: service_healthy
     restart: "no"
 
+  tenant-bind:
+    image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    environment:
+      PGPASSWORD: liyans-bootstrap-local-only
+    command:
+      [
+        "psql",
+        "--host=postgres",
+        "--username=liyans_bootstrap",
+        "--dbname=liyans",
+        "--set=oidc_issuer=http://localhost:8080/realms/cybercontrol",
+        "--file=/scripts/bind-demo-tenant.sql",
+      ]
+    volumes:
+      - ./postgres/dev/bind-demo-tenant.sql:/scripts/bind-demo-tenant.sql:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
   api:
     build:
       context: ..
@@ -45,28 +93,58 @@ services:
       LIYAN_AUDIT_LOG_PATH: /var/lib/liyans/audit/events.jsonl
       LIYAN_ARTIFACT_ROOT: /var/lib/liyans/artifacts
       LIYAN_SSE_CURSOR_SECRET: local-compose-cursor-secret-change-me-32
+      LIYAN_OIDC_ISSUER: http://localhost:8080/realms/cybercontrol
+      LIYAN_OIDC_AUDIENCE: cybercontrol-api
+      LIYAN_OIDC_JWKS_URL: http://keycloak:8080/realms/cybercontrol/protocol/openid-connect/certs
+      LIYAN_OIDC_ALGORITHMS: '["RS256"]'
+      LIYAN_OIDC_TENANT_CLAIM: tenant_id
+      LIYAN_OIDC_ROLES_CLAIM: roles
+      LIYAN_OIDC_SCOPE_CLAIM: permissions
     ports:
       - "${LIYAN_API_HOST_PORT:-8000}:8000"
     volumes:
       - liyans-runtime:/var/lib/liyans
     depends_on:
-      migrate:
+      keycloak:
+        condition: service_healthy
+      tenant-bind:
         condition: service_completed_successfully
     healthcheck:
-      # Development Compose has no identity provider. Container health therefore
-      # uses liveness; production orchestrators MUST gate traffic on /health/ready.
       test:
         [
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live')",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')",
         ]
       interval: 10s
       timeout: 3s
       retries: 10
       start_period: 10s
     stop_grace_period: 30s
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+        VITE_OIDC_AUTHORITY: http://localhost:8080/realms/cybercontrol
+        VITE_OIDC_CLIENT_ID: cybercontrol-workbench
+        VITE_OIDC_SCOPE: openid profile email
+    ports:
+      - "5173:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/sbin/nginx", "-t", "-c", "/etc/nginx/nginx.conf"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
 volumes:
   liyans-postgres:

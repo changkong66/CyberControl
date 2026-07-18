@@ -9,19 +9,33 @@
     "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
     "sbom": "python ../tools/generate_node_sbom.py --project . --output ../artifacts/sbom/frontend.cdx.json"
   },
   "dependencies": {
     "@liyans/contracts": "file:../packages/contracts-ts",
-    "vue": "^3.5.13"
+    "@lucide/vue": "1.25.0",
+    "ajv": "8.20.0",
+    "eventsource-parser": "3.0.6",
+    "oidc-client-ts": "3.3.0",
+    "pinia": "3.0.3",
+    "vue": "^3.5.13",
+    "vue-router": "4.5.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.0",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/coverage-v8": "4.1.10",
+    "@vue/test-utils": "2.4.11",
+    "jsdom": "29.1.1",
+    "msw": "2.15.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.0",
+    "vitest": "4.1.10",
     "vue-tsc": "^2.2.0"
   }
 }

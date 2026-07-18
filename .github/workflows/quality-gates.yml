@@ -235,6 +235,8 @@ jobs:
         run: pnpm --dir frontend install --frozen-lockfile
       - name: Validate generated TypeScript contracts
         run: pnpm --dir frontend exec tsc --noEmit --project ../packages/contracts-ts/tsconfig.json
+      - name: Run frontend unit and integration tests with coverage redlines
+        run: pnpm --dir frontend run test:coverage
       - name: Type-check and build Vue production assets
         run: |
           pnpm --dir frontend run typecheck
@@ -258,6 +260,14 @@ jobs:
             artifacts/sbom/frontend-license-policy.json
           if-no-files-found: error
           retention-days: 90
+      - name: Upload frontend test evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: frontend-test-evidence
+          path: frontend/coverage/coverage-final.json
+          if-no-files-found: warn
+          retention-days: 30
 
   python-supply-chain:
     name: Python audit and SBOM
@@ -319,7 +329,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      IMAGE_REF: liyans-backend:ci-${{ github.sha }}
+      BACKEND_IMAGE_REF: liyans-backend:ci-${{ github.sha }}
+      FRONTEND_IMAGE_REF: liyans-frontend:ci-${{ github.sha }}
     steps:
       - name: Check out immutable source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -327,20 +338,26 @@ jobs:
           persist-credentials: false
       - name: Configure Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-      - name: Validate Compose and build the pinned production image
+      - name: Validate Compose and build pinned production images
         run: |
           docker compose -f infra/docker-compose.yml config --quiet
           docker buildx build \
             --file infra/backend.Dockerfile \
-            --tag "$IMAGE_REF" \
+            --tag "$BACKEND_IMAGE_REF" \
+            --load \
+            .
+          docker buildx build \
+            --file infra/frontend.Dockerfile \
+            --tag "$FRONTEND_IMAGE_REF" \
             --load \
             .
           mkdir -p artifacts/container artifacts/security artifacts/sbom
-          docker image inspect "$IMAGE_REF" > artifacts/container/image-inspect.json
-      - name: Enforce non-root and minimal runtime image
+          docker image inspect "$BACKEND_IMAGE_REF" > artifacts/container/backend-image-inspect.json
+          docker image inspect "$FRONTEND_IMAGE_REF" > artifacts/container/frontend-image-inspect.json
+      - name: Enforce non-root and minimal runtime images
         run: |
-          test "$(docker image inspect "$IMAGE_REF" --format '{{.Config.User}}')" = "10001:10001"
-          docker run --rm --entrypoint /bin/sh "$IMAGE_REF" -c '
+          test "$(docker image inspect "$BACKEND_IMAGE_REF" --format '{{.Config.User}}')" = "10001:10001"
+          docker run --rm --entrypoint /bin/sh "$BACKEND_IMAGE_REF" -c '
             set -eu
             id -u | grep -qx 10001
             id -g | grep -qx 10001
@@ -352,17 +369,30 @@ jobs:
             test ! -e /usr/local/lib/python3.11/site-packages/wheel
             python -c "import liyans, liyans_contracts"
           '
+          test "$(docker image inspect "$FRONTEND_IMAGE_REF" --format '{{.Config.User}}')" = "65532:65532"
+          frontend_check_id="$(docker create "$FRONTEND_IMAGE_REF")"
+          trap 'docker rm -f "$frontend_check_id" >/dev/null 2>&1 || true' EXIT
+          docker export "$frontend_check_id" > artifacts/container/frontend-rootfs.tar
+          tar -tf artifacts/container/frontend-rootfs.tar > artifacts/container/frontend-rootfs.txt
+          grep -qx 'usr/share/nginx/html/index.html' artifacts/container/frontend-rootfs.txt
+          ! grep -Eq '(^|/)workspace/|(^|/)node$|(^|/)npm$|(^|/)pnpm$' artifacts/container/frontend-rootfs.txt
+          docker run --rm --entrypoint /usr/sbin/nginx "$FRONTEND_IMAGE_REF" \
+            -t -c /etc/nginx/nginx.conf
       - name: Smoke-test container liveness
         run: |
           container_id="$(docker run -d \
             -p 127.0.0.1::8000 \
             -e LIYAN_ENVIRONMENT=development \
             -e LIYAN_SSE_CURSOR_SECRET=ci-container-cursor-secret-at-least-32-bytes \
-            "$IMAGE_REF")"
-          trap 'docker logs "$container_id" || true; docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+            "$BACKEND_IMAGE_REF")"
+          frontend_id="$(docker run -d -p 127.0.0.1::8080 "$FRONTEND_IMAGE_REF")"
+          trap 'docker logs "$container_id" || true; docker logs "$frontend_id" || true; docker rm -f "$container_id" "$frontend_id" >/dev/null 2>&1 || true' EXIT
           port="$(docker port "$container_id" 8000/tcp | awk -F: '{print $NF}')"
+          frontend_port="$(docker port "$frontend_id" 8080/tcp | awk -F: '{print $NF}')"
           for _ in $(seq 1 40); do
             if curl --fail --silent --show-error "http://127.0.0.1:${port}/health/live" \
+              | grep -q '"status":"live"' \
+              && curl --fail --silent --show-error "http://127.0.0.1:${frontend_port}/healthz" \
               | grep -q '"status":"live"'; then
               exit 0
             fi
@@ -372,28 +402,59 @@ jobs:
       - name: Generate CycloneDX container SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
-          image: ${{ env.IMAGE_REF }}
+          image: ${{ env.BACKEND_IMAGE_REF }}
           format: cyclonedx-json
           output-file: artifacts/sbom/backend-container.cdx.json
+          upload-artifact: false
+          dependency-snapshot: false
+      - name: Generate CycloneDX frontend container SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.FRONTEND_IMAGE_REF }}
+          format: cyclonedx-json
+          output-file: artifacts/sbom/frontend-container.cdx.json
           upload-artifact: false
           dependency-snapshot: false
       - name: Record complete container vulnerability inventory
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
-          image-ref: ${{ env.IMAGE_REF }}
+          image-ref: ${{ env.BACKEND_IMAGE_REF }}
           scanners: vuln
           severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           ignore-unfixed: false
           timeout: 15m0s
           exit-code: "0"
           format: json
-          output: artifacts/security/container-trivy.json
+          output: artifacts/security/backend-container-trivy.json
+      - name: Record complete frontend container vulnerability inventory
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.FRONTEND_IMAGE_REF }}
+          scanners: vuln
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          timeout: 15m0s
+          exit-code: "0"
+          format: json
+          output: artifacts/security/frontend-container-trivy.json
       - name: Block fixable high and critical container vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: image
-          image-ref: ${{ env.IMAGE_REF }}
+          image-ref: ${{ env.BACKEND_IMAGE_REF }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          timeout: 15m0s
+          exit-code: "1"
+          format: table
+      - name: Block fixable frontend high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.FRONTEND_IMAGE_REF }}
           scanners: vuln
           severity: HIGH,CRITICAL
           ignore-unfixed: true
@@ -409,6 +470,7 @@ jobs:
             artifacts/container
             artifacts/security
             artifacts/sbom/backend-container.cdx.json
+            artifacts/sbom/frontend-container.cdx.json
           if-no-files-found: warn
           retention-days: 90
 

@@ -21,7 +21,10 @@ CURATED_LICENSE_PREFIXES = (
     ("@tailwindcss/oxide-", "MIT"),
     ("lightningcss-", "MPL-2.0"),
 )
-CURATED_LICENSES = {"fsevents": "MIT"}
+CURATED_LICENSES = {
+    "config-chain": "MIT",
+    "fsevents": "MIT",
+}
 
 
 def package_version(node: dict[str, Any]) -> str:
