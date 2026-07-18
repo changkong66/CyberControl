@@ -1,38 +1,52 @@
 # Topic4 Frontend Development Unlock Certificate
 
-## Decision
+## Status
 
-Topic4 C12 is formally **ACCEPTED**. Frontend development is unlocked from
-the verified remote commit
-`7ffcc0bd49664b8b13604926c5c1980a2feb35ce`.
+**PREAUTHORIZED - NOT YET ACTIVE**
 
-## Evidence
+Topic4 backend acceptance prerequisites are satisfied on
+`codex/topic4-verifier-runtime` at
+`8d143ba43ae78f3b66ab8d691d1513f03f8baa2d`. Release Quality Gates Run
+`29634407475` completed with all eight jobs successful.
 
-- GitHub Actions Run `29531563951` completed with `8/8` jobs successful.
-- Final archive GitHub Actions Run `29531925104` completed with `8/8` jobs
-  successful.
-- PostgreSQL integration and coverage evidence reported `424` tests, `1`
-  explicitly skipped database-restart probe, and `90.88%` global coverage.
-- Trivy container security, Gitleaks full-history scanning, SBOM, license,
-  dependency, Ruff, Go, TypeScript, Vue, and contract gates passed.
-- C12 release tests cover one-time authorization, Candidate/report SHA
-  binding, disclosure block filtering, tenant isolation, expiry, replay
-  rejection, immutable snapshot replay, Outbox registration, and fail-closed
-  object storage behavior.
+The frontend unlock becomes active only after this branch is approved by the
+required CODEOWNERS and merged through the protected pull-request workflow into
+`main`. Until that merge, no frontend business branch or frontend business code
+is authorized by this certificate.
 
-## Scope Boundary
+## Verified Evidence
 
-The frontend may now consume the frozen Phase1.1, Topic1, Topic2, Topic3, and
-Topic4 contracts and APIs. It must not modify any frozen backend contract,
-migration, transaction, Outbox, SSE, audit, RLS, or release-gate semantics.
-Frontend changes require the existing branch protection, CODEOWNERS review,
-full remote CI, SBOM, license, Trivy, and Gitleaks gates.
+- 428 tests passed, 1 Windows symbolic-link privilege test skipped.
+- Global Python coverage is 91.19%.
+- 200 concurrent C1 verifications completed without lost reports or duplicate
+  Claims.
+- 200 concurrent C12 authorization consumptions converged on one immutable
+  publication result.
+- C2 100,000-block retrieval p95 is 12.283 ms.
+- Database restart, Faiss/BM25 corruption recovery, Outbox rollback, duplicate
+  delivery, persistent SSE, and tenant isolation tests passed.
+- Ruff, Go, TypeScript, Vue, SBOM, license, dependency, Trivy, and Gitleaks
+  gates passed.
+
+## Activation Conditions
+
+1. The acceptance archive commit passes Release Quality Gates.
+2. A formal pull request targets protected `main`.
+3. Required CODEOWNERS approval is present.
+4. All required checks are green on the pull request.
+5. The pull request is merged without bypassing branch protection.
+
+## Frontend Freeze Boundary
+
+After activation, frontend code may call frozen Topic1-Topic4 APIs, render SSE,
+and visualize returned data. It must not modify backend contracts, migrations,
+RLS, SERIALIZABLE transaction semantics, audit hashes, Outbox delivery, SSE
+replay, verification policy, revision limits, or the C12 release gate.
 
 ## Certificate Metadata
 
-- Branch: `codex/topic4-verifier-runtime`
-- C12 state: `ACCEPTED`
-- Acceptance time: `2026-07-16T20:20:44Z`
-- Verified implementation commit: `7ffcc0bd49664b8b13604926c5c1980a2feb35ce`
-- Final archive commit: `0ae8fc7685e88c6f61e5ff6babc00403774cd1ac`
-- Remote report: [GitHub Actions Run 29531925104](https://github.com/changkong66/CyberControl/actions/runs/29531925104)
+- Protected main base: `6922cd3e6cf6a014f7c5a7e0436596d97fcc71df`
+- Accepted development commit: `8d143ba43ae78f3b66ab8d691d1513f03f8baa2d`
+- Remote run: [Release Quality Gates 29634407475](https://github.com/changkong66/CyberControl/actions/runs/29634407475)
+- Active: `false`
+- Activation event: protected-main merge

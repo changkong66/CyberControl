@@ -1,51 +1,37 @@
 {
   "schema_version": "topic4.c2.acceptance-status.v1",
-  "topic": "Topic4",
-  "module": "C2",
-  "status": "CHECKPOINT_READY",
-  "overall_topic4_status": "IN_PROGRESS",
+  "topic": "TOPIC4",
+  "module": "C2_LOCAL_HYBRID_RAG",
+  "state": "ACCEPTED",
+  "overall_topic4_status": "ACCEPTED_ON_DEVELOPMENT_BRANCH",
   "branch": "codex/topic4-verifier-runtime",
   "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "implementation_commit": "c8e4009159b232cc324f6842699bac149d0aedf8",
+  "integration_commit": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+  "accepted_at_utc": "2026-07-18T06:43:58Z",
   "scope": "local-first authoritative hybrid RAG",
-  "frozen_dependencies": [
-    "Phase1.1",
-    "Topic1",
-    "Topic2",
-    "Topic3",
-    "Topic4 C1"
-  ],
   "quality": {
-    "full_regression_passed": 269,
-    "full_regression_skipped": 2,
-    "full_coverage_percent": 90.32,
-    "database_restart_probe_passed": 1,
-    "topic4_c2_recovery_cases_passed": 6,
+    "full_regression_passed": 428,
+    "full_regression_skipped": 1,
+    "full_coverage_percent": 91.19,
+    "database_restart_probe_passed": true,
+    "faiss_recovery_passed": true,
+    "bm25_recovery_passed": true,
     "trivy_findings": 0,
     "gitleaks_findings": 0,
-    "p95_retrieval_ms_100k": 11.933,
+    "p95_retrieval_ms_100k": 12.283,
     "p95_limit_ms": 200.0,
-    "peak_working_set_mb_100k": 1298.797
+    "retrieval_max_ms_100k": 14.048,
+    "index_build_seconds_100k": 22.049,
+    "serialized_index_megabytes": 216.968,
+    "peak_working_set_megabytes": 1221.141
   },
-  "implemented_assets": [
-    "deterministic source ingestion and bounded chunking",
-    "BM25 shard persistence and high-frequency-term control",
-    "2048-dimensional signed lexical hash vectorization",
-    "Faiss sharded index persistence and integrity restore",
-    "Topic1 graph and formula-signature retrieval channels",
-    "tenant-scoped PostgreSQL repositories",
-    "SERIALIZABLE idempotent lifecycle and retrieval transactions",
-    "append-only evidence and audit/Outbox integration",
-    "activation CAS and concurrent self-healing",
-    "100k-scale deterministic performance benchmark"
-  ],
-  "not_unlocked": [
-    "C3-C7",
-    "C8",
-    "C9-C11",
-    "C12",
-    "Topic4 API and worker wiring",
-    "frontend"
-  ],
-  "next_gate": "C3-C7 vertical professional verification",
-  "generated_at": "2026-07-16T17:00:00+08:00"
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29634407475,
+    "head_sha": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29634407475"
+  }
 }
