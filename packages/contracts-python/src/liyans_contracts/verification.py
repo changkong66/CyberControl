@@ -7,8 +7,9 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 from .artifacts import ArtifactObjectRefV1, SourceSnapshotRefV1
-from .common import FROZEN_MODEL_CONFIG, MUTABLE_MODEL_CONFIG, Sha256Hex
+from .common import FROZEN_MODEL_CONFIG, Sha256Hex
 from .enums import VerificationProfile, VerificationTrigger
+from .topic4_common import Topic4RecordV1
 
 
 class VerificationState(StrEnum):
@@ -31,7 +32,7 @@ class VerificationState(StrEnum):
     CANCELLED = "CANCELLED"
 
 
-class VerificationBindingV1(BaseModel):
+class VerificationBindingV1(Topic4RecordV1):
     model_config = FROZEN_MODEL_CONFIG
 
     schema_version: Literal["verification.binding.v1"]
@@ -61,8 +62,8 @@ class VerificationContextV1(BaseModel):
     personalization_policy_digest: Sha256Hex
 
 
-class VerificationRequestPayloadV1(BaseModel):
-    model_config = MUTABLE_MODEL_CONFIG
+class VerificationRequestPayloadV1(Topic4RecordV1):
+    model_config = FROZEN_MODEL_CONFIG
 
     schema_version: Literal["verification.request.v1"]
     verification_id: UUID
@@ -93,7 +94,7 @@ class VerificationRequestPayloadV1(BaseModel):
         return self
 
 
-class VerificationAcceptedPayloadV1(BaseModel):
+class VerificationAcceptedPayloadV1(Topic4RecordV1):
     model_config = FROZEN_MODEL_CONFIG
 
     schema_version: Literal["verification.accepted.v1"]
@@ -110,7 +111,7 @@ class VerificationAcceptedPayloadV1(BaseModel):
     estimated_profile: VerificationProfile
 
 
-class VerificationStateChangedPayloadV1(BaseModel):
+class VerificationStateChangedPayloadV1(Topic4RecordV1):
     model_config = FROZEN_MODEL_CONFIG
 
     schema_version: Literal["verification.state_changed.v1"]
@@ -123,7 +124,7 @@ class VerificationStateChangedPayloadV1(BaseModel):
     changed_at: AwareDatetime
 
 
-class ReleaseAuthorizationPayloadV1(BaseModel):
+class ReleaseAuthorizationPayloadV1(Topic4RecordV1):
     model_config = FROZEN_MODEL_CONFIG
 
     schema_version: Literal["release.authorization.v1"]

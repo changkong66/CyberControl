@@ -14,7 +14,7 @@ COPY pyproject.toml uv.lock .python-version /app/
 COPY backend /app/backend
 COPY packages/contracts-python /app/packages/contracts-python
 
-RUN uv sync --frozen --no-dev --all-packages --no-editable
+RUN uv sync --frozen --no-dev --all-packages --no-editable --extra retrieval
 
 FROM ${PYTHON_IMAGE} AS runtime
 

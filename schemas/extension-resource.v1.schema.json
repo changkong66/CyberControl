@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "ExtensionResourceType": {
+      "enum": [
+        "PAPER",
+        "STANDARD",
+        "ENGINEERING_CASE",
+        "OFFICIAL_DOCUMENTATION",
+        "DATASET"
+      ],
+      "title": "ExtensionResourceType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "extension-resource.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "extension_resource_id": {
+      "format": "uuid",
+      "title": "Extension Resource Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "resource_type": {
+      "$ref": "#/$defs/ExtensionResourceType"
+    },
+    "title": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "title": "Authors",
+      "type": "array"
+    },
+    "publisher": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Publisher",
+      "type": "string"
+    },
+    "publication_date": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Publication Date"
+    },
+    "identifier": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Identifier"
+    },
+    "canonical_uri": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Canonical Uri"
+    },
+    "canonical_citation": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Canonical Citation",
+      "type": "string"
+    },
+    "citation_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Citation Sha256",
+      "type": "string"
+    },
+    "license_expression": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "License Expression",
+      "type": "string"
+    },
+    "topic1_knowledge_point_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Topic1 Knowledge Point Ids",
+      "type": "array"
+    },
+    "source_evidence_ref_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Source Evidence Ref Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "extension_resource_id",
+    "verification_id",
+    "claim_id",
+    "resource_type",
+    "title",
+    "publisher",
+    "canonical_citation",
+    "citation_sha256",
+    "license_expression",
+    "topic1_knowledge_point_ids",
+    "source_evidence_ref_ids"
+  ],
+  "title": "VerifierExtensionResourceV1",
+  "type": "object"
+}

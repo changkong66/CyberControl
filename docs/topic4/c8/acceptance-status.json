@@ -1,0 +1,81 @@
+{
+  "topic": "TOPIC4",
+  "module": "C8_REVISION",
+  "state": "ACCEPTED",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "cfae239baed752e01074082370af84382abe8e90",
+  "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T18:08:00Z",
+  "local_implementation_checkpoint": "9ca2c51",
+  "verified_commit": "f25ce7aed19f39eb37a391fee62aaef17a4aaa17",
+  "implemented": [
+    "C1 RevisionRequestV1 tenant, Trace, Candidate ID/version/SHA, deadline, and target-agent binding",
+    "maximum two-round revision enforcement tied to immutable Candidate version",
+    "PostgreSQL transaction-scoped advisory lock for per-Candidate concurrency exclusion",
+    "deterministic idempotent replay for completed revision requests",
+    "append-only LOCKED, GENERATING, and COMPLETED revision cycle snapshots",
+    "immutable revision plan and claim-bound block patch persistence",
+    "replacement artifact byte-size, object SHA, BlockV1, content schema, block identity, dependency, and content SHA validation",
+    "safe terminal FAILED or SUPERSEDED block removal without dangling dependencies",
+    "immutable Candidate version N+1 creation with parent version and canonical SHA binding",
+    "immutable response artifact and RevisionResponseV1 emission",
+    "C1 child re-verification command with deterministic child verification identity",
+    "C1-owned SERIALIZABLE transaction, audit, Outbox, and commit boundary preserved"
+  ],
+  "verification": {
+    "c8_dedicated_tests": "10 passed",
+    "c8_package_coverage_percent": 91.0,
+    "topic4_c1_to_c8_regression": "145 passed",
+    "deterministic_unit_suite": "338 passed, 1 skipped, 52 deselected",
+    "global_postgres_suite": "389 passed, 2 skipped",
+    "global_coverage_percent": 90.92,
+    "global_coverage_redline": "passed (>= 90.54% baseline and >= 90% CI gate)",
+    "alembic_round_trip": "passed (head -> base -> head, head 20260716_0009)",
+    "model_drift": "passed (no new migration operations)",
+    "ruff": "passed (check and format)",
+    "python_compile": "passed",
+    "contract_drift": "passed",
+    "go_gate": "passed (gofmt, mod verify, vet, race, build)",
+    "typescript_vue_build": "passed",
+    "node_audit": "passed (no known vulnerabilities)",
+    "python_dependency_audit": "passed (no known vulnerabilities)",
+    "sbom_license_policy": "passed",
+    "container_runtime": "passed (non-root 10001:10001, minimal runtime, liveness)",
+    "trivy": "passed (Alpine and Python inventory, all severity findings zero)",
+    "gitleaks_history": "passed locally and remotely",
+    "gitleaks_working_tree": "passed (zero leaks)",
+    "expected_skips": [
+      "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
+      "Windows symbolic-link capability test unavailable"
+    ]
+  },
+  "checkpoint": {
+    "implementation_commit": "f25ce7aed19f39eb37a391fee62aaef17a4aaa17",
+    "local_checkpoint": "9ca2c51",
+    "commit_subject": "feat(topic4): implement bounded immutable C8 revision runtime",
+    "commit_pending": false,
+    "remote_ci_pending": false,
+    "remote_ci_run_id": 29522491591,
+    "remote_ci_conclusion": "success",
+    "remote_ci_url": "https://github.com/changkong66/CyberControl/actions/runs/29522491591"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29522491591,
+    "head_sha": "f25ce7aed19f39eb37a391fee62aaef17a4aaa17",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29522491591"
+  },
+  "unlock": {
+    "c5": true,
+    "c6": true,
+    "c7": true,
+    "c8": true,
+    "c9_c11": true,
+    "c12": false,
+    "frontend": false
+  }
+}

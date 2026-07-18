@@ -1,0 +1,80 @@
+{
+  "topic": "TOPIC4",
+  "module": "C5_QUIZ",
+  "state": "ACCEPTED",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "82df1857d403c657be90768491873f8546689137",
+  "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T15:12:59Z",
+  "verified_commit": "782e62c20203164347dd06aef1b9693b04ab3f45",
+  "implemented": [
+    "immutable Topic3 Tester candidate and question reconstruction from Claim JSON pointers",
+    "frozen C5 QuizItemVerifierIRV1 and QuizVerificationResultV1 runtime emission",
+    "question stem completeness, ambiguity, placeholder, and math delimiter checks",
+    "Topic1 knowledge-point and golden-question deterministic binding",
+    "structured answer coverage for numeric, boolean, formula, object, and array leaves",
+    "C3 SafeFormulaParser-compatible formula comparison without executing generated content",
+    "solution-step coherence and misconception diagnostic validation",
+    "difficulty normalization and Topic1 golden question type compatibility checks",
+    "C2 EvidenceBundle, KnowledgeBaseVersion, EvidenceRef, and Topic1 snapshot binding",
+    "tenant, Claim, Candidate, Trace, content SHA, excerpt SHA, and record integrity enforcement",
+    "C1 BoundedModuleExecutor-compatible quiz handler",
+    "canonical tenant-scoped SHA-addressed immutable result artifacts"
+  ],
+  "verification": {
+    "c5_targeted_tests": "21 passed",
+    "c5_targeted_coverage_percent": 94.58,
+    "topic4_c1_to_c5_regression": "108 passed",
+    "deterministic_unit_suite": "296 passed, 1 skipped, 52 deselected",
+    "global_postgres_suite": "347 passed, 2 skipped",
+    "global_coverage_percent": 90.69,
+    "global_coverage_redline": "passed (>= 90.54% baseline and >= 90% gate)",
+    "alembic_round_trip": "passed (head -> base -> head, head 20260716_0009)",
+    "model_drift": "passed (no new migration operations)",
+    "ruff": "passed",
+    "python_compile": "passed",
+    "contract_drift": "passed",
+    "go_gate": "passed (gofmt, mod verify, vet, race, build)",
+    "typescript_vue_build": "passed",
+    "node_audit": "passed (no known vulnerabilities)",
+    "python_dependency_audit": "passed (no known vulnerabilities)",
+    "sbom_license_policy": "passed",
+    "container_runtime": "passed (non-root 10001:10001, minimal runtime, liveness)",
+    "trivy": "passed (Alpine and Python inventory, all severity findings zero)",
+    "gitleaks_history": "passed (42 commits, zero leaks)",
+    "gitleaks_working_tree": "passed (zero leaks)",
+    "security_scans": "passed locally and remotely",
+    "expected_skips": [
+      "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
+      "Windows symbolic-link test unavailable"
+    ]
+  },
+  "checkpoint": {
+    "implementation_commit": "782e62c20203164347dd06aef1b9693b04ab3f45",
+    "commit_subject": "feat(topic4): implement C5 quiz verification runtime",
+    "commit_pending": false,
+    "remote_ci_pending": false,
+    "remote_ci_run_id": 29510019468,
+    "remote_ci_conclusion": "success",
+    "remote_ci_url": "https://github.com/changkong66/CyberControl/actions/runs/29510019468"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29510019468,
+    "head_sha": "782e62c20203164347dd06aef1b9693b04ab3f45",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29510019468"
+  },
+  "unlock": {
+    "c5": true,
+    "c6": true,
+    "c7": false,
+    "c8": false,
+    "c9_c11": false,
+    "c12": false,
+    "frontend": false
+  }
+}

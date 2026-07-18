@@ -235,7 +235,7 @@ exception.
 - Python lock and pnpm lock reproduce without mutation;
 - Ruff findings and generated contract drift equal zero;
 - Go vet/race/build and TypeScript/Vue build all pass;
-- PostgreSQL integration passes on version 16 with coverage at least 89%;
+- PostgreSQL integration passes on version 16 with coverage at least 90%;
 - Python and Node known high/critical dependency findings equal zero;
 - fixable high/critical container findings equal zero;
 - secret findings equal zero;

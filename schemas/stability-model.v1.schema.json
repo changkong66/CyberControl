@@ -1,0 +1,162 @@
+{
+  "$defs": {
+    "StabilityDomain": {
+      "enum": [
+        "CONTINUOUS",
+        "DISCRETE"
+      ],
+      "title": "StabilityDomain",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "stability-model.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stability_model_id": {
+      "format": "uuid",
+      "title": "Stability Model Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "domain": {
+      "$ref": "#/$defs/StabilityDomain"
+    },
+    "representation": {
+      "enum": [
+        "TRANSFER_FUNCTION",
+        "STATE_SPACE",
+        "CHARACTERISTIC_POLYNOMIAL"
+      ],
+      "title": "Representation",
+      "type": "string"
+    },
+    "numerator_coefficients": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 4096,
+      "title": "Numerator Coefficients",
+      "type": "array"
+    },
+    "denominator_coefficients": {
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 4096,
+      "title": "Denominator Coefficients",
+      "type": "array"
+    },
+    "state_space_matrices": {
+      "additionalProperties": {
+        "items": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "type": "array"
+      },
+      "title": "State Space Matrices",
+      "type": "object"
+    },
+    "sample_time_seconds": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sample Time Seconds"
+    },
+    "assumptions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 256,
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "model_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Model Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "stability_model_id",
+    "verification_id",
+    "claim_id",
+    "domain",
+    "representation",
+    "model_sha256"
+  ],
+  "title": "StabilityModelV1",
+  "type": "object"
+}

@@ -49,6 +49,7 @@ from .topic3 import (
     Topic3GenerationResultV1,
     Topic3GenerationSessionV1,
 )
+from .topic4_registry import TOPIC4_CONTRACT_SPECS
 from .verification import (
     ReleaseAuthorizationPayloadV1,
     VerificationAcceptedPayloadV1,
@@ -362,4 +363,5 @@ CONTRACT_REGISTRY: tuple[ContractRegistration, ...] = (
         "strict-v1",
         ReleaseAuthorizationPayloadV1,
     ),
+    *(ContractRegistration(*spec) for spec in TOPIC4_CONTRACT_SPECS),
 )

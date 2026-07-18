@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "ModuleRunState": {
+      "enum": [
+        "PENDING",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT",
+        "SKIPPED",
+        "CANCELLED"
+      ],
+      "title": "ModuleRunState",
+      "type": "string"
+    },
+    "VerificationModule": {
+      "enum": [
+        "C2_RAG",
+        "C3_ACADEMIC",
+        "C4_GRAPH",
+        "C5_QUIZ",
+        "C6_CODE",
+        "C7_EXTENSION",
+        "C9_SECURITY",
+        "C10_PRIVACY",
+        "C11_COMPLIANCE"
+      ],
+      "title": "VerificationModule",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "module-run.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "module_run_id": {
+      "format": "uuid",
+      "title": "Module Run Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "dispatch_plan_id": {
+      "format": "uuid",
+      "title": "Dispatch Plan Id",
+      "type": "string"
+    },
+    "dispatch_item_id": {
+      "format": "uuid",
+      "title": "Dispatch Item Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "module": {
+      "$ref": "#/$defs/VerificationModule"
+    },
+    "state": {
+      "$ref": "#/$defs/ModuleRunState"
+    },
+    "attempt": {
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "max_attempts": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Max Attempts",
+      "type": "integer"
+    },
+    "input_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "worker_instance_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Worker Instance Id"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Z][A-Z0-9_.-]{0,127}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "module_run_id",
+    "verification_id",
+    "dispatch_plan_id",
+    "dispatch_item_id",
+    "claim_id",
+    "module",
+    "state",
+    "attempt",
+    "max_attempts",
+    "input_sha256"
+  ],
+  "title": "ModuleRunV1",
+  "type": "object"
+}

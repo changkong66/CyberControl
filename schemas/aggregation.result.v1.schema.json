@@ -1,0 +1,182 @@
+{
+  "$defs": {
+    "AggregateDecision": {
+      "enum": [
+        "RELEASE",
+        "RELEASE_WITH_DISCLOSURE",
+        "REVISE",
+        "REVIEW_REQUIRED",
+        "BLOCK"
+      ],
+      "title": "AggregateDecision",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "aggregation.result.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "aggregation_result_id": {
+      "format": "uuid",
+      "title": "Aggregation Result Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "candidate_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Sha256",
+      "type": "string"
+    },
+    "decision": {
+      "$ref": "#/$defs/AggregateDecision"
+    },
+    "claim_verdict_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "minItems": 1,
+      "title": "Claim Verdict Ids",
+      "type": "array"
+    },
+    "supported_count": {
+      "minimum": 0,
+      "title": "Supported Count",
+      "type": "integer"
+    },
+    "contradicted_count": {
+      "minimum": 0,
+      "title": "Contradicted Count",
+      "type": "integer"
+    },
+    "insufficient_count": {
+      "minimum": 0,
+      "title": "Insufficient Count",
+      "type": "integer"
+    },
+    "unsafe_count": {
+      "minimum": 0,
+      "title": "Unsafe Count",
+      "type": "integer"
+    },
+    "overall_confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Overall Confidence",
+      "type": "number"
+    },
+    "revision_block_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 2048,
+      "title": "Revision Block Ids",
+      "type": "array"
+    },
+    "disclosure_codes": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Z][A-Z0-9_.-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Disclosure Codes",
+      "type": "array"
+    },
+    "policy_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Policy Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "aggregation_result_id",
+    "verification_id",
+    "candidate_id",
+    "candidate_version",
+    "candidate_sha256",
+    "decision",
+    "claim_verdict_ids",
+    "supported_count",
+    "contradicted_count",
+    "insufficient_count",
+    "unsafe_count",
+    "overall_confidence",
+    "policy_version"
+  ],
+  "title": "AggregationResultV1",
+  "type": "object"
+}

@@ -1,0 +1,184 @@
+{
+  "$defs": {
+    "RiskLevel": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "VerificationModule": {
+      "enum": [
+        "C2_RAG",
+        "C3_ACADEMIC",
+        "C4_GRAPH",
+        "C5_QUIZ",
+        "C6_CODE",
+        "C7_EXTENSION",
+        "C9_SECURITY",
+        "C10_PRIVACY",
+        "C11_COMPLIANCE"
+      ],
+      "title": "VerificationModule",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "claim.risk.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "risk_id": {
+      "format": "uuid",
+      "title": "Risk Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "level": {
+      "$ref": "#/$defs/RiskLevel"
+    },
+    "score": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Score",
+      "type": "number"
+    },
+    "academic_impact": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Academic Impact",
+      "type": "number"
+    },
+    "learner_harm": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Learner Harm",
+      "type": "number"
+    },
+    "uncertainty": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Uncertainty",
+      "type": "number"
+    },
+    "irreversibility": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Irreversibility",
+      "type": "number"
+    },
+    "external_action": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "External Action",
+      "type": "number"
+    },
+    "mandatory_modules": {
+      "items": {
+        "$ref": "#/$defs/VerificationModule"
+      },
+      "maxItems": 9,
+      "minItems": 1,
+      "title": "Mandatory Modules",
+      "type": "array"
+    },
+    "reason_codes": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Z][A-Z0-9_.-]{0,127}$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Reason Codes",
+      "type": "array"
+    },
+    "policy_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Policy Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "risk_id",
+    "verification_id",
+    "claim_id",
+    "level",
+    "score",
+    "academic_impact",
+    "learner_harm",
+    "uncertainty",
+    "irreversibility",
+    "external_action",
+    "mandatory_modules",
+    "reason_codes",
+    "policy_version"
+  ],
+  "title": "ClaimRiskV1",
+  "type": "object"
+}

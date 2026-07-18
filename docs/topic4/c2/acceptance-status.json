@@ -1,0 +1,37 @@
+{
+  "schema_version": "topic4.c2.acceptance-status.v1",
+  "topic": "TOPIC4",
+  "module": "C2_LOCAL_HYBRID_RAG",
+  "state": "ACCEPTED",
+  "overall_topic4_status": "ACCEPTED_ON_DEVELOPMENT_BRANCH",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "implementation_commit": "c8e4009159b232cc324f6842699bac149d0aedf8",
+  "integration_commit": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+  "accepted_at_utc": "2026-07-18T06:43:58Z",
+  "scope": "local-first authoritative hybrid RAG",
+  "quality": {
+    "full_regression_passed": 428,
+    "full_regression_skipped": 1,
+    "full_coverage_percent": 91.19,
+    "database_restart_probe_passed": true,
+    "faiss_recovery_passed": true,
+    "bm25_recovery_passed": true,
+    "trivy_findings": 0,
+    "gitleaks_findings": 0,
+    "p95_retrieval_ms_100k": 12.283,
+    "p95_limit_ms": 200.0,
+    "retrieval_max_ms_100k": 14.048,
+    "index_build_seconds_100k": 22.049,
+    "serialized_index_megabytes": 216.968,
+    "peak_working_set_megabytes": 1221.141
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29634407475,
+    "head_sha": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29634407475"
+  }
+}

@@ -1,0 +1,259 @@
+{
+  "$defs": {
+    "QueryPlanV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "query-plan.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "query_plan_id": {
+          "format": "uuid",
+          "title": "Query Plan Id",
+          "type": "string"
+        },
+        "verification_id": {
+          "format": "uuid",
+          "title": "Verification Id",
+          "type": "string"
+        },
+        "claim_id": {
+          "format": "uuid",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "knowledge_base_version_id": {
+          "format": "uuid",
+          "title": "Knowledge Base Version Id",
+          "type": "string"
+        },
+        "lexical_queries": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Lexical Queries",
+          "type": "array"
+        },
+        "graph_seed_knowledge_point_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Graph Seed Knowledge Point Ids",
+          "type": "array"
+        },
+        "formula_signature_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Formula Signature Ids",
+          "type": "array"
+        },
+        "top_k_bm25": {
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Top K Bm25",
+          "type": "integer"
+        },
+        "top_k_vector": {
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Top K Vector",
+          "type": "integer"
+        },
+        "top_k_graph": {
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Top K Graph",
+          "type": "integer"
+        },
+        "top_k_formula": {
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Top K Formula",
+          "type": "integer"
+        },
+        "final_top_k": {
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Final Top K",
+          "type": "integer"
+        },
+        "fusion_method": {
+          "const": "RRF_V1",
+          "title": "Fusion Method",
+          "type": "string"
+        },
+        "tenant_filter_required": {
+          "const": true,
+          "title": "Tenant Filter Required",
+          "type": "boolean"
+        },
+        "timeout_ms": {
+          "maximum": 10000,
+          "minimum": 10,
+          "title": "Timeout Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "query_plan_id",
+        "verification_id",
+        "claim_id",
+        "knowledge_base_version_id",
+        "lexical_queries",
+        "top_k_bm25",
+        "top_k_vector",
+        "top_k_graph",
+        "top_k_formula",
+        "final_top_k",
+        "fusion_method",
+        "tenant_filter_required",
+        "timeout_ms"
+      ],
+      "title": "QueryPlanV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "retrieval.request.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "retrieval_request_id": {
+      "format": "uuid",
+      "title": "Retrieval Request Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "query_plan": {
+      "$ref": "#/$defs/QueryPlanV1"
+    },
+    "deadline_at": {
+      "format": "date-time",
+      "title": "Deadline At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "retrieval_request_id",
+    "verification_id",
+    "claim_id",
+    "query_plan",
+    "deadline_at"
+  ],
+  "title": "RetrievalRequestV1",
+  "type": "object"
+}

@@ -1,0 +1,64 @@
+{
+  "schema_version": "topic4.acceptance-status.v1",
+  "topic": "TOPIC4",
+  "state": "ACCEPTED",
+  "acceptance_scope": "codex/topic4-verifier-runtime",
+  "protected_main_base": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "implementation_commit": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+  "accepted_at_utc": "2026-07-18T06:43:58Z",
+  "mainline_merge_state": "PENDING_PROTECTED_PULL_REQUEST",
+  "modules": {
+    "C1": "ACCEPTED",
+    "C2": "ACCEPTED",
+    "C3": "ACCEPTED",
+    "C4": "ACCEPTED",
+    "C5": "ACCEPTED",
+    "C6": "ACCEPTED",
+    "C7": "ACCEPTED",
+    "C8": "ACCEPTED",
+    "C9": "ACCEPTED",
+    "C10": "ACCEPTED",
+    "C11": "ACCEPTED",
+    "C12": "ACCEPTED"
+  },
+  "assets": {
+    "database_tables": 41,
+    "alembic_head": "20260716_0009",
+    "coded_topic4_frozen_contracts": 64,
+    "topic4_rest_routes": 19,
+    "local_rag_external_embedding": false
+  },
+  "quality": {
+    "tests_passed": 428,
+    "tests_skipped": 1,
+    "tests_failed": 0,
+    "coverage_percent": 91.19,
+    "topic4_tests": 201,
+    "concurrent_verifications": 200,
+    "concurrent_authorization_consumptions": 200,
+    "rag_corpus_size": 100000,
+    "rag_retrieval_p95_ms": 12.283,
+    "rag_retrieval_limit_ms": 200.0,
+    "release_replay_p95_limit_ms": 300.0,
+    "trivy_findings": 0,
+    "gitleaks_history_findings": 0,
+    "gitleaks_worktree_findings": 0,
+    "static_and_supply_chain_gates": "passed"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29634407475,
+    "head_sha": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "artifact_count": 6,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29634407475"
+  },
+  "frontend": {
+    "business_code_started": false,
+    "unlock_preconditions_met": true,
+    "unlock_active": false,
+    "activation_condition": "merge the approved Topic4 pull request into protected main"
+  }
+}

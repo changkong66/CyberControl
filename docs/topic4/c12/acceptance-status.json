@@ -1,0 +1,52 @@
+{
+  "schema_version": "topic4.c12.acceptance-status.v2",
+  "topic": "TOPIC4",
+  "module": "C12_ATOMIC_RELEASE_GATE",
+  "state": "ACCEPTED",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "implementation_commit": "7ffcc0bd49664b8b13604926c5c1980a2feb35ce",
+  "integration_commit": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+  "accepted_at_utc": "2026-07-18T06:43:58Z",
+  "implemented": [
+    "one-time tenant-bound release authorization",
+    "Candidate, report, request, block, and artifact SHA256 binding",
+    "FULL and FULL_WITH_DISCLOSURE policy enforcement",
+    "SERIALIZABLE authorization consumption and publication persistence",
+    "append-only authorization, consumption, batch, and public event records",
+    "audit hash-chain and transactional Outbox publication event",
+    "persistent public SSE projection and replay",
+    "fail-closed expiry, replay, tenant, payload, and rollback behavior"
+  ],
+  "verification": {
+    "unit_release_tests": 8,
+    "real_postgres_release_tests": 2,
+    "real_postgres_runtime_tests": 2,
+    "fake_postgres_adapter_evidence_removed": true,
+    "full_regression": "428 passed, 1 skipped",
+    "global_coverage_percent": 91.19,
+    "concurrent_authorization_consumptions": 200,
+    "authorization_reuse_count": 0,
+    "release_replay_p95_limit_ms": 300.0,
+    "release_replay_p95_gate": "passed",
+    "database_restart_probe": "passed",
+    "outbox_failure_rollback": "passed",
+    "cross_tenant_release": "blocked",
+    "trivy_findings": 0,
+    "gitleaks_findings": 0,
+    "remote_jobs": "8/8 successful"
+  },
+  "frontend": {
+    "preconditions_met": true,
+    "unlock_active": false,
+    "activation_condition": "Topic4 pull request merged into protected main after CODEOWNERS approval"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29634407475,
+    "head_sha": "8d143ba43ae78f3b66ab8d691d1513f03f8baa2d",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29634407475"
+  }
+}

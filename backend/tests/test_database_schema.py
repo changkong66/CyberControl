@@ -7,18 +7,37 @@ from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from liyans.domains.compliance.models import TOPIC4_COMPLIANCE_TABLES
+from liyans.domains.knowledge.models import TOPIC4_KNOWLEDGE_TABLES
+from liyans.domains.privacy.models import TOPIC4_PRIVACY_TABLES
+from liyans.domains.qa.models import TOPIC4_QA_TABLES
+from liyans.domains.revision.models import TOPIC4_REVISION_TABLES
+from liyans.domains.security.models import TOPIC4_SECURITY_TABLES
 from liyans.domains.topic1.models import TOPIC1_TENANT_TABLES
 from liyans.domains.topic2.models import TOPIC2_TENANT_TABLES
 from liyans.domains.topic3.models import TOPIC3_TENANT_TABLES
+from liyans.domains.verification.models import TOPIC4_CONTROL_TABLES
+from liyans.domains.verification.release_models import TOPIC4_RELEASE_TABLES
 from liyans.infrastructure.database.models import TENANT_SCOPED_TABLES, Base
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 ALEMBIC_CONFIG_PATH = REPOSITORY_ROOT / "backend" / "alembic.ini"
+TOPIC4_TENANT_TABLES = (
+    *TOPIC4_CONTROL_TABLES,
+    *TOPIC4_KNOWLEDGE_TABLES,
+    *TOPIC4_REVISION_TABLES,
+    *TOPIC4_SECURITY_TABLES,
+    *TOPIC4_PRIVACY_TABLES,
+    *TOPIC4_COMPLIANCE_TABLES,
+    *TOPIC4_QA_TABLES,
+    *TOPIC4_RELEASE_TABLES,
+)
 ALL_TENANT_TABLES = (
     *TENANT_SCOPED_TABLES,
     *TOPIC1_TENANT_TABLES,
     *TOPIC2_TENANT_TABLES,
     *TOPIC3_TENANT_TABLES,
+    *TOPIC4_TENANT_TABLES,
 )
 
 
@@ -44,7 +63,7 @@ def test_all_constraints_and_indexes_are_stably_named() -> None:
 
 def test_alembic_has_one_linear_head() -> None:
     script = ScriptDirectory.from_config(alembic_config())
-    assert script.get_heads() == ["20260716_0006"]
+    assert script.get_heads() == ["20260716_0009"]
     assert script.get_base() == "20260714_0001"
 
 
@@ -68,6 +87,9 @@ def test_offline_upgrade_contains_security_and_integrity_controls() -> None:
     assert "CREATE FUNCTION reject_topic3_history_mutation" in sql
     for table_name in TOPIC3_TENANT_TABLES:
         assert f"CREATE TRIGGER trg_{table_name}_append_only" in sql
+    assert "CREATE FUNCTION reject_topic4_history_mutation" in sql
+    for table_name in TOPIC4_TENANT_TABLES:
+        assert f"CREATE TRIGGER trg_{table_name}_append_only" in sql
     assert "CREATE TABLE alembic_version" in sql
     assert "Liyan Platform" in sql
 
@@ -76,7 +98,7 @@ def test_offline_downgrade_is_complete_and_ordered() -> None:
     output = StringIO()
     command.downgrade(
         alembic_config(output),
-        "20260716_0006:base",
+        "20260716_0009:base",
         sql=True,
     )
     sql = output.getvalue()
@@ -88,6 +110,9 @@ def test_offline_downgrade_is_complete_and_ordered() -> None:
         assert f"DROP TRIGGER IF EXISTS trg_{table_name}_append_only" in sql
     assert "DROP FUNCTION IF EXISTS reject_topic3_history_mutation" in sql
     for table_name in TOPIC3_TENANT_TABLES:
+        assert f"DROP TRIGGER IF EXISTS trg_{table_name}_append_only" in sql
+    assert "DROP FUNCTION IF EXISTS reject_topic4_history_mutation" in sql
+    for table_name in TOPIC4_TENANT_TABLES:
         assert f"DROP TRIGGER IF EXISTS trg_{table_name}_append_only" in sql
     for table_name in reversed(ALL_TENANT_TABLES):
         assert f"DROP TABLE {table_name}" in sql

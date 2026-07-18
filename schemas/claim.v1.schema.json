@@ -1,0 +1,195 @@
+{
+  "$defs": {
+    "ClaimKind": {
+      "enum": [
+        "TEXT",
+        "FORMULA",
+        "GRAPH",
+        "QUIZ",
+        "CODE",
+        "EXTENSION"
+      ],
+      "title": "ClaimKind",
+      "type": "string"
+    },
+    "ExtractionMethod": {
+      "enum": [
+        "DETERMINISTIC",
+        "SPARK_STRUCTURED",
+        "HYBRID"
+      ],
+      "title": "ExtractionMethod",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "claim.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "candidate_id": {
+      "format": "uuid",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "candidate_version": {
+      "minimum": 1,
+      "title": "Candidate Version",
+      "type": "integer"
+    },
+    "candidate_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Candidate Sha256",
+      "type": "string"
+    },
+    "block_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Block Id",
+      "type": "string"
+    },
+    "claim_kind": {
+      "$ref": "#/$defs/ClaimKind"
+    },
+    "claim_subtype": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Claim Subtype",
+      "type": "string"
+    },
+    "statement": {
+      "maxLength": 32768,
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
+    "normalized_statement": {
+      "maxLength": 32768,
+      "minLength": 1,
+      "title": "Normalized Statement",
+      "type": "string"
+    },
+    "json_pointer": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Json Pointer",
+      "type": "string"
+    },
+    "ordinal": {
+      "minimum": 0,
+      "title": "Ordinal",
+      "type": "integer"
+    },
+    "source_span_start": {
+      "minimum": 0,
+      "title": "Source Span Start",
+      "type": "integer"
+    },
+    "source_span_end": {
+      "exclusiveMinimum": 0,
+      "title": "Source Span End",
+      "type": "integer"
+    },
+    "claim_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Claim Sha256",
+      "type": "string"
+    },
+    "extraction_method": {
+      "$ref": "#/$defs/ExtractionMethod"
+    },
+    "dependent_claim_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 128,
+      "title": "Dependent Claim Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "claim_id",
+    "verification_id",
+    "candidate_id",
+    "candidate_version",
+    "candidate_sha256",
+    "block_id",
+    "claim_kind",
+    "claim_subtype",
+    "statement",
+    "normalized_statement",
+    "json_pointer",
+    "ordinal",
+    "source_span_start",
+    "source_span_end",
+    "claim_sha256",
+    "extraction_method"
+  ],
+  "title": "ClaimV1",
+  "type": "object"
+}

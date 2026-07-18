@@ -1,0 +1,309 @@
+{
+  "$defs": {
+    "ArtifactObjectRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "artifact.object.ref.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "storage_namespace": {
+          "const": "verification-artifacts",
+          "title": "Storage Namespace",
+          "type": "string"
+        },
+        "object_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9/_\\-.]{0,511}$",
+          "title": "Object Key",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "application/x-ndjson",
+            "text/markdown",
+            "text/plain",
+            "application/octet-stream"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_encoding": {
+          "enum": [
+            "identity",
+            "gzip"
+          ],
+          "title": "Content Encoding",
+          "type": "string"
+        },
+        "byte_size": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "storage_namespace",
+        "object_key",
+        "media_type",
+        "content_encoding",
+        "byte_size",
+        "sha256",
+        "created_at"
+      ],
+      "title": "ArtifactObjectRefV1",
+      "type": "object"
+    },
+    "DocumentSectionIRV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "document-section-ir.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "section_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Section Id",
+          "type": "string"
+        },
+        "parent_section_id": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Section Id"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "title": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "json_pointer": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Json Pointer",
+          "type": "string"
+        },
+        "text_artifact": {
+          "$ref": "#/$defs/ArtifactObjectRefV1"
+        },
+        "text_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Sha256",
+          "type": "string"
+        },
+        "formula_signature_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 4096,
+          "title": "Formula Signature Ids",
+          "type": "array"
+        },
+        "topic1_knowledge_point_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4096,
+          "title": "Topic1 Knowledge Point Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "section_id",
+        "ordinal",
+        "title",
+        "json_pointer",
+        "text_artifact",
+        "text_sha256"
+      ],
+      "title": "DocumentSectionIRV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "document-ir.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "document_ir_id": {
+      "format": "uuid",
+      "title": "Document Ir Id",
+      "type": "string"
+    },
+    "source_document_version_id": {
+      "format": "uuid",
+      "title": "Source Document Version Id",
+      "type": "string"
+    },
+    "parser_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Parser Version",
+      "type": "string"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/DocumentSectionIRV1"
+      },
+      "maxItems": 65536,
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    },
+    "document_ir_artifact": {
+      "$ref": "#/$defs/ArtifactObjectRefV1"
+    },
+    "document_ir_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Document Ir Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "document_ir_id",
+    "source_document_version_id",
+    "parser_version",
+    "sections",
+    "document_ir_artifact",
+    "document_ir_sha256"
+  ],
+  "title": "DocumentIRV1",
+  "type": "object"
+}

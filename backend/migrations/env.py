@@ -9,14 +9,30 @@ from sqlalchemy.engine import Connection, make_url
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from liyans.core.settings import Settings
+from liyans.domains.compliance import models as compliance_models
+from liyans.domains.knowledge import models as knowledge_models
+from liyans.domains.privacy import models as privacy_models
+from liyans.domains.qa import models as qa_models
+from liyans.domains.revision import models as revision_models
+from liyans.domains.security import models as security_models
 from liyans.domains.topic1 import models as topic1_models
 from liyans.domains.topic2 import models as topic2_models
 from liyans.domains.topic3 import models as topic3_models
+from liyans.domains.verification import models as verification_models
+from liyans.domains.verification import release_models
 from liyans.infrastructure.database.models import Base
 
 del topic1_models
 del topic2_models
 del topic3_models
+del compliance_models
+del knowledge_models
+del privacy_models
+del qa_models
+del release_models
+del revision_models
+del security_models
+del verification_models
 
 config = context.config
 if config.config_file_name is not None:

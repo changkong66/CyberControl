@@ -1,0 +1,77 @@
+{
+  "topic": "TOPIC4",
+  "module": "C7_EXTENSION",
+  "state": "ACCEPTED",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "d1cffa8109fa4210f1faeaeb5f1e36494bf0b0f9",
+  "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T17:02:10Z",
+  "verified_commit": "1b9e52befb9ff449a62f4b444d82925125719dde",
+  "implemented": [
+    "exact immutable Topic3 ExtensionContentV1 resource reconstruction from Claim JSON pointers",
+    "tenant-scoped Topic3 Candidate, C2 EvidenceBundle, EvidenceRef, KnowledgeBaseVersion, and Topic1 snapshot loading",
+    "local-only approved-corpus citation provenance matching without network retrieval",
+    "Topic1 knowledge-point identity and deterministic semantic relevance scoring",
+    "citation placeholder, structured metadata, publication-year, and future-date validation",
+    "local evidence-derived SPDX-like license detection and fail-closed compatibility policy",
+    "frozen VerifierExtensionResourceV1 and ExtensionVerificationResultV1 runtime emission",
+    "tenant, Claim, Candidate, Trace, record SHA, excerpt SHA, snapshot, and artifact integrity enforcement",
+    "C1 BoundedModuleExecutor-compatible deterministic ModuleFinding output",
+    "canonical immutable SHA-addressed C7 result artifacts"
+  ],
+  "verification": {
+    "c7_targeted_tests": "12 passed",
+    "c7_targeted_package_coverage_percent": 95.0,
+    "topic4_c1_to_c7_regression": "128 passed",
+    "deterministic_unit_suite": "328 passed, 1 skipped, 52 deselected",
+    "global_postgres_suite": "379 passed, 2 skipped",
+    "global_coverage_percent": 90.89,
+    "global_coverage_redline": "passed (>= 90.54% baseline and >= 90% gate)",
+    "alembic_round_trip": "passed (head -> base -> head, head 20260716_0009)",
+    "model_drift": "passed (no new migration operations)",
+    "ruff": "passed (check and format)",
+    "python_compile": "passed",
+    "contract_drift": "passed",
+    "go_gate": "passed (gofmt, mod verify, vet, race, build)",
+    "typescript_vue_build": "passed",
+    "node_audit": "passed (no known vulnerabilities)",
+    "python_dependency_audit": "passed (no known vulnerabilities)",
+    "sbom_license_policy": "passed",
+    "container_runtime": "passed (non-root 10001:10001, minimal runtime, liveness)",
+    "trivy": "passed (Alpine and Python inventory, all severity findings zero)",
+    "gitleaks_history": "passed locally and remotely",
+    "gitleaks_working_tree": "passed (zero leaks)",
+    "expected_skips": [
+      "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
+      "Windows symbolic-link capability test unavailable"
+    ]
+  },
+  "checkpoint": {
+    "implementation_commit": "1b9e52befb9ff449a62f4b444d82925125719dde",
+    "commit_subject": "feat(topic4): implement C7 extension provenance verifier",
+    "commit_pending": false,
+    "remote_ci_pending": false,
+    "remote_ci_run_id": 29517993876,
+    "remote_ci_conclusion": "success",
+    "remote_ci_url": "https://github.com/changkong66/CyberControl/actions/runs/29517993876"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29517993876,
+    "head_sha": "1b9e52befb9ff449a62f4b444d82925125719dde",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29517993876"
+  },
+  "unlock": {
+    "c5": true,
+    "c6": true,
+    "c7": true,
+    "c8": true,
+    "c9_c11": false,
+    "c12": false,
+    "frontend": false
+  }
+}

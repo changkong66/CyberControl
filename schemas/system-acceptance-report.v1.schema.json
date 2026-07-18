@@ -1,0 +1,366 @@
+{
+  "$defs": {
+    "AcceptanceDecision": {
+      "enum": [
+        "ACCEPTED",
+        "REJECTED"
+      ],
+      "title": "AcceptanceDecision",
+      "type": "string"
+    },
+    "AcceptanceGateResultV1": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "description": "Root trace propagated from Topic 3 ingestion.",
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]{16,64}$",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "description": "Trusted server-side tenant boundary.",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "version_cas": {
+          "description": "Optimistic concurrency version.",
+          "minimum": 1,
+          "title": "Version Cas",
+          "type": "integer"
+        },
+        "record_sha256": {
+          "description": "Canonical immutable record digest.",
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "UTC record creation time.",
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "immutable": {
+          "const": true,
+          "description": "Records are append-only once emitted.",
+          "title": "Immutable",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "acceptance-gate-result.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "gate_code": {
+          "pattern": "^G(?:[0-9]|1[0-2])$",
+          "title": "Gate Code",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "metric_values": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Metric Values",
+          "type": "object"
+        },
+        "evidence_artifact": {
+          "$ref": "#/$defs/ArtifactObjectRefV1"
+        },
+        "evidence_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Evidence Sha256",
+          "type": "string"
+        },
+        "failure_codes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Failure Codes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "trace_id",
+        "tenant_id",
+        "version_cas",
+        "record_sha256",
+        "created_at",
+        "immutable",
+        "schema_version",
+        "gate_code",
+        "status",
+        "evidence_artifact",
+        "evidence_sha256"
+      ],
+      "title": "AcceptanceGateResultV1",
+      "type": "object"
+    },
+    "ArtifactObjectRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "artifact.object.ref.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "storage_namespace": {
+          "const": "verification-artifacts",
+          "title": "Storage Namespace",
+          "type": "string"
+        },
+        "object_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9/_\\-.]{0,511}$",
+          "title": "Object Key",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "application/x-ndjson",
+            "text/markdown",
+            "text/plain",
+            "application/octet-stream"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_encoding": {
+          "enum": [
+            "identity",
+            "gzip"
+          ],
+          "title": "Content Encoding",
+          "type": "string"
+        },
+        "byte_size": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "storage_namespace",
+        "object_key",
+        "media_type",
+        "content_encoding",
+        "byte_size",
+        "sha256",
+        "created_at"
+      ],
+      "title": "ArtifactObjectRefV1",
+      "type": "object"
+    },
+    "GateStatus": {
+      "enum": [
+        "PASSED",
+        "FAILED",
+        "SKIPPED"
+      ],
+      "title": "GateStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "system-acceptance-report.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "system_acceptance_report_id": {
+      "format": "uuid",
+      "title": "System Acceptance Report Id",
+      "type": "string"
+    },
+    "build_commit_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Build Commit Sha256",
+      "type": "string"
+    },
+    "build_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,127}$",
+      "title": "Build Version",
+      "type": "string"
+    },
+    "gate_results": {
+      "items": {
+        "$ref": "#/$defs/AcceptanceGateResultV1"
+      },
+      "maxItems": 13,
+      "minItems": 13,
+      "title": "Gate Results",
+      "type": "array"
+    },
+    "python_coverage_percent": {
+      "maximum": 100.0,
+      "minimum": 0.0,
+      "title": "Python Coverage Percent",
+      "type": "number"
+    },
+    "concurrent_verifications": {
+      "minimum": 0,
+      "title": "Concurrent Verifications",
+      "type": "integer"
+    },
+    "retrieval_p95_ms": {
+      "minimum": 0.0,
+      "title": "Retrieval P95 Ms",
+      "type": "number"
+    },
+    "publication_p95_ms": {
+      "minimum": 0.0,
+      "title": "Publication P95 Ms",
+      "type": "number"
+    },
+    "cross_tenant_leaks": {
+      "minimum": 0,
+      "title": "Cross Tenant Leaks",
+      "type": "integer"
+    },
+    "authorization_replay_successes": {
+      "minimum": 0,
+      "title": "Authorization Replay Successes",
+      "type": "integer"
+    },
+    "critical_vulnerabilities": {
+      "minimum": 0,
+      "title": "Critical Vulnerabilities",
+      "type": "integer"
+    },
+    "high_vulnerabilities": {
+      "minimum": 0,
+      "title": "High Vulnerabilities",
+      "type": "integer"
+    },
+    "open_p0_defects": {
+      "minimum": 0,
+      "title": "Open P0 Defects",
+      "type": "integer"
+    },
+    "open_p1_defects": {
+      "minimum": 0,
+      "title": "Open P1 Defects",
+      "type": "integer"
+    },
+    "flaky_core_tests": {
+      "minimum": 0,
+      "title": "Flaky Core Tests",
+      "type": "integer"
+    },
+    "decision": {
+      "$ref": "#/$defs/AcceptanceDecision"
+    },
+    "report_artifact": {
+      "$ref": "#/$defs/ArtifactObjectRefV1"
+    },
+    "report_sha256": {
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Report Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "system_acceptance_report_id",
+    "build_commit_sha256",
+    "build_version",
+    "gate_results",
+    "python_coverage_percent",
+    "concurrent_verifications",
+    "retrieval_p95_ms",
+    "publication_p95_ms",
+    "cross_tenant_leaks",
+    "authorization_replay_successes",
+    "critical_vulnerabilities",
+    "high_vulnerabilities",
+    "open_p0_defects",
+    "open_p1_defects",
+    "flaky_core_tests",
+    "decision",
+    "report_artifact",
+    "report_sha256"
+  ],
+  "title": "SystemAcceptanceReportV1",
+  "type": "object"
+}

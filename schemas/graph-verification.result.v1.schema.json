@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "VerificationVerdict": {
+      "enum": [
+        "SUPPORTED",
+        "PARTIALLY_SUPPORTED",
+        "CONTRADICTED",
+        "INSUFFICIENT_EVIDENCE",
+        "UNSAFE",
+        "NOT_APPLICABLE",
+        "ERROR"
+      ],
+      "title": "VerificationVerdict",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "trace_id": {
+      "description": "Root trace propagated from Topic 3 ingestion.",
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-fA-F0-9]{16,64}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "description": "Trusted server-side tenant boundary.",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version_cas": {
+      "description": "Optimistic concurrency version.",
+      "minimum": 1,
+      "title": "Version Cas",
+      "type": "integer"
+    },
+    "record_sha256": {
+      "description": "Canonical immutable record digest.",
+      "maxLength": 64,
+      "minLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "UTC record creation time.",
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "immutable": {
+      "const": true,
+      "description": "Records are append-only once emitted.",
+      "title": "Immutable",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "graph-verification.result.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "graph_verification_result_id": {
+      "format": "uuid",
+      "title": "Graph Verification Result Id",
+      "type": "string"
+    },
+    "verification_id": {
+      "format": "uuid",
+      "title": "Verification Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "format": "uuid",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "verifier_graph_ir_id": {
+      "format": "uuid",
+      "title": "Verifier Graph Ir Id",
+      "type": "string"
+    },
+    "syntax_valid": {
+      "title": "Syntax Valid",
+      "type": "boolean"
+    },
+    "node_ids_unique": {
+      "title": "Node Ids Unique",
+      "type": "boolean"
+    },
+    "edge_endpoints_valid": {
+      "title": "Edge Endpoints Valid",
+      "type": "boolean"
+    },
+    "prerequisite_subgraph_acyclic": {
+      "title": "Prerequisite Subgraph Acyclic",
+      "type": "boolean"
+    },
+    "unknown_topic1_node_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "title": "Unknown Topic1 Node Ids",
+      "type": "array"
+    },
+    "invalid_edge_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 16384,
+      "title": "Invalid Edge Ids",
+      "type": "array"
+    },
+    "topology_mismatch_codes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 4096,
+      "title": "Topology Mismatch Codes",
+      "type": "array"
+    },
+    "evidence_ref_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 512,
+      "title": "Evidence Ref Ids",
+      "type": "array"
+    },
+    "verdict": {
+      "$ref": "#/$defs/VerificationVerdict"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "trace_id",
+    "tenant_id",
+    "version_cas",
+    "record_sha256",
+    "created_at",
+    "immutable",
+    "schema_version",
+    "graph_verification_result_id",
+    "verification_id",
+    "claim_id",
+    "verifier_graph_ir_id",
+    "syntax_valid",
+    "node_ids_unique",
+    "edge_endpoints_valid",
+    "prerequisite_subgraph_acyclic",
+    "verdict",
+    "confidence"
+  ],
+  "title": "GraphVerificationResultV1",
+  "type": "object"
+}

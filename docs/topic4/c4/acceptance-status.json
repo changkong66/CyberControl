@@ -1,0 +1,75 @@
+{
+  "topic": "TOPIC4",
+  "module": "C4_GRAPH",
+  "state": "ACCEPTED",
+  "branch": "codex/topic4-verifier-runtime",
+  "base_commit": "6922cd3e6cf6a014f7c5a7e0436596d97fcc71df",
+  "parent_checkpoint": "e276edaf73474c834de05805473009adc0e13148",
+  "status_as_of": "2026-07-16",
+  "accepted_at_utc": "2026-07-16T13:41:25Z",
+  "verified_commit": "a02d09761fa365f72fdb04c5a7291880db69155f",
+  "implemented": [
+    "bounded non-executable Mermaid parser for the frozen Topic3 MindMap subset",
+    "Topic1 knowledge-point ID, title, and alias resolution",
+    "prerequisite direction, omission, endpoint, and cycle validation",
+    "fail-closed handling for unsupported non-prerequisite relations",
+    "Topic1 snapshot SHA and count integrity validation",
+    "C2 EvidenceBundle and KnowledgeBaseVersion PostgreSQL adapter",
+    "tenant, Claim, Trace, evidence, and knowledge-base binding enforcement",
+    "C1 BoundedModuleExecutor-compatible graph handler",
+    "canonical SHA-bound immutable result artifacts"
+  ],
+  "verification": {
+    "c4_targeted_tests": "22 passed",
+    "c4_targeted_coverage_percent": 93.73,
+    "ruff": "passed",
+    "python_compile": "passed",
+    "deterministic_unit_suite": "275 passed, 1 skipped, 52 deselected",
+    "global_postgres_suite": "326 passed, 2 skipped",
+    "global_coverage_percent": 90.54,
+    "global_coverage_redline": "passed (>= 90%)",
+    "alembic_round_trip": "passed (head -> base -> head, head 20260716_0009)",
+    "contract_drift": "passed",
+    "go_gate": "passed (gofmt, mod verify, vet, race, build)",
+    "typescript_vue_build": "passed",
+    "node_audit": "passed (no known vulnerabilities)",
+    "python_dependency_audit": "passed (no known vulnerabilities)",
+    "sbom_license_policy": "passed",
+    "container_runtime": "passed (non-root 10001:10001 and liveness)",
+    "trivy": "passed (all severity findings zero)",
+    "gitleaks_history": "passed (40 commits, zero leaks)",
+    "gitleaks_working_tree": "passed (zero leaks)",
+    "security_scans": "passed locally and remotely",
+    "expected_skips": [
+      "Docker database restart probe disabled unless LIYAN_RUN_DATABASE_RESTART_TEST=1",
+      "Windows symbolic-link test unavailable"
+    ]
+  },
+  "checkpoint": {
+    "implementation_commit": "a02d09761fa365f72fdb04c5a7291880db69155f",
+    "commit_subject": "feat(topic4): implement C4 graph verification runtime",
+    "commit_pending": false,
+    "remote_ci_pending": false,
+    "remote_ci_run_id": 29503160951,
+    "remote_ci_conclusion": "success",
+    "remote_ci_url": "https://github.com/changkong66/CyberControl/actions/runs/29503160951"
+  },
+  "remote_acceptance": {
+    "workflow": "Release Quality Gates",
+    "run_id": 29503160951,
+    "head_sha": "a02d09761fa365f72fdb04c5a7291880db69155f",
+    "status": "completed",
+    "conclusion": "success",
+    "successful_jobs": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/29503160951"
+  },
+  "unlock": {
+    "c5": true,
+    "c6": false,
+    "c7": false,
+    "c8": false,
+    "c9_c11": false,
+    "c12": false,
+    "frontend": false
+  }
+}
