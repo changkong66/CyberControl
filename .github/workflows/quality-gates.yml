@@ -237,6 +237,10 @@ jobs:
         run: pnpm --dir frontend exec tsc --noEmit --project ../packages/contracts-ts/tsconfig.json
       - name: Run frontend unit and integration tests with coverage redlines
         run: pnpm --dir frontend run test:coverage
+      - name: Install pinned Playwright Chromium runtime
+        run: pnpm --dir frontend exec playwright install --with-deps chromium
+      - name: Run frontend browser integration tests
+        run: pnpm --dir frontend run test:e2e
       - name: Type-check and build Vue production assets
         run: |
           pnpm --dir frontend run typecheck
@@ -331,6 +335,7 @@ jobs:
     env:
       BACKEND_IMAGE_REF: liyans-backend:ci-${{ github.sha }}
       FRONTEND_IMAGE_REF: liyans-frontend:ci-${{ github.sha }}
+      MOCK_PROVIDER_IMAGE_REF: liyans-mock-provider:ci-${{ github.sha }}
     steps:
       - name: Check out immutable source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -351,9 +356,15 @@ jobs:
             --tag "$FRONTEND_IMAGE_REF" \
             --load \
             .
+          docker buildx build \
+            --file infra/mock-provider.Dockerfile \
+            --tag "$MOCK_PROVIDER_IMAGE_REF" \
+            --load \
+            .
           mkdir -p artifacts/container artifacts/security artifacts/sbom
           docker image inspect "$BACKEND_IMAGE_REF" > artifacts/container/backend-image-inspect.json
           docker image inspect "$FRONTEND_IMAGE_REF" > artifacts/container/frontend-image-inspect.json
+          docker image inspect "$MOCK_PROVIDER_IMAGE_REF" > artifacts/container/mock-provider-image-inspect.json
       - name: Enforce non-root and minimal runtime images
         run: |
           test "$(docker image inspect "$BACKEND_IMAGE_REF" --format '{{.Config.User}}')" = "10001:10001"
@@ -382,6 +393,16 @@ jobs:
           fi
           docker run --rm --entrypoint /usr/sbin/nginx "$FRONTEND_IMAGE_REF" \
             -t -c /etc/nginx/nginx.conf
+          test "$(docker image inspect "$MOCK_PROVIDER_IMAGE_REF" --format '{{.Config.User}}')" = "10002:10002"
+          docker run --rm --entrypoint /bin/sh "$MOCK_PROVIDER_IMAGE_REF" -c '
+            set -eu
+            id -u | grep -qx 10002
+            id -g | grep -qx 10002
+            test -r /srv/fixture/server.py
+            test ! -x /usr/local/bin/pip
+            test ! -e /usr/local/lib/python3.11/site-packages/setuptools
+            test ! -e /usr/local/lib/python3.11/site-packages/wheel
+          '
       - name: Smoke-test container liveness
         run: |
           container_id="$(docker run -d \
@@ -390,14 +411,18 @@ jobs:
             -e LIYAN_SSE_CURSOR_SECRET=ci-container-cursor-secret-at-least-32-bytes \
             "$BACKEND_IMAGE_REF")"
           frontend_id="$(docker run -d -p 127.0.0.1::8080 "$FRONTEND_IMAGE_REF")"
-          trap 'docker logs "$container_id" || true; docker logs "$frontend_id" || true; docker rm -f "$container_id" "$frontend_id" >/dev/null 2>&1 || true' EXIT
+          mock_provider_id="$(docker run -d -p 127.0.0.1::8090 "$MOCK_PROVIDER_IMAGE_REF")"
+          trap 'docker logs "$container_id" || true; docker logs "$frontend_id" || true; docker logs "$mock_provider_id" || true; docker rm -f "$container_id" "$frontend_id" "$mock_provider_id" >/dev/null 2>&1 || true' EXIT
           port="$(docker port "$container_id" 8000/tcp | awk -F: '{print $NF}')"
           frontend_port="$(docker port "$frontend_id" 8080/tcp | awk -F: '{print $NF}')"
+          mock_provider_port="$(docker port "$mock_provider_id" 8090/tcp | awk -F: '{print $NF}')"
           for _ in $(seq 1 40); do
             if curl --fail --silent --show-error "http://127.0.0.1:${port}/health/live" \
               | grep -q '"status":"live"' \
               && curl --fail --silent --show-error "http://127.0.0.1:${frontend_port}/healthz" \
-              | grep -q '"status":"live"'; then
+              | grep -q '"status":"live"' \
+              && curl --fail --silent --show-error "http://127.0.0.1:${mock_provider_port}/health/ready" \
+              | grep -q '"status":"ready"'; then
               exit 0
             fi
             sleep 0.5
@@ -417,6 +442,14 @@ jobs:
           image: ${{ env.FRONTEND_IMAGE_REF }}
           format: cyclonedx-json
           output-file: artifacts/sbom/frontend-container.cdx.json
+          upload-artifact: false
+          dependency-snapshot: false
+      - name: Generate CycloneDX local fixture provider container SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.MOCK_PROVIDER_IMAGE_REF }}
+          format: cyclonedx-json
+          output-file: artifacts/sbom/mock-provider-container.cdx.json
           upload-artifact: false
           dependency-snapshot: false
       - name: Record complete container vulnerability inventory
@@ -443,6 +476,18 @@ jobs:
           exit-code: "0"
           format: json
           output: artifacts/security/frontend-container-trivy.json
+      - name: Record complete local fixture provider vulnerability inventory
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.MOCK_PROVIDER_IMAGE_REF }}
+          scanners: vuln
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          timeout: 15m0s
+          exit-code: "0"
+          format: json
+          output: artifacts/security/mock-provider-container-trivy.json
       - name: Block fixable high and critical container vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -465,6 +510,17 @@ jobs:
           timeout: 15m0s
           exit-code: "1"
           format: table
+      - name: Block fixable local fixture provider high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.MOCK_PROVIDER_IMAGE_REF }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          timeout: 15m0s
+          exit-code: "1"
+          format: table
       - name: Upload container security evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -475,6 +531,7 @@ jobs:
             artifacts/security
             artifacts/sbom/backend-container.cdx.json
             artifacts/sbom/frontend-container.cdx.json
+            artifacts/sbom/mock-provider-container.cdx.json
           if-no-files-found: warn
           retention-days: 90
 
