@@ -85,6 +85,23 @@ describe("OIDC identity and stores", () => {
     expect(auth.hasAllScopes(["topic1:read", "topic4:read"])).toBe(true)
   })
 
+  it("clears tenant caches when a different subject signs in to the same tenant", async () => {
+    const auth = useAuthStore()
+    await auth.restore(new OidcSession(manager(oidcUser())))
+
+    const cacheKey = tenantCacheKey("demo-academy", "verification")
+    const cursorKey = "cybercontrol:sse:demo-academy:verification"
+    window.sessionStorage.setItem(cacheKey, "cached")
+    window.sessionStorage.setItem(cursorKey, "cursor")
+
+    const reviewer = oidcUser()
+    reviewer.profile = { ...reviewer.profile, sub: "reviewer-001" }
+    auth.applyUser(reviewer)
+
+    expect(window.sessionStorage.getItem(cacheKey)).toBeNull()
+    expect(window.sessionStorage.getItem(cursorKey)).toBeNull()
+  })
+
   it("clears local state before redirecting to logout", async () => {
     const auth = useAuthStore()
     const fakeManager = manager(oidcUser())

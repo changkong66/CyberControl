@@ -2,8 +2,9 @@
 
 ## Current Revision
 
-- Branch: `codex/frontend-workbench`
-- Base: merged PR #19 main baseline `dccdc735f8fa6f82325abb4a18dcdac308eabed2`
+- Delivery PR: [#20](https://github.com/changkong66/CyberControl/pull/20)
+- Delivery main baseline: `7fba5b1901794bb177dd46a9e109dc171ff0ecf7`
+- Security follow-up branch: `codex/frontend-security-hardening`
 - Frontend stack: Vue 3, Vite, TypeScript strict, Pinia, Vue Router, OIDC PKCE
 - Backend changes: none
 
@@ -26,9 +27,10 @@
 | --- | --- |
 | `pnpm typecheck` | PASS |
 | `pnpm build` | PASS |
-| Vitest | PASS, 49 tests |
-| Frontend coverage | PASS, statements 92.91%, branches 83.16%, functions 91.30%, lines 95.36% |
+| Vitest | PASS, 50 tests |
+| Frontend coverage | PASS, statements 92.91%, branches 83.22%, functions 91.30%, lines 95.36% |
 | Playwright | PASS, 3 browser integration scenarios |
+| Main Release Quality Gates | PASS, run 29675840180, 8/8 jobs |
 | OIDC learner PKCE login | PASS against local Keycloak |
 | Workspace API readiness | PASS, HTTP 200 |
 | Real Topic1/Topic2 data | PASS, 1 course, 13 knowledge points, 15 edges, profile v1, 13 memory states |
@@ -55,7 +57,12 @@ derive/commit payload, forbidden identity headers, and `RELEASED` UI state are
 covered by Playwright with API mocks; production acceptance still requires a
 release-eligible persisted report.
 
-Local Docker image rebuild and Trivy execution remain pending because the
-Docker Desktop engine timed out during this work session. The CI workflow now
-builds, checks non-root users, generates SBOMs, and scans backend, frontend, and
-fixture Provider images; acceptance is not final until that remote job is green.
+The local Docker Desktop engine timed out during the image rebuild in the
+delivery session, so that specific workstation run was not reproduced locally.
+The protected-main workflow subsequently built all images, checked non-root
+runtime users, generated SBOMs, and completed the Trivy gates successfully in
+Release Quality Gates run 29675840180.
+
+The security follow-up also verifies that changing either the trusted OIDC
+tenant or subject clears all tenant-scoped caches and SSE cursors. This prevents
+same-tenant account switches from retaining another user's browser state.
