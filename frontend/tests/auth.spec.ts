@@ -78,8 +78,10 @@ describe("OIDC identity and stores", () => {
 
     const cacheKey = tenantCacheKey("demo-academy", "verification")
     window.sessionStorage.setItem(cacheKey, "cached")
+    window.sessionStorage.setItem("cybercontrol:sse:demo-academy:verification", "cursor")
     auth.applyUser(oidcUser("second-academy"))
     expect(window.sessionStorage.getItem(cacheKey)).toBeNull()
+    expect(window.sessionStorage.getItem("cybercontrol:sse:demo-academy:verification")).toBeNull()
     expect(auth.hasAllScopes(["topic1:read", "topic4:read"])).toBe(true)
   })
 

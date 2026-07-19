@@ -43,6 +43,13 @@ export class SseHttpError extends Error {
   }
 }
 
+export class SseContractError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "SseContractError"
+  }
+}
+
 function cursorKey(tenantId: string, streamKey: string): string {
   return `cybercontrol:sse:${encodeURIComponent(tenantId)}:${encodeURIComponent(streamKey)}`
 }
@@ -85,6 +92,17 @@ function eventSequence(data: unknown): number | null {
   return null
 }
 
+function eventTenantId(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null
+  const record = data as Record<string, unknown>
+  if (typeof record.tenant_id === "string") return record.tenant_id
+  const payload = record.payload
+  if (payload && typeof payload === "object" && typeof (payload as Record<string, unknown>).tenant_id === "string") {
+    return (payload as Record<string, string>).tenant_id
+  }
+  return null
+}
+
 export class SseClient {
   private readonly baseUrl: string
   private readonly fetcher: typeof fetch
@@ -121,7 +139,12 @@ export class SseClient {
         retryAfter = await this.consumeOnce(path, tenantId, options.streamKey, cursor, options)
         retries = 0
       } catch (error) {
-        if (error instanceof SseHttpError && (error.status === 401 || error.status === 403)) throw error
+        if (
+          error instanceof SseContractError ||
+          (error instanceof SseHttpError && (error.status === 401 || error.status === 403))
+        ) {
+          throw error
+        }
         options.onError?.(error)
       }
       if (options.signal?.aborted) return
@@ -177,6 +200,11 @@ export class SseClient {
           data = JSON.parse(message.data) as T
         } catch (error) {
           parseError = error
+          return
+        }
+        const tenantIdInEvent = eventTenantId(data)
+        if (tenantIdInEvent && tenantIdInEvent !== tenantId) {
+          parseError = new SseContractError("The SSE event tenant does not match the authenticated tenant.")
           return
         }
         const id = message.id ?? null

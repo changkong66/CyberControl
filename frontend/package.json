@@ -11,6 +11,8 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "test:watch": "vitest",
     "sbom": "python ../tools/generate_node_sbom.py --project . --output ../artifacts/sbom/frontend.cdx.json"
   },
@@ -25,6 +27,7 @@
     "vue-router": "4.5.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.0",
     "@vitejs/plugin-vue": "^5.2.1",
