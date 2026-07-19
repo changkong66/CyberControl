@@ -23,6 +23,7 @@ RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend install --frozen-lockfile
 
 COPY --chown=65532:65532 frontend/index.html frontend/tsconfig.json frontend/tsconfig.app.json frontend/tsconfig.node.json /workspace/frontend/
 COPY --chown=65532:65532 frontend/vite.config.ts /workspace/frontend/vite.config.ts
+COPY --chown=65532:65532 frontend/public /workspace/frontend/public
 COPY --chown=65532:65532 frontend/src /workspace/frontend/src
 RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend run build
 

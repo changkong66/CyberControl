@@ -25,6 +25,29 @@
       }
     ]
   },
+  "userProfile": {
+    "unmanagedAttributePolicy": "ENABLED",
+    "attributes": [
+      {
+        "name": "tenant_id",
+        "displayName": "Tenant",
+        "permissions": {
+          "view": ["admin", "user"],
+          "edit": ["admin"]
+        },
+        "multivalued": false
+      },
+      {
+        "name": "permissions",
+        "displayName": "Permissions",
+        "permissions": {
+          "view": ["admin", "user"],
+          "edit": ["admin"]
+        },
+        "multivalued": false
+      }
+    ]
+  },
   "clientScopes": [
     {
       "name": "basic",
@@ -225,14 +248,18 @@
       "rootUrl": "http://localhost:5173",
       "baseUrl": "http://localhost:5173/",
       "redirectUris": [
-        "http://localhost:5173/auth/callback"
+        "http://localhost:5173/auth/callback",
+        "http://localhost:5174/auth/callback",
+        "http://127.0.0.1:5174/auth/callback"
       ],
       "webOrigins": [
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5174/*##http://127.0.0.1:5174/*"
       },
       "defaultClientScopes": [
         "basic",
@@ -274,7 +301,7 @@
           "demo-academy"
         ],
         "permissions": [
-          "topic1:read topic2:read topic3:read topic3:write topic3:sse:read topic4:read topic4:sse:read"
+          "topic1:read topic2:read topic2:profile:read topic2:profile:write topic2:memory:read topic2:memory:write topic2:path:read topic2:path:write topic2:context:read topic3:read topic3:write topic3:generation:read topic3:generation:write topic3:generation:retry topic3:sse:read topic4:read topic4:verification:read topic4:verification:execute topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read"
         ]
       },
       "realmRoles": [
@@ -300,7 +327,7 @@
           "demo-academy"
         ],
         "permissions": [
-          "topic1:read topic2:read topic3:read topic3:write topic3:sse:read topic4:read topic4:sse:read topic4:review:read topic4:review:write topic4:release:read topic4:release:write"
+          "topic1:read topic1:import topic1:freeze topic2:read topic2:profile:read topic2:profile:write topic2:memory:read topic2:memory:write topic2:path:read topic2:path:write topic2:context:read topic3:read topic3:write topic3:generation:read topic3:generation:write topic3:generation:retry topic3:sse:read topic4:read topic4:verification:read topic4:verification:execute topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read topic4:review:read topic4:review:write topic4:release:read topic4:release:write"
         ]
       },
       "realmRoles": [
