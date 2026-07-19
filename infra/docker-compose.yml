@@ -79,6 +79,29 @@ services:
         condition: service_completed_successfully
     restart: "no"
 
+  mock-provider:
+    build:
+      context: ..
+      dockerfile: infra/mock-provider.Dockerfile
+    environment:
+      FIXTURE_PROVIDER_TOKEN: local-fixture-provider-only
+      PORT: "8090"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health/ready', timeout=2)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+
   api:
     build:
       context: ..
@@ -100,6 +123,13 @@ services:
       LIYAN_OIDC_TENANT_CLAIM: tenant_id
       LIYAN_OIDC_ROLES_CLAIM: roles
       LIYAN_OIDC_SCOPE_CLAIM: permissions
+      LIYAN_PROVIDER_EXTERNAL_ENABLED: "true"
+      LIYAN_SPARK_TEXT_ENDPOINT: http://mock-provider:8090/v1/responses
+      LIYAN_SPARK_TEXT_API_KEY: local-fixture-provider-only
+      LIYAN_SPARK_TEXT_MODEL_ALIAS: local-fixture-spark-text-v1
+      LIYAN_XFYUN_CODE_ENDPOINT: http://mock-provider:8090/v1/responses
+      LIYAN_XFYUN_CODE_API_KEY: local-fixture-provider-only
+      LIYAN_XFYUN_CODE_MODEL_ALIAS: local-fixture-code-v1
     ports:
       - "${LIYAN_API_HOST_PORT:-8000}:8000"
     volumes:
@@ -109,6 +139,8 @@ services:
         condition: service_healthy
       tenant-bind:
         condition: service_completed_successfully
+      mock-provider:
+        condition: service_healthy
     healthcheck:
       test:
         [

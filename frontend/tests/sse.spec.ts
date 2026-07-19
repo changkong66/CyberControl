@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { readSseCursor, SseClient, SseHttpError, type StreamEvent } from "../src/streaming/sse"
+import { readSseCursor, SseClient, SseContractError, SseHttpError, type StreamEvent } from "../src/streaming/sse"
 
 function streamResponse(chunks: string[], status = 200): Response {
   const encoder = new TextEncoder()
@@ -126,5 +126,19 @@ describe("SseClient", () => {
       client.run("/internal/topic4/sse", { streamKey: "nested", onEvent: (event) => events.push(event) }),
     ).rejects.toThrow(/reconnect limit/u)
     expect(events[0]?.sequence).toBe(7)
+  })
+
+  it("rejects an event carrying a different tenant boundary", async () => {
+    const client = new SseClient({
+      fetcher: vi
+        .fn()
+        .mockResolvedValue(streamResponse(['data: {"tenant_id":"other-academy","sequence":1}\n\n'])) as typeof fetch,
+      getTenantId: () => "demo-academy",
+      maxRetries: 3,
+      sleep: async () => undefined,
+    })
+    await expect(
+      client.run("/internal/topic4/sse", { streamKey: "cross-tenant", onEvent: vi.fn() }),
+    ).rejects.toBeInstanceOf(SseContractError)
   })
 })

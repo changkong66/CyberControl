@@ -48,6 +48,8 @@ dist/
 .playwright-cli/
 *.tsbuildinfo
 coverage/
+test-results/
+playwright-report/
 
 .idea/
 .vscode/
