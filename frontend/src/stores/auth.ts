@@ -17,7 +17,10 @@ export const useAuthStore = defineStore("auth", () => {
 
   function applyUser(oidcUser: OidcUserLike): AuthenticatedUser {
     const next = userToIdentity(oidcUser)
-    if (user.value && user.value.tenantId !== next.tenantId) {
+    if (
+      user.value &&
+      (user.value.tenantId !== next.tenantId || user.value.subject !== next.subject)
+    ) {
       clearAllTenantCaches()
     }
     user.value = next
