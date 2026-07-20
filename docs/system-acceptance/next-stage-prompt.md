@@ -1,153 +1,115 @@
-# Next Stage Prompt: Production Acceptance And Release Freeze
+# Next Stage Prompt: Registration, Accounts And Three-Language Workbench
 
 ```text
-# CyberControl Phase 7.1: immutable release-candidate closure and production acceptance
+# CyberControl Phase 7.2: additive identity self-service and i18n
 
-You are the release architect for a single-maintainer multi-tenant trusted AI
-education platform. Continue from the objective facts below. Do not add new
-business features and do not weaken any security or repository rule.
+Continue only after the mainline evidence PR for protected main
+40c9a590614d3fb57011061fac02669d86946240 is merged and its CI is green.
+The project is currently RELEASE_CANDIDATE, not SYSTEM_ACCEPTED.
 
 ## Fixed facts
 
-- Protected main: d880c4b7549a512cf8ba91e8fd8f500513b099f9
-- Main CI: Release Quality Gates run 29676794168, 8/8 jobs successful
-- Working branch: codex/system-acceptance-release-eligible
-- Source commits: 095ff8eba0dddfa47d14ae723d869937826484f1,
-  b389fed1ca39d80439acd9fb518680631987297e and
-  8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89
-- Immutable-source evidence is archived separately under
-  docs/system-acceptance/evidence/release-eligible-immutable-source.json
-- Alembic head: 20260716_0009; migrations 0001-0009 are frozen
-- Local clean-volume acceptance passed:
-  - initial business counts 0|0|0|0
-  - 68/68 tenant tables FORCE RLS
-  - audit-chain breaks 0
-  - Outbox DEAD/open 0/0
-  - final Verification state RELEASED
-  - same-key C12 replay idempotent; changed replay HTTP 409
-  - authenticated publication SSE replay passed
-- Regression: 474 passed, 1 skipped, Python coverage 91.21%
-- Previous main coverage observation: 91.19%; current delta: +0.02 points
-- Frontend: 54 Vitest passed; coverage 92.80/83.13/91.54/95.37;
-  Playwright 3 passed
-- C2 benchmark: 100,000 chunks, 200 queries, p95 17.502 ms
-- Concurrency: 200 verifications and 200 C12 attempts passed on real PostgreSQL
-- Trivy: zero findings for backend/frontend/local Provider images
-- Gitleaks: zero history and working-tree findings
-- Real browser PKCE login and persisted RELEASED report rendering passed
-- Docker Desktop officially migrated its 25.24 GiB data VHDX to D:\Docker\wsl;
-  migration-time C: free space was 34.67 GiB and inventory hashes matched
-- Isolated release volume cybercontrol_release_postgres was verified empty and
-  used by the immutable-source replay
-- Terminal Verification semantics plus RequireCleanSource dirty and clean paths pass
+- Protected main: 40c9a590614d3fb57011061fac02669d86946240
+- PR #25 merged; protected-main CI Run 29729849367 passed 8/8
+- Merged-main clean-volume replay passed from
+  docs/system-acceptance/evidence/release-eligible-mainline.json
+- PostgreSQL volume used: cybercontrol_release_postgres
+- Alembic head: 20260716_0009; migrations 0001-0009 and frozen Topic contracts are immutable
+- Keycloak OIDC Authorization Code + PKCE is the only identity and password authority
+- Existing tenant context, FORCE RLS, SERIALIZABLE, CAS, append-only audit, Outbox and C12 semantics are frozen
+- Current local quality evidence: 474 passed, 1 skipped, Python coverage 91.21%; 54 Vitest; 3 Playwright
+- No real SMS, email, AI-provider or production secret may enter source, logs or fixtures
 
-## Permanent constraints
+## Mandatory sequencing
 
-1. Do not change migrations 0001-0009 or frozen Topic1-Topic4 contract fields.
-2. Tenant identity comes only from verified OIDC and backend TenantContext.
-3. Preserve FORCE RLS, SERIALIZABLE transactions, CAS, append-only evidence,
-   SHA256 binding, Outbox atomicity and fail-closed release behavior.
-4. Do not use Fake database evidence for PostgreSQL, RLS, concurrency or recovery.
-5. Do not commit Provider credentials or send tokens to non-loopback acceptance tools.
-6. Do not reduce Python/frontend coverage thresholds or skip Release Quality Gates.
-7. Do not merge Dependabot major upgrades into this release-candidate PR.
-8. Historical acceptance documents are immutable snapshots; publish new current-state
-   documents instead of rewriting historical facts.
+1. Merge the documentation-only mainline evidence PR.
+2. Create and merge the backend registration/account PR with all Release Quality Gates green.
+3. Rebase frontend work from the merged backend main and create the frontend registration/i18n PR.
+4. Run a clean-volume registration-to-OIDC replay from merged main.
+5. Only then continue to the final G0-G12 non-functional gates.
 
-## Strict serial execution
+Any failed CI, dirty source, missing evidence, contract drift or security ambiguity stops the sequence.
 
-### Stage A: verify the completed workstation migration checkpoint
+## Backend PR: Keycloak-backed registration and account projection
 
-1. Treat the archived before/after evidence as the authoritative migration result.
-2. Verify the D: VHDX and isolated release volume still exist before heavy work.
-3. Do not repeat migration, manually move a live VHDX, or delete unrelated volumes.
+Create a branch from the latest protected main. Add an ADR before coding:
 
-Exit: archived migration remains valid and Docker is healthy.
+- Keycloak alone stores passwords and password hashes.
+- The application database stores only non-secret account projections and encrypted contact values plus lookup digests.
+- Keycloak Admin API is an external side effect; use a registration state machine, idempotency, retry, compensation and reconciliation.
+- Default production registration requires a server-verified invitation; local demo may use demo-academy only under explicit development configuration.
+- New accounts receive learner only. Reviewer/admin roles and tenant changes are server-authorized and never client-controlled.
 
-### Stage B: source traceability checkpoint (completed locally)
+Add only migration 0010. Every new table must have FORCE RLS, append-only protections where applicable, audit and Outbox coverage. Do not modify 0001-0009.
 
-Preserve the completed result: implementation and tests are separated, runtime
-images were rebuilt from `8efdfb9`, and the clean external-volume replay records
-the source tree, Compose/lockfile hashes, image IDs and exact flags.
+Add versioned contracts and generated Python/JSON Schema/TypeScript/Go artifacts:
 
-Exit: immutable implementation commit plus evidence commit; no unexplained dirty files.
+- UserRegisterByEmailCommandV1
+- UserRegisterByPhoneCommandV1
+- VerificationChallengeRequestV1
+- VerificationChallengeVerifyV1
+- AccountProfileV1
+- AccountAdminViewV1
 
-### Stage C: rerun the complete local release matrix
+Required server capabilities:
 
-Use a separate health-checked PostgreSQL 16 test container. TEMP/TMP and Trivy
-cache may use D:, but source and evidence paths remain in the repository.
+- email and E.164 phone registration
+- verification challenge send/verify with hashed codes, five-minute expiry, attempt limits and multidimensional rate limits
+- uniform anti-enumeration responses
+- Idempotency-Key on every write and replay conflict detection
+- current-user profile read/edit for non-sensitive fields
+- verified contact change workflow
+- tenant-admin account list/detail and suspend/restore
+- audit and Outbox records for every lifecycle change
+- reconciliation for Keycloak success/database failure, timeout and retry paths
+- real PostgreSQL and real Keycloak integration tests for RLS, concurrency, compensation and permissions
 
-Required gates:
+The local fixture must use a loopback-only test inbox, never console-print a usable code, and never contain real credentials.
 
-- actionlint, Ruff check/format, frozen contract drift
-- Go fmt/vet/race/test/build
-- Vue/TypeScript/Vite
-- Python/Node dependency audit, SBOM and license policy
-- 474+ Python tests with database restart enabled and coverage >= 91.19%
-- Vitest thresholds >= 80/75/80/80 and all tests passing
-- Playwright project suite
-- real Keycloak PKCE browser login
-- real persisted RELEASED report UI: 10 Claims and 12 matrix cells
-- 100k C2 benchmark p95 <= 200 ms
-- 200 verification and 200 release contention tests
-- Trivy all-severity inventories and fixable HIGH/CRITICAL redlines for all images
-- Gitleaks full history and working tree
-- non-root/minimal runtime checks for all images
+## Frontend PR: registration, account management and i18n
 
-Preserve the completed terminal-report regression: modules outside the resource
-profile render NOT_REQUIRED while planned/active modules retain real states.
+Branch from the merged backend main. Use the existing Vue 3, Pinia, Router, AJV, OIDC PKCE and fetch/SSE layers. Do not add identity headers or change Topic1-Topic4 contracts.
 
-Exit: every local gate passes from immutable source; reports contain exact values.
+Locales:
 
-### Stage D: protected PR and mainline replay
+- zh-CN (default fallback)
+- zh-TW
+- en-US
 
-1. Push codex/system-acceptance-release-eligible.
-2. Open one release-candidate PR to main with:
-   - acceptance fixes
-   - source/evidence commit separation
-   - test, performance and security results
-   - explicit compatibility statement
-   - no claim that Phase 7 is fully accepted
-3. Wait for all eight Release Quality Gates jobs. Do not use admin override.
-4. Squash merge only after all jobs succeed and all conversations are resolved.
-5. Record the merged main SHA and main CI run.
-6. From merged main, rebuild images and rerun clean-volume acceptance once more.
-7. Publish a mainline acceptance evidence document tied to the merged SHA.
+Move all user-visible shell, login, registration, account, permission, validation, error, empty-state, date and number text into vue-i18n messages. Pass ui_locales to Keycloak; do not transmit language or tenant identity in custom headers. Do not claim that academic knowledge or historical AI content has been translated.
 
-Exit: protected main and its rebuilt images reproduce the release-eligible flow.
+Routes:
 
-### Stage E: remaining product-level G0-G12 gates
+- /register
+- /account/profile
+- /account/recovery
+- /tenant/accounts
 
-Run these only after Stage D:
+Security requirements:
 
-1. 2,000 authenticated SSE connections with reconnect, cursor recovery,
-   duplicate delivery, slow consumers and tenant isolation.
-2. Minimum 8-hour soak with generation, verification, revision, review and release.
-3. PostgreSQL backup/restore into a separate instance; measure and report RPO/RTO.
-4. Artifact Store, audit chain and Outbox consistency after restore.
-5. Sealed real-Provider integration using external secret injection; no secret in
-   repository, logs, screenshots or artifacts.
-6. Human-reviewed academic golden dataset accuracy and false-positive analysis.
-7. Production deployment rehearsal with TLS, secret manager, monitoring, alerts,
-   capacity limits, rollback and incident runbook.
-8. Cross-browser and WCAG accessibility acceptance.
+- token remains in the existing session-scoped OIDC storage, never localStorage
+- no X-Tenant-ID, X-Subject-Ref, role or Scope request headers
+- tenant identity is display/cache context only and comes from verified claims
+- passwords, codes, tokens and raw PII are absent from logs, telemetry and error reports
+- 401/403, logout and tenant change clear private caches and SSE cursors
+- all responses pass Envelope and runtime schema validation
 
-Each gate must produce machine-readable evidence and a signed-off Markdown result.
-Any failed gate keeps the project in RELEASE_CANDIDATE, not ACCEPTED.
+Required tests:
 
-### Stage F: final freeze
+- registration success, duplicate, invalid/expired code, rate limit and network failure
+- registered account logs in through existing PKCE and receives correct tenant/learner scopes
+- contact re-verification and profile editing
+- learner/reviewer/admin access separation and cross-tenant cache clearing
+- locale switch, fallback and missing-key detection, including Keycloak ui_locales
+- mobile layout, accessibility and Playwright end-to-end coverage
 
-Only when Stages A-E pass:
+## Acceptance and release rules
 
-1. Create the final SystemAcceptanceReport and current project status.
-2. Update README and roadmap current-state text without changing historical snapshots.
-3. Tag the immutable release and attach SBOM, provenance and acceptance evidence.
-4. Mark Phase 7 ACCEPTED and open only deployment/operations maintenance scope.
-
-## Required final response
-
-Report exact commit SHAs, PR URL, eight CI jobs, main CI run, evidence paths,
-coverage, p95 values, concurrency counts, Trivy/Gitleaks results, RPO/RTO,
-soak duration, SSE connection results, remaining limitations and final release state.
-Never substitute planned or historical evidence for a result from the exact commit.
+- Keep Python coverage >= 91.19% observed and CI threshold unchanged at 90%.
+- Keep frontend thresholds at statements/functions/lines >=80% and branches >=75%.
+- Run real PostgreSQL, real Keycloak, contract drift, Go race, SBOM/license, Trivy and Gitleaks gates.
+- Commit implementation, tests and evidence separately; use conventional messages.
+- Every evidence record includes source SHA, migration head, dataset version/hash, image IDs and exact command flags.
+- Do not start 2,000-SSE, soak, DR or sealed-provider final gates until registration/i18n is merged and replayed from main.
+- Do not mark SYSTEM_ACCEPTED until all final non-functional and production-operation evidence is complete.
 ```

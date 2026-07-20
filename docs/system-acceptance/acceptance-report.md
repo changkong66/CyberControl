@@ -2,24 +2,25 @@
 
 ## Decision
 
-The committed source revision `8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89` is
-accepted as a **local release candidate**. It passed a clean external release
-volume, real PostgreSQL, real Keycloak, Topic1 -> Topic2 -> Topic3 -> Topic4
--> C12 -> authenticated SSE flow with `-RequireCleanSource`. It is not yet a
-formally frozen production release because patch-specific remote CI and the
-merged-main replay are still pending.
+Protected `main` revision `40c9a590614d3fb57011061fac02669d86946240` is
+accepted as a **release candidate**. PR #25, its pull-request CI, the merge push
+CI and a clean external-volume merged-main replay all passed. It is not yet a
+production release because the final 2,000-SSE, soak, disaster-recovery, sealed
+Provider, deployment, accessibility and privacy-lifecycle gates remain open.
 
-Formal state: `SOURCE_COMMITTED`.
+Formal state: `RELEASE_CANDIDATE`.
 
 ## Evaluated Baseline
 
-- Protected `main`: `d880c4b7549a512cf8ba91e8fd8f500513b099f9`
-- Latest protected-main CI: [Run 29676794168](https://github.com/changkong66/CyberControl/actions/runs/29676794168), 8/8 jobs successful
-- Working branch: `codex/system-acceptance-release-eligible`
-- Working HEAD: `8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89`
+- Protected `main`: `40c9a590614d3fb57011061fac02669d86946240`
+- Merged PR: [#25](https://github.com/changkong66/CyberControl/pull/25)
+- PR CI: [Run 29729566019](https://github.com/changkong66/CyberControl/actions/runs/29729566019), 8/8 jobs successful
+- Protected-main CI: [Run 29729849367](https://github.com/changkong66/CyberControl/actions/runs/29729849367), 8/8 jobs successful
+- Evidence branch: `codex/system-acceptance-mainline-evidence`
+- Evidence branch base: `40c9a590614d3fb57011061fac02669d86946240`
 - Implementation commit: `095ff8eba0dddfa47d14ae723d869937826484f1`
 - Test commit: `b389fed1ca39d80439acd9fb518680631987297e`
-- Working-tree state after the evidence commit: clean; remote CI does not yet cover this patch
+- Working-tree state after the follow-up evidence commit: clean
 - Alembic head: `20260716_0009`; no migration was added or changed
 
 ## Docker Storage Migration
@@ -64,8 +65,8 @@ No development volume was deleted or reset.
 
 The runner used the protected external volume `cybercontrol_release_postgres`, ran
 all nine migrations, and asserted initial representative business counts
-`0|0|0|0` before seeding. The replay was generated at
-`2026-07-20T06:35:19Z` from the immutable source commit.
+`0|0|0|0` before seeding. The authoritative merged-main replay was generated at
+`2026-07-20T09:08:44Z` from protected `main`.
 
 | Stage | Result |
 | --- | --- |
@@ -82,14 +83,14 @@ all nine migrations, and asserted initial representative business counts
 
 Immutable identifiers:
 
-- Candidate: `55b725a8-718e-58cd-a2fd-78facf15e1ee`
-- Verification: `2bf9eb01-87b3-5f1e-8828-a45506ca6c36`
-- Report: `0371e0d7-5017-5101-bbb1-0bec00de237b`
-- Authorization: `6f7c7b8c-f29a-55e9-aa8e-0666976ed81b`
-- Publication batch: `9dcd6604-108a-542b-9aca-70ba50bf7702`
-- Public event: `e6737dc9-193d-5321-818c-95604fe76a46`
+- Candidate: `b6b48f47-d7eb-54fb-810f-8edc821e16c2`
+- Verification: `4107ee7a-69b7-5789-8cbd-6a8de75f6f06`
+- Report: `d0ba0bd7-36fe-55d2-a8f6-cfaa6f5e6f02`
+- Authorization: `95352684-89d8-500a-a374-51bcb3d92e61`
+- Publication batch: `3fed024a-8627-5b84-ab30-1b8261b2e247`
+- Public event: `acb34f23-f2b8-51be-a897-543a9fe2674b`
 
-## Immutable Replay Fingerprints
+## Source Replay Fingerprints
 
 - Evidence: `evidence/release-eligible-immutable-source.json`
 - Source commit: `8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89`
@@ -100,6 +101,16 @@ Immutable identifiers:
 - Backend image: `sha256:dc0839825a13bc4eb6ba0837572059471ad159d48bf57c534e03438e841d5a1f`
 - Frontend image: `sha256:9015b822294ff61507f34aa1effd6d5eb04caf17f313ebbce4b09ab683afe98e`
 - Mock Provider image: `sha256:bbba49ce183ae9e1f630f61e87bc437812b3d8d82d115816dc4c999920319d53`
+
+## Mainline Replay Fingerprints
+
+- Evidence: `evidence/release-eligible-mainline.json`
+- Source commit: `40c9a590614d3fb57011061fac02669d86946240`
+- Source tree: `d898d2c9c9005bb011aa0464453787c370d2d7b4`
+- Compose config SHA256: `a56f83de9c5071ef48c6e4cb088a2f79c948351435b6eba11d7716026985e55c`
+- Backend image: `sha256:3c5a80254204c422d659dfdcf187257b2102e98f6f0b3807e8b5c402e52f6dea`
+- Frontend image: `sha256:2502b976d1a4e37be17fb046102eb98308a74d9a7da8c33b524f5836058b280e`
+- Mock Provider image: `sha256:d5b17d3f2efbdb5a05a3343df5456fa8fdf50074bb3687e8faa59d2a007303ff`
 
 ## Database Invariants
 
@@ -167,6 +178,7 @@ side effects and to accept the clean immutable source used for the replay.
   local Provider `10002:10002`.
 - Runtime images contain no test runner, package manager, source workspace or
   disallowed build tool checked by the release gate.
+- PR, push and protected-main Release Quality Gates each completed all eight jobs.
 
 ## Browser Acceptance
 
@@ -191,6 +203,7 @@ real `PENDING` or `RUNNING` state. The regression is covered by Vitest.
 
 - [Clean-volume evidence](evidence/release-eligible.json)
 - [Immutable-source release replay](evidence/release-eligible-immutable-source.json)
+- [Merged-main release replay](evidence/release-eligible-mainline.json)
 - [100k C2 benchmark](evidence/topic4-c2-100k.json)
 - [Browser shell acceptance](evidence/browser-acceptance.json)
 - [Release-eligible report UI](evidence/release-eligible-ui.json)
@@ -201,8 +214,8 @@ real `PENDING` or `RUNNING` state. The regression is covered by Vitest.
 
 ## Release Blockers
 
-1. All eight Release Quality Gates jobs must pass for the complete PR commit set.
-2. The PR must be squash-merged to protected `main`, followed by a clean-volume
-   replay that records the merged SHA.
-3. Product-level 2000-SSE, soak, backup/restore disaster recovery, sealed real
-   Provider integration and production deployment gates remain outstanding.
+1. Execute 2,000 authenticated SSE connections with reconnect, cursor recovery,
+   duplicate suppression, slow consumers and cross-tenant isolation evidence.
+2. Complete the minimum 8-hour soak and backup/restore disaster-recovery gates.
+3. Complete sealed Provider, production deployment, cross-browser/WCAG and PII
+   lifecycle acceptance before moving from `RELEASE_CANDIDATE` to `SYSTEM_ACCEPTED`.
