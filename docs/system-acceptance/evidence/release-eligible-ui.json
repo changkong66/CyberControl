@@ -1,0 +1,20 @@
+{
+  "schema_version": "cybercontrol.release-eligible-ui.v1",
+  "generated_at": "2026-07-19T13:34:03.467Z",
+  "verification_id": "8ee87d38-76bc-5341-9c19-d064a2f058d7",
+  "page": {
+    "title": "可信核验 | CyberControl",
+    "path": "/verification?id=8ee87d38-76bc-5341-9c19-d064a2f058d7",
+    "textLength": 2725,
+    "horizontalOverflow": false,
+    "hasViteOverlay": false
+  },
+  "claim_count_rendered": 10,
+  "verification_matrix_items": 12,
+  "hash_values_rendered": 6,
+  "report_contains_release_decision": true,
+  "console_errors_or_warnings": [],
+  "expected_sse_aborts": [],
+  "unexpected_failed_requests": [],
+  "passed": true
+}

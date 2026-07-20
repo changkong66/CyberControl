@@ -1,0 +1,40 @@
+{
+  "schema_version": "cybercontrol.docker-migration-evidence.v1",
+  "phase": "before_official_disk_migration",
+  "generated_at_utc": "2026-07-19T19:01:40.9143969Z",
+  "source": {
+    "workspace": "C:\\Users\\wch06\\Documents\\CyberControl",
+    "branch": "codex/system-acceptance-release-eligible",
+    "head": "d880c4b7549a512cf8ba91e8fd8f500513b099f9"
+  },
+  "docker": {
+    "server_version": "29.6.1",
+    "operating_system": "Docker Desktop",
+    "container_count": 19,
+    "running_container_count": 0,
+    "image_count": 38,
+    "volume_count": 38,
+    "compose_projects": 3,
+    "container_inventory_sha256": "FACB2F75ED7DC6BBA5511F42C362E3EE3E3B48530001369970B1A6E944571699",
+    "image_inventory_sha256": "D455AE05618191ACA044FEC7AF21A79D46BB0A7871D7F329C18AAD14125FDB55",
+    "volume_inventory_sha256": "C963EEEBD6D16CAB2FB94EA684C4FCEC7A21643B85667119F30F5404F33DEB69"
+  },
+  "disk": {
+    "source_vhdx": "C:\\Users\\wch06\\AppData\\Local\\Docker\\wsl\\disk\\docker_data.vhdx",
+    "source_vhdx_bytes": 27098349568,
+    "source_vhdx_gib": 25.24,
+    "target_directory": "D:\\Docker\\wsl",
+    "c_free_gib": 12.88,
+    "d_free_gib": 85.65,
+    "target_capacity_gate_gib": 80.0
+  },
+  "protected_volumes": [
+    "cybercontrol-acceptance_liyans-postgres",
+    "cybercontrol-acceptance_liyans-runtime",
+    "cybercontrol-prc_liyans-postgres",
+    "cybercontrol-prc_liyans-runtime",
+    "infra_liyans-postgres",
+    "cybercontrol-trivy-cache"
+  ],
+  "migration_completed": false
+}

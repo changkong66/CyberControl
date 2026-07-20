@@ -1,0 +1,53 @@
+{
+  "schema_version": "cybercontrol.docker-migration-evidence.v1",
+  "phase": "after_official_disk_migration",
+  "generated_at_utc": "2026-07-19T19:24:40.7726805Z",
+  "source": {
+    "workspace": "C:\\Users\\wch06\\Documents\\CyberControl",
+    "branch": "codex/system-acceptance-release-eligible",
+    "head": "d880c4b7549a512cf8ba91e8fd8f500513b099f9"
+  },
+  "docker": {
+    "server_version": "29.6.1",
+    "operating_system": "Docker Desktop",
+    "container_count": 19,
+    "running_container_count": 0,
+    "image_count": 38,
+    "volume_count": 38,
+    "image_inventory_sha256": "D455AE05618191ACA044FEC7AF21A79D46BB0A7871D7F329C18AAD14125FDB55",
+    "volume_inventory_sha256": "C963EEEBD6D16CAB2FB94EA684C4FCEC7A21643B85667119F30F5404F33DEB69"
+  },
+  "disk": {
+    "old_c_vhdx_exists": false,
+    "data_vhdx": "D:\\Docker\\wsl\\DockerDesktopWSL\\disk\\docker_data.vhdx",
+    "data_vhdx_bytes": 27098349568,
+    "data_vhdx_gib": 25.24,
+    "c_free_gib": 34.67,
+    "d_free_gib": 60.32
+  },
+  "database_integrity": {
+    "alembic_head": "20260716_0009",
+    "tenant_tables": 68,
+    "forced_rls_tables": 68,
+    "append_only_triggers": 55,
+    "audit_chain_breaks": 0,
+    "outbox_dead": 0,
+    "outbox_open": 0,
+    "outbox_published": 26,
+    "verification_id": "8ee87d38-76bc-5341-9c19-d064a2f058d7",
+    "verification_state": "RELEASED",
+    "verification_count": 1,
+    "authorization_consumptions": 1,
+    "committed_batches": 1,
+    "public_stream_events": 1
+  },
+  "migration_completed": true,
+  "asset_loss_detected": false,
+  "release_volume": {
+    "name": "cybercontrol_release_postgres",
+    "driver": "local",
+    "purpose": "release-acceptance",
+    "data_class": "isolated-clean-postgres",
+    "empty_read_only_check": true
+  }
+}
