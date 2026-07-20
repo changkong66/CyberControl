@@ -4,15 +4,15 @@
 
 CyberControl has completed the engineering foundation, Topic1-Topic4 backend,
 and the frontend business workbench. The protected main branch is
-`d880c4b7549a512cf8ba91e8fd8f500513b099f9`; PRs #16-#21 are merged and the latest
-main Release Quality Gates run 29676794168 completed 8/8 jobs successfully.
+`40c9a590614d3fb57011061fac02669d86946240`; PRs #16-#25 are merged and protected
+main Release Quality Gates run 29729849367 completed 8/8 jobs successfully.
 
 The project is now in **Phase 7 system acceptance and release closure**, not
-Phase 6 frontend implementation. The current acceptance branch has a locally
-accepted release candidate tied to committed source `8efdfb9`. It has not yet
-been pushed, merged or covered by patch-specific remote CI.
+Phase 6 frontend implementation. PR #25, its PR/push gates and the merged-main
+clean external-volume replay passed. The project is now a `RELEASE_CANDIDATE`,
+not yet `SYSTEM_ACCEPTED`.
 
-Weighted implementation estimate: **about 88%**.
+Weighted implementation estimate: **about 90%**.
 
 This estimate is not an acceptance state. It assigns 50% to the backend product
 chain, 25% to the frontend workbench, 10% to reproducible local acceptance, and
@@ -104,49 +104,47 @@ and external integration account for most remaining work.
 
 ## 3. Current Work And Exact Boundary
 
-Current branch: `codex/system-acceptance-release-eligible`.
+Current branch: `codex/system-acceptance-mainline-evidence`.
 
-The branch contains only acceptance-enabling backend compatibility fixes, local
-fixture alignment, tests, acceptance tooling and new system-acceptance evidence.
-It does not add migrations or alter frozen contract fields. The current boundary
-is release closure; new Topic features or unrelated frontend work are out of scope.
+The branch contains only the merged-main replay evidence and current-state
+documentation. All runtime, test and acceptance tooling changes are already
+Squash Merged through PR #25. No frozen migration or contract field changed.
 
 Current status:
 
-- immutable-source local acceptance: passed from `8efdfb9` on the external
-  `cybercontrol_release_postgres` volume;
-- implementation and tests: committed in three logical commits;
-- working tree: only restored current-state documents and new evidence remain uncommitted;
-- remote branch/PR for this patch: not created;
-- remote CI for this patch: not executed;
-- protected-main CI: successful only for the preceding `d880c4b` baseline;
-- acceptance services: healthy at ports 5173, 8000 and 8080;
+- PR #25: merged by standard Squash Merge;
+- protected main: `40c9a590614d3fb57011061fac02669d86946240`;
+- PR, push and protected-main CI: 8/8 jobs successful;
+- merged-main clean-volume replay: passed on `cybercontrol_release_postgres`;
+- final Verification state: `RELEASED`; authenticated SSE replay passed;
 - official Docker data migration: completed and accepted with no asset loss;
 - source traceability: dirty-source rejection and successful clean-source replay
   both passed; Compose, lockfile and runtime image fingerprints are archived.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Release-Closure Blockers
+### 4.1 P0 Current Evidence Closure
 
-1. Commit the current-state documents and immutable replay as a separate evidence commit.
-2. Push the branch, open a PR, and require all eight Release Quality Gates jobs.
-3. Squash-merge to protected `main`; run main CI and clean-volume replay again.
-4. Publish a final status document and release tag only after the merged replay.
+1. Merge this documentation-only mainline evidence update through normal PR CI.
+2. Do not mark `SYSTEM_ACCEPTED` until every final non-functional gate below has evidence.
 
 ### 4.2 P1 Product Acceptance Gaps
 
-1. Add real-data browser E2E for knowledge, learning, all five Agent resources,
+1. Add Keycloak-backed email/phone registration, account profile and tenant account
+   administration through additive migration 0010 and versioned contracts.
+2. Add `zh-CN`, `zh-TW` and `en-US` frontend plus Keycloak theme localization.
+3. Add real-data browser E2E for registration, account isolation, knowledge,
+   learning, all five Agent resources,
    review CAS conflicts, publication history and account-switch cache isolation.
-2. Execute 2,000 simultaneous authenticated SSE connections with reconnect,
+4. Execute 2,000 simultaneous authenticated SSE connections with reconnect,
    cursor recovery, duplicate delivery and slow-consumer measurements.
-3. Execute an 8-hour minimum soak with continuous generation, verification,
+5. Execute an 8-hour minimum soak with continuous generation, verification,
    Outbox dispatch, SSE and publication while monitoring memory and queue depth.
-4. Perform backup/restore disaster recovery into a separate PostgreSQL instance;
+6. Perform backup/restore disaster recovery into a separate PostgreSQL instance;
    measure RPO/RTO and verify audit, Artifact Store and Outbox consistency.
-5. Execute sealed-environment integration with real approved Providers. No
+7. Execute sealed-environment integration with real approved Providers. No
    credentials may be committed, logged or embedded in evidence.
-6. Build a human-reviewed academic golden set. The 100,000-chunk benchmark is a
+8. Build a human-reviewed academic golden set. The 100,000-chunk benchmark is a
    deterministic performance corpus, not 100,000 manually validated facts.
 
 ### 4.3 P1 Production Operations
@@ -175,13 +173,14 @@ Current status:
   for its earlier long-lived volume. The new clean-volume evidence supersedes that
   limitation without rewriting the historical report.
 
-The new `docs/system-acceptance/acceptance-status.json` is the authoritative
-current-state document until the release-closure PR is merged.
+`docs/system-acceptance/acceptance-status.json` is the authoritative current-state
+document. Historical Topic and frontend reports remain time-point snapshots.
 
 ## 6. Final Audit Judgment
 
 The product is backend-complete, frontend-complete for the intended workbench
-scope, and locally end-to-end demonstrable with a real release-eligible record.
-It is not yet a production release. The immediate next step is evidence commit,
-PR/CI and merged-main replay closure, followed by the outstanding
-load, soak, DR, real Provider and production operations gates.
+scope, and reproducible from protected main with a real release-eligible record.
+It is not yet a production release. After this evidence-only PR, the next product
+iteration is additive registration/account management and three-language support,
+followed by a new mainline replay and the outstanding load, soak, DR, sealed
+Provider and production operations gates.

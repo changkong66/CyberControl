@@ -1,18 +1,20 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-20T07:35:36.3871908Z",
-  "state": "SOURCE_COMMITTED",
-  "formal_release_state": "PENDING_PR_REMOTE_CI_AND_MAINLINE_REPLAY",
+  "generated_at_utc": "2026-07-20T09:08:44.9021780Z",
+  "state": "RELEASE_CANDIDATE",
+  "formal_release_state": "PENDING_PHASE7_FINAL_NONFUNCTIONAL_GATES",
   "baseline": {
-    "protected_main_sha": "d880c4b7549a512cf8ba91e8fd8f500513b099f9",
-    "protected_main_ci_run": 29676794168,
+    "protected_main_sha": "40c9a590614d3fb57011061fac02669d86946240",
+    "protected_main_ci_run": 29729849367,
     "protected_main_ci_jobs_successful": 8,
-    "working_branch": "codex/system-acceptance-release-eligible",
-    "working_head_sha": "8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89",
+    "merged_pr": 25,
+    "merged_pr_url": "https://github.com/changkong66/CyberControl/pull/25",
+    "working_branch": "codex/system-acceptance-mainline-evidence",
+    "working_head_sha": "40c9a590614d3fb57011061fac02669d86946240",
     "implementation_commit_sha": "095ff8eba0dddfa47d14ae723d869937826484f1",
     "test_commit_sha": "b389fed1ca39d80439acd9fb518680631987297e",
     "release_volume_commit_sha": "8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89",
-    "working_tree_clean": true,
+    "working_tree_clean": false,
     "remote_ci_covers_working_tree": false
   },
   "docker_migration": {
@@ -28,21 +30,51 @@
     "isolated_release_volume_empty_check": "passed_before_immutable_replay",
     "isolated_release_volume_used_by_replay": true
   },
+  "mainline_replay": {
+    "passed": true,
+    "evidence_path": "docs/system-acceptance/evidence/release-eligible-mainline.json",
+    "source_commit_sha": "40c9a590614d3fb57011061fac02669d86946240",
+    "source_tree_sha": "d898d2c9c9005bb011aa0464453787c370d2d7b4",
+    "compose_config_sha256": "a56f83de9c5071ef48c6e4cb088a2f79c948351435b6eba11d7716026985e55",
+    "postgres_volume": "cybercontrol_release_postgres",
+    "runtime_image_ids": {
+      "backend": "sha256:3c5a80254204c422d659dfdcf187257b2102e98f6f0b3807e8b5c402e52f6dea",
+      "frontend": "sha256:2502b976d1a4e37be17fb046102eb98308a74d9a7da8c33b524f5836058b280e",
+      "mock_provider": "sha256:d5b17d3f2efbdb5a05a3343df5456fa8fdf50074bb3687e8faa59d2a007303ff"
+    },
+    "candidate_id": "b6b48f47-d7eb-54fb-810f-8edc821e16c2",
+    "verification_id": "4107ee7a-69b7-5789-8cbd-6a8de75f6f06",
+    "report_id": "d0ba0bd7-36fe-55d2-a8f6-cfaa6f5e6f02",
+    "authorization_id": "95352684-89d8-500a-a374-51bcb3d92e61",
+    "publication_batch_id": "3fed024a-8627-5b84-ab30-1b8261b2e247",
+    "public_event_id": "acb34f23-f2b8-51be-a897-543a9fe2674b",
+    "final_state": "RELEASED",
+    "claim_count": 10,
+    "tenant_tables": 68,
+    "forced_rls_tables": 68,
+    "audit_chain_breaks": 0,
+    "outbox_dead": 0,
+    "outbox_open": 0,
+    "foreign_tenant_visible_verifications": 0,
+    "same_key_replay_idempotent": true,
+    "changed_replay_http_status": 409,
+    "authenticated_sse_replay": true
+  },
   "clean_volume_acceptance": {
     "passed": true,
-    "evidence_path": "docs/system-acceptance/evidence/release-eligible-immutable-source.json",
-    "source_commit_sha": "8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89",
-    "source_tree_sha": "45ab301b75c764f866ac376d2d181d15d86faa2d",
+    "evidence_path": "docs/system-acceptance/evidence/release-eligible-mainline.json",
+    "source_commit_sha": "40c9a590614d3fb57011061fac02669d86946240",
+    "source_tree_sha": "d898d2c9c9005bb011aa0464453787c370d2d7b4",
     "require_clean_source": true,
     "clean_at_start": true,
     "postgres_volume": "cybercontrol_release_postgres",
-    "compose_config_sha256": "62bcce826ad654884b52c05ce881954dd60ccc7f5dc49f2ad67e121390bf0741",
+    "compose_config_sha256": "a56f83de9c5071ef48c6e4cb088a2f79c948351435b6eba11d7716026985e55",
     "uv_lock_sha256": "3254ba70e5484cd795f7635025d5550a7e70b10797a9b4b811267076ed08bbb3",
     "pnpm_lock_sha256": "aa6245402301eea803783e0f23691aee1b1c792d26f6d564f9e1d4e14e2128ab",
     "runtime_image_ids": {
-      "backend": "sha256:dc0839825a13bc4eb6ba0837572059471ad159d48bf57c534e03438e841d5a1f",
-      "frontend": "sha256:9015b822294ff61507f34aa1effd6d5eb04caf17f313ebbce4b09ab683afe98e",
-      "mock_provider": "sha256:bbba49ce183ae9e1f630f61e87bc437812b3d8d82d115816dc4c999920319d53"
+      "backend": "sha256:3c5a80254204c422d659dfdcf187257b2102e98f6f0b3807e8b5c402e52f6dea",
+      "frontend": "sha256:2502b976d1a4e37be17fb046102eb98308a74d9a7da8c33b524f5836058b280e",
+      "mock_provider": "sha256:d5b17d3f2efbdb5a05a3343df5456fa8fdf50074bb3687e8faa59d2a007303ff"
     },
     "alembic_head": "20260716_0009",
     "initial_business_counts": "0|0|0|0",
@@ -52,12 +84,12 @@
     "outbox_dead": 0,
     "outbox_open": 0,
     "foreign_tenant_visible_verifications": 0,
-    "topic3_candidate_id": "55b725a8-718e-58cd-a2fd-78facf15e1ee",
-    "topic4_verification_id": "2bf9eb01-87b3-5f1e-8828-a45506ca6c36",
-    "topic4_report_id": "0371e0d7-5017-5101-bbb1-0bec00de237b",
-    "c12_authorization_id": "6f7c7b8c-f29a-55e9-aa8e-0666976ed81b",
-    "publication_batch_id": "9dcd6604-108a-542b-9aca-70ba50bf7702",
-    "public_event_id": "e6737dc9-193d-5321-818c-95604fe76a46",
+    "topic3_candidate_id": "b6b48f47-d7eb-54fb-810f-8edc821e16c2",
+    "topic4_verification_id": "4107ee7a-69b7-5789-8cbd-6a8de75f6f06",
+    "topic4_report_id": "d0ba0bd7-36fe-55d2-a8f6-cfaa6f5e6f02",
+    "c12_authorization_id": "95352684-89d8-500a-a374-51bcb3d92e61",
+    "publication_batch_id": "3fed024a-8627-5b84-ab30-1b8261b2e247",
+    "public_event_id": "acb34f23-f2b8-51be-a897-543a9fe2674b",
     "final_state": "RELEASED",
     "same_key_replay_idempotent": true,
     "changed_replay_http_status": 409,
@@ -114,8 +146,7 @@
     "unexpected_failed_requests": 0
   },
   "blocking_items": [
-    "Push a PR and obtain all eight Release Quality Gates jobs on the current patch.",
-    "Squash merge to protected main and replay clean-volume acceptance from the merged commit.",
-    "Complete the remaining product-level soak, 2000-SSE, disaster-recovery, sealed-provider and production-deployment gates."
+    "Complete the remaining product-level 2000-SSE, minimum 8-hour soak, disaster-recovery, sealed-provider and production-deployment gates.",
+    "Complete WCAG, cross-browser and PII lifecycle acceptance before marking Phase 7 SYSTEM_ACCEPTED."
   ]
 }
