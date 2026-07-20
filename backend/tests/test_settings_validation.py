@@ -37,6 +37,15 @@ from liyans.core.settings import Settings
         ({"provider_http_timeout_seconds": 0}, "must be positive"),
         ({"provider_max_connections": 0}, "between one and 1024"),
         ({"oidc_clock_skew_seconds": 0}, "OIDC timing settings must be positive"),
+        (
+            {"keycloak_admin_base_url": "http://localhost:8080"},
+            "URL and secret must be configured together",
+        ),
+        ({"identity_encryption_secret": "short"}, "at least 32 bytes"),
+        (
+            {"registration_reconciliation_claim_lease_seconds": 0},
+            "identity service timing settings must be positive",
+        ),
     ],
 )
 def test_settings_reject_invalid_runtime_boundaries(
@@ -118,6 +127,72 @@ def test_production_requires_an_external_cursor_secret(
             },
             "requires configured providers: xfyun_code",
         ),
+        (
+            {"registration_enabled": True},
+            "production identity runtime requires a Keycloak Admin API secret",
+        ),
+        (
+            {
+                "registration_enabled": True,
+                "keycloak_admin_base_url": "http://identity.test",
+                "keycloak_admin_client_secret": "external-admin-secret",
+            },
+            "Keycloak Admin API must use HTTPS",
+        ),
+        (
+            {
+                "registration_enabled": True,
+                "keycloak_admin_base_url": "https://identity.test",
+                "keycloak_admin_client_secret": "external-admin-secret",
+            },
+            "cannot use the development fallback",
+        ),
+        (
+            {
+                "registration_enabled": True,
+                "keycloak_admin_base_url": "https://identity.test",
+                "keycloak_admin_client_secret": "external-admin-secret",
+                "registration_allow_development_fallback": False,
+            },
+            "cannot enable the fixture inbox",
+        ),
+        (
+            {
+                "registration_enabled": True,
+                "keycloak_admin_base_url": "https://identity.test",
+                "keycloak_admin_client_secret": "external-admin-secret",
+                "registration_allow_development_fallback": False,
+                "registration_fixture_inbox_enabled": False,
+            },
+            "requires external identity secrets",
+        ),
+        (
+            {
+                "registration_enabled": True,
+                "keycloak_admin_base_url": "https://identity.test",
+                "keycloak_admin_client_secret": "external-admin-secret",
+                "registration_allow_development_fallback": False,
+                "registration_fixture_inbox_enabled": False,
+                "identity_encryption_secret": "external-encryption-secret-at-least-32-bytes",
+                "identity_lookup_pepper": "external-lookup-pepper-at-least-32-bytes",
+                "verification_code_pepper": "external-code-pepper-at-least-32-bytes",
+            },
+            "requires an external invitation secret",
+        ),
+        (
+            {
+                "registration_enabled": True,
+                "keycloak_admin_base_url": "https://identity.test",
+                "keycloak_admin_client_secret": "external-admin-secret",
+                "registration_allow_development_fallback": False,
+                "registration_fixture_inbox_enabled": False,
+                "registration_invitation_secret": "external-invitation-secret-at-least-32-bytes",
+                "identity_encryption_secret": "external-encryption-secret-at-least-32-bytes",
+                "identity_lookup_pepper": "external-lookup-pepper-at-least-32-bytes",
+                "verification_code_pepper": "external-code-pepper-at-least-32-bytes",
+            },
+            "requires the reconciliation catalog URL",
+        ),
     ],
 )
 def test_production_security_dependencies_fail_closed(
@@ -128,3 +203,27 @@ def test_production_security_dependencies_fail_closed(
     monkeypatch.setenv("LIYAN_SSE_CURSOR_SECRET", "x" * 32)
     with pytest.raises(ValidationError, match=message):
         Settings(_env_file=None, **production_settings(**overrides))
+
+
+def test_production_identity_runtime_accepts_only_external_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LIYAN_SSE_CURSOR_SECRET", "x" * 32)
+    settings = Settings(
+        _env_file=None,
+        **production_settings(
+            registration_enabled=True,
+            keycloak_admin_base_url="https://identity.test",
+            keycloak_admin_client_secret="external-admin-secret",
+            registration_allow_development_fallback=False,
+            registration_fixture_inbox_enabled=False,
+            registration_invitation_secret="external-invitation-secret-at-least-32-bytes",
+            identity_encryption_secret="external-encryption-secret-at-least-32-bytes",
+            identity_lookup_pepper="external-lookup-pepper-at-least-32-bytes",
+            verification_code_pepper="external-code-pepper-at-least-32-bytes",
+            identity_reconciler_database_url=(
+                "postgresql+asyncpg://identity-reconciler@database/liyans"
+            ),
+        ),
+    )
+    assert settings.registration_enabled is True

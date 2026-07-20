@@ -17,6 +17,7 @@ from liyans.infrastructure.database import (
 RUNTIME_URL = os.getenv("LIYAN_TEST_DATABASE_URL")
 MIGRATION_URL = os.getenv("LIYAN_TEST_MIGRATION_DATABASE_URL")
 DISPATCHER_URL = os.getenv("LIYAN_TEST_DISPATCHER_DATABASE_URL")
+RECONCILER_URL = os.getenv("LIYAN_TEST_RECONCILER_DATABASE_URL")
 
 
 async def assert_restricted_role(
@@ -39,8 +40,15 @@ async def assert_restricted_role(
 async def postgres_runtime():
     if not RUNTIME_URL or not MIGRATION_URL:
         pytest.skip("PostgreSQL integration URLs are not configured")
-    runtime = DatabaseSessionManager(create_database_engine(Settings(database_url=RUNTIME_URL)))
-    migrator = DatabaseSessionManager(create_database_engine(Settings(database_url=MIGRATION_URL)))
+    integration_settings = {
+        "database_pool_timeout_seconds": 60,
+    }
+    runtime = DatabaseSessionManager(
+        create_database_engine(Settings(database_url=RUNTIME_URL, **integration_settings))
+    )
+    migrator = DatabaseSessionManager(
+        create_database_engine(Settings(database_url=MIGRATION_URL, **integration_settings))
+    )
     tenant_id = f"it-{uuid4().hex[:24]}"
     context = TenantContext(
         tenant_id=tenant_id,
@@ -94,3 +102,21 @@ async def postgres_dispatcher(postgres_runtime):
         yield dispatcher
     finally:
         await dispatcher.close()
+
+
+@pytest.fixture
+async def postgres_reconciler(postgres_runtime):
+    del postgres_runtime
+    if not RECONCILER_URL:
+        pytest.skip("PostgreSQL reconciler integration URL is not configured")
+    reconciler = DatabaseSessionManager(
+        create_database_engine(
+            Settings(database_url=RECONCILER_URL),
+            application_name="liyans-integration-identity-reconciler",
+        )
+    )
+    try:
+        await assert_restricted_role(reconciler, label="identity reconciler")
+        yield reconciler
+    finally:
+        await reconciler.close()
