@@ -7,6 +7,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-admin-only
       KC_HEALTH_ENABLED: "true"
       KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HOSTNAME_STRICT: "false"
     ports:
       - "8080:8080"
@@ -25,6 +26,22 @@ services:
       retries: 30
       start_period: 20s
 
+  keycloak-config:
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0
+    entrypoint: ["/bin/bash", "/scripts/configure-user-profile.sh"]
+    network_mode: "service:keycloak"
+    environment:
+      KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME: local-admin
+      KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD: local-admin-only
+      KEYCLOAK_ADMIN_SERVER_URL: http://127.0.0.1:8080
+    volumes:
+      - ./keycloak/configure-user-profile.sh:/scripts/configure-user-profile.sh:ro
+      - ./keycloak/user-profile.json:/config/user-profile.json:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    restart: "no"
+
   postgres:
     image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
     environment:
@@ -42,6 +59,26 @@ services:
       timeout: 3s
       retries: 20
 
+  postgres-role-bootstrap:
+    image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    environment:
+      PGPASSWORD: liyans-bootstrap-local-only
+    command:
+      [
+        "psql",
+        "--host=postgres",
+        "--username=liyans_bootstrap",
+        "--dbname=liyans",
+        "--set=ON_ERROR_STOP=1",
+        "--file=/scripts/001-runtime-role.sql",
+      ]
+    volumes:
+      - ./postgres/init/001-runtime-role.sql:/scripts/001-runtime-role.sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   migrate:
     build:
       context: ..
@@ -53,8 +90,8 @@ services:
       LIYAN_DATABASE_MIGRATION_URL: postgresql+asyncpg://liyans_migrator:liyans-migrator-local-only@postgres:5432/liyans
       LIYAN_SSE_CURSOR_SECRET: local-compose-cursor-secret-change-me-32
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-role-bootstrap:
+        condition: service_completed_successfully
     restart: "no"
 
   tenant-bind:
@@ -110,6 +147,7 @@ services:
       LIYAN_ENVIRONMENT: development
       LIYAN_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans
       LIYAN_OUTBOX_DISPATCHER_DATABASE_URL: postgresql+asyncpg://liyans_dispatcher:liyans-dispatcher-local-only@postgres:5432/liyans
+      LIYAN_IDENTITY_RECONCILER_DATABASE_URL: postgresql+asyncpg://liyans_identity_reconciler:liyans-identity-reconciler-local-only@postgres:5432/liyans
       LIYAN_OUTBOX_PUBLISHER_ENABLED: "true"
       LIYAN_SSE_NOTIFICATION_ENABLED: "true"
       LIYAN_SSE_NOTIFICATION_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans
@@ -123,6 +161,17 @@ services:
       LIYAN_OIDC_TENANT_CLAIM: tenant_id
       LIYAN_OIDC_ROLES_CLAIM: roles
       LIYAN_OIDC_SCOPE_CLAIM: permissions
+      LIYAN_KEYCLOAK_ADMIN_BASE_URL: http://keycloak:8080
+      LIYAN_KEYCLOAK_ADMIN_REALM: cybercontrol
+      LIYAN_KEYCLOAK_ADMIN_CLIENT_ID: cybercontrol-registration-admin
+      LIYAN_KEYCLOAK_ADMIN_CLIENT_SECRET: local-registration-admin-only
+      LIYAN_REGISTRATION_ENABLED: "true"
+      LIYAN_REGISTRATION_ALLOW_DEVELOPMENT_FALLBACK: "true"
+      LIYAN_REGISTRATION_DEVELOPMENT_TENANT_ID: demo-academy
+      LIYAN_REGISTRATION_FIXTURE_INBOX_ENABLED: "true"
+      LIYAN_IDENTITY_ENCRYPTION_SECRET: local-identity-encryption-secret-change-me-32
+      LIYAN_IDENTITY_LOOKUP_PEPPER: local-identity-lookup-pepper-change-me-32
+      LIYAN_VERIFICATION_CODE_PEPPER: local-verification-code-pepper-change-me-32
       LIYAN_PROVIDER_EXTERNAL_ENABLED: "true"
       LIYAN_SPARK_TEXT_ENDPOINT: http://mock-provider:8090/v1/responses
       LIYAN_SPARK_TEXT_API_KEY: local-fixture-provider-only
@@ -131,12 +180,12 @@ services:
       LIYAN_XFYUN_CODE_API_KEY: local-fixture-provider-only
       LIYAN_XFYUN_CODE_MODEL_ALIAS: local-fixture-code-v1
     ports:
-      - "${LIYAN_API_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${LIYAN_API_HOST_PORT:-8000}:8000"
     volumes:
       - liyans-runtime:/var/lib/liyans
     depends_on:
-      keycloak:
-        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
       tenant-bind:
         condition: service_completed_successfully
       mock-provider:

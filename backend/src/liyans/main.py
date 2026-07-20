@@ -11,6 +11,18 @@ from liyans import __version__
 from liyans.api.errors import install_exception_handlers
 from liyans.api.middleware import AuthenticationTenantMiddleware
 from liyans.api.routes.health import router as health_router
+from liyans.api.routes.identity import (
+    account_router as identity_account_router,
+)
+from liyans.api.routes.identity import (
+    public_router as identity_public_router,
+)
+from liyans.api.routes.identity import (
+    tenant_account_router as identity_tenant_account_router,
+)
+from liyans.api.routes.identity import (
+    tenant_registration_router as identity_tenant_registration_router,
+)
 from liyans.api.routes.metrics import router as metrics_router
 from liyans.api.routes.topic1 import router as topic1_router
 from liyans.api.routes.topic2 import router as topic2_router
@@ -21,6 +33,8 @@ from liyans.core.config import ConfigSnapshot, HotReloadingTomlConfig
 from liyans.core.provider_policy import ProviderPolicyRegistry
 from liyans.core.settings import get_settings
 from liyans.domains.compliance.service import ComplianceBuilderPolicy, ComplianceEvidenceService
+from liyans.domains.identity.keycloak import KeycloakAdminClient
+from liyans.domains.identity.service import IdentityReconciliationWorker, IdentityService
 from liyans.domains.knowledge.artifact_writer import KnowledgeArtifactWriter
 from liyans.domains.knowledge.postgres_repository import PostgresKnowledgeRepository
 from liyans.domains.knowledge.retrieval import HotReloadableRAGIndex
@@ -163,6 +177,44 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             database,
             claim_lease_seconds=settings.outbox_claim_lease_seconds,
         )
+        keycloak_admin = None
+        if settings.keycloak_admin_base_url and settings.keycloak_admin_client_secret:
+            keycloak_admin = KeycloakAdminClient(
+                base_url=settings.keycloak_admin_base_url,
+                realm=settings.keycloak_admin_realm,
+                client_id=settings.keycloak_admin_client_id,
+                client_secret=settings.keycloak_admin_client_secret.get_secret_value(),
+                timeout_seconds=settings.keycloak_admin_http_timeout_seconds,
+                max_response_bytes=settings.keycloak_admin_max_response_bytes,
+            )
+        identity_reconciliation_catalog = None
+        if settings.identity_reconciler_database_url:
+            identity_reconciliation_catalog = DatabaseSessionManager(
+                create_database_engine(
+                    settings,
+                    database_url=settings.identity_reconciler_database_url,
+                    application_name="liyans-identity-reconciler",
+                )
+            )
+            resources.push_async_callback(identity_reconciliation_catalog.close)
+        app.state.identity_reconciliation_catalog = identity_reconciliation_catalog
+        identity_service = IdentityService(
+            database,
+            app.state.outbox,
+            settings,
+            keycloak=keycloak_admin,
+            instance_id=settings.service_instance_id,
+            reconciliation_catalog=identity_reconciliation_catalog,
+        )
+        resources.push_async_callback(identity_service.close)
+        identity_reconciliation_worker = IdentityReconciliationWorker(
+            identity_service,
+            interval_seconds=settings.registration_reconciliation_interval_seconds,
+        )
+        await identity_reconciliation_worker.start()
+        resources.push_async_callback(identity_reconciliation_worker.close)
+        app.state.identity_service = identity_service
+        app.state.identity_reconciliation_worker = identity_reconciliation_worker
         topic1_repository = PostgresTopic1Repository()
         app.state.topic1_service = Topic1Service(
             database,
@@ -436,6 +488,10 @@ def create_app() -> FastAPI:
     install_exception_handlers(application)
     application.include_router(health_router)
     application.include_router(metrics_router)
+    application.include_router(identity_public_router)
+    application.include_router(identity_account_router)
+    application.include_router(identity_tenant_account_router)
+    application.include_router(identity_tenant_registration_router)
     application.include_router(topic1_router)
     application.include_router(topic2_router)
     application.include_router(topic3_router)

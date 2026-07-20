@@ -31,6 +31,17 @@ BEGIN
             NOBYPASSRLS
             PASSWORD 'liyans-dispatcher-local-only';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'liyans_identity_reconciler') THEN
+        CREATE ROLE liyans_identity_reconciler
+            LOGIN
+            NOSUPERUSER
+            NOCREATEDB
+            NOCREATEROLE
+            NOINHERIT
+            NOREPLICATION
+            NOBYPASSRLS
+            PASSWORD 'liyans-identity-reconciler-local-only';
+    END IF;
 END
 $$;
 
@@ -46,3 +57,5 @@ GRANT CONNECT ON DATABASE liyans TO liyans_app;
 GRANT USAGE ON SCHEMA public TO liyans_app;
 GRANT CONNECT ON DATABASE liyans TO liyans_dispatcher;
 GRANT USAGE ON SCHEMA public TO liyans_dispatcher;
+GRANT CONNECT ON DATABASE liyans TO liyans_identity_reconciler;
+GRANT USAGE ON SCHEMA public TO liyans_identity_reconciler;

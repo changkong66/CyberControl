@@ -5,12 +5,16 @@ import secrets
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPOSITORY_ROOT = Path(
     os.getenv("LIYAN_REPOSITORY_ROOT", str(Path(__file__).resolve().parents[4]))
 ).resolve()
+DEVELOPMENT_REGISTRATION_INVITATION_SECRET = "local-registration-invitation-secret-change-me-32"
+DEVELOPMENT_IDENTITY_ENCRYPTION_SECRET = "local-identity-encryption-secret-change-me-32"
+DEVELOPMENT_IDENTITY_LOOKUP_PEPPER = "local-identity-lookup-pepper-change-me-32"
+DEVELOPMENT_VERIFICATION_CODE_PEPPER = "local-verification-code-pepper-change-me-32"
 
 
 class Settings(BaseSettings):
@@ -26,6 +30,7 @@ class Settings(BaseSettings):
     )
     database_migration_url: str | None = None
     outbox_dispatcher_database_url: str | None = None
+    identity_reconciler_database_url: str | None = None
     database_pool_size: int = 10
     database_max_overflow: int = 20
     database_pool_timeout_seconds: float = 10.0
@@ -62,6 +67,41 @@ class Settings(BaseSettings):
     oidc_max_token_lifetime_seconds: float = 3600
     oidc_jwks_cache_ttl_seconds: float = 300
     oidc_http_timeout_seconds: float = 3
+    keycloak_admin_base_url: str | None = None
+    keycloak_admin_realm: str = "cybercontrol"
+    keycloak_admin_client_id: str = "cybercontrol-registration-admin"
+    keycloak_admin_client_secret: SecretStr | None = Field(default=None, repr=False)
+    keycloak_admin_http_timeout_seconds: float = 5
+    keycloak_admin_max_response_bytes: int = 512 * 1024
+    registration_enabled: bool = False
+    registration_development_tenant_id: str = "demo-academy"
+    registration_allow_development_fallback: bool = True
+    registration_invitation_secret: SecretStr | None = Field(
+        default=SecretStr(DEVELOPMENT_REGISTRATION_INVITATION_SECRET),
+        repr=False,
+    )
+    registration_invitation_issuer: str = "cybercontrol-registration"
+    registration_invitation_audience: str = "cybercontrol-registration"
+    identity_encryption_secret: SecretStr = Field(
+        default=SecretStr(DEVELOPMENT_IDENTITY_ENCRYPTION_SECRET),
+        repr=False,
+    )
+    identity_lookup_pepper: SecretStr = Field(
+        default=SecretStr(DEVELOPMENT_IDENTITY_LOOKUP_PEPPER),
+        repr=False,
+    )
+    verification_code_pepper: SecretStr = Field(
+        default=SecretStr(DEVELOPMENT_VERIFICATION_CODE_PEPPER),
+        repr=False,
+    )
+    registration_challenge_ttl_seconds: int = 300
+    registration_challenge_cooldown_seconds: int = 60
+    registration_challenge_max_attempts: int = 5
+    registration_rate_limit_window_seconds: int = 3600
+    registration_rate_limit_max_requests: int = 10
+    registration_fixture_inbox_enabled: bool = True
+    registration_reconciliation_interval_seconds: float = 30
+    registration_reconciliation_claim_lease_seconds: float = 120
     artifact_root: Path = REPOSITORY_ROOT / "var" / "artifacts"
     artifact_max_object_bytes: int = 64 * 1024 * 1024
     audit_log_path: Path = REPOSITORY_ROOT / "var" / "audit" / "events.jsonl"
@@ -111,6 +151,40 @@ class Settings(BaseSettings):
             <= 0
         ):
             raise ValueError("database retention and lease durations must be positive")
+        if (
+            min(
+                self.keycloak_admin_http_timeout_seconds,
+                self.registration_reconciliation_interval_seconds,
+                self.registration_reconciliation_claim_lease_seconds,
+            )
+            <= 0
+        ):
+            raise ValueError("identity service timing settings must be positive")
+        if not 16_384 <= self.keycloak_admin_max_response_bytes <= 16 * 1024 * 1024:
+            raise ValueError("keycloak_admin_max_response_bytes is outside the safe range")
+        if not 30 <= self.registration_challenge_ttl_seconds <= 3600:
+            raise ValueError("registration challenge TTL must be between 30 and 3600 seconds")
+        if not 1 <= self.registration_challenge_cooldown_seconds <= 3600:
+            raise ValueError("registration challenge cooldown is invalid")
+        if not 1 <= self.registration_challenge_max_attempts <= 20:
+            raise ValueError("registration challenge max attempts is invalid")
+        if not 1 <= self.registration_rate_limit_window_seconds <= 86_400:
+            raise ValueError("registration rate limit window is invalid")
+        if not 1 <= self.registration_rate_limit_max_requests <= 1000:
+            raise ValueError("registration rate limit maximum is invalid")
+        keycloak_values = (
+            self.keycloak_admin_base_url,
+            self.keycloak_admin_client_secret,
+        )
+        if any(keycloak_values) and not all(keycloak_values):
+            raise ValueError("Keycloak Admin API URL and secret must be configured together")
+        identity_secret_values = (
+            self.identity_encryption_secret.get_secret_value(),
+            self.identity_lookup_pepper.get_secret_value(),
+            self.verification_code_pepper.get_secret_value(),
+        )
+        if any(len(secret.encode("utf-8")) < 32 for secret in identity_secret_values):
+            raise ValueError("identity secrets must contain at least 32 bytes")
         if not 1 <= self.outbox_publisher_batch_size <= 1000:
             raise ValueError("outbox_publisher_batch_size must be between one and 1000")
         if (
@@ -145,6 +219,47 @@ class Settings(BaseSettings):
             raise ValueError("OIDC issuer, audience, and JWKS URL must be configured together")
         if self.environment == "production" and not all(oidc_values):
             raise ValueError("production requires OIDC issuer, audience, and JWKS URL")
+        identity_runtime_configured = self.registration_enabled or all(keycloak_values)
+        if self.environment == "production" and identity_runtime_configured:
+            if not all(keycloak_values):
+                raise ValueError("production identity runtime requires a Keycloak Admin API secret")
+            if not self.keycloak_admin_base_url.startswith("https://"):
+                raise ValueError("production Keycloak Admin API must use HTTPS")
+            if self.registration_allow_development_fallback:
+                raise ValueError("production identity runtime cannot use the development fallback")
+            if self.registration_fixture_inbox_enabled:
+                raise ValueError("production identity runtime cannot enable the fixture inbox")
+            development_identity_secrets = (
+                DEVELOPMENT_IDENTITY_ENCRYPTION_SECRET,
+                DEVELOPMENT_IDENTITY_LOOKUP_PEPPER,
+                DEVELOPMENT_VERIFICATION_CODE_PEPPER,
+            )
+            if any(
+                actual == development
+                for actual, development in zip(
+                    identity_secret_values,
+                    development_identity_secrets,
+                    strict=True,
+                )
+            ):
+                raise ValueError("production identity runtime requires external identity secrets")
+            if self.registration_enabled:
+                invitation_secret = (
+                    self.registration_invitation_secret.get_secret_value()
+                    if self.registration_invitation_secret is not None
+                    else ""
+                )
+                if (
+                    len(invitation_secret.encode("utf-8")) < 32
+                    or invitation_secret == DEVELOPMENT_REGISTRATION_INVITATION_SECRET
+                ):
+                    raise ValueError(
+                        "production registration requires an external invitation secret"
+                    )
+            if not self.identity_reconciler_database_url:
+                raise ValueError(
+                    "production identity runtime requires the reconciliation catalog URL"
+                )
         allowed_algorithms = {"RS256", "RS384", "RS512", "ES256", "ES384"}
         if not self.oidc_algorithms or not set(self.oidc_algorithms) <= allowed_algorithms:
             raise ValueError("oidc_algorithms contains an unsupported signing algorithm")

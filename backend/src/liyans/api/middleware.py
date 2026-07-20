@@ -25,7 +25,10 @@ FORBIDDEN_IDENTITY_HEADERS = frozenset(
         "x-subject-ref",
         "x-user-id",
         "x-roles",
+        "x-role",
         "x-scopes",
+        "x-scope",
+        "x-permissions",
         "x-auth-request-user",
         "x-auth-request-groups",
     }
@@ -55,6 +58,14 @@ class AuthenticationTenantMiddleware(BaseHTTPMiddleware):
             trace_id = secrets.token_hex(16)
         request.state.trace_id = trace_id
 
+        if any(header in request.headers for header in FORBIDDEN_IDENTITY_HEADERS):
+            raise LiyanError(
+                ErrorCode.AUTH_IDENTITY_HEADER_FORBIDDEN,
+                "Client-controlled identity headers are forbidden.",
+                category=ErrorCategory.AUTH,
+                status_code=400,
+            )
+
         if not request.url.path.startswith("/internal/"):
             token = set_message_trace(MessageTraceContext(trace_id, None, None, None))
             try:
@@ -63,14 +74,6 @@ class AuthenticationTenantMiddleware(BaseHTTPMiddleware):
                 reset_message_trace(token)
             response.headers["x-trace-id"] = trace_id
             return response
-
-        if any(header in request.headers for header in FORBIDDEN_IDENTITY_HEADERS):
-            raise LiyanError(
-                ErrorCode.AUTH_IDENTITY_HEADER_FORBIDDEN,
-                "Client-controlled identity headers are forbidden.",
-                category=ErrorCategory.AUTH,
-                status_code=400,
-            )
 
         token = self._bearer_token(request)
         verifier = getattr(request.app.state, "token_verifier", None)

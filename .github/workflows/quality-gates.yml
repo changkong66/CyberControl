@@ -112,6 +112,11 @@ jobs:
       LIYAN_TEST_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@127.0.0.1:5432/liyans
       LIYAN_TEST_MIGRATION_DATABASE_URL: postgresql+asyncpg://liyans_migrator:liyans-migrator-local-only@127.0.0.1:5432/liyans
       LIYAN_TEST_DISPATCHER_DATABASE_URL: postgresql+asyncpg://liyans_dispatcher:liyans-dispatcher-local-only@127.0.0.1:5432/liyans
+      LIYAN_TEST_RECONCILER_DATABASE_URL: postgresql+asyncpg://liyans_identity_reconciler:liyans-identity-reconciler-local-only@127.0.0.1:5432/liyans
+      LIYAN_TEST_KEYCLOAK_BASE_URL: http://127.0.0.1:8080
+      LIYAN_TEST_KEYCLOAK_REALM: cybercontrol
+      LIYAN_TEST_KEYCLOAK_ADMIN_CLIENT_ID: cybercontrol-registration-admin
+      LIYAN_TEST_KEYCLOAK_ADMIN_CLIENT_SECRET: local-registration-admin-only
       LIYAN_SSE_CURSOR_SECRET: ci-postgres-cursor-secret-at-least-32-bytes
     steps:
       - name: Check out immutable source
@@ -137,6 +142,44 @@ jobs:
           docker exec -i "$POSTGRES_CONTAINER"
           psql --set ON_ERROR_STOP=1 --username liyans_bootstrap --dbname liyans
           < infra/postgres/init/001-runtime-role.sql
+      - name: Start real Keycloak identity integration service
+        run: |
+          docker run --detach --name cybercontrol-keycloak-it \
+            --publish 8080:8080 --publish 9000:9000 \
+            --env KC_BOOTSTRAP_ADMIN_USERNAME=local-admin \
+            --env KC_BOOTSTRAP_ADMIN_PASSWORD=local-admin-only \
+            --env KC_HEALTH_ENABLED=true \
+            --env KC_HOSTNAME=http://localhost:8080 \
+            --env KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true \
+            --volume "$PWD/infra/keycloak/cybercontrol-realm.json:/opt/keycloak/data/import/cybercontrol-realm.json:ro" \
+            quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0 \
+            start-dev --import-realm
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:9000/health/ready >/dev/null; then
+              break
+            fi
+            if ! docker inspect --format '{{.State.Running}}' cybercontrol-keycloak-it \
+              | grep --quiet true; then
+              docker logs cybercontrol-keycloak-it
+              exit 1
+            fi
+            sleep 3
+          done
+          curl --fail --silent http://127.0.0.1:9000/health/ready >/dev/null
+          docker cp infra/keycloak/user-profile.json \
+            cybercontrol-keycloak-it:/tmp/cybercontrol-user-profile.json
+          docker exec cybercontrol-keycloak-it \
+            /opt/keycloak/bin/kcadm.sh config credentials \
+            --config /tmp/kcadm.config \
+            --server http://127.0.0.1:8080 \
+            --realm master \
+            --user local-admin \
+            --password local-admin-only
+          docker exec cybercontrol-keycloak-it \
+            /opt/keycloak/bin/kcadm.sh update users/profile \
+            --config /tmp/kcadm.config \
+            -r cybercontrol \
+            -f /tmp/cybercontrol-user-profile.json
       - name: Verify migration upgrade, downgrade, and schema drift
         run: |
           uv run --frozen alembic -c backend/alembic.ini upgrade head
@@ -169,6 +212,9 @@ jobs:
             artifacts/coverage
           if-no-files-found: warn
           retention-days: 30
+      - name: Stop Keycloak integration service
+        if: ${{ always() }}
+        run: docker rm --force cybercontrol-keycloak-it || true
 
   go-contracts:
     name: Go contract compiler gate

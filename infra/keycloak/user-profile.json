@@ -1,0 +1,164 @@
+{
+  "attributes": [
+    {
+      "name": "username",
+      "displayName": "${username}",
+      "validations": {
+        "length": {
+          "min": 3,
+          "max": 255
+        },
+        "username-prohibited-characters": {},
+        "up-username-not-idn-homograph": {}
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "email",
+      "displayName": "${email}",
+      "validations": {
+        "email": {},
+        "length": {
+          "max": 255
+        }
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "firstName",
+      "displayName": "${firstName}",
+      "validations": {
+        "length": {
+          "max": 255
+        },
+        "person-name-prohibited-characters": {}
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "lastName",
+      "displayName": "${lastName}",
+      "validations": {
+        "length": {
+          "max": 255
+        },
+        "person-name-prohibited-characters": {}
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "tenant_id",
+      "displayName": "Tenant",
+      "validations": {
+        "length": {
+          "min": 3,
+          "max": 128
+        },
+        "pattern": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,126}[a-z0-9]$",
+          "error-message": "invalidTenant"
+        }
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "permissions",
+      "displayName": "Application permissions",
+      "validations": {
+        "length": {
+          "max": 8192
+        }
+      },
+      "permissions": {
+        "view": ["admin"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "registration_id",
+      "displayName": "Registration ID",
+      "validations": {
+        "length": {
+          "min": 36,
+          "max": 36
+        }
+      },
+      "permissions": {
+        "view": ["admin"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "preferred_locale",
+      "displayName": "Preferred locale",
+      "validations": {
+        "options": {
+          "options": ["zh-CN", "zh-TW", "en-US"]
+        }
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "login_channel",
+      "displayName": "Login channel",
+      "validations": {
+        "options": {
+          "options": ["EMAIL", "PHONE"]
+        }
+      },
+      "permissions": {
+        "view": ["admin"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    },
+    {
+      "name": "phone_number",
+      "displayName": "Phone number",
+      "validations": {
+        "pattern": {
+          "pattern": "^\\+[1-9][0-9]{7,14}$",
+          "error-message": "invalidPhone"
+        }
+      },
+      "permissions": {
+        "view": ["admin", "user"],
+        "edit": ["admin"]
+      },
+      "multivalued": false
+    }
+  ],
+  "groups": [
+    {
+      "name": "user-metadata",
+      "displayHeader": "User metadata",
+      "displayDescription": "CyberControl identity attributes"
+    }
+  ]
+}
