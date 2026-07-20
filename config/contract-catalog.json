@@ -1,6 +1,17 @@
 {
   "catalog_version": "1.0.0",
   "entries": [
+    {"schema_name":"identity.api-envelope.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"verification-challenge.request.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"verification-challenge.verify.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"verification-challenge.receipt.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"user-register-by-email.command.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"user-register-by-phone.command.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"registration.receipt.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"account.profile.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"account.admin-view.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"registration.status.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
+    {"schema_name":"identity.audit-entry.v1","owner":"identity-platform","status":"CODED_IDENTITY_V1"},
     {"schema_name":"topic1.api-envelope.v1","owner":"topic1","status":"CODED_TOPIC1_FROZEN"},
     {"schema_name":"topic1.course.v1","owner":"topic1","status":"CODED_TOPIC1_FROZEN"},
     {"schema_name":"topic1.knowledge-point.v1","owner":"topic1","status":"CODED_TOPIC1_FROZEN"},

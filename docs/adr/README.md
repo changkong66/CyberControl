@@ -15,3 +15,4 @@ Current records:
 - ADR-0008: test and release gates
 - ADR-0009: Topic 3 Envelope runtime semantics
 - ADR-0010: Topic 4 trusted evidence and server-derived release boundary
+- ADR-0011: Keycloak registration and account projection

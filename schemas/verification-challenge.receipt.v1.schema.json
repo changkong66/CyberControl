@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "IdentityChallengePurpose": {
+      "enum": [
+        "REGISTER",
+        "CHANGE_EMAIL",
+        "CHANGE_PHONE",
+        "RECOVERY"
+      ],
+      "title": "IdentityChallengePurpose",
+      "type": "string"
+    },
+    "IdentityChallengeState": {
+      "enum": [
+        "PENDING",
+        "VERIFIED",
+        "CONSUMED",
+        "EXPIRED",
+        "LOCKED"
+      ],
+      "title": "IdentityChallengeState",
+      "type": "string"
+    },
+    "IdentityContactChannel": {
+      "enum": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "title": "IdentityContactChannel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "verification-challenge.receipt.v1",
+      "default": "verification-challenge.receipt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "challenge_id": {
+      "format": "uuid",
+      "title": "Challenge Id",
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "#/$defs/IdentityContactChannel"
+    },
+    "purpose": {
+      "$ref": "#/$defs/IdentityChallengePurpose"
+    },
+    "state": {
+      "$ref": "#/$defs/IdentityChallengeState"
+    },
+    "delivery_hint": {
+      "maxLength": 320,
+      "minLength": 1,
+      "title": "Delivery Hint",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "resend_after_seconds": {
+      "maximum": 3600,
+      "minimum": 1,
+      "title": "Resend After Seconds",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "challenge_id",
+    "channel",
+    "purpose",
+    "state",
+    "delivery_hint",
+    "expires_at",
+    "resend_after_seconds"
+  ],
+  "title": "VerificationChallengeReceiptV1",
+  "type": "object"
+}

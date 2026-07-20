@@ -35,6 +35,41 @@ type AcceptanceGateResultV1 struct {
 	FailureCodes     []string            `json:"failure_codes,omitempty"`
 }
 
+type AccountAdminViewV1 struct {
+	SchemaVersion      *string               `json:"schema_version,omitempty"`
+	AccountId          UUID                  `json:"account_id"`
+	TenantId           string                `json:"tenant_id"`
+	SubjectRef         string                `json:"subject_ref"`
+	DisplayName        string                `json:"display_name"`
+	PreferredLocale    string                `json:"preferred_locale"`
+	EmailHint          *string               `json:"email_hint,omitempty"`
+	EmailVerified      bool                  `json:"email_verified"`
+	PhoneHint          *string               `json:"phone_hint,omitempty"`
+	PhoneVerified      bool                  `json:"phone_verified"`
+	Status             IdentityAccountStatus `json:"status"`
+	ProfileVersion     int64                 `json:"profile_version"`
+	CreatedAt          DateTime              `json:"created_at"`
+	UpdatedAt          DateTime              `json:"updated_at"`
+	DisabledReasonCode *string               `json:"disabled_reason_code,omitempty"`
+}
+
+type AccountProfileV1 struct {
+	SchemaVersion   *string               `json:"schema_version,omitempty"`
+	AccountId       UUID                  `json:"account_id"`
+	TenantId        string                `json:"tenant_id"`
+	SubjectRef      string                `json:"subject_ref"`
+	DisplayName     string                `json:"display_name"`
+	PreferredLocale string                `json:"preferred_locale"`
+	EmailHint       *string               `json:"email_hint,omitempty"`
+	EmailVerified   bool                  `json:"email_verified"`
+	PhoneHint       *string               `json:"phone_hint,omitempty"`
+	PhoneVerified   bool                  `json:"phone_verified"`
+	Status          IdentityAccountStatus `json:"status"`
+	ProfileVersion  int64                 `json:"profile_version"`
+	CreatedAt       DateTime              `json:"created_at"`
+	UpdatedAt       DateTime              `json:"updated_at"`
+}
+
 type AgentTaskState string
 
 const (
@@ -1159,6 +1194,73 @@ type HumanReviewTaskV1 struct {
 	NonWaivableFindingIds []UUID          `json:"non_waivable_finding_ids,omitempty"`
 }
 
+type IdentityAccountStatus string
+
+const (
+	IdentityAccountStatusACTIVE                 IdentityAccountStatus = "ACTIVE"
+	IdentityAccountStatusDISABLED               IdentityAccountStatus = "DISABLED"
+	IdentityAccountStatusRECONCILIATIONREQUIRED IdentityAccountStatus = "RECONCILIATION_REQUIRED"
+)
+
+type IdentityApiEnvelopeV1 struct {
+	SchemaVersion *string        `json:"schema_version,omitempty"`
+	RequestId     UUID           `json:"request_id"`
+	TraceId       string         `json:"trace_id"`
+	Data          map[string]any `json:"data"`
+}
+
+type IdentityAuditEntryV1 struct {
+	SchemaVersion *string        `json:"schema_version,omitempty"`
+	EventId       UUID           `json:"event_id"`
+	Sequence      int64          `json:"sequence"`
+	Action        string         `json:"action"`
+	Outcome       string         `json:"outcome"`
+	ActorRef      string         `json:"actor_ref"`
+	TargetRef     *string        `json:"target_ref,omitempty"`
+	TraceId       *string        `json:"trace_id,omitempty"`
+	Metadata      map[string]any `json:"metadata"`
+	OccurredAt    DateTime       `json:"occurred_at"`
+	PreviousHash  string         `json:"previous_hash"`
+	EventHash     string         `json:"event_hash"`
+	HashAlgorithm *string        `json:"hash_algorithm,omitempty"`
+}
+
+type IdentityChallengePurpose string
+
+const (
+	IdentityChallengePurposeREGISTER    IdentityChallengePurpose = "REGISTER"
+	IdentityChallengePurposeCHANGEEMAIL IdentityChallengePurpose = "CHANGE_EMAIL"
+	IdentityChallengePurposeCHANGEPHONE IdentityChallengePurpose = "CHANGE_PHONE"
+	IdentityChallengePurposeRECOVERY    IdentityChallengePurpose = "RECOVERY"
+)
+
+type IdentityChallengeState string
+
+const (
+	IdentityChallengeStatePENDING  IdentityChallengeState = "PENDING"
+	IdentityChallengeStateVERIFIED IdentityChallengeState = "VERIFIED"
+	IdentityChallengeStateCONSUMED IdentityChallengeState = "CONSUMED"
+	IdentityChallengeStateEXPIRED  IdentityChallengeState = "EXPIRED"
+	IdentityChallengeStateLOCKED   IdentityChallengeState = "LOCKED"
+)
+
+type IdentityContactChannel string
+
+const (
+	IdentityContactChannelEMAIL IdentityContactChannel = "EMAIL"
+	IdentityContactChannelPHONE IdentityContactChannel = "PHONE"
+)
+
+type IdentityRegistrationState string
+
+const (
+	IdentityRegistrationStateKEYCLOAKPENDING      IdentityRegistrationState = "KEYCLOAK_PENDING"
+	IdentityRegistrationStatePROJECTIONPENDING    IdentityRegistrationState = "PROJECTION_PENDING"
+	IdentityRegistrationStateCOMPLETED            IdentityRegistrationState = "COMPLETED"
+	IdentityRegistrationStateCOMPENSATIONREQUIRED IdentityRegistrationState = "COMPENSATION_REQUIRED"
+	IdentityRegistrationStateFAILED               IdentityRegistrationState = "FAILED"
+)
+
 type IndexBuildManifestV1 struct {
 	// Root trace propagated from Topic 3 ingestion.
 	TraceId string `json:"trace_id"`
@@ -1840,6 +1942,35 @@ type QuizVerificationResultV1 struct {
 	EvidenceRefIds           []UUID              `json:"evidence_ref_ids,omitempty"`
 	Verdict                  VerificationVerdict `json:"verdict"`
 	Confidence               float64             `json:"confidence"`
+}
+
+type RegistrationConsentV1 struct {
+	PrivacyPolicyVersion   string `json:"privacy_policy_version"`
+	TermsOfServiceVersion  string `json:"terms_of_service_version"`
+	PrivacyPolicyAccepted  bool   `json:"privacy_policy_accepted"`
+	TermsOfServiceAccepted bool   `json:"terms_of_service_accepted"`
+}
+
+type RegistrationReceiptV1 struct {
+	SchemaVersion   *string  `json:"schema_version,omitempty"`
+	RegistrationId  UUID     `json:"registration_id"`
+	AccountId       UUID     `json:"account_id"`
+	State           *string  `json:"state,omitempty"`
+	PreferredLocale string   `json:"preferred_locale"`
+	LoginRequired   *bool    `json:"login_required,omitempty"`
+	CreatedAt       DateTime `json:"created_at"`
+}
+
+type RegistrationStatusV1 struct {
+	SchemaVersion       *string                   `json:"schema_version,omitempty"`
+	RegistrationId      UUID                      `json:"registration_id"`
+	RegistrationVersion int64                     `json:"registration_version"`
+	State               IdentityRegistrationState `json:"state"`
+	Channel             IdentityContactChannel    `json:"channel"`
+	AccountId           *UUID                     `json:"account_id,omitempty"`
+	FailureCode         *string                   `json:"failure_code,omitempty"`
+	RecordSha256        string                    `json:"record_sha256"`
+	CreatedAt           DateTime                  `json:"created_at"`
 }
 
 type ReleaseAuthorizationPayloadV1 struct {
@@ -3333,6 +3464,28 @@ type Topic3GenerationSessionV1 struct {
 	CreatedAt               DateTime                    `json:"created_at"`
 }
 
+type UserRegisterByEmailCommandV1 struct {
+	SchemaVersion   *string               `json:"schema_version,omitempty"`
+	ChallengeId     UUID                  `json:"challenge_id"`
+	Email           string                `json:"email"`
+	Password        string                `json:"password"`
+	DisplayName     string                `json:"display_name"`
+	PreferredLocale *string               `json:"preferred_locale,omitempty"`
+	Consent         RegistrationConsentV1 `json:"consent"`
+	InvitationToken *string               `json:"invitation_token,omitempty"`
+}
+
+type UserRegisterByPhoneCommandV1 struct {
+	SchemaVersion   *string               `json:"schema_version,omitempty"`
+	ChallengeId     UUID                  `json:"challenge_id"`
+	Phone           string                `json:"phone"`
+	Password        string                `json:"password"`
+	DisplayName     string                `json:"display_name"`
+	PreferredLocale *string               `json:"preferred_locale,omitempty"`
+	Consent         RegistrationConsentV1 `json:"consent"`
+	InvitationToken *string               `json:"invitation_token,omitempty"`
+}
+
 type VerificationAcceptedPayloadV1 struct {
 	// Root trace propagated from Topic 3 ingestion.
 	TraceId string `json:"trace_id"`
@@ -3384,6 +3537,32 @@ type VerificationBindingV1 struct {
 	ToolchainManifestVersion     string `json:"toolchain_manifest_version"`
 	ContentSecurityPolicyVersion string `json:"content_security_policy_version"`
 	LicensePolicyVersion         string `json:"license_policy_version"`
+}
+
+type VerificationChallengeReceiptV1 struct {
+	SchemaVersion      *string                  `json:"schema_version,omitempty"`
+	ChallengeId        UUID                     `json:"challenge_id"`
+	Channel            IdentityContactChannel   `json:"channel"`
+	Purpose            IdentityChallengePurpose `json:"purpose"`
+	State              IdentityChallengeState   `json:"state"`
+	DeliveryHint       string                   `json:"delivery_hint"`
+	ExpiresAt          DateTime                 `json:"expires_at"`
+	ResendAfterSeconds int64                    `json:"resend_after_seconds"`
+}
+
+type VerificationChallengeRequestV1 struct {
+	SchemaVersion   *string                  `json:"schema_version,omitempty"`
+	Channel         IdentityContactChannel   `json:"channel"`
+	Purpose         IdentityChallengePurpose `json:"purpose"`
+	Identifier      string                   `json:"identifier"`
+	InvitationToken *string                  `json:"invitation_token,omitempty"`
+}
+
+type VerificationChallengeVerifyV1 struct {
+	SchemaVersion   *string `json:"schema_version,omitempty"`
+	ChallengeId     UUID    `json:"challenge_id"`
+	Code            string  `json:"code"`
+	InvitationToken *string `json:"invitation_token,omitempty"`
 }
 
 type VerificationContextV1 struct {

@@ -585,6 +585,7 @@ source = { editable = "backend" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "liyans-contracts" },
@@ -621,6 +622,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.16,<2" },
     { name = "asyncpg", specifier = ">=0.30,<1" },
     { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.6,<8" },
+    { name = "cryptography", specifier = ">=44,<50" },
     { name = "cyclonedx-bom", marker = "extra == 'dev'", specifier = ">=7.1,<8" },
     { name = "faiss-cpu", marker = "extra == 'retrieval'", specifier = ">=1.9,<2" },
     { name = "fastapi", specifier = ">=0.139,<0.140" },

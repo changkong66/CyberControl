@@ -1,0 +1,51 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "registration.receipt.v1",
+      "default": "registration.receipt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "registration_id": {
+      "format": "uuid",
+      "title": "Registration Id",
+      "type": "string"
+    },
+    "account_id": {
+      "format": "uuid",
+      "title": "Account Id",
+      "type": "string"
+    },
+    "state": {
+      "const": "COMPLETED",
+      "default": "COMPLETED",
+      "title": "State",
+      "type": "string"
+    },
+    "preferred_locale": {
+      "pattern": "^(zh-CN|zh-TW|en-US)$",
+      "title": "Preferred Locale",
+      "type": "string"
+    },
+    "login_required": {
+      "const": true,
+      "default": true,
+      "title": "Login Required",
+      "type": "boolean"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "registration_id",
+    "account_id",
+    "preferred_locale",
+    "created_at"
+  ],
+  "title": "RegistrationReceiptV1",
+  "type": "object"
+}

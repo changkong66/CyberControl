@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "IdentityChallengePurpose": {
+      "enum": [
+        "REGISTER",
+        "CHANGE_EMAIL",
+        "CHANGE_PHONE",
+        "RECOVERY"
+      ],
+      "title": "IdentityChallengePurpose",
+      "type": "string"
+    },
+    "IdentityContactChannel": {
+      "enum": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "title": "IdentityContactChannel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "verification-challenge.request.v1",
+      "default": "verification-challenge.request.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "#/$defs/IdentityContactChannel"
+    },
+    "purpose": {
+      "$ref": "#/$defs/IdentityChallengePurpose"
+    },
+    "identifier": {
+      "maxLength": 320,
+      "minLength": 3,
+      "title": "Identifier",
+      "type": "string"
+    },
+    "invitation_token": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "minLength": 32,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Invitation Token"
+    }
+  },
+  "required": [
+    "channel",
+    "purpose",
+    "identifier"
+  ],
+  "title": "VerificationChallengeRequestV1",
+  "type": "object"
+}

@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "IdentityContactChannel": {
+      "enum": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "title": "IdentityContactChannel",
+      "type": "string"
+    },
+    "IdentityRegistrationState": {
+      "enum": [
+        "KEYCLOAK_PENDING",
+        "PROJECTION_PENDING",
+        "COMPLETED",
+        "COMPENSATION_REQUIRED",
+        "FAILED"
+      ],
+      "title": "IdentityRegistrationState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "registration.status.v1",
+      "default": "registration.status.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "registration_id": {
+      "format": "uuid",
+      "title": "Registration Id",
+      "type": "string"
+    },
+    "registration_version": {
+      "minimum": 1,
+      "title": "Registration Version",
+      "type": "integer"
+    },
+    "state": {
+      "$ref": "#/$defs/IdentityRegistrationState"
+    },
+    "channel": {
+      "$ref": "#/$defs/IdentityContactChannel"
+    },
+    "account_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Account Id"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Code"
+    },
+    "record_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Record Sha256",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "registration_id",
+    "registration_version",
+    "state",
+    "channel",
+    "record_sha256",
+    "created_at"
+  ],
+  "title": "RegistrationStatusV1",
+  "type": "object"
+}
