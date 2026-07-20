@@ -9,6 +9,8 @@ param(
 
     [switch]$RequireCleanSource,
 
+    [switch]$UseReleasePostgresVolume,
+
     [ValidatePattern('^https?://')]
     [string]$ApiBaseUrl = "http://localhost:8000",
 
@@ -26,6 +28,11 @@ Set-StrictMode -Version Latest
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $composeFile = Join-Path $root "infra\docker-compose.yml"
+$releaseComposeFile = Join-Path $root "infra\docker-compose.release.yml"
+$composeArguments = @("-p", $ProjectName, "-f", $composeFile)
+if ($UseReleasePostgresVolume) {
+    $composeArguments += @("-f", $releaseComposeFile)
+}
 $knowledgeScript = Join-Path $root "tools\topic4\bootstrap-release-eligible-knowledge.py"
 $sseVerifier = Join-Path $root "tools\topic4\verify-authenticated-sse.py"
 $bootstrapScript = Join-Path $root "tools\windows\bootstrap-frontend-demo.ps1"
@@ -42,7 +49,7 @@ $keycloak = $KeycloakBaseUrl.TrimEnd('/')
 function Invoke-DockerCompose {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
 
-    & docker compose -p $ProjectName -f $composeFile @Arguments
+    & docker compose @composeArguments @Arguments
     if ($LASTEXITCODE -ne 0) {
         throw "docker compose failed with exit code ${LASTEXITCODE}: $($Arguments -join ' ')"
     }
@@ -235,7 +242,22 @@ try {
         )
     }
 
-    $composeConfig = (& docker compose -p $ProjectName -f $composeFile config | Out-String)
+    if ($UseReleasePostgresVolume) {
+        if ($ResetVolumes) {
+            throw "ResetVolumes cannot be used with the protected external release PostgreSQL volume."
+        }
+        $releaseVolume = @(& docker volume inspect cybercontrol_release_postgres | ConvertFrom-Json)
+        if ($LASTEXITCODE -ne 0 -or $releaseVolume.Count -ne 1) {
+            throw "The external cybercontrol_release_postgres volume is unavailable."
+        }
+        $purpose = $releaseVolume[0].Labels.'com.cybercontrol.purpose'
+        $dataClass = $releaseVolume[0].Labels.'com.cybercontrol.data-class'
+        if ($purpose -ne "release-acceptance" -or $dataClass -ne "isolated-clean-postgres") {
+            throw "The external release PostgreSQL volume labels do not match the acceptance policy."
+        }
+    }
+
+    $composeConfig = (& docker compose @composeArguments config | Out-String)
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($composeConfig)) {
         throw "Unable to resolve the Docker Compose configuration for system acceptance."
     }
@@ -268,10 +290,10 @@ try {
     Invoke-DockerCompose -Arguments @("up", "--no-build", "-d")
     $readiness = Wait-HttpReady
 
-    $script:postgresContainer = (& docker compose -p $ProjectName -f $composeFile ps -q postgres).Trim()
-    $apiContainer = (& docker compose -p $ProjectName -f $composeFile ps -q api).Trim()
-    $frontendContainer = (& docker compose -p $ProjectName -f $composeFile ps -q frontend).Trim()
-    $providerContainer = (& docker compose -p $ProjectName -f $composeFile ps -q mock-provider).Trim()
+    $script:postgresContainer = (& docker compose @composeArguments ps -q postgres).Trim()
+    $apiContainer = (& docker compose @composeArguments ps -q api).Trim()
+    $frontendContainer = (& docker compose @composeArguments ps -q frontend).Trim()
+    $providerContainer = (& docker compose @composeArguments ps -q mock-provider).Trim()
     if (
         [string]::IsNullOrWhiteSpace($script:postgresContainer) -or
         [string]::IsNullOrWhiteSpace($apiContainer) -or
@@ -279,6 +301,19 @@ try {
         [string]::IsNullOrWhiteSpace($providerContainer)
     ) {
         throw "Compose did not return all required PostgreSQL, API, frontend, and Provider container IDs."
+    }
+    $postgresMounts = @((docker inspect $script:postgresContainer | ConvertFrom-Json)[0].Mounts)
+    $postgresDataMount = @(
+        $postgresMounts | Where-Object { $_.Destination -eq "/var/lib/postgresql/data" }
+    )
+    if ($postgresDataMount.Count -ne 1) {
+        throw "PostgreSQL must have exactly one persistent data mount."
+    }
+    if (
+        $UseReleasePostgresVolume -and
+        $postgresDataMount[0].Name -ne "cybercontrol_release_postgres"
+    ) {
+        throw "PostgreSQL is not mounted to the isolated release acceptance volume."
     }
     $runtimeImageIds = [ordered]@{
         backend = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()
@@ -622,12 +657,14 @@ where authorization_id='$($authorization.authorization_id)';
                 reset_volumes = [bool]$ResetVolumes
                 skip_build = [bool]$SkipBuild
                 require_clean_source = [bool]$RequireCleanSource
+                use_release_postgres_volume = [bool]$UseReleasePostgresVolume
                 api_base_url = $api
                 frontend_base_url = $frontend
                 keycloak_base_url = $keycloak
                 evidence_path = $evidenceFile
             }
             clean_volume_verified = $true
+            postgres_volume = [string]$postgresDataMount[0].Name
             alembic_head = $migrationHead
             initial_business_counts = $initialCounts
             api_ready = $readiness.api.status
