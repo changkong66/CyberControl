@@ -67,6 +67,72 @@ async def test_hot_config_rejects_invalid_candidate_without_swapping(tmp_path: P
     assert config.snapshot.digest == original.digest
 
 
+@pytest.mark.asyncio
+async def test_hot_config_lifecycle_and_rejection_listeners_are_bounded(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "providers.toml"
+    config_path.write_text(
+        'schema_version="provider-policy.v1"\npolicy_version="1.0.0"\ndefault_fail_closed=true\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="positive"):
+        HotReloadingTomlConfig(
+            config_path,
+            validator=ProviderPolicyRegistry.from_document,
+            poll_interval_seconds=0,
+        )
+
+    config = HotReloadingTomlConfig(
+        config_path,
+        validator=ProviderPolicyRegistry.from_document,
+        poll_interval_seconds=0.001,
+    )
+    with pytest.raises(RuntimeError, match="has not been loaded"):
+        _ = config.snapshot
+
+    await config.start()
+    task = config._task
+    await config.start()
+    assert config._task is task
+    await config.close()
+
+    observed: list[str] = []
+
+    def broken_listener(_path: Path, _error: Exception) -> None:
+        raise RuntimeError("listener failure")
+
+    async def closing_listener(path: Path, error: Exception) -> None:
+        observed.append(f"{path.name}:{type(error).__name__}")
+        config._closed = True
+
+    config.add_rejection_listener(broken_listener)
+    config.add_rejection_listener(closing_listener)
+    config_path.write_text("invalid = [", encoding="utf-8")
+    config._last_mtime_ns = 0
+    config._closed = False
+    await config._watch()
+    assert observed == ["providers.toml:TOMLDecodeError"]
+
+
+@pytest.mark.asyncio
+async def test_hot_config_watcher_tolerates_a_missing_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = HotReloadingTomlConfig(
+        tmp_path / "missing.toml",
+        validator=lambda _document: None,
+        poll_interval_seconds=0.001,
+    )
+
+    async def stop_after_sleep(_seconds: float) -> None:
+        config._closed = True
+
+    monkeypatch.setattr(asyncio, "sleep", stop_after_sleep)
+    await config._watch()
+
+
 def test_tenant_scope_denies_cross_tenant_access() -> None:
     context = TenantContext(
         tenant_id="tenant-a",

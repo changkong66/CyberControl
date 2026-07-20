@@ -378,7 +378,9 @@ def test_dispatch_plan_is_complete_acyclic_and_profile_bounded() -> None:
     for claim in claims:
         claim_items = [item for item in plan.items if item.claim_id == claim.claim_id]
         rag = next(item for item in claim_items if item.module == VerificationModule.C2_RAG)
-        vertical = next(
+        assert rag.timeout_ms == 8_000
+        assert rag.max_attempts == 2
+        evidence_consumers = [
             item
             for item in claim_items
             if item.module
@@ -388,9 +390,13 @@ def test_dispatch_plan_is_complete_acyclic_and_profile_bounded() -> None:
                 VerificationModule.C5_QUIZ,
                 VerificationModule.C6_CODE,
                 VerificationModule.C7_EXTENSION,
+                VerificationModule.C9_SECURITY,
+                VerificationModule.C10_PRIVACY,
+                VerificationModule.C11_COMPLIANCE,
             }
-        )
-        assert rag.dispatch_item_id in vertical.dependency_item_ids
+        ]
+        assert evidence_consumers
+        assert all(rag.dispatch_item_id in item.dependency_item_ids for item in evidence_consumers)
 
     first, second = plan.items[:2]
     cyclic = [
@@ -537,10 +543,7 @@ async def test_bounded_executor_retries_failure_and_skips_failed_dependencies() 
         deadline_at=datetime.now(UTC) + timedelta(seconds=5),
     )
 
-    assert {result.module for result in bundle.results} == {
-        VerificationModule.C9_SECURITY,
-        VerificationModule.C10_PRIVACY,
-    }
+    assert not bundle.results
     c2_failures = [
         run
         for run in bundle.run_snapshots
@@ -552,6 +555,8 @@ async def test_bounded_executor_retries_failure_and_skips_failed_dependencies() 
     }
     assert skipped_modules == {
         VerificationModule.C3_ACADEMIC,
+        VerificationModule.C9_SECURITY,
+        VerificationModule.C10_PRIVACY,
         VerificationModule.C11_COMPLIANCE,
     }
 
@@ -790,7 +795,7 @@ async def test_executor_configuration_timeout_and_unexpected_failure_boundaries(
 
     security_item = next(
         item for item in plan.items if item.module == VerificationModule.C9_SECURITY
-    ).model_copy(update={"timeout_ms": 100, "max_attempts": 1})
+    ).model_copy(update={"dependency_item_ids": [], "timeout_ms": 100, "max_attempts": 1})
     single_item_plan = plan.model_copy(update={"items": [security_item], "max_parallelism": 1})
     timeout_bundle = await BoundedModuleExecutor(
         {VerificationModule.C9_SECURITY: _SlowHandler()},
