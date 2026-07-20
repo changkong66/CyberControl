@@ -12,19 +12,121 @@ from liyans_contracts.topic4_c11 import ComplianceBuildProvenanceInputV1
 from test_topic4_c12_release import _authorization, _report
 from test_topic4_control_plane import TENANT_ID, TRACE_ID, _candidate
 
-from liyans.api.routes.topic4 import RevisionCommand, create_revision
+from liyans.api.routes.topic4 import RevisionCommand, create_revision, stream_public_events
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.domains.release.engine import ReleaseError
 from liyans.domains.verification.claim_extraction import DeterministicClaimExtractor
-from liyans.domains.verification.runtime import map_topic4_error
+from liyans.domains.verification.runtime import (
+    TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES,
+    map_topic4_error,
+)
 from liyans.infrastructure.security import AuthenticatedPrincipal
 from liyans.infrastructure.streaming.sse import (
     InMemorySSEReplayLog,
     ReplayCursorCodec,
     SSEBroker,
+    SSEEvent,
 )
 from liyans.main import create_app
+
+
+def test_topic4_internal_outbox_events_have_a_durable_runtime_sink() -> None:
+    assert set(TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES) == {
+        "topic4.knowledge.source_imported",
+        "topic4.knowledge.base_activated",
+        "topic4.knowledge.retrieval_completed",
+        "topic4.knowledge.index_self_healed",
+        "topic4.verification.accepted",
+        "topic4.verification.state_changed",
+        "topic4.verification.control_plane_prepared",
+        "topic4.verification.modules_recorded",
+        "topic4.verification.aggregated",
+        "topic4.verification.human_review_decided",
+    }
+    assert "topic4.publication.committed" not in TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES
+
+
+class _StreamBroker:
+    def __init__(self, events: list[SSEEvent | None]) -> None:
+        self.events = events
+        self.after_sequence: int | None = None
+
+    async def subscribe(self, _tenant_id: str, *, after_sequence: int | None = None):
+        self.after_sequence = after_sequence
+        for event in self.events:
+            yield event
+
+
+class _StreamRequest:
+    def __init__(self, broker: _StreamBroker, *, disconnected: bool = False) -> None:
+        self.app = SimpleNamespace(
+            state=SimpleNamespace(
+                sse_broker=broker,
+                sse_cursor_codec=ReplayCursorCodec(b"topic4-api-test-cursor-secret-32-bytes"),
+            )
+        )
+        self._disconnected = disconnected
+
+    async def is_disconnected(self) -> bool:
+        return self._disconnected
+
+
+@pytest.mark.asyncio
+async def test_topic4_sse_stream_restores_cursor_filters_and_heartbeats() -> None:
+    broker = _StreamBroker(
+        [
+            None,
+            SSEEvent(TENANT_ID, 5, "topic3.internal", {"ignored": True}, datetime.now(UTC)),
+            SSEEvent(
+                TENANT_ID,
+                6,
+                "topic4.publication.committed",
+                {"authorization_id": "authorization-1"},
+                datetime.now(UTC),
+            ),
+        ]
+    )
+    request = _StreamRequest(broker)
+    context = TenantContext(
+        tenant_id=TENANT_ID,
+        subject_ref="subject:topic4-api",
+        roles=frozenset(),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id=TRACE_ID,
+    )
+    cursor = request.app.state.sse_cursor_codec.encode(TENANT_ID, 4)
+
+    with tenant_scope(context):
+        response = await stream_public_events(request, cursor)  # type: ignore[arg-type]
+        body = b"".join([chunk async for chunk in response.body_iterator])
+
+    assert broker.after_sequence == 4
+    assert b": heartbeat\n\n" in body
+    assert b"event: topic4.publication.committed" in body
+    assert b"authorization-1" in body
+    assert b"topic3.internal" not in body
+    assert response.headers["x-accel-buffering"] == "no"
+
+
+@pytest.mark.asyncio
+async def test_topic4_sse_stream_stops_when_client_disconnects() -> None:
+    broker = _StreamBroker([SSEEvent(TENANT_ID, 0, "topic4.test", {"ok": True}, datetime.now(UTC))])
+    request = _StreamRequest(broker, disconnected=True)
+    context = TenantContext(
+        tenant_id=TENANT_ID,
+        subject_ref="subject:topic4-api",
+        roles=frozenset(),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id=TRACE_ID,
+    )
+
+    with tenant_scope(context):
+        response = await stream_public_events(request, None)  # type: ignore[arg-type]
+        body = b"".join([chunk async for chunk in response.body_iterator])
+
+    assert body == b""
+    assert broker.after_sequence is None
 
 
 class _Document:

@@ -1,0 +1,193 @@
+{
+    "schema_version":  "cybercontrol.system-acceptance-evidence.v1",
+    "generated_at":  "2026-07-20T06:35:19.6694334Z",
+    "git":  {
+                "branch":  "codex/system-acceptance-release-eligible",
+                "commit":  "8efdfb9b1cf7c7afb88ad43c55c67878acdd5e89",
+                "tree":  "45ab301b75c764f866ac376d2d181d15d86faa2d",
+                "require_clean_source":  true,
+                "clean_at_start":  true,
+                "dirty_files_at_start":  [
+
+                                         ],
+                "dirty_files":  [
+
+                                ]
+            },
+    "environment":  {
+                        "compose_project":  "cybercontrol-release-immutable",
+                        "compose_config_sha256":  "62bcce826ad654884b52c05ce881954dd60ccc7f5dc49f2ad67e121390bf0741",
+                        "uv_lock_sha256":  "3254ba70e5484cd795f7635025d5550a7e70b10797a9b4b811267076ed08bbb3",
+                        "pnpm_lock_sha256":  "aa6245402301eea803783e0f23691aee1b1c792d26f6d564f9e1d4e14e2128ab",
+                        "runtime_image_ids":  {
+                                                  "backend":  "sha256:dc0839825a13bc4eb6ba0837572059471ad159d48bf57c534e03438e841d5a1f",
+                                                  "frontend":  "sha256:9015b822294ff61507f34aa1effd6d5eb04caf17f313ebbce4b09ab683afe98e",
+                                                  "mock_provider":  "sha256:bbba49ce183ae9e1f630f61e87bc437812b3d8d82d115816dc4c999920319d53"
+                                              },
+                        "command":  {
+                                        "reset_volumes":  false,
+                                        "skip_build":  false,
+                                        "require_clean_source":  true,
+                                        "use_release_postgres_volume":  true,
+                                        "api_base_url":  "http://localhost:8000",
+                                        "frontend_base_url":  "http://localhost:5173",
+                                        "keycloak_base_url":  "http://localhost:8080",
+                                        "evidence_path":  "C:\\Users\\wch06\\Documents\\CyberControl\\docs\\system-acceptance\\evidence\\release-eligible-immutable-source.json"
+                                    },
+                        "clean_volume_verified":  true,
+                        "postgres_volume":  "cybercontrol_release_postgres",
+                        "alembic_head":  "20260716_0009",
+                        "initial_business_counts":  "0|0|0|0",
+                        "api_ready":  "ready",
+                        "frontend_ready":  "live",
+                        "oidc_issuer":  "http://localhost:8080/realms/cybercontrol",
+                        "external_provider_mode":  "local-fixture-only"
+                    },
+    "identity":  {
+                     "tenant_id":  "demo-academy",
+                     "learner_subject_ref":  "8c3b11e1-861a-44fc-afb1-5fb6499d9aa7",
+                     "reviewer_subject_ref":  "e2817392-bed3-4816-860e-570e52de7f7f",
+                     "reviewer_roles":  [
+                                            "reviewer"
+                                        ],
+                     "tokens_persisted":  false
+                 },
+    "topic1_topic2":  {
+                          "tenant_id":  "demo-academy",
+                          "learner_ref":  "8c3b11e1-861a-44fc-afb1-5fb6499d9aa7",
+                          "course_id":  "CRS_ATC_001",
+                          "generation_session_id":  null,
+                          "candidates":  [
+
+                                         ]
+                      },
+    "c2_knowledge":  {
+                         "active_index_version_id":  "d2ecf7e3-ce0f-5aa7-b3e1-42c248adfb19",
+                         "chunk_count":  1,
+                         "course_id":  "CRS_ATC_001",
+                         "graph_snapshot_id":  "03d3444d-1898-4ebc-ba21-b8444da25adc",
+                         "graph_snapshot_sha256":  "a9c1ebe069dbc0a48947b0106386c9b6a8f9453e4785f7ba038626c36aa0fdfc",
+                         "graph_snapshot_version":  1,
+                         "index_manifest_sha256":  "92d78bea6ce798e5815280ae811f2965181b2b7deffeba134e80c899fe5c3e7f",
+                         "index_state":  "READY",
+                         "knowledge_base_sha256":  "da01c6a76294aeaed42b6519164a7999c530bf89af61bfd544c80cd285e8d315",
+                         "knowledge_base_version":  "system-acceptance-2026.07.19.v3",
+                         "knowledge_base_version_id":  "d2ecf7e3-ce0f-5aa7-b3e1-42c248adfb19",
+                         "source_document_version_id":  "e0383bab-293c-5c1c-a2e0-d088c281f0f5",
+                         "source_sha256":  "2af21e049b5e460b56e96df31eb11640b635ca005e5645e00a989c6d72f49836",
+                         "target_kp_id":  "KP_ATC_202_LAPLACE_TRANSFORM",
+                         "tenant_id":  "demo-academy",
+                         "trace_id":  "3fecfef8ccba4203a124ed1db7fab0fe"
+                     },
+    "topic3":  {
+                   "generation_session_id":  "225580bb-0a85-4dec-ba66-5cb07c9afb3a",
+                   "state":  "COMPLETED",
+                   "candidate_id":  "55b725a8-718e-58cd-a2fd-78facf15e1ee",
+                   "candidate_version":  1,
+                   "candidate_sha256":  "a87c71e7698602c33bba999a4c42d17f7405dac08289aa681e71b42ec9ce1e77",
+                   "resource_type":  "Lecturer_Doc"
+               },
+    "topic4":  {
+                   "verification_id":  "2bf9eb01-87b3-5f1e-8828-a45506ca6c36",
+                   "state_before_release":  "RELEASE_PENDING",
+                   "state_after_release":  "RELEASED",
+                   "report_id":  "0371e0d7-5017-5101-bbb1-0bec00de237b",
+                   "report_sha256":  "2e71efd77feedc1840b34bfdf18c830371ab2be963b18bddcf9d2a7f444717ab",
+                   "decision":  "RELEASE",
+                   "claim_count":  10,
+                   "module_results":  [
+                                          {
+                                              "module":  "C10_PRIVACY",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C11_COMPLIANCE",
+                                              "verdict":  "NOT_APPLICABLE",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C2_RAG",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C3_ACADEMIC",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C9_SECURITY",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          }
+                                      ]
+               },
+    "c12":  {
+                "authorization_id":  "6f7c7b8c-f29a-55e9-aa8e-0666976ed81b",
+                "authorization_sha256":  "5e0fbb35cea40ba0f8db01976bad28f0bad0ed6b177f55ae737e1d1b919225a9",
+                "authorization_ttl_seconds":  300,
+                "one_time_use":  true,
+                "publication_batch_id":  "9dcd6604-108a-542b-9aca-70ba50bf7702",
+                "publication_batch_sha256":  "8f3c311e90b934ba968091206e916abc9efc94502617682946ab8a8696439ca0",
+                "public_artifact_sha256":  "6b6ccf8da06b84c6cd5f29329f8d9cc27bc0bd67e44922adeb282b821bdc86c5",
+                "public_event_id":  "e6737dc9-193d-5321-818c-95604fe76a46",
+                "public_event_sha256":  "4777622116f072b9410c9710a106a645068af5c90eaca172f8c48784a57ee4f4",
+                "same_key_replay_idempotent":  true,
+                "changed_replay_http_status":  409,
+                "history_record_count":  5
+            },
+    "sse":  {
+                "replay_event":  {
+                                     "sequence":  28,
+                                     "event_type":  "topic4.publication.committed",
+                                     "data":  {
+                                                  "payload":  {
+                                                                  "event_artifact":  {
+                                                                                         "sha256":  "6b77873bc644157ac39c0c52d819808da5e75dbcd972c3e339f2d12ad75498ac",
+                                                                                         "byte_size":  883,
+                                                                                         "created_at":  "2026-07-20T06:35:11.619110Z",
+                                                                                         "media_type":  "application/json",
+                                                                                         "object_key":  "c12/events/2bf9eb01-87b3-5f1e-8828-a45506ca6c36/6f7c7b8c-f29a-55e9-aa8e-0666976ed81b/6b77873bc644157ac39c0c52d819808da5e75dbcd972c3e339f2d12ad75498ac.json",
+                                                                                         "schema_version":  "artifact.object.ref.v1",
+                                                                                         "content_encoding":  "identity",
+                                                                                         "storage_namespace":  "verification-artifacts"
+                                                                                     },
+                                                                  "schema_version":  "topic4.publication.committed.v1",
+                                                                  "authorization_id":  "6f7c7b8c-f29a-55e9-aa8e-0666976ed81b",
+                                                                  "publication_batch_id":  "9dcd6604-108a-542b-9aca-70ba50bf7702"
+                                                              },
+                                                  "trace_id":  "1aef4f986ea8284ef31b8e01f5f5941a",
+                                                  "tenant_id":  "demo-academy",
+                                                  "envelope_id":  "26ff10f2-af7c-58ba-95d5-35eb5333d043",
+                                                  "partition_key":  "topic4:public:demo-academy:9dcd6604-108a-542b-9aca-70ba50bf7702",
+                                                  "schema_version":  "topic4.publication.sse.v1",
+                                                  "partition_sequence":  0
+                                              },
+                                     "emitted_at":  "2026-07-20T06:35:16.365927+00:00",
+                                     "cursor":  "ZGVtby1hY2FkZW15OjI4LmWGqFxgrvDP0TwC0ybUfA6pbnj5NECZpODmbKyaRuz-"
+                                 },
+                "authenticated_stream":  {
+                                             "authenticated":  true,
+                                             "event_id":  "ZGVtby1hY2FkZW15OjI4LmWGqFxgrvDP0TwC0ybUfA6pbnj5NECZpODmbKyaRuz-",
+                                             "event_type":  "topic4.publication.committed",
+                                             "publication_batch_id":  "9dcd6604-108a-542b-9aca-70ba50bf7702",
+                                             "replayed":  true
+                                         }
+            },
+    "database":  {
+                     "invariants":  {
+                                        "tenant_tables":  68,
+                                        "forced_rls_tables":  68,
+                                        "append_only_triggers":  55,
+                                        "audit_chain_breaks":  0,
+                                        "outbox_dead":  0,
+                                        "outbox_open":  0,
+                                        "outbox_published":  26,
+                                        "authorization_consumptions":  1,
+                                        "committed_batches":  1,
+                                        "public_stream_events":  1
+                                    },
+                     "foreign_tenant_visible_verifications":  0
+                 }
+}

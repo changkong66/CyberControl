@@ -1,0 +1,50 @@
+{
+  "schema_version": "cybercontrol.browser-acceptance.v1",
+  "generated_at": "2026-07-19T12:54:39.501Z",
+  "browser": "Google Chrome via Playwright",
+  "oidc_mode": "real Keycloak PKCE",
+  "authenticated_user": "reviewer",
+  "workspace_desktop": {
+    "title": "工作台 | CyberControl",
+    "path": "/workspace",
+    "textLength": 493,
+    "hasViteOverlay": false,
+    "horizontalOverflow": false,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440
+  },
+  "verification_desktop": {
+    "title": "可信核验 | CyberControl",
+    "path": "/verification",
+    "textLength": 209,
+    "hasViteOverlay": false,
+    "horizontalOverflow": false,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440
+  },
+  "workspace_mobile": {
+    "title": "工作台 | CyberControl",
+    "path": "/workspace",
+    "textLength": 466,
+    "hasViteOverlay": false,
+    "horizontalOverflow": false,
+    "viewportWidth": 390,
+    "scrollWidth": 390
+  },
+  "mobile_sidebar": {
+    "x": 0,
+    "y": 0,
+    "width": 248,
+    "height": 844
+  },
+  "mobile_sidebar_stable": true,
+  "console_errors_or_warnings": [],
+  "expected_route_change_sse_aborts": [
+    {
+      "url": "http://localhost:5173/internal/topic4/sse/stream",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "unexpected_failed_requests": [],
+  "passed": true
+}

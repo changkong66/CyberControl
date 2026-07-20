@@ -56,6 +56,7 @@ from liyans.domains.verification.reporting import (
     VerificationReportBuilder,
 )
 from liyans.domains.verification.runtime import (
+    TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES,
     TOPIC4_VERIFICATION_TASK,
     Topic3CandidateVerificationConsumer,
     Topic4PublicationSSEConsumer,
@@ -403,6 +404,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         outbox_sse_bridge = DurableOutboxSSEBridge(app.state.sse_broker)
         for event_type in DOMAIN_OUTBOX_EVENT_TYPES:
+            message_bus.register(event_type, outbox_sse_bridge)
+        for event_type in TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES:
             message_bus.register(event_type, outbox_sse_bridge)
         await task_queue.start()
         resources.push_async_callback(task_queue.close)

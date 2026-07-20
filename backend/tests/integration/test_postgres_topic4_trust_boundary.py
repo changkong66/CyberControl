@@ -22,6 +22,7 @@ from test_topic4_c6_code import _snapshot
 from liyans.core.tenant import tenant_scope
 from liyans.domains.code.evidence_source import CodeEvidenceBundle
 from liyans.domains.code.handler import C6CodeHandler
+from liyans.domains.compliance.handler import C11ComplianceHandler
 from liyans.domains.compliance.service import (
     ComplianceBuilderPolicy,
     ComplianceEvidenceError,
@@ -46,6 +47,66 @@ class _CodeEvidenceSource:
 
     async def load(self, claim: ClaimV1) -> CodeEvidenceBundle:
         return self._bundle
+
+
+@pytest.mark.asyncio
+async def test_c11_non_code_claims_remain_not_applicable_with_trusted_service(
+    postgres_runtime,
+    tmp_path: Path,
+) -> None:
+    fixture = await build_topic4_runtime_fixture(
+        postgres_runtime,
+        tmp_path,
+        instance_suffix="trust-boundary-c11-non-code",
+    )
+
+    with tenant_scope(fixture.context):
+        request = await fixture.runtime._request_for_candidate(
+            fixture.candidate,
+            context=fixture.context,
+            source_envelope_id=uuid4(),
+            trigger=VerificationTrigger.INITIAL_GENERATION,
+            parent_verification_id=None,
+            verification_id=uuid4(),
+            course_id=COURSE_ID,
+            target_kp_id=KP_ID,
+        )
+        accepted = await fixture.verification_service.accept_verification(request)
+        prepared = await fixture.verification_service.prepare_control_plane(
+            request.verification_id,
+            expected_state_version=accepted.state_version,
+            idempotency_key=f"topic4:c11:non-code:{request.verification_id.hex}",
+        )
+        service = ComplianceEvidenceService(
+            fixture.database,
+            fixture.verification_repository,
+            fixture.knowledge_repository,
+            fixture.artifact_store,
+            fixture.outbox,
+            ComplianceBuilderPolicy.load(ROOT / "config" / "compliance-builders.toml"),
+            instance_id="topic4-c11-non-code-test",
+        )
+        handlers = {module: _NotApplicableHandler() for module in VerificationModule}
+        handlers[VerificationModule.C11_COMPLIANCE] = C11ComplianceHandler(
+            service,
+            fixture.artifact_store,
+        )
+        execution = await BoundedModuleExecutor(
+            handlers,
+            worker_instance_id="topic4-c11-non-code-worker",
+            retry_backoff_ms=0,
+        ).execute(
+            prepared.dispatch_plan,
+            prepared.claims,
+            deadline_at=request.deadline_at,
+        )
+
+    c11_results = [
+        item for item in execution.results if item.module == VerificationModule.C11_COMPLIANCE
+    ]
+    assert c11_results
+    assert all(item.verdict.value == "NOT_APPLICABLE" for item in c11_results)
+    assert all(item.finding_codes == ["C11_NON_CODE_CLAIM"] for item in c11_results)
 
 
 async def _prepare_code_authority(fixture, now: datetime):

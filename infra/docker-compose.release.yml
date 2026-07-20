@@ -1,0 +1,9 @@
+services:
+  postgres:
+    volumes:
+      - release-postgres:/var/lib/postgresql/data
+
+volumes:
+  release-postgres:
+    external: true
+    name: cybercontrol_release_postgres

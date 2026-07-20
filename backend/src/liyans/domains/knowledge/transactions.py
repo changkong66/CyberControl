@@ -97,7 +97,7 @@ class KnowledgeTransactionCoordinator:
                 transaction,
                 context=current_session_context(),
                 isolation=TransactionIsolation.SERIALIZABLE,
-                retry_policy=TransactionRetryPolicy(max_attempts=3),
+                retry_policy=TransactionRetryPolicy(max_attempts=8),
             )
         except IntegrityError as exc:
             sqlstate = getattr(exc.orig, "sqlstate", None) or getattr(exc.orig, "pgcode", None)
