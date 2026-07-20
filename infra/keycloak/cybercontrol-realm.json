@@ -25,29 +25,6 @@
       }
     ]
   },
-  "userProfile": {
-    "unmanagedAttributePolicy": "ENABLED",
-    "attributes": [
-      {
-        "name": "tenant_id",
-        "displayName": "Tenant",
-        "permissions": {
-          "view": ["admin", "user"],
-          "edit": ["admin"]
-        },
-        "multivalued": false
-      },
-      {
-        "name": "permissions",
-        "displayName": "Permissions",
-        "permissions": {
-          "view": ["admin", "user"],
-          "edit": ["admin"]
-        },
-        "multivalued": false
-      }
-    ]
-  },
   "clientScopes": [
     {
       "name": "basic",

@@ -17,7 +17,10 @@ from liyans_contracts.topic4_common import RiskLevel, VerificationModule
 from .records import build_topic4_record
 
 _MODULE_TIMEOUT_MS: dict[VerificationModule, int] = {
-    VerificationModule.C2_RAG: 2_000,
+    # C2 persists retrieval evidence in SERIALIZABLE transactions. Its timeout
+    # must cover the bounded eight-attempt transaction retry budget after a
+    # database restart or a concentrated Claim dispatch.
+    VerificationModule.C2_RAG: 8_000,
     VerificationModule.C3_ACADEMIC: 8_000,
     VerificationModule.C4_GRAPH: 3_000,
     VerificationModule.C5_QUIZ: 8_000,
@@ -192,6 +195,8 @@ class ModuleDispatchPlanner:
             VerificationModule.C5_QUIZ,
             VerificationModule.C6_CODE,
             VerificationModule.C7_EXTENSION,
+            VerificationModule.C9_SECURITY,
+            VerificationModule.C10_PRIVACY,
             VerificationModule.C11_COMPLIANCE,
         }:
             rag_item_id = item_ids.get(VerificationModule.C2_RAG)

@@ -54,21 +54,21 @@ def _lecturer(targets: list[str], title: str, depth: str) -> dict[str, Any]:
         "learning_objectives": [f"Explain the core definition and boundary of {title}."],
         "sections": [
             {
-                "section_id": "fixture-foundation",
+                "section_id": "fixture_foundation",
                 "title": "Authoritative foundation",
                 "depth": depth,
                 "markdown": (
                     f"# {title}\n\n"
                     "This deterministic local fixture uses only the frozen Topic1 input segment. "
                     "It demonstrates the complete generation, verification, and release pipeline "
-                    "without contacting an external model provider."
+                    "through the configured local fixture provider."
                 ),
                 "target_kp_ids": targets,
             }
         ],
         "summary": [f"Review the Topic1 evidence bound to {', '.join(targets)}."],
-        "misconception_alerts": ["Do not infer facts that are absent from the frozen evidence."],
-        "personalization_notes": ["The response is deterministic for local demonstration."],
+        "misconception_alerts": [],
+        "personalization_notes": [],
     }
 
 

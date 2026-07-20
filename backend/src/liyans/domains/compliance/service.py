@@ -341,6 +341,24 @@ class ComplianceEvidenceService:
         context = current_tenant()
         if claim.tenant_id != context.tenant_id or claim.trace_id != context.trace_id:
             raise ComplianceEvidenceError("C11 Claim does not match trusted context")
+        if claim.claim_kind.value != "CODE":
+            loaded_claim, evidence = await self._load_claim_authority(
+                claim.verification_id,
+                claim.claim_id,
+            )
+            if loaded_claim.model_dump(mode="json") != claim.model_dump(mode="json"):
+                raise ComplianceEvidenceError(
+                    "C11 Claim does not match the persisted immutable authority"
+                )
+            return ComplianceEvidenceBundle(
+                source_tenant_id=claim.tenant_id,
+                code_artifact=None,
+                sbom_manifest=None,
+                sbom_document=None,
+                vulnerabilities=(),
+                provenance=None,
+                evidence=evidence,
+            )
         _loaded_claim, code_artifact, evidence = await self._load_code_authority(
             claim.verification_id,
             claim.claim_id,
@@ -445,12 +463,6 @@ class ComplianceEvidenceService:
     ) -> tuple[ClaimV1, CodeArtifactV1, tuple[EvidenceRefV1, ...]]:
         context = current_tenant()
         async with self._database.transaction(context=current_session_context()) as session:
-            claims = await self._verification_repository.list_claims(
-                session, context.tenant_id, verification_id
-            )
-            claim = next((item for item in claims if item.claim_id == claim_id), None)
-            if claim is None:
-                raise ComplianceEvidenceError("C11 Claim was not found")
             results = await self._verification_repository.list_module_results(
                 session, context.tenant_id, verification_id
             )
@@ -469,18 +481,38 @@ class ComplianceEvidenceService:
                     str(item.module_result_id),
                 ),
             )
-            evidence_rows = await self._knowledge_repository.list_evidence_refs(
-                session, context.tenant_id, claim_id
-            )
-            evidence = tuple(
-                item
-                for item in evidence_rows
-                if item.verification_id == verification_id
-                and item.claim_id == claim_id
-                and item.trace_id == claim.trace_id
-            )
+        claim, evidence = await self._load_claim_authority(verification_id, claim_id)
         code_artifact = await self._read_code_artifact(result, claim)
         return claim, code_artifact, evidence
+
+    async def _load_claim_authority(
+        self,
+        verification_id: UUID,
+        claim_id: UUID,
+    ) -> tuple[ClaimV1, tuple[EvidenceRefV1, ...]]:
+        context = current_tenant()
+        async with self._database.transaction(context=current_session_context()) as session:
+            claims = await self._verification_repository.list_claims(
+                session,
+                context.tenant_id,
+                verification_id,
+            )
+            claim = next((item for item in claims if item.claim_id == claim_id), None)
+            if claim is None:
+                raise ComplianceEvidenceError("C11 Claim was not found")
+            evidence_rows = await self._knowledge_repository.list_evidence_refs(
+                session,
+                context.tenant_id,
+                claim_id,
+            )
+        evidence = tuple(
+            item
+            for item in evidence_rows
+            if item.verification_id == verification_id
+            and item.claim_id == claim_id
+            and item.trace_id == claim.trace_id
+        )
+        return claim, evidence
 
     async def _read_code_artifact(
         self,

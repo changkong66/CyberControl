@@ -124,6 +124,18 @@ from liyans.infrastructure.tasks.queue import AsyncTaskQueue, TaskPriority, Task
 
 TOPIC4_VERIFICATION_TASK = "topic4.execute-verification"
 TOPIC4_RUNTIME_VERSION = "topic4-runtime-v1"
+TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES = (
+    "topic4.knowledge.source_imported",
+    "topic4.knowledge.base_activated",
+    "topic4.knowledge.retrieval_completed",
+    "topic4.knowledge.index_self_healed",
+    "topic4.verification.accepted",
+    "topic4.verification.state_changed",
+    "topic4.verification.control_plane_prepared",
+    "topic4.verification.modules_recorded",
+    "topic4.verification.aggregated",
+    "topic4.verification.human_review_decided",
+)
 
 
 class Topic4RuntimeMetrics:

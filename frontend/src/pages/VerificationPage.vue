@@ -6,6 +6,7 @@ import { useRoute, useRouter } from "vue-router"
 
 import type { JsonObject, RevisionHistoryItem, VerificationSnapshot } from "../api/types"
 import { useAppServices } from "../app/services"
+import { verificationMatrixState } from "./verification-status"
 import { useAuthStore } from "../stores/auth"
 import { tenantCacheKey } from "../shared/cache"
 import ErrorState from "../shared/components/ErrorState.vue"
@@ -66,8 +67,6 @@ const highestRisk = computed<RiskLevel | null>(() => {
   const weights: Record<RiskLevel, number> = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 }
   return (snapshot.value?.risks ?? []).reduce<RiskLevel | null>((current, risk) => !current || weights[risk.level] > weights[current] ? risk.level : current, null)
 })
-const completedModules = computed(() => new Set((snapshot.value?.module_results ?? []).map((result) => result.module)))
-const activeModuleRuns = computed(() => new Map((snapshot.value?.module_runs ?? []).map((run) => [run.module, run])))
 const releaseAllowed = computed(() => snapshot.value?.report?.decision === "RELEASE" || snapshot.value?.report?.decision === "RELEASE_WITH_DISCLOSURE")
 const recentIds = ref<string[]>([])
 const selectedRevision = computed(() => revisions.value.find((item) => item.revision_cycle_id === selectedRevisionId.value) ?? null)
@@ -197,12 +196,7 @@ async function connectStream(): Promise<void> {
 }
 
 function moduleState(module: { code: string; module?: VerificationModule }): string {
-  if (module.code === "C1") return snapshot.value?.state.current_state ? "SUCCEEDED" : "PENDING"
-  if (module.code === "C8") return revisions.value.length ? "SUCCEEDED" : "SKIPPED"
-  if (module.code === "C12") return snapshot.value?.state.current_state === "RELEASED" ? "SUCCEEDED" : snapshot.value?.state.current_state === "RELEASE_PENDING" ? "RUNNING" : "PENDING"
-  if (!module.module) return "PENDING"
-  if (completedModules.value.has(module.module)) return "SUCCEEDED"
-  return activeModuleRuns.value.get(module.module)?.state ?? "PENDING"
+  return verificationMatrixState(module, snapshot.value, revisions.value.length)
 }
 
 function printReport(): void { window.print() }
