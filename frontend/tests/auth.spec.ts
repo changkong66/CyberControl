@@ -60,12 +60,22 @@ describe("OIDC identity and stores", () => {
     const session = new OidcSession(fakeManager)
     await session.login("//external.example")
     expect(window.sessionStorage.getItem(RETURN_TO_KEY)).toBe("/workspace")
-    expect(fakeManager.signinRedirect).toHaveBeenCalledWith({ state: { returnTo: "/workspace" } })
+    expect(fakeManager.signinRedirect).toHaveBeenCalledWith({
+      state: { returnTo: "/workspace" },
+      ui_locales: "zh-CN",
+    })
     expect(session.consumeReturnTo()).toBe("/workspace")
     await session.login("/verification")
     expect(session.consumeReturnTo()).toBe("/verification")
     expect(await session.callback()).toEqual(oidcUser())
     expect(await session.silentRenew()).toEqual(oidcUser())
+    await session.recover("//external.example")
+    expect(fakeManager.signinRedirect).toHaveBeenLastCalledWith({
+      state: { returnTo: "/login" },
+      prompt: "login",
+      ui_locales: "zh-CN",
+      extraQueryParams: { kc_action: "UPDATE_PASSWORD" },
+    })
     await session.clear()
     expect(fakeManager.removeUser).toHaveBeenCalledOnce()
   })

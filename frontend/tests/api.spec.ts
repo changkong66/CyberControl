@@ -5,6 +5,21 @@ import { ApiClient, ApiClientError } from "../src/api/client"
 import { server, topic3Envelope } from "./mocks/server"
 
 describe("ApiClient", () => {
+  it("rejects cross-origin and scheme-relative paths before reading credentials", async () => {
+    const getAccessToken = vi.fn(() => "must-not-leak")
+    const fetcher = vi.fn() as unknown as typeof fetch
+    const client = new ApiClient({ baseUrl: "http://localhost", fetcher, getAccessToken })
+
+    await expect(client.request("https://attacker.invalid/collect")).rejects.toThrow(
+      /same-origin root paths/u,
+    )
+    await expect(client.request("//attacker.invalid/collect")).rejects.toThrow(
+      /same-origin root paths/u,
+    )
+    expect(getAccessToken).not.toHaveBeenCalled()
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
   it("binds the platform fetch implementation to the global context", async () => {
     const platformFetch = vi.fn(function (this: unknown) {
       expect(this).toBe(globalThis)
@@ -118,7 +133,7 @@ describe("ApiClient", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       )
     }) as typeof fetch
-    await new ApiClient({ fetcher }).requestEnvelope("https://api.example.invalid/topic1", {
+    await new ApiClient({ baseUrl: "https://api.example.invalid", fetcher }).requestEnvelope("/topic1", {
       envelope: "topic1",
       traceId: "f".repeat(32),
     })
