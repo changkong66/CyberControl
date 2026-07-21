@@ -65,6 +65,20 @@ def _git_revision(revision: str) -> str:
     return completed.stdout.strip()
 
 
+def _git_status() -> list[str]:
+    git_path = shutil.which("git")
+    if git_path is None:
+        raise RuntimeError("Git is required to verify a clean dataset source")
+    completed = subprocess.run(  # noqa: S603 - resolved Git executable and fixed arguments.
+        [git_path, "status", "--porcelain=v1"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line for line in completed.stdout.splitlines() if line]
+
+
 def _performance_rows(count: int, knowledge_point_count: int) -> Iterable[dict[str, object]]:
     for ordinal in range(count):
         point_ordinal = ordinal % knowledge_point_count
@@ -224,6 +238,11 @@ def _arguments() -> argparse.Namespace:
             "attestation are accepted."
         ),
     )
+    parser.add_argument(
+        "--allow-dirty-source",
+        action="store_true",
+        help="Permit local tool development runs from a dirty tree; never use for formal evidence.",
+    )
     arguments = parser.parse_args()
     if arguments.performance_corpus_size < 1:
         parser.error("--performance-corpus-size must be positive")
@@ -234,6 +253,12 @@ def _arguments() -> argparse.Namespace:
 
 def main() -> int:
     arguments = _arguments()
+    dirty_files = _git_status()
+    if dirty_files and not arguments.allow_dirty_source:
+        raise SystemExit(
+            "Phase 7 dataset evidence requires a clean source tree; "
+            "commit tooling before formal generation."
+        )
     performance_generator = ROOT / PERFORMANCE_GENERATOR_RELATIVE_PATH
     demo_fixture = ROOT / DEMO_FIXTURE_RELATIVE_PATH
     materialized: dict[str, object] | None = None
@@ -251,6 +276,8 @@ def main() -> int:
         "schema_version": "phase7.dataset-registry.v1",
         "source_commit": _git_revision("HEAD"),
         "source_tree": _git_revision("HEAD^{tree}"),
+        "clean_source": not dirty_files,
+        "dirty_files_at_start": dirty_files,
         "datasets": [
             {
                 "dataset_id": PERFORMANCE_DATASET_ID,

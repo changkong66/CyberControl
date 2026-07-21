@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import runpy
+import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -132,3 +133,22 @@ def test_phase7_dataset_inventory_binds_git_commit_and_tree() -> None:
     for revision in (git_revision("HEAD"), git_revision("HEAD^{tree}")):
         assert len(revision) == 40
         assert set(revision) <= set("0123456789abcdef")
+
+
+def test_phase7_dataset_inventory_rejects_dirty_source(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setitem(PHASE7_DATASET_TOOL, "_git_status", lambda: [" M source.py"])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "build-phase7-dataset-inventory.py",
+            "--output",
+            str(tmp_path / "inventory.json"),
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="requires a clean source tree"):
+        PHASE7_DATASET_TOOL["main"]()
