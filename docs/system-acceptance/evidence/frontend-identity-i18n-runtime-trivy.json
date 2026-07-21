@@ -1,0 +1,35 @@
+{
+  "schema_version": "cybercontrol.runtime-trivy-evidence.v1",
+  "generated_at_utc": "2026-07-21T13:41:30Z",
+  "source_commit": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
+  "tool": {
+    "name": "trivy",
+    "version": "0.70.0",
+    "database_version": 2,
+    "database_updated_at_utc": "2026-07-21T07:28:47.888246741Z",
+    "database_downloaded_at_utc": "2026-07-21T10:50:25.7211572Z"
+  },
+  "scan_policy": {
+    "scanners": ["vuln"],
+    "severities": ["UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+    "database_update": false
+  },
+  "images": [
+    {
+      "role": "backend",
+      "digest": "sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a",
+      "vulnerability_count": 0
+    },
+    {
+      "role": "frontend",
+      "digest": "sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2",
+      "runtime_user": "65532:65532",
+      "vulnerability_count": 0
+    },
+    {
+      "role": "mock_provider",
+      "digest": "sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27",
+      "vulnerability_count": 0
+    }
+  ]
+}
