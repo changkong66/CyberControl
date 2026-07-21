@@ -10,6 +10,7 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "bruteForceProtected": true,
+  "passwordPolicy": "length(8)",
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 28800,
@@ -22,9 +23,21 @@
       {
         "name": "reviewer",
         "description": "CyberControl human reviewer role"
+      },
+      {
+        "name": "tenant-admin",
+        "description": "CyberControl tenant account administrator role"
       }
     ]
   },
+  "groups": [
+    {
+      "name": "learners",
+      "realmRoles": [
+        "learner"
+      ]
+    }
+  ],
   "clientScopes": [
     {
       "name": "basic",
@@ -128,6 +141,55 @@
       ]
     },
     {
+      "name": "roles",
+      "description": "OIDC client and realm role claims for least-privilege service tokens",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "foo",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "audience-resolve",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-resolve-mapper",
+          "consentRequired": false,
+          "config": {
+            "introspection.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "client-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "foo",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
       "name": "cybercontrol-claims",
       "description": "Trusted tenant, role, permission and audience claims for local development",
       "protocol": "openid-connect",
@@ -202,6 +264,18 @@
     "cybercontrol-claims"
   ],
   "defaultOptionalClientScopes": [],
+  "clientScopeMappings": {
+    "realm-management": [
+      {
+        "client": "cybercontrol-registration-admin",
+        "roles": [
+          "manage-users",
+          "query-users",
+          "view-users"
+        ]
+      }
+    ]
+  },
   "clients": [
     {
       "clientId": "cybercontrol-api",
@@ -209,6 +283,22 @@
       "enabled": true,
       "bearerOnly": true,
       "protocol": "openid-connect"
+    },
+    {
+      "clientId": "cybercontrol-registration-admin",
+      "name": "CyberControl Registration Service",
+      "enabled": true,
+      "secret": "local-registration-admin-only",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [
+        "roles"
+      ]
     },
     {
       "clientId": "cybercontrol-workbench",
@@ -278,7 +368,7 @@
           "demo-academy"
         ],
         "permissions": [
-          "topic1:read topic2:read topic2:profile:read topic2:profile:write topic2:memory:read topic2:memory:write topic2:path:read topic2:path:write topic2:context:read topic3:read topic3:write topic3:generation:read topic3:generation:write topic3:generation:retry topic3:sse:read topic4:read topic4:verification:read topic4:verification:execute topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read"
+          "topic1:read topic2:read topic2:profile:read topic2:profile:write topic2:memory:read topic2:memory:write topic2:path:read topic2:path:write topic2:context:read topic3:read topic3:write topic3:generation:read topic3:generation:write topic3:generation:retry topic3:sse:read topic4:read topic4:verification:read topic4:verification:execute topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read account:profile:read account:profile:write account:contact:write"
         ]
       },
       "realmRoles": [
@@ -304,7 +394,7 @@
           "demo-academy"
         ],
         "permissions": [
-          "topic1:read topic1:import topic1:freeze topic2:read topic2:profile:read topic2:profile:write topic2:memory:read topic2:memory:write topic2:path:read topic2:path:write topic2:context:read topic3:read topic3:write topic3:generation:read topic3:generation:write topic3:generation:retry topic3:sse:read topic4:read topic4:verification:read topic4:verification:execute topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read topic4:review:read topic4:review:write topic4:release:read topic4:release:write"
+          "topic1:read topic1:import topic1:freeze topic2:read topic2:profile:read topic2:profile:write topic2:memory:read topic2:memory:write topic2:path:read topic2:path:write topic2:context:read topic3:read topic3:write topic3:generation:read topic3:generation:write topic3:generation:retry topic3:sse:read topic4:read topic4:verification:read topic4:verification:execute topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read topic4:review:read topic4:review:write topic4:release:read topic4:release:write account:profile:read account:profile:write account:contact:write"
         ]
       },
       "realmRoles": [
@@ -317,6 +407,44 @@
           "temporary": false
         }
       ]
+    },
+    {
+      "username": "tenant-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Tenant Admin",
+      "email": "tenant-admin@example.invalid",
+      "attributes": {
+        "tenant_id": [
+          "demo-academy"
+        ],
+        "permissions": [
+          "topic1:read topic2:read topic2:profile:read topic2:memory:read topic2:path:read topic2:context:read topic3:read topic3:generation:read topic3:sse:read topic4:read topic4:verification:read topic4:claim:read topic4:report:read topic4:rag:read topic4:revision:read topic4:trace:read topic4:sse:read account:profile:read account:profile:write account:contact:write account:admin:read account:admin:write"
+        ]
+      },
+      "realmRoles": [
+        "tenant-admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenant-admin-local-only1",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "service-account-cybercontrol-registration-admin",
+      "enabled": true,
+      "serviceAccountClientId": "cybercontrol-registration-admin",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "query-users",
+          "view-users"
+        ]
+      }
     }
   ]
 }

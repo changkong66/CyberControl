@@ -1,0 +1,106 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "identity.audit-entry.v1",
+      "default": "identity.audit-entry.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "sequence": {
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "action": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Action",
+      "type": "string"
+    },
+    "outcome": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Outcome",
+      "type": "string"
+    },
+    "actor_ref": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Actor Ref",
+      "type": "string"
+    },
+    "target_ref": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Ref"
+    },
+    "trace_id": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "minLength": 16,
+          "pattern": "^[a-fA-F0-9]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trace Id"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "previous_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Previous Hash",
+      "type": "string"
+    },
+    "event_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Event Hash",
+      "type": "string"
+    },
+    "hash_algorithm": {
+      "const": "SHA-256",
+      "default": "SHA-256",
+      "title": "Hash Algorithm",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "sequence",
+    "action",
+    "outcome",
+    "actor_ref",
+    "metadata",
+    "occurred_at",
+    "previous_hash",
+    "event_hash"
+  ],
+  "title": "IdentityAuditEntryV1",
+  "type": "object"
+}

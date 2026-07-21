@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "verification-challenge.verify.v1",
+      "default": "verification-challenge.verify.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "challenge_id": {
+      "format": "uuid",
+      "title": "Challenge Id",
+      "type": "string"
+    },
+    "code": {
+      "format": "password",
+      "title": "Code",
+      "type": "string",
+      "writeOnly": true
+    },
+    "invitation_token": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "minLength": 32,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Invitation Token"
+    }
+  },
+  "required": [
+    "challenge_id",
+    "code"
+  ],
+  "title": "VerificationChallengeVerifyV1",
+  "type": "object"
+}

@@ -6,6 +6,19 @@ from pydantic import BaseModel
 
 from .artifacts import ArtifactObjectRefV1, SourceSnapshotRefV1
 from .envelope import ErrorReceiptV1, Topic3EnvelopeV1
+from .identity import (
+    AccountAdminViewV1,
+    AccountProfileV1,
+    IdentityApiEnvelopeV1,
+    IdentityAuditEntryV1,
+    RegistrationReceiptV1,
+    RegistrationStatusV1,
+    UserRegisterByEmailCommandV1,
+    UserRegisterByPhoneCommandV1,
+    VerificationChallengeReceiptV1,
+    VerificationChallengeRequestV1,
+    VerificationChallengeVerifyV1,
+)
 from .providers import ResponsesLiteRequestV1
 from .topic1 import (
     Topic1ApiEnvelopeV1,
@@ -69,6 +82,83 @@ class ContractRegistration:
 
 
 CONTRACT_REGISTRY: tuple[ContractRegistration, ...] = (
+    ContractRegistration(
+        "identity.api-envelope.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        IdentityApiEnvelopeV1,
+    ),
+    ContractRegistration(
+        "verification-challenge.request.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        VerificationChallengeRequestV1,
+    ),
+    ContractRegistration(
+        "verification-challenge.verify.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        VerificationChallengeVerifyV1,
+    ),
+    ContractRegistration(
+        "verification-challenge.receipt.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        VerificationChallengeReceiptV1,
+    ),
+    ContractRegistration(
+        "user-register-by-email.command.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        UserRegisterByEmailCommandV1,
+    ),
+    ContractRegistration(
+        "user-register-by-phone.command.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        UserRegisterByPhoneCommandV1,
+    ),
+    ContractRegistration(
+        "registration.receipt.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        RegistrationReceiptV1,
+    ),
+    ContractRegistration(
+        "account.profile.v1",
+        "identity-platform",
+        "shared",
+        "strict-v1",
+        AccountProfileV1,
+    ),
+    ContractRegistration(
+        "account.admin-view.v1",
+        "identity-platform",
+        "internal",
+        "strict-v1",
+        AccountAdminViewV1,
+    ),
+    ContractRegistration(
+        "registration.status.v1",
+        "identity-platform",
+        "internal",
+        "strict-v1",
+        RegistrationStatusV1,
+    ),
+    ContractRegistration(
+        "identity.audit-entry.v1",
+        "identity-platform",
+        "internal",
+        "strict-v1",
+        IdentityAuditEntryV1,
+    ),
     ContractRegistration(
         "topic1.api-envelope.v1", "topic1", "shared", "strict-v1", Topic1ApiEnvelopeV1
     ),

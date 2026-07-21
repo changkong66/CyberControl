@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from liyans.core.settings import Settings
 from liyans.domains.compliance import models as compliance_models
+from liyans.domains.identity import models as identity_models
 from liyans.domains.knowledge import models as knowledge_models
 from liyans.domains.privacy import models as privacy_models
 from liyans.domains.qa import models as qa_models
@@ -26,6 +27,7 @@ del topic1_models
 del topic2_models
 del topic3_models
 del compliance_models
+del identity_models
 del knowledge_models
 del privacy_models
 del qa_models

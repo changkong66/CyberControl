@@ -24,6 +24,41 @@ export interface AcceptanceGateResultV1 {
   "failure_codes"?: Array<string>
 }
 
+export interface AccountAdminViewV1 {
+  "schema_version"?: "account.admin-view.v1"
+  "account_id": string
+  "tenant_id": string
+  "subject_ref": string
+  "display_name": string
+  "preferred_locale": string
+  "email_hint"?: string | null
+  "email_verified": boolean
+  "phone_hint"?: string | null
+  "phone_verified": boolean
+  "status": IdentityAccountStatus
+  "profile_version": number
+  "created_at": string
+  "updated_at": string
+  "disabled_reason_code"?: string | null
+}
+
+export interface AccountProfileV1 {
+  "schema_version"?: "account.profile.v1"
+  "account_id": string
+  "tenant_id": string
+  "subject_ref": string
+  "display_name": string
+  "preferred_locale": string
+  "email_hint"?: string | null
+  "email_verified": boolean
+  "phone_hint"?: string | null
+  "phone_verified": boolean
+  "status": IdentityAccountStatus
+  "profile_version": number
+  "created_at": string
+  "updated_at": string
+}
+
 export type AgentTaskState = "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "SKIPPED" | "CANCELLED"
 
 export type AggregateDecision = "RELEASE" | "RELEASE_WITH_DISCLOSURE" | "REVISE" | "REVIEW_REQUIRED" | "BLOCK"
@@ -1018,6 +1053,39 @@ export interface HumanReviewTaskV1 {
   "non_waivable_finding_ids"?: Array<string>
 }
 
+export type IdentityAccountStatus = "ACTIVE" | "DISABLED" | "RECONCILIATION_REQUIRED"
+
+export interface IdentityApiEnvelopeV1 {
+  "schema_version"?: "identity.api-envelope.v1"
+  "request_id": string
+  "trace_id": string
+  "data": {  }
+}
+
+export interface IdentityAuditEntryV1 {
+  "schema_version"?: "identity.audit-entry.v1"
+  "event_id": string
+  "sequence": number
+  "action": string
+  "outcome": string
+  "actor_ref": string
+  "target_ref"?: string | null
+  "trace_id"?: string | null
+  "metadata": {  }
+  "occurred_at": string
+  "previous_hash": string
+  "event_hash": string
+  "hash_algorithm"?: "SHA-256"
+}
+
+export type IdentityChallengePurpose = "REGISTER" | "CHANGE_EMAIL" | "CHANGE_PHONE" | "RECOVERY"
+
+export type IdentityChallengeState = "PENDING" | "VERIFIED" | "CONSUMED" | "EXPIRED" | "LOCKED"
+
+export type IdentityContactChannel = "EMAIL" | "PHONE"
+
+export type IdentityRegistrationState = "KEYCLOAK_PENDING" | "PROJECTION_PENDING" | "COMPLETED" | "COMPENSATION_REQUIRED" | "FAILED"
+
 export interface IndexBuildManifestV1 {
   /** Root trace propagated from Topic 3 ingestion. */
   "trace_id": string
@@ -1608,6 +1676,35 @@ export interface QuizVerificationResultV1 {
   "evidence_ref_ids"?: Array<string>
   "verdict": VerificationVerdict
   "confidence": number
+}
+
+export interface RegistrationConsentV1 {
+  "privacy_policy_version": string
+  "terms_of_service_version": string
+  "privacy_policy_accepted": true
+  "terms_of_service_accepted": true
+}
+
+export interface RegistrationReceiptV1 {
+  "schema_version"?: "registration.receipt.v1"
+  "registration_id": string
+  "account_id": string
+  "state"?: "COMPLETED"
+  "preferred_locale": string
+  "login_required"?: true
+  "created_at": string
+}
+
+export interface RegistrationStatusV1 {
+  "schema_version"?: "registration.status.v1"
+  "registration_id": string
+  "registration_version": number
+  "state": IdentityRegistrationState
+  "channel": IdentityContactChannel
+  "account_id"?: string | null
+  "failure_code"?: string | null
+  "record_sha256": string
+  "created_at": string
 }
 
 export interface ReleaseAuthorizationPayloadV1 {
@@ -2900,6 +2997,28 @@ export interface Topic3GenerationSessionV1 {
   "created_at": string
 }
 
+export interface UserRegisterByEmailCommandV1 {
+  "schema_version"?: "user-register-by-email.command.v1"
+  "challenge_id": string
+  "email": string
+  "password": string
+  "display_name": string
+  "preferred_locale"?: string
+  "consent": RegistrationConsentV1
+  "invitation_token"?: string | null
+}
+
+export interface UserRegisterByPhoneCommandV1 {
+  "schema_version"?: "user-register-by-phone.command.v1"
+  "challenge_id": string
+  "phone": string
+  "password": string
+  "display_name": string
+  "preferred_locale"?: string
+  "consent": RegistrationConsentV1
+  "invitation_token"?: string | null
+}
+
 export interface VerificationAcceptedPayloadV1 {
   /** Root trace propagated from Topic 3 ingestion. */
   "trace_id": string
@@ -2951,6 +3070,32 @@ export interface VerificationBindingV1 {
   "toolchain_manifest_version": string
   "content_security_policy_version": string
   "license_policy_version": string
+}
+
+export interface VerificationChallengeReceiptV1 {
+  "schema_version"?: "verification-challenge.receipt.v1"
+  "challenge_id": string
+  "channel": IdentityContactChannel
+  "purpose": IdentityChallengePurpose
+  "state": IdentityChallengeState
+  "delivery_hint": string
+  "expires_at": string
+  "resend_after_seconds": number
+}
+
+export interface VerificationChallengeRequestV1 {
+  "schema_version"?: "verification-challenge.request.v1"
+  "channel": IdentityContactChannel
+  "purpose": IdentityChallengePurpose
+  "identifier": string
+  "invitation_token"?: string | null
+}
+
+export interface VerificationChallengeVerifyV1 {
+  "schema_version"?: "verification-challenge.verify.v1"
+  "challenge_id": string
+  "code": string
+  "invitation_token"?: string | null
 }
 
 export interface VerificationContextV1 {
