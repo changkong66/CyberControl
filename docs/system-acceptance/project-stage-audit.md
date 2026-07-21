@@ -5,17 +5,17 @@
 CyberControl has completed Phase1.1, Topic1-Topic4, the complete business
 workbench, the Keycloak-backed identity backend, frontend registration/account
 management, and `zh-CN`/`zh-TW`/`en-US` localization. Protected `main` is
-`8f0966f96dad8a6be34bd4ab11c985d001dd0185`; Release Quality Gates Run
-29831570652 completed 8/8 jobs successfully.
+`d25ed4dd92afd37720c158e4828794853ba8670a`; Release Quality Gates Run
+29840722346 completed 8/8 jobs successfully.
 
 The project is in **Phase 7 release closure**, at the boundary between product
-completion and final non-functional/production acceptance. It is a
-`RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
+completion and final non-functional/production acceptance. Gate A preflight is
+accepted, while Gate B is blocked on a real human-reviewed academic golden
+dataset requirement. It is a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
 
-Weighted implementation estimate: **about 95%**.
-
-This estimate is not an acceptance state. The remaining work is smaller in
-feature count but high in operational risk and elapsed test time.
+Feature completeness is not an acceptance state. The remaining work is smaller
+in feature count but high in operational risk, external review dependency and
+elapsed test time.
 
 | Area | Maturity | Objective assessment |
 | --- | --- | --- |
@@ -23,8 +23,9 @@ feature count but high in operational risk and elapsed test time.
 | Topic1-Topic4 backend | 100% current product scope | frozen trusted-learning and release chain |
 | Identity backend | 100% current product scope | registration, projection, administration and recovery boundary complete |
 | Frontend workbench | 100% current product scope | business, identity and three-language surfaces merged |
-| Local demonstrable product | about 99% | clean-volume registration-to-release chain passes from merged main |
-| Production operations | about 50% | secure CI/containers exist; load, soak, DR and target deployment remain |
+| Local demonstrable product | accepted release candidate | clean-volume registration-to-release chain passes from merged main |
+| Dataset boundary | blocked | performance corpus exists; licensed human-reviewed academic facts are absent |
+| Production operations | not started | serial gate blocks load, soak, DR and target deployment work |
 
 ## 2. Completed And Frozen Assets
 
@@ -89,31 +90,44 @@ feature count but high in operational risk and elapsed test time.
 - Exact release backend, frontend and Mock Provider images have zero Trivy
   findings at all severities.
 - Browser runtime inspection rendered all three locales without console errors.
+- Evidence archive PR #32 merged and current protected-main Run 29840722346
+  passed all eight jobs.
+- Gate A preflight captured Docker D-drive location, release-volume provenance,
+  image/source binding and resource limits without recording secrets.
+- Gate B materialized a content-addressed 100,000-record synthetic performance
+  corpus, but correctly rejected it as academic accuracy evidence.
 
 ## 3. Current Boundary
 
-The current replay branch may update only current-state acceptance assets and
-generated evidence. It must not modify historical Topic acceptance snapshots,
-product behavior, migrations, identity authority, TenantContext, RLS,
+The current acceptance branch may update only acceptance tooling, current-state
+assets and generated evidence. It must not modify historical Topic acceptance
+snapshots, product behavior, migrations, identity authority, TenantContext, RLS,
 SERIALIZABLE transactions, Outbox, SSE or C12 semantics.
 
-After this evidence PR merges, the only allowed next phase is final
-non-functional and production acceptance. Any product code change discovered
-during that phase must be isolated in a defect PR with an ADR when it touches a
-frozen boundary, then replayed from a new main baseline.
+The only allowed immediate next activity is Gate B completion: a qualified human
+reviewer must supply licensed academic facts and a SHA256-bound acceptance
+attestation. Any product code change discovered during later acceptance must be
+isolated in a defect PR with an ADR when it touches a frozen boundary, then
+replayed from a new main baseline.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Evidence Closure
+### 4.1 P0 Dataset Boundary
 
-1. Merge the current frontend mainline replay evidence PR with 8/8 gates.
-2. Keep the formal state at `RELEASE_CANDIDATE` until every final gate passes.
-3. Address the standard-gate Python coverage observation: 90.57% passes the 90%
+1. Supply `tests/golden/phase7-academic-golden-facts.v1.jsonl` with per-fact
+   citations and license expressions.
+2. Supply `tests/golden/phase7-academic-golden-review.v1.json` with a qualified
+   reviewer subject, policy version, SHA256 binding and `ACCEPTED` decision.
+3. Run the dataset inventory with `--require-human-reviewed-golden`; it must
+   succeed before Gate C begins.
+4. Keep the formal state at `RELEASE_CANDIDATE` until every final gate passes.
+5. Address the standard-gate Python coverage observation: 90.57% passes the 90%
    hard gate but is below the historical 91.19% observation target.
 
 ### 4.2 P1 High-Load And Stability Acceptance
 
-1. Test 2,000 authenticated SSE connections, including reconnect,
+1. Only after Gate B acceptance, test 2,000 authenticated SSE connections,
+   including reconnect,
    `Last-Event-ID`, duplicate suppression, slow consumers and tenant isolation.
 2. Run at least eight hours of continuous generation, verification, review,
    release and SSE while recording memory, CPU, connection pools, queue depth,
