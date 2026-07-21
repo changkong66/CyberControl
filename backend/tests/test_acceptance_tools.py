@@ -9,6 +9,12 @@ from typing import Any, cast
 import pytest
 
 TOOLS_ROOT = Path(__file__).resolve().parents[2] / "tools" / "topic4"
+PHASE7_DATASET_TOOL_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "tools"
+    / "acceptance"
+    / "build-phase7-dataset-inventory.py"
+)
 SYSTEM_ACCEPTANCE_SCRIPT = (
     Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-system-acceptance.ps1"
 )
@@ -17,6 +23,13 @@ SSE_TOOL = cast(
     runpy.run_path(
         str(TOOLS_ROOT / "verify-authenticated-sse.py"),
         run_name="verify_authenticated_sse_test",
+    ),
+)
+PHASE7_DATASET_TOOL = cast(
+    dict[str, Any],
+    runpy.run_path(
+        str(PHASE7_DATASET_TOOL_PATH),
+        run_name="phase7_dataset_inventory_test",
     ),
 )
 
@@ -92,3 +105,22 @@ def test_system_acceptance_covers_identity_mainline_release() -> None:
     for evidence in required_evidence:
         assert evidence in script
     assert 'registeredPassword = "Acceptance-$(([Guid]::NewGuid())' in script
+
+
+def test_phase7_performance_dataset_is_deterministic_and_content_addressed(
+    tmp_path: Path,
+) -> None:
+    materialize = PHASE7_DATASET_TOOL["_materialize_performance_corpus"]
+    first = materialize(tmp_path / "first.jsonl", 12, 3)
+    second = materialize(tmp_path / "second.jsonl", 12, 3)
+
+    assert first["record_count"] == 12
+    assert first["content_sha256"] == second["content_sha256"]
+    assert (tmp_path / "first.jsonl").read_bytes() == (tmp_path / "second.jsonl").read_bytes()
+
+
+def test_phase7_human_golden_set_remains_blocked_without_review_attestation() -> None:
+    golden_status = PHASE7_DATASET_TOOL["_human_golden_status"]()
+
+    assert golden_status["state"] == "MISSING_HUMAN_REVIEWED_GOLDEN_SET"
+    assert golden_status["acceptance_eligible"] is False
