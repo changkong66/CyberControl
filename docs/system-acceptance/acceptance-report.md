@@ -149,9 +149,9 @@ Immutable identifiers for this replay:
 | Gate | Current result |
 | --- | --- |
 | Ruff and frozen contract drift | passed |
-| Python deterministic suite | 449 passed, 1 skipped, 70 deselected |
-| Standard PostgreSQL suite | 514 passed, 6 skipped |
-| Python coverage | 90.57%; hard threshold 90% |
+| Python deterministic suite | 453 passed, 1 skipped, 70 deselected |
+| Standard PostgreSQL suite | 518 passed, 6 skipped |
+| Python coverage | 90.61%; hard threshold 90% |
 | Historical Python observation | 91.19%; not met by the standard-gate run |
 | Vitest | 72 passed |
 | Frontend coverage | 89.12% statements, 81.79% branches, 83.79% functions, 92.38% lines |
@@ -189,6 +189,14 @@ The machine-readable inventory and the detailed boundary report are retained in
 `docs/system-acceptance/evidence/phase7-dataset-inventory.json` and
 `docs/system-acceptance/evidence/phase7-dataset-boundary-report.md`.
 
+The complete local Release Quality Gates were then replayed on source commit
+`4c0fd18daa76960fe172805ad4e5b278dd7c9a19` using a PostgreSQL instance on
+port `55432` whose data volume is distinct from `cybercontrol_release_postgres`.
+All gates passed, including the full migration cycle, PostgreSQL regression,
+container runtime constraints, Trivy and Gitleaks. The retained summary is
+[phase7-local-quality-gates.json](evidence/phase7-local-quality-gates.json).
+This quality result does not satisfy or bypass the missing human-review evidence.
+
 ## Current Boundary
 
 Frontend identity, account administration and three-language workbench scope is
@@ -201,8 +209,9 @@ approved defect ADR proves they are necessary.
 
 1. Supply a licensed, independently human-reviewed academic fact set and an
    SHA256-bound `ACCEPTED` review attestation, then pass the Gate B validator.
-2. Raise Python coverage toward the 91.19% historical observation or record a
-   reviewed disposition; the 90% hard gate must not be lowered.
+2. Raise the current 90.61% Python coverage toward the 91.19% historical
+   observation or record a reviewed disposition; the 90% hard gate must not be
+   lowered.
 3. After Gate B is accepted, execute 2,000 authenticated SSE connections with
    reconnect, cursor recovery,
    duplicate suppression, slow-consumer and tenant-isolation evidence.

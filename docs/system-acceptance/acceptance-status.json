@@ -1,6 +1,6 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-21T15:58:38.5132764Z",
+  "generated_at_utc": "2026-07-21T17:10:20.7957800Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_B_BLOCKED_HUMAN_REVIEWED_GOLDEN_SET_MISSING",
   "baseline": {
@@ -62,6 +62,15 @@
         "state": "MISSING_HUMAN_REVIEWED_GOLDEN_SET",
         "accuracy_acceptance_eligible": false
       }
+    },
+    "local_quality_gate": {
+      "state": "PASSED",
+      "source_commit": "4c0fd18daa76960fe172805ad4e5b278dd7c9a19",
+      "source_tree": "d3a5ff20cbcc470d3a0b98723cdef851032100fa",
+      "evidence_path": "docs/system-acceptance/evidence/phase7-local-quality-gates.json",
+      "evidence_sha256": "fca64a11d8b787bc0a29013368c5002dc53b41e15ccee89ced91dbb5433a7e55",
+      "postgres_test_instance_isolated_from_release_volume": true,
+      "full_release_quality_gates_passed": true
     },
     "gates_c_through_g": "NOT_STARTED_SERIAL_GATE_B_BLOCK"
   },
@@ -138,14 +147,14 @@
     "identity_plaintext_contact_matches": 0
   },
   "quality": {
-    "python_tests_total": 520,
-    "python_tests_passed": 514,
+    "python_tests_total": 524,
+    "python_tests_passed": 518,
     "python_tests_skipped": 6,
-    "python_coverage_percent": 90.57,
+    "python_coverage_percent": 90.61,
     "python_coverage_hard_threshold_percent": 90.0,
     "python_coverage_historical_observation_percent": 91.19,
     "python_historical_observation_met_by_standard_gate": false,
-    "python_deterministic_tests_passed": 449,
+    "python_deterministic_tests_passed": 453,
     "python_deterministic_tests_skipped": 1,
     "python_deterministic_tests_deselected": 70,
     "frontend_tests_passed": 72,
@@ -187,7 +196,7 @@
   },
   "blocking_items": [
     "Supply and independently review a licensed academic golden fact set plus SHA256-bound ACCEPTED review attestation, then pass the Gate B validator.",
-    "Raise or formally disposition the standard-gate Python coverage observation of 90.57% versus the historical 91.19% target without lowering the 90% hard gate.",
+    "Raise or formally disposition the standard-gate Python coverage observation of 90.61% versus the historical 91.19% target without lowering the 90% hard gate.",
     "Complete 2,000 authenticated SSE load acceptance.",
     "Complete a minimum eight-hour soak test.",
     "Complete independent backup/restore and disaster-recovery evidence with measured RPO/RTO.",

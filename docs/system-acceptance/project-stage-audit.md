@@ -96,6 +96,9 @@ elapsed test time.
   image/source binding and resource limits without recording secrets.
 - Gate B materialized a content-addressed 100,000-record synthetic performance
   corpus, but correctly rejected it as academic accuracy evidence.
+- The Phase 7 acceptance branch passed the complete local Release Quality Gates
+  at `4c0fd18daa76960fe172805ad4e5b278dd7c9a19`: 518 standard-suite tests passed,
+  six were explicitly skipped, coverage was 90.61%, and Trivy/Gitleaks passed.
 
 ## 3. Current Boundary
 
@@ -121,7 +124,7 @@ replayed from a new main baseline.
 3. Run the dataset inventory with `--require-human-reviewed-golden`; it must
    succeed before Gate C begins.
 4. Keep the formal state at `RELEASE_CANDIDATE` until every final gate passes.
-5. Address the standard-gate Python coverage observation: 90.57% passes the 90%
+5. Address the standard-gate Python coverage observation: 90.61% passes the 90%
    hard gate but is below the historical 91.19% observation target.
 
 ### 4.2 P1 High-Load And Stability Acceptance

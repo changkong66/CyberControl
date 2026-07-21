@@ -1,0 +1,71 @@
+{
+  "schema_version": "cybercontrol.phase7-local-quality-gates.v1",
+  "generated_at_utc": "2026-07-21T17:10:20.7957800Z",
+  "result": "PASSED",
+  "source": {
+    "branch": "codex/phase7-final-nonfunctional-acceptance",
+    "commit_sha": "4c0fd18daa76960fe172805ad4e5b278dd7c9a19",
+    "tree_sha": "d3a5ff20cbcc470d3a0b98723cdef851032100fa",
+    "working_tree_clean_before_run": true
+  },
+  "postgresql": {
+    "container_name": "cybercontrol-postgres-identity-it-20260721",
+    "container_id": "6412053668a9ae5ba38dcc036411d35d314549faa9e1b67b55e9c248738b0a4a",
+    "image": "postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+    "host_port": 55432,
+    "health": "healthy",
+    "migration_head": "20260720_0010",
+    "data_volume": "3988d132493b8626059ab6832d4d15a19e46c182f26971a9e889ae87996536e9",
+    "release_volume": "cybercontrol_release_postgres",
+    "release_volume_used": false,
+    "full_downgrade_upgrade_cycle_passed": true
+  },
+  "python": {
+    "deterministic_suite": {
+      "passed": 453,
+      "skipped": 1,
+      "deselected": 70
+    },
+    "standard_postgresql_suite": {
+      "total": 524,
+      "passed": 518,
+      "skipped": 6,
+      "failures": 0,
+      "errors": 0,
+      "duration_seconds": 341.208
+    },
+    "coverage_percent": 90.61,
+    "coverage_hard_threshold_percent": 90.0,
+    "historical_observation_percent": 91.19,
+    "historical_observation_met": false
+  },
+  "container": {
+    "image": "liyans-backend:local-quality",
+    "image_id": "sha256:12da55c067832ae831e4087c4a74042c625422f62989f476d34bdcbf26e09539",
+    "runtime_user": "10001:10001",
+    "minimal_runtime_validation": "passed",
+    "trivy_findings_all_severities": 0,
+    "trivy_fixable_high_or_critical": 0
+  },
+  "security_and_supply_chain": {
+    "python_dependency_audit": "passed",
+    "node_dependency_audit": "passed",
+    "python_and_node_sbom_license_policy": "passed",
+    "gitleaks_history": "passed",
+    "gitleaks_working_tree": "passed"
+  },
+  "artifact_sha256": {
+    "quality_summary": "9e3600a02cf21c6726c9c5c71482038bb884a995c3e01c131462b024b18f3584",
+    "python_coverage_xml": "a3ac01c80aaf43833e6522159444f1fb39497c1354545bc936cb2bff6c405db8",
+    "python_junit_xml": "5567ab6b57d71c71a833f980ea6aaaf0386cc08f24edb4fb1f45f9f2936651e1",
+    "container_trivy_json": "7189c0b032e46795d3fdbda7a0f05eaf90d087e8351d527def53c0f55bc2c13b",
+    "gitleaks_history_json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "gitleaks_working_tree_json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "acceptance_boundary": {
+    "formal_release_state": "PHASE7_GATE_B_BLOCKED_HUMAN_REVIEWED_GOLDEN_SET_MISSING",
+    "gate_b_accepted": false,
+    "gates_c_through_g_started": false,
+    "quality_gate_pass_does_not_override_dataset_gate": true
+  }
+}
