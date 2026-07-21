@@ -1,0 +1,155 @@
+{
+  "schema_version": "phase7.academic-source-ledger.v1",
+  "ledger_id": "phase7-academic-source-ledger.v1",
+  "checked_at_utc": "2026-07-21T18:32:54Z",
+  "intended_use": "Commercially reusable, paraphrased academic-accuracy fixtures for the frozen Topic4 C3 academic verifier.",
+  "rights_boundary": {
+    "compilation_text_reused": false,
+    "chapter_figures_reused": false,
+    "chapter_tables_reused": false,
+    "verbatim_source_text_reused": false,
+    "use_mode": "ORIGINAL_PARAPHRASED_FACTS_WITH_ATTRIBUTION"
+  },
+  "included_sources": [
+    {
+      "source_id": "SRC-PID-2012-C1",
+      "work_title": "Introduction to PID Controllers - Theory, Tuning and Application to Frontier Areas",
+      "chapter_title": "PID Controller Design for Specified Performance",
+      "chapter_authors": [
+        "Štefan Bucz",
+        "Alena Kozáková"
+      ],
+      "editor": "Rames C. Panda",
+      "publisher": "InTech",
+      "publication_year": 2012,
+      "doi": "10.5772/2422",
+      "doi_url": "https://doi.org/10.5772/2422",
+      "metadata_url": "https://api.crossref.org/works/10.5772/2422",
+      "source_url": "https://mts.intechopen.com/storage/books/2011/authors_book/authors_book.pdf",
+      "source_content_sha256": "104bd807599660eccb06f5cec38b1d9f581a466179a205985b4d53bb204cb6ef",
+      "source_byte_size": 9402011,
+      "remote_hash_verified_at_utc": "2026-07-21T18:32:54Z",
+      "chapter_pdf_pages": "14-41",
+      "license_expression": "CC-BY-3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "license_evidence_locator": "PDF page 4 states that individual chapters are CC BY 3.0 and permit commercial use with attribution.",
+      "commercial_reuse_permitted": true,
+      "attribution_required": true,
+      "included_material": "PARAPHRASED_CHAPTER_FACTS_ONLY",
+      "images_included": false,
+      "status": "INCLUDED"
+    },
+    {
+      "source_id": "SRC-PID-2025-C1",
+      "work_title": "PID Control - New Design Methods and Applications",
+      "chapter_title": "Introductory Chapter: Basic Considerations for the Digital Implementation of PI Controllers",
+      "chapter_authors": [
+        "Constantin Voloșencu"
+      ],
+      "editor": "Constantin Voloşencu",
+      "publisher": "IntechOpen",
+      "publication_year": 2025,
+      "crossref_issued_year": 2024,
+      "publisher_pdf_copyright_year": 2025,
+      "publication_year_note": "Crossref records a 2024-11-15 issued date; the publisher PDF copyright and first-publication statement use 2025.",
+      "doi": "10.5772/intechopen.1003415",
+      "doi_url": "https://doi.org/10.5772/intechopen.1003415",
+      "metadata_url": "https://api.crossref.org/works/10.5772/intechopen.1003415",
+      "source_url": "https://intech-files.s3.amazonaws.com/a043Y000011YN2pQAG/0015852_Authors_Book%20%282025-01-30%2009%3A22%3A47%29.pdf",
+      "source_content_sha256": "fd74c64b321c3a3bb3d8aac44ce7986dba0233980fa1260f783511a40ee29976",
+      "source_byte_size": 2749585,
+      "remote_hash_verified_at_utc": "2026-07-21T18:32:54Z",
+      "chapter_pdf_pages": "12-20",
+      "license_expression": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_locator": "PDF page 20 states that the chapter is distributed under CC BY 4.0.",
+      "commercial_reuse_permitted": true,
+      "attribution_required": true,
+      "included_material": "PARAPHRASED_CHAPTER_FACTS_ONLY",
+      "images_included": false,
+      "status": "INCLUDED"
+    },
+    {
+      "source_id": "SRC-PID-2025-C3",
+      "work_title": "PID Control - New Design Methods and Applications",
+      "chapter_title": "A Novel Approach for the Identification and Control of Unstable Systems Using PITOPS: Simplifying Complex Processes beyond Traditional Methods",
+      "chapter_authors": [
+        "Davarapalli Kishore",
+        "Sabbarapu Ganesh",
+        "Vaska Lokesh"
+      ],
+      "editor": "Constantin Voloşencu",
+      "publisher": "IntechOpen",
+      "publication_year": 2025,
+      "crossref_issued_year": 2024,
+      "publisher_pdf_copyright_year": 2025,
+      "publication_year_note": "Crossref records a 2024-11-15 issued date; the publisher PDF copyright and first-publication statement use 2025.",
+      "doi": "10.5772/intechopen.1003415",
+      "doi_url": "https://doi.org/10.5772/intechopen.1003415",
+      "metadata_url": "https://api.crossref.org/works/10.5772/intechopen.1003415",
+      "source_url": "https://intech-files.s3.amazonaws.com/a043Y000011YN2pQAG/0015852_Authors_Book%20%282025-01-30%2009%3A22%3A47%29.pdf",
+      "source_content_sha256": "fd74c64b321c3a3bb3d8aac44ce7986dba0233980fa1260f783511a40ee29976",
+      "source_byte_size": 2749585,
+      "remote_hash_verified_at_utc": "2026-07-21T18:32:54Z",
+      "chapter_pdf_pages": "39-56",
+      "license_expression": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_locator": "PDF page 56 states that the chapter is distributed under CC BY 4.0.",
+      "commercial_reuse_permitted": true,
+      "attribution_required": true,
+      "included_material": "PARAPHRASED_CHAPTER_FACTS_ONLY",
+      "images_included": false,
+      "status": "INCLUDED"
+    },
+    {
+      "source_id": "SRC-PID-2025-C4",
+      "work_title": "PID Control - New Design Methods and Applications",
+      "chapter_title": "Analytical Design of a Closed Control Loop Controller, Based on a Suboptimal Kalman-Busy Filter",
+      "chapter_authors": [
+        "Yuri V. Kim"
+      ],
+      "editor": "Constantin Voloşencu",
+      "publisher": "IntechOpen",
+      "publication_year": 2025,
+      "crossref_issued_year": 2024,
+      "publisher_pdf_copyright_year": 2025,
+      "publication_year_note": "Crossref records a 2024-11-15 issued date; the publisher PDF copyright and first-publication statement use 2025.",
+      "doi": "10.5772/intechopen.1003415",
+      "doi_url": "https://doi.org/10.5772/intechopen.1003415",
+      "metadata_url": "https://api.crossref.org/works/10.5772/intechopen.1003415",
+      "source_url": "https://intech-files.s3.amazonaws.com/a043Y000011YN2pQAG/0015852_Authors_Book%20%282025-01-30%2009%3A22%3A47%29.pdf",
+      "source_content_sha256": "fd74c64b321c3a3bb3d8aac44ce7986dba0233980fa1260f783511a40ee29976",
+      "source_byte_size": 2749585,
+      "remote_hash_verified_at_utc": "2026-07-21T18:32:54Z",
+      "chapter_pdf_pages": "59-68",
+      "license_expression": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_locator": "PDF page 68 states that the chapter is distributed under CC BY 4.0.",
+      "commercial_reuse_permitted": true,
+      "attribution_required": true,
+      "included_material": "PARAPHRASED_CHAPTER_FACTS_ONLY",
+      "images_included": false,
+      "status": "INCLUDED"
+    }
+  ],
+  "excluded_sources": [
+    {
+      "source_id": "EXCLUDED-FEEDBACK-SYSTEMS-CALTECH",
+      "title": "Feedback Systems: An Introduction for Scientists and Engineers",
+      "reason": "The freely available edition is licensed for noncommercial use; it is not used as a primary commercial-release dataset source.",
+      "status": "EXCLUDED_NONCOMMERCIAL"
+    },
+    {
+      "source_id": "EXCLUDED-LIBRETEXTS-CONTROL",
+      "title": "Engineering LibreTexts control-systems materials",
+      "reason": "Relevant pages use CC BY-NC-SA terms; they are excluded from this commercially reusable dataset.",
+      "status": "EXCLUDED_NONCOMMERCIAL"
+    }
+  ],
+  "verification_notes": [
+    "Crossref metadata and publisher-hosted PDFs were checked on 2026-07-21 UTC.",
+    "The source PDFs are not committed to the repository; hashes permit later byte-level verification.",
+    "Only individual chapter rights are relied upon. The reserved-rights book compilations are not redistributed.",
+    "All dataset claims are original concise paraphrases; no figures, tables, or substantial source passages are reproduced."
+  ]
+}

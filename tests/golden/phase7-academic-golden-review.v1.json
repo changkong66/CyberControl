@@ -1,0 +1,38 @@
+{
+  "schema_version": "phase7.academic-golden-review.v1",
+  "dataset_id": "phase7-academic-human-reviewed-facts.v1",
+  "facts_content_sha256": "c6f70ff86b7803fa6a0a82bcf5742019c495d8941ed95e62f5e52ea9cf0332dd",
+  "source_ledger_content_sha256": "f683441fe1b23057e525fc839f5495d358e03bc3d8dd8f26aa2b8ca6a81b88cc",
+  "review_policy_content_sha256": "bc7a0ca0ca21b2e06bfa869e4d86a80e33ddaa1402df947df7c209c4f77fc12e",
+  "reviewer_subject_ref": "github:changkong66",
+  "reviewer_roles": [
+    "PROJECT_OWNER",
+    "DATASET_OWNER",
+    "HUMAN_REVIEWER",
+    "AUTOMATIC_CONTROL_SUBJECT_MATTER_EXPERT",
+    "EDUCATION_TECHNOLOGY_SUBJECT_MATTER_EXPERT"
+  ],
+  "reviewer_qualification_statement": "Wu Chuhan (吴楚涵) self-attests that he is the project and dataset owner, the responsible human reviewer, and a subject-matter expert in automatic control and education technology.",
+  "conflict_of_interest": "PROJECT_AND_DATASET_OWNER",
+  "conflict_disposition": "DISCLOSED_AND_ACCEPTED_FOR_SINGLE_MAINTAINER_REVIEW; this is owner review, not institutionally independent peer review. Exact-source attribution, deterministic validation, hash binding, and reproducible metrics are mandatory mitigations.",
+  "review_policy_version": "phase7.academic-review-policy.v1",
+  "fact_count": 72,
+  "outcome_counts": {
+    "CONTRADICTED": 24,
+    "INSUFFICIENT_EVIDENCE": 24,
+    "SUPPORTED": 24
+  },
+  "target_module_counts": {
+    "C3_ACADEMIC": 72
+  },
+  "source_rights_scope": "CC-BY-3.0_AND_CC-BY-4.0_INDIVIDUAL_CHAPTER_PARAPHRASE_ONLY",
+  "rights_review_decision": "ACCEPTED",
+  "source_text_reproduced": false,
+  "images_or_tables_reproduced": false,
+  "contains_personal_data": false,
+  "authorization_record": "On 2026-07-22 Asia/Shanghai, Wu Chuhan explicitly confirmed and accepted facts SHA256 c6f70ff86b7803fa6a0a82bcf5742019c495d8941ed95e62f5e52ea9cf0332dd, source-ledger SHA256 f683441fe1b23057e525fc839f5495d358e03bc3d8dd8f26aa2b8ca6a81b88cc, and review-policy SHA256 bc7a0ca0ca21b2e06bfa869e4d86a80e33ddaa1402df947df7c209c4f77fc12e. He accepted the disclosed owner conflict and did not represent this decision as institutionally independent peer review.",
+  "prepared_at_utc": "2026-07-21T18:32:54Z",
+  "reviewed_at_utc": "2026-07-21T19:04:42Z",
+  "signature_method": "HASH_BOUND_REVIEWER_DECLARATION_IN_GIT_HISTORY",
+  "decision": "ACCEPTED"
+}
