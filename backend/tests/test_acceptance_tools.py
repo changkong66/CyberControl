@@ -84,8 +84,8 @@ def test_system_acceptance_covers_identity_mainline_release() -> None:
         'if ($migrationHead -ne "20260720_0010")',
         "/api/auth/verification-challenges",
         "/api/auth/register/email",
-        'Get-AccessToken `\n        -Username $registeredEmail',
-        'learner_admin_http_status = $learnerAdminStatus',
+        "Get-AccessToken `\n        -Username $registeredEmail",
+        "learner_admin_http_status = $learnerAdminStatus",
         "identity_plaintext_contact_matches",
         "foreign_tenant_visible_identity_accounts",
     )
