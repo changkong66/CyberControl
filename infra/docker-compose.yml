@@ -83,6 +83,8 @@ services:
     build:
       context: ..
       dockerfile: infra/backend.Dockerfile
+      args:
+        PYTHON_PACKAGE_INDEX_URL: ${LIYAN_PYTHON_PACKAGE_INDEX_URL:-https://pypi.org/simple}
     command: ["alembic", "-c", "alembic.ini", "upgrade", "head"]
     environment:
       LIYAN_ENVIRONMENT: development
@@ -143,6 +145,8 @@ services:
     build:
       context: ..
       dockerfile: infra/backend.Dockerfile
+      args:
+        PYTHON_PACKAGE_INDEX_URL: ${LIYAN_PYTHON_PACKAGE_INDEX_URL:-https://pypi.org/simple}
     environment:
       LIYAN_ENVIRONMENT: development
       LIYAN_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans

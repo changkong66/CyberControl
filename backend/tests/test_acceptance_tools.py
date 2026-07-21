@@ -9,6 +9,9 @@ from typing import Any, cast
 import pytest
 
 TOOLS_ROOT = Path(__file__).resolve().parents[2] / "tools" / "topic4"
+SYSTEM_ACCEPTANCE_SCRIPT = (
+    Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-system-acceptance.ps1"
+)
 SSE_TOOL = cast(
     dict[str, Any],
     runpy.run_path(
@@ -73,3 +76,19 @@ def test_sse_acceptance_http_client_disables_proxies_and_redirects(
             {},
             "https://example.com/token-sink",
         )
+
+
+def test_system_acceptance_covers_identity_mainline_release() -> None:
+    script = SYSTEM_ACCEPTANCE_SCRIPT.read_text(encoding="utf-8")
+    required_evidence = (
+        'if ($migrationHead -ne "20260720_0010")',
+        "/api/auth/verification-challenges",
+        "/api/auth/register/email",
+        'Get-AccessToken `\n        -Username $registeredEmail',
+        'learner_admin_http_status = $learnerAdminStatus',
+        "identity_plaintext_contact_matches",
+        "foreign_tenant_visible_identity_accounts",
+    )
+    for evidence in required_evidence:
+        assert evidence in script
+    assert 'registeredPassword = "Acceptance-$(([Guid]::NewGuid())' in script

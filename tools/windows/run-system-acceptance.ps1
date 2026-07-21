@@ -130,6 +130,31 @@ function Invoke-Api {
     return Invoke-RestMethod @arguments
 }
 
+function Invoke-PublicApi {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet("GET", "POST")][string]$Method,
+        [Parameter(Mandatory = $true)][string]$Uri,
+        [object]$Body,
+        [string]$IdempotencyKey
+    )
+
+    $headers = @{}
+    if (-not [string]::IsNullOrWhiteSpace($IdempotencyKey)) {
+        $headers["Idempotency-Key"] = $IdempotencyKey
+    }
+    $arguments = @{
+        Method = $Method
+        Uri = $Uri
+        Headers = $headers
+        TimeoutSec = 60
+    }
+    if ($null -ne $Body) {
+        $arguments["ContentType"] = "application/json; charset=utf-8"
+        $arguments["Body"] = $Body | ConvertTo-Json -Depth 20 -Compress
+    }
+    return Invoke-RestMethod @arguments
+}
+
 function Get-HttpStatusCode {
     param([Parameter(Mandatory = $true)]$ErrorRecord)
 
@@ -325,17 +350,139 @@ try {
     }
 
     $migrationHead = Invoke-Psql -Sql "select version_num from alembic_version;"
-    if ($migrationHead -ne "20260716_0009") {
+    if ($migrationHead -ne "20260720_0010") {
         throw "Unexpected Alembic head: $migrationHead"
     }
     $initialCounts = Invoke-Psql -Sql (
         "select (select count(*) from topic1_courses)," +
         "(select count(*) from topic2_student_profiles)," +
         "(select count(*) from topic3_generated_candidates)," +
-        "(select count(*) from topic4_verifications);"
+        "(select count(*) from topic4_verifications)," +
+        "(select count(*) from identity_accounts);"
     )
-    if ($initialCounts -ne "0|0|0|0") {
+    if ($initialCounts -ne "0|0|0|0|0") {
         throw "The acceptance PostgreSQL volume is not business-data clean: $initialCounts"
+    }
+
+    $registeredEmail = "release-$($sourceCommit.Substring(0, 12))@example.invalid"
+    $registeredPassword = "Acceptance-$(([Guid]::NewGuid()).ToString('N'))-A1"
+    $challengeRequest = Invoke-PublicApi `
+        -Method POST `
+        -Uri "$api/api/auth/verification-challenges" `
+        -IdempotencyKey "system-acceptance-identity-challenge-$(([Guid]::NewGuid()).ToString('N'))" `
+        -Body @{
+            schema_version = "verification-challenge.request.v1"
+            channel = "EMAIL"
+            purpose = "REGISTER"
+            identifier = $registeredEmail
+        }
+    $challenge = $challengeRequest.data.challenge
+    if ($challenge.state -ne "PENDING") {
+        throw "The registration challenge did not enter PENDING state."
+    }
+    $challengeId = [Guid]$challenge.challenge_id
+    $fixtureUrl = "http://127.0.0.1:8000/api/auth/dev/verification-codes/$challengeId"
+    $fixtureRaw = & docker exec $apiContainer python -c (
+        "import urllib.request; " +
+        "print(urllib.request.urlopen('$fixtureUrl', timeout=10).read().decode('utf-8'))"
+    )
+    if ($LASTEXITCODE -ne 0) {
+        throw "The loopback-only verification fixture could not be read inside the API container."
+    }
+    $fixture = ($fixtureRaw | Out-String) | ConvertFrom-Json
+    $challengeVerification = Invoke-PublicApi `
+        -Method POST `
+        -Uri "$api/api/auth/verification-challenges/verify" `
+        -IdempotencyKey "system-acceptance-identity-verify-$(([Guid]::NewGuid()).ToString('N'))" `
+        -Body @{
+            schema_version = "verification-challenge.verify.v1"
+            challenge_id = $challengeId.ToString()
+            code = [string]$fixture.data.code
+        }
+    if ($challengeVerification.data.challenge.state -ne "VERIFIED") {
+        throw "The registration challenge was not verified."
+    }
+    $registrationResponse = Invoke-PublicApi `
+        -Method POST `
+        -Uri "$api/api/auth/register/email" `
+        -IdempotencyKey "system-acceptance-identity-register-$(([Guid]::NewGuid()).ToString('N'))" `
+        -Body @{
+            schema_version = "user-register-by-email.command.v1"
+            challenge_id = $challengeId.ToString()
+            email = $registeredEmail
+            password = $registeredPassword
+            display_name = "Release Acceptance Learner"
+            preferred_locale = "zh-CN"
+            consent = @{
+                privacy_policy_version = "acceptance-v1"
+                terms_of_service_version = "acceptance-v1"
+                privacy_policy_accepted = $true
+                terms_of_service_accepted = $true
+            }
+        }
+    $registration = $registrationResponse.data.registration
+    if ($registration.state -ne "COMPLETED" -or -not $registration.login_required) {
+        throw "Email registration did not complete with an explicit login requirement."
+    }
+    $registeredAccountId = [Guid]$registration.account_id
+    $registeredLearnerToken = Get-AccessToken `
+        -Username $registeredEmail `
+        -Password $registeredPassword
+    $registeredLearnerClaims = Get-JwtClaims -Token $registeredLearnerToken
+    if (
+        $registeredLearnerClaims.tenant_id -ne "demo-academy" -or
+        $registeredLearnerClaims.roles -notcontains "learner" -or
+        $registeredLearnerClaims.roles -contains "reviewer" -or
+        $registeredLearnerClaims.roles -contains "tenant-admin"
+    ) {
+        throw "The registered account Token is not bound to the learner-only tenant policy."
+    }
+    $registeredProfileResponse = Invoke-Api `
+        -Method GET `
+        -Uri "$api/internal/accounts/me" `
+        -Token $registeredLearnerToken
+    $registeredProfile = $registeredProfileResponse.data.profile
+    if (
+        $registeredProfile.account_id -ne $registeredAccountId.ToString() -or
+        $registeredProfile.tenant_id -ne "demo-academy" -or
+        $registeredProfile.subject_ref -ne $registeredLearnerClaims.sub
+    ) {
+        throw "The registered account projection does not match the OIDC identity."
+    }
+    $learnerAdminStatus = $null
+    try {
+        Invoke-Api `
+            -Method GET `
+            -Uri "$api/internal/tenant/accounts?limit=1" `
+            -Token $registeredLearnerToken | Out-Null
+        throw "The learner account accessed tenant administration."
+    }
+    catch {
+        $learnerAdminStatus = Get-HttpStatusCode -ErrorRecord $_
+        if ($learnerAdminStatus -ne 403) {
+            throw
+        }
+    }
+    $tenantAdminToken = Get-AccessToken `
+        -Username "tenant-admin" `
+        -Password "tenant-admin-local-only1"
+    $tenantAdminClaims = Get-JwtClaims -Token $tenantAdminToken
+    if (
+        $tenantAdminClaims.tenant_id -ne "demo-academy" -or
+        $tenantAdminClaims.roles -notcontains "tenant-admin"
+    ) {
+        throw "The tenant administrator Token is invalid."
+    }
+    $tenantAccounts = Invoke-Api `
+        -Method GET `
+        -Uri "$api/internal/tenant/accounts?limit=200" `
+        -Token $tenantAdminToken
+    $registeredAdminView = @(
+        $tenantAccounts.data.accounts |
+            Where-Object { $_.account_id -eq $registeredAccountId.ToString() }
+    )
+    if ($registeredAdminView.Count -ne 1) {
+        throw "The tenant administrator cannot see the registered account projection."
     }
 
     $bootstrapRaw = & $bootstrapScript `
@@ -601,6 +748,13 @@ select 'committed_batches', count(*) from topic4_publication_batches
 where authorization_id='$($authorization.authorization_id)' and state='COMMITTED';
 select 'public_stream_events', count(*) from topic4_public_stream_events
 where authorization_id='$($authorization.authorization_id)';
+select 'identity_registered_accounts', count(*) from identity_accounts
+where account_id='$($registeredAccountId.ToString())' and status='ACTIVE';
+select 'identity_completed_registrations', count(*) from identity_registration_snapshots
+where registration_id='$($registration.registration_id)' and state='COMPLETED';
+select 'identity_plaintext_contact_matches', count(*) from identity_accounts
+where account_id='$($registeredAccountId.ToString())'
+and email_ciphertext like '%$registeredEmail%';
 "@
     $databaseChecks = [ordered]@{}
     foreach ($line in ($databaseChecksRaw -split "`r?`n")) {
@@ -617,7 +771,10 @@ where authorization_id='$($authorization.authorization_id)';
         $databaseChecks.outbox_open -ne 0 -or
         $databaseChecks.authorization_consumptions -ne 1 -or
         $databaseChecks.committed_batches -ne 1 -or
-        $databaseChecks.public_stream_events -ne 1
+        $databaseChecks.public_stream_events -ne 1 -or
+        $databaseChecks.identity_registered_accounts -ne 1 -or
+        $databaseChecks.identity_completed_registrations -ne 1 -or
+        $databaseChecks.identity_plaintext_contact_matches -ne 0
     ) {
         throw "Database acceptance invariants failed: $($databaseChecks | ConvertTo-Json -Compress)"
     }
@@ -633,6 +790,18 @@ where authorization_id='$($authorization.authorization_id)';
     $foreignCount = [int](@($foreignVisible)[-2])
     if ($foreignCount -ne 0) {
         throw "RLS exposed Topic4 records to a foreign tenant context."
+    }
+    $foreignIdentityVisible = & docker exec `
+        -e PGPASSWORD=liyans-app-local-only `
+        $script:postgresContainer `
+        psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -U liyans_app -d liyans -At -c `
+        "begin; select set_config('app.tenant_id','foreign-tenant',true); select count(*) from identity_accounts; rollback;"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Identity RLS foreign-tenant visibility probe failed to execute."
+    }
+    $foreignIdentityCount = [int](@($foreignIdentityVisible)[-2])
+    if ($foreignIdentityCount -ne 0) {
+        throw "RLS exposed identity records to a foreign tenant context."
     }
 
     $evidence = [ordered]@{
@@ -677,6 +846,18 @@ where authorization_id='$($authorization.authorization_id)';
             learner_subject_ref = [string]$learnerClaims.sub
             reviewer_subject_ref = [string]$reviewerClaims.sub
             reviewer_roles = @($reviewerClaims.roles)
+            registered_account = [ordered]@{
+                registration_id = [string]$registration.registration_id
+                account_id = $registeredAccountId.ToString()
+                subject_ref = [string]$registeredLearnerClaims.sub
+                roles = @($registeredLearnerClaims.roles)
+                profile_version = [int]$registeredProfile.profile_version
+                email_hint = [string]$registeredProfile.email_hint
+                learner_admin_http_status = $learnerAdminStatus
+                tenant_admin_visible = $true
+                registration_state = [string]$registration.state
+                login_via_oidc = $true
+            }
             tokens_persisted = $false
         }
         topic1_topic2 = $bootstrap
@@ -720,6 +901,7 @@ where authorization_id='$($authorization.authorization_id)';
         database = [ordered]@{
             invariants = $databaseChecks
             foreign_tenant_visible_verifications = $foreignCount
+            foreign_tenant_visible_identity_accounts = $foreignIdentityCount
         }
     }
 
