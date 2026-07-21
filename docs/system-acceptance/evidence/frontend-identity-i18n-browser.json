@@ -1,0 +1,42 @@
+{
+  "schema_version": "cybercontrol.frontend-browser-acceptance.v1",
+  "generated_at_utc": "2026-07-21T13:37:55.1902210Z",
+  "source": {
+    "branch": "codex/frontend-identity-i18n-mainline-replay",
+    "commit": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
+    "tree": "01c1705debb4b869721b9b9432ed2747064921b8",
+    "pull_request": 30,
+    "pull_request_url": "https://github.com/changkong66/CyberControl/pull/30"
+  },
+  "runtime": {
+    "compose_project": "cybercontrol-frontend-mainline",
+    "frontend_url": "http://127.0.0.1:5173",
+    "frontend_image": "sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2",
+    "frontend_user": "65532:65532",
+    "playwright_cli_version": "0.1.17"
+  },
+  "checks": {
+    "zh_cn_login_rendered": true,
+    "en_us_login_rendered": true,
+    "zh_tw_registration_rendered": true,
+    "registration_email_and_phone_modes_present": true,
+    "privacy_and_terms_controls_present": true,
+    "console_errors": 0,
+    "console_warnings": 0,
+    "visual_overlap_detected": false
+  },
+  "screenshots": [
+    {
+      "path": "docs/system-acceptance/evidence/screenshots/frontend-mainline-login-en.png",
+      "sha256": "4c60b00422a136b3f8e4f337589705510dffdb9a52bae8d83587a7d1dfdbb259",
+      "locale": "en-US",
+      "route": "/login"
+    },
+    {
+      "path": "docs/system-acceptance/evidence/screenshots/frontend-mainline-register-zh-tw.png",
+      "sha256": "d5bfcb28c9cb48bac3e9b60fda1813ea97f1884f2c74393cc157b748aa2af03d",
+      "locale": "zh-TW",
+      "route": "/register"
+    }
+  ]
+}
