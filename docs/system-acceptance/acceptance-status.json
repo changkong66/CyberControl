@@ -61,7 +61,7 @@
       "artifact_manifest_sha256": "2bdcaa3702c97fe3766dc592610b66801352934a47e850fc1dd2200e8f03b3f2",
       "postgres_environment_path": "docs/system-acceptance/evidence/phase7-c3-postgres-environment.json",
       "postgres_environment_sha256": "e2d07609663939d95daca3ccde416697e58cf6ed2f2a2a54bd6a81bc1e762284",
-      "tooling_source_commit": "265310f7563c75eb8e0aaf0dd48bd6e8c702eb08",
+      "tooling_source_commit": "557bcca967ade6b8f6aa3f4925ecdaee0334f423",
       "synthetic_performance_corpus": {
         "record_count": 100000,
         "sha256": "12614d0eb5a59dccf841d1ef8479efec905fa7cff3d7f4d5f6214e9fe9dd4393",
