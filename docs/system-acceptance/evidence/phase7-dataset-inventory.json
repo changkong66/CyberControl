@@ -1,0 +1,65 @@
+{
+  "clean_source": true,
+  "datasets": [
+    {
+      "accuracy_claim_permitted": false,
+      "corpus_size": 100000,
+      "dataset_id": "phase7-c2-synthetic-retrieval-performance.v1",
+      "generator_path": "backend\\benchmarks\\topic4_c2_retrieval.py",
+      "generator_sha256": "283c6b11ce739588490f17fbb200d2c8349deeb23e8bb250bb07fa6907a7bbaa",
+      "knowledge_point_count": 100,
+      "license_expression": "LicenseRef-CyberControl-Internal-Benchmark",
+      "materialized_artifact": {
+        "artifact_path": "D:\\CyberControlAcceptance\\phase7\\datasets\\phase7-c2-synthetic-retrieval-performance.v1.jsonl",
+        "byte_size": 52067890,
+        "content_sha256": "12614d0eb5a59dccf841d1ef8479efec905fa7cff3d7f4d5f6214e9fe9dd4393",
+        "record_count": 100000
+      },
+      "purpose": "RETRIEVAL_LATENCY_AND_THROUGHPUT_ONLY",
+      "source_class": "SYNTHETIC_DETERMINISTIC"
+    },
+    {
+      "accuracy_claim_permitted": false,
+      "dataset_id": "phase7-local-demo-fixtures.v1",
+      "production_data_eligible": false,
+      "purpose": "LOCAL_DEMONSTRATION_ONLY",
+      "rights_status": "NOT_ASSERTED_FOR_REDISTRIBUTION",
+      "source_class": "CURATED_LOCAL_FIXTURE",
+      "source_path": "data\\topic1\\automatic-control-principles.v1.json",
+      "source_sha256": "7de9d68ca809f6a72db58829dfac87628b023adf15813cf2281019b92a9119b1"
+    },
+    {
+      "acceptance_eligible": false,
+      "dataset_id": "phase7-academic-human-reviewed-facts.v1",
+      "expected": {
+        "facts_path": "tests\\golden\\phase7-academic-golden-facts.v1.jsonl",
+        "required_fact_fields": [
+          "fact_id",
+          "claim",
+          "expected_outcome",
+          "citations",
+          "license_expression"
+        ],
+        "required_review_fields": [
+          "schema_version",
+          "dataset_id",
+          "facts_content_sha256",
+          "reviewer_subject_ref",
+          "reviewed_at_utc",
+          "review_policy_version",
+          "decision"
+        ],
+        "review_path": "tests\\golden\\phase7-academic-golden-review.v1.json"
+      },
+      "purpose": "ACADEMIC_ACCURACY_ONLY",
+      "state": "MISSING_HUMAN_REVIEWED_GOLDEN_SET"
+    }
+  ],
+  "dirty_files_at_start": [],
+  "gate_b_state": "BLOCKED_HUMAN_REVIEWED_GOLDEN_SET_MISSING",
+  "generated_at_utc": "2026-07-21T15:57:20.360652+00:00",
+  "registry_descriptor_sha256": "a8526a9a080eb775a6d84817bf26ad054c814c1c8163f84513bdd9407fe7b356",
+  "schema_version": "phase7.dataset-registry.v1",
+  "source_commit": "265310f7563c75eb8e0aaf0dd48bd6e8c702eb08",
+  "source_tree": "d96a0b7fd157c49dc33ea7d0505d175cfcb9539b"
+}
