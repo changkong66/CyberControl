@@ -1,181 +1,223 @@
-# Next Stage Prompt: Frontend Identity And Three-Language Workbench
+# Next Stage Prompt: Phase 7 Final Non-Functional And Production Acceptance
 
 ```text
-# CyberControl Phase 7.3: frontend registration, account management and i18n
+# CyberControl Phase 7.4: final non-functional and production acceptance
 
-Execute this task only after the current identity-mainline evidence PR is merged
-and its protected-main Release Quality Gates pass. Always branch from the latest
-remote main; do not assume a stale SHA.
+You are the release and reliability architect for a single-maintainer,
+multi-tenant, trusted AI education platform. Work from real repository state,
+real PostgreSQL, real Keycloak, real containers, real CI and retained evidence.
+Never fabricate test results, CI status, performance figures, backup/restore
+results or provider integration.
 
-The project is RELEASE_CANDIDATE, not SYSTEM_ACCEPTED.
+All work is serial. Stop at the first failed gate. Do not begin the next gate
+until the current result, logs, image IDs, dataset hashes and residual risks are
+archived.
 
-## Fixed facts
+## Fixed baseline
 
-- Protected main currently includes identity backend PR #27 and acceptance PR #28.
-- Current accepted main before the evidence PR: bc9836532f6300e91dc7c0a906b07dabe754c138.
-- Protected-main CI Run 29801095074 passed 8/8 jobs.
-- Clean external-volume evidence is in
-  docs/system-acceptance/evidence/identity-mainline.json.
-- Alembic head is 20260720_0010; migrations 0001-0010 are immutable for this task.
-- Keycloak Authorization Code + PKCE is the only identity and password authority.
-- TenantID, roles and scopes come only from verified OIDC claims and backend TenantContext.
-- Existing RLS, SERIALIZABLE, CAS, audit, Outbox, SSE and C12 semantics are frozen.
-- Current quality evidence: 519 Python passed, 1 skipped, 91.33% coverage;
-  54 Vitest; 3 Playwright; push/PR/main gates each 8/8.
-- No real SMS, email, AI Provider or production secret may enter source, logs or fixtures.
+- Repository: C:\Users\wch06\Documents\CyberControl
+- Protected main: 8f0966f96dad8a6be34bd4ab11c985d001dd0185
+- Main CI: Run 29831570652, 8/8 Release Quality Gates passed
+- Product PR: #30, frontend identity/i18n merged by Squash Merge
+- Mainline clean-volume evidence:
+  docs/system-acceptance/evidence/frontend-identity-i18n-mainline.json
+- Browser evidence:
+  docs/system-acceptance/evidence/frontend-identity-i18n-browser.json
+- Protected external PostgreSQL volume: cybercontrol_release_postgres
+- Migration head: 20260720_0010
+- Keycloak is the only password and OIDC identity authority.
+- The platform state is RELEASE_CANDIDATE, not SYSTEM_ACCEPTED.
 
-## Branch and sequencing
+## Immutable boundaries
 
-1. Confirm the evidence PR is merged and latest main CI is 8/8 green.
-2. From latest main create `codex/frontend-identity-i18n`.
-3. Do not modify backend Python, migrations, generated identity contract meaning,
-   repository governance or historical acceptance snapshots.
-4. Complete i18n infrastructure before page implementation.
-5. Complete registration before account self-service and tenant administration.
-6. Complete Vitest and Playwright before opening the PR.
-7. Merge only after push and PR workflows are both 8/8 green.
-8. Replay registered-user OIDC and the trusted release chain from merged main.
+1. Do not modify migrations 0001-0010, Topic1-Topic4 contracts, RLS,
+   SERIALIZABLE transaction semantics, audit chain, Outbox, SSE cursor protocol,
+   Keycloak authority or C12 release semantics.
+2. Do not lower the Python 90% hard coverage gate, disable CI, change branch
+   protection or use admin merge bypass.
+3. Do not submit production or Provider secrets. Real-provider credentials may
+   only be injected into a sealed external environment and must never enter logs,
+   evidence, source, Docker images or shell history.
+4. Do not send client-controlled tenant, subject, role or scope headers. Tenant
+   identity remains derived only from verified OIDC claims and TenantContext.
+5. Do not reuse dirty development data for acceptance. Every release run must
+   identify its PostgreSQL volume, initial counts, image IDs and source SHA.
+6. Do not mark SYSTEM_ACCEPTED before every listed final gate passes with
+   reproducible evidence.
 
-Any backend contract gap, dirty source, failed CI, identity ambiguity or security
-boundary uncertainty stops the task. Document the gap instead of changing the
-frozen backend in this PR.
+## Branch and evidence discipline
 
-## Existing backend APIs to consume
+1. First verify that the current replay-evidence PR is merged and that the
+   latest protected main CI is 8/8 green.
+2. Start from latest main in one new branch:
+   codex/phase7-final-nonfunctional-acceptance
+3. Preserve historical acceptance snapshots. Add current evidence under
+   docs/system-acceptance/evidence/ and update only current-state status/report.
+4. Separate benchmark tooling, test code, execution evidence and documentation
+   into reviewable Conventional Commit commits.
+5. Any defect requiring product code changes stops this branch. Create an ADR
+   explaining the frozen-boundary impact and open a separate defect PR from main.
+   Resume final acceptance only from the newly merged main SHA.
 
-Public registration:
+## Gate A: preflight and reproducibility
 
-- POST /api/auth/verification-challenges
-- POST /api/auth/verification-challenges/verify
-- POST /api/auth/register/email
-- POST /api/auth/register/phone
+Before destructive or long-running work, record:
 
-Authenticated account self-service:
+- git branch, clean worktree, source SHA and tree SHA;
+- Docker Desktop disk location and free capacity;
+- exact Compose configuration SHA256, uv.lock SHA256 and pnpm-lock SHA256;
+- `docker volume inspect` for cybercontrol_release_postgres;
+- running containers, image digests and mounted volumes;
+- CPU, RAM, disk and Docker resource limits;
+- benchmark tool versions, host OS and network topology.
 
-- GET /internal/accounts/me
-- PATCH /internal/accounts/me
-- POST /internal/accounts/me/verification-challenges
-- POST /internal/accounts/me/verification-challenges/verify
-- POST /internal/accounts/me/contact
+Never delete development volumes. If the release volume must be reset, first
+verify no container mounts it, record its inspect output, recreate only that
+volume with the exact `release-acceptance` and `isolated-clean-postgres` labels,
+and prove initial business counts are zero before loading fixtures.
 
-Tenant administration:
+## Gate B: evidence dataset and accuracy boundary
 
-- GET /internal/tenant/accounts
-- GET /internal/tenant/accounts/{account_id}
-- GET /internal/tenant/accounts/{account_id}/audit
-- POST /internal/tenant/accounts/{account_id}/disable
-- POST /internal/tenant/accounts/{account_id}/restore
-- GET /internal/tenant/registrations/{registration_id}
+Create versioned, content-addressed datasets and state their distinct purpose:
 
-The development verification-code inbox is loopback-only test infrastructure.
-Production UI must never depend on it.
+1. A 100,000-chunk retrieval performance corpus. This measures retrieval
+   latency/throughput only; it is not an accuracy claim.
+2. A human-reviewed academic golden fact set with sources, licenses, reviewer
+   decision, SHA256 and provenance. Report precision, recall, false positives
+   and false negatives separately by Topic4 module where meaningful.
+3. Local demo fixtures, clearly labelled non-production.
 
-## Internationalization foundation
+For each dataset store version, source license, counts, SHA256, import command,
+reviewer policy and tenant isolation strategy. Do not claim broad academic
+coverage until the reviewed set proves it.
 
-- Add and lock `vue-i18n` using the existing pnpm workflow.
-- Locales: `zh-CN`, `zh-TW`, `en-US`.
-- Default and missing-key fallback: `zh-CN`.
-- Store the authenticated user's preference through the existing profile API.
-- Persist only a non-sensitive pre-login locale preference in session-scoped storage.
-- Map application locale to Keycloak `ui_locales`; use explicit mapping when
-  Keycloak expects `en` instead of `en-US`.
-- Configure the Keycloak realm/login theme for Simplified Chinese, Traditional
-  Chinese and English without enabling Keycloak native public self-registration.
-- Move all user-visible shell, auth, registration, account, validation, error,
-  empty-state, date and number text into message catalogs.
-- Add a CI test that fails on missing locale keys or user-visible hard-coded text
-  in the new identity surfaces.
-- Do not claim that academic source data, historical AI output or persisted
-  knowledge content has been translated.
+## Gate C: 2,000 authenticated SSE connections
 
-## Required routes and behavior
+Implement or configure a reproducible load harness without weakening the
+existing SSE client/server protocol. It must use valid OIDC Bearer Tokens and
+at least two tenants.
 
-### /register
+Before execution define acceptance thresholds for:
 
-- Email and E.164 phone segmented modes.
-- Normalize identifiers before request submission.
-- Request and verify a challenge, then submit the matching versioned register command.
-- Use a 60-second resend countdown, password policy feedback and accessible errors.
-- Every write uses a fresh valid Idempotency-Key.
-- Use uniform user-facing responses that do not reveal whether an account exists.
-- Never log password, code, Token or raw contact data.
-- Registration success never auto-logs in; redirect to the standard OIDC login.
+- successful connected clients and authenticated handshakes;
+- reconnect success and Last-Event-ID recovery;
+- duplicate suppression and sequence monotonicity;
+- cross-tenant event leakage (must be zero);
+- slow-consumer behavior and bounded queue/memory growth;
+- p50/p95/p99 connection establishment and event delivery latency;
+- API error rate, SSE reconnect rate, CPU, memory, file descriptors and database
+  connection utilization;
+- Outbox pending/claimed/dead counts and dispatch lag.
 
-### /account/profile
+Run at least 2,000 authenticated connections. Emit a machine-readable result
+file and a human report with environment constraints. If local hardware cannot
+reliably produce 2,000 connections, do not fake success: document the measured
+capacity and move the test to an appropriately sized isolated runner.
 
-- Load the current account through the authenticated profile endpoint.
-- Edit display name and locale with expected-version CAS.
-- Email or phone changes require a new challenge and verification.
-- Handle CAS conflicts by reloading authoritative state and preserving a safe user draft.
-- Never expose TenantID, subject, roles or scopes as editable fields.
+## Gate D: eight-hour trusted-workflow soak
 
-### /tenant/accounts
+Run a minimum eight-hour workload over a clean, isolated release environment.
+The cycle must cover Topic3 generation, C1-C12 verification, revision where
+applicable, reviewer decision, C12 publication and authenticated/public SSE.
 
-- Require account administration read/write scopes in router and command guards.
-- List only the current tenant's accounts and show status, masked contacts and audit history.
-- Disable or restore with expected-version CAS and explicit confirmation.
-- Learner/reviewer users without admin scope receive the standard 403 surface.
-- No cross-tenant cache entry may survive logout, 401/403 or OIDC tenant change.
+Record time series at a fixed interval:
 
-### /account/recovery
+- service health/restarts, CPU and RSS;
+- database connections, locks, long transactions and disk growth;
+- Outbox pending/claimed/dead/published and delivery lag;
+- SSE connection count, reconnects, duplicate events and tenant leakage;
+- request latency/error rate and provider circuit state;
+- audit-chain verification and publication-state consistency.
 
-- Delegate password recovery to Keycloak's supported OIDC/account action flow.
-- Do not add an application password-reset endpoint or store recovery secrets.
-- Preserve and validate post-recovery return targets against a local allowlist.
+Define failure conditions before the run. Do not reset counters or selectively
+discard failed intervals. End with an integrity query that verifies RLS, audit
+hash chain, Outbox, C12 one-time consumption and RELEASED snapshots.
 
-## Security requirements
+## Gate E: backup, restore and disaster recovery
 
-- Continue using session-scoped OIDC storage; never use localStorage for Tokens.
-- Never send X-Tenant-ID, X-Subject-Ref, role or scope identity headers.
-- Send only Authorization, valid X-Trace-ID, X-Session-ID, Idempotency-Key and
-  Last-Event-ID where the existing client permits them.
-- Validate every response Envelope and runtime schema.
-- Redact password, verification code, Token, raw email and raw phone from logs,
-  telemetry, test traces and screenshots.
-- Clear identity/profile/account caches and SSE cursors on logout, 401/403 or tenant change.
-- Keep CSP, non-root container and Nginx proxy-buffering controls unchanged.
+1. Produce a versioned PostgreSQL logical or physical backup using a supported
+   tool and cryptographic digest.
+2. Restore it into an independent PostgreSQL instance/volume, never over the
+   source release volume.
+3. Measure actual RPO and RTO from timestamps, not estimates.
+4. Verify restored migration head, tenant/RLS policy, audit chain, artifacts,
+   Outbox ordering, identity projection and C12 publication consistency.
+5. Exercise and document fail-closed behavior for:
+   - PostgreSQL restart during active work;
+   - Faiss/BM25 artifact corruption and recoverability;
+   - Keycloak/JWKS unavailability;
+   - mock/real Provider timeout and circuit opening;
+   - interrupted publication transaction and Outbox retry.
 
-## Tests
+Any data loss, cross-tenant visibility, inconsistent publication or secret leak
+is a blocking failure.
 
-Vitest and MSW must cover:
+## Gate F: sealed Provider integration
 
-- email and phone registration success;
-- duplicate/anti-enumeration response, invalid or expired code, rate limit and network failure;
-- idempotent retry and conflicting replay handling;
-- registered account redirected to and authenticated through existing OIDC PKCE;
-- profile edit, locale persistence, contact re-verification and CAS conflict;
-- learner/reviewer/admin route and command separation;
-- tenant-change, logout and 401/403 cache cleanup;
-- locale switching, `zh-CN` fallback, missing-key failure and Keycloak `ui_locales` mapping;
-- password/code/Token/PII redaction from client logs and error objects.
+Keep local development in fixture-only mode. For real Provider checks:
 
-Playwright must cover desktop and mobile:
+- use a separate sealed environment and least-privilege credentials injected
+  from an external secret manager;
+- predefine egress allowlists, budget/rate limits, retention and redaction;
+- record only provider configuration fingerprints, not secrets or raw prompts
+  containing PII;
+- verify Provider outage and malformed response handling remains fail-closed;
+- keep local CI and developer Compose free of Provider credentials.
 
-1. choose locale before login;
-2. register by local email fixture without exposing the code in browser logs;
-3. complete OIDC login as the new learner;
-4. edit profile and locale;
-5. confirm learner cannot access tenant administration;
-6. confirm tenant-admin can list, inspect, disable and restore the account;
-7. verify account switching clears prior-tenant state;
-8. verify all three locales render without overflow or missing-key placeholders.
+This gate is incomplete if a sealed environment is unavailable; record that
+fact rather than emulating a real Provider call.
 
-Maintain frontend thresholds at statements/functions/lines >=80% and branches
->=75%. TypeScript strict, build, pnpm audit, SBOM/license, Trivy and Gitleaks must
-all pass.
+## Gate G: production deployment and compliance operations
 
-## Delivery and replay
+Select the target platform and rehearse the complete deployment path:
 
-- Commit i18n foundation, identity pages, tests and evidence separately with
-  allowed Conventional Commit types.
-- Create a standard PR to protected main; no admin override or ruleset changes.
-- Require both push and pull_request workflows to pass all eight jobs.
-- Squash Merge only when GitHub reports mergeable_state=clean.
-- Wait for merged-main 8/8 CI.
-- Recreate the protected release volume only after verifying labels and no mounts.
-- Replay registration -> OIDC -> Topic1 -> Topic3 -> Topic4 -> C12 -> SSE from
-  merged main and archive source SHA, dataset hashes and image IDs.
+- signed immutable image/digest promotion and rollback;
+- domain, TLS, HTTP security headers and OIDC redirect allowlists;
+- secrets manager, key rotation and least-privilege service identities;
+- managed PostgreSQL/PITR, retention, capacity, alerting and dashboard setup;
+- service SLOs, runbooks, incident response and tenant offboarding;
+- cross-browser matrix and WCAG 2.2 AA audit with issue disposition;
+- PII inventory plus export, correction, retention and deletion workflow tests.
 
-Stop after the frontend identity/i18n replay is archived. The 2,000-SSE, eight-hour
-soak, DR, sealed Provider and production-operation gates remain separate final tasks.
-Do not mark SYSTEM_ACCEPTED.
+Do not call a local Docker Compose run a production deployment rehearsal.
+
+## Required quality and security checks
+
+At every code/evidence PR boundary run and archive:
+
+- full Windows Release Quality Gates;
+- real PostgreSQL tests and frozen-contract drift checks;
+- Vitest and Playwright when frontend tooling changes;
+- Go fmt/vet/race/test/build;
+- pnpm/pip audit, SBOM and license policy;
+- Trivy for exact runtime image digests;
+- Gitleaks history and worktree scans.
+
+The current standard quality run has 514 passed and 6 skipped Python tests at
+90.57% coverage. The 90% hard gate passed; the historical 91.19% observation is
+not met in that configuration. Improve coverage with meaningful tests or record
+a reviewed disposition; do not manipulate exclusions or lower thresholds.
+
+## Final acceptance state transition
+
+Only transition through evidence-backed states:
+
+RELEASE_CANDIDATE
+-> FINAL_LOAD_ACCEPTED
+-> SOAK_ACCEPTED
+-> DR_ACCEPTED
+-> PRODUCTION_OPERATIONS_ACCEPTED
+-> SYSTEM_ACCEPTED
+
+For each state record exact commit, source tree, PR URL, CI run URLs, image IDs,
+volume/restore identifiers, dataset hashes, tool versions, raw results, pass/fail
+thresholds, failures, residual risk and reviewer decision. If any gate is
+partial, leave SYSTEM_ACCEPTED unset.
+
+At the end produce:
+
+- docs/system-acceptance/final-system-acceptance-report.md;
+- per-gate machine-readable evidence and human reports;
+- deployment/DR/incident runbooks;
+- a concise executive release decision with explicit residual risks.
 ```

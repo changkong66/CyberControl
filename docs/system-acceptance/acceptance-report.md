@@ -2,105 +2,122 @@
 
 ## Decision
 
-Protected `main` revision `bc9836532f6300e91dc7c0a906b07dabe754c138` is
-accepted as a **release candidate**. The Keycloak-backed identity backend, its
-runtime Outbox integration, two remote PR workflows, the protected-main
-workflow and a clean external-volume mainline replay all passed.
+Protected `main` revision `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
+is accepted as a **release candidate** with the frontend identity and
+internationalization scope complete. PR #30 passed both remote workflows,
+merged through the protected branch, passed the merged-main workflow, and was
+replayed from a newly recreated external PostgreSQL release volume.
 
-Formal state: `RELEASE_CANDIDATE`.
+Formal state:
+`FRONTEND_IDENTITY_I18N_MAINLINE_REPLAY_ACCEPTED_FINAL_GATES_PENDING`.
 
-The project is not `SYSTEM_ACCEPTED`. Final high-load SSE, soak, disaster
-recovery, sealed Provider, production deployment, accessibility and privacy
-lifecycle evidence remains open.
+The project is not `SYSTEM_ACCEPTED`. High-load SSE, long-duration soak,
+independent backup/restore and disaster recovery, sealed Provider integration,
+production deployment, cross-browser/WCAG and PII lifecycle evidence remain
+open.
 
 ## Evaluated Baseline
 
-- Protected `main`: `bc9836532f6300e91dc7c0a906b07dabe754c138`
-- Identity backend PR: [#27](https://github.com/changkong66/CyberControl/pull/27)
-- Identity acceptance PR: [#28](https://github.com/changkong66/CyberControl/pull/28)
-- PR #28 push CI: [Run 29800780508](https://github.com/changkong66/CyberControl/actions/runs/29800780508), 8/8
-- PR #28 pull-request CI: [Run 29800825295](https://github.com/changkong66/CyberControl/actions/runs/29800825295), 8/8
-- Protected-main CI: [Run 29801095074](https://github.com/changkong66/CyberControl/actions/runs/29801095074), 8/8
+- Protected `main`: `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
+- Source tree: `01c1705debb4b869721b9b9432ed2747064921b8`
+- Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
+- Push CI: [Run 29830793779](https://github.com/changkong66/CyberControl/actions/runs/29830793779), 8/8
+- Pull-request CI: [Run 29830972987](https://github.com/changkong66/CyberControl/actions/runs/29830972987), 8/8
+- Protected-main CI: [Run 29831570652](https://github.com/changkong66/CyberControl/actions/runs/29831570652), 8/8
 - Alembic head: `20260720_0010`
 - Historical migrations `0001` through `0009`: unchanged
-- Mainline evidence: [identity-mainline.json](evidence/identity-mainline.json)
-- Evidence SHA256: `f0ee985feac9cebf229fc018d0b864b5bfb861805f7778eeef142da97ffd8ab8`
+- Mainline evidence: [frontend-identity-i18n-mainline.json](evidence/frontend-identity-i18n-mainline.json)
+- Evidence SHA256: `c61ae5e8b5b4c3a516aaf3c8ed746df6217687f963726a5ea05d2c7fae736b6e`
+- Browser evidence: [frontend-identity-i18n-browser.json](evidence/frontend-identity-i18n-browser.json)
 
 ## Closure Delivered
 
-### Identity Boundary
+### Identity And Account Surfaces
 
+- Email and E.164 phone registration are available without creating a second
+  identity authority.
 - Keycloak remains the only password, password-hash and OIDC subject authority.
-- Email and E.164 phone registration use versioned contracts, hashed challenges,
-  idempotency, bounded retries and compensation/reconciliation.
-- The application stores encrypted contact projections and keyed lookup digests,
-  never passwords, password hashes, usable verification codes or Keycloak tokens.
-- New accounts receive learner access only; tenant administration is
-  server-authorized and cannot be requested by the client.
-- Six additive identity tables use FORCE RLS; append-only registration and
-  consent evidence, audit events and transactional Outbox records are active.
-- Reconciliation uses a least-privilege tenant catalog and claim-token CAS for
-  restart-safe external-side-effect recovery.
+- Registration uses verification challenges, payload-aware idempotency and
+  standard anti-enumeration responses.
+- Profile updates and verified contact changes use the frozen backend APIs and
+  expected-version conflict handling.
+- Tenant account administration is scope guarded; a learner receives HTTP 403.
+- Account recovery delegates to Keycloak and does not introduce an application
+  password reset store.
+- OIDC state remains session scoped. Browser local storage contains no Token.
+- The frontend sends no `X-Tenant-ID`, `X-Subject-Ref`, role or scope identity
+  headers.
 
-### Runtime Defect Found By Real Replay
+### Three-Language Workbench
 
-The first identity-aware clean-volume replay failed closed. Two identity Outbox
-messages reached `DEAD` and the next message in one ordered partition remained
-`PENDING` because no identity event handler was registered in application
-lifespan.
+- Application locales: `zh-CN`, `zh-TW`, `en-US`.
+- Keycloak locale handoff maps application locale to `ui_locales`.
+- Login, registration, account profile, tenant administration, navigation,
+  validation, error and empty-state text use the locale catalog.
+- Runtime browser inspection rendered Simplified Chinese, Traditional Chinese
+  and English with zero console errors and zero warnings.
+- This acceptance does not claim that historical academic content or generated
+  teaching material has been translated.
 
-The fix adds a catalog for all nine identity event types and registers them with
-the existing tenant-scoped, durable SSE projection. An AST drift test proves the
-catalog matches every identity event emitted by `IdentityService`, and a message
-bus test proves every catalog event dispatches. The acceptance redline was not
-weakened. The successful replay ended with 29 published, zero open and zero dead
-Outbox messages.
+### Frontend Runtime Boundary
+
+- API Envelopes and response bodies are validated against generated CSP-safe
+  validators.
+- Idempotency keys are reused only for identical retries and rotate when the
+  request payload changes.
+- Passwords, codes, Tokens and contact PII are redacted from client diagnostics.
+- The frontend runtime image runs as `65532:65532`; the backend runs as
+  `10001:10001`.
+- The release frontend image is the hardened Nginx runtime and does not include
+  the Node build environment.
 
 ## Clean External-Volume Replay
 
-The protected external volume `cybercontrol_release_postgres` was confirmed
-unused, recreated with its original release-acceptance labels, and mounted as
-the PostgreSQL data directory. No development volume was deleted.
+The prior acceptance stack was stopped without `--volumes`. No development
+volume was deleted. The external volume `cybercontrol_release_postgres` was
+confirmed unused, recreated by exact name, and restored with these labels:
 
-The runner asserted representative initial business counts `0|0|0|0|0` before
-seeding and then executed:
+- `com.cybercontrol.purpose=release-acceptance`
+- `com.cybercontrol.data-class=isolated-clean-postgres`
+
+The runner asserted initial business counts `0|0|0|0|0` and then executed:
 
 `registration -> OIDC login -> Topic1 -> Topic2 -> Topic3 -> C1-C12 -> C12 release -> authenticated SSE`
 
 | Stage | Result |
 | --- | --- |
 | Registration | email challenge verified; registration `COMPLETED` |
-| OIDC | registered user logged in through Keycloak |
-| Authorization | registered account learner-only; tenant admin API returned 403 |
-| Administration | tenant-admin could view the new account projection |
-| Topic1/Topic2 | authoritative graph and learner bootstrap passed |
+| OIDC | the newly registered account logged in through Keycloak |
+| Authorization | new account learner-only; tenant administration returned 403 |
+| Administration | tenant-admin could view the account projection |
+| Topic1/Topic2 | authority graph, learner profile and local knowledge index passed |
 | Topic3 | Lecturer generation `COMPLETED`; immutable Candidate persisted |
-| Topic4 | 10 Claims; report decision `RELEASE` |
+| Topic4 | 10 Claims; all required module results supported; decision `RELEASE` |
 | C12 | server-derived one-time authorization committed atomically |
-| Replay defense | same key idempotent; changed replay returned HTTP 409 |
+| Replay defense | same key returned the same publication; changed replay returned 409 |
 | Final state | `RELEASED` |
 | SSE | durable replay and authenticated Bearer stream passed |
 
 Immutable identifiers for this replay:
 
-- Registration: `e5c242d3-1fd2-4079-a81a-e0336db0db30`
-- Account: `17d2cc50-7517-4a5a-86ca-d600c11d37a4`
-- Candidate: `54a5f85b-bead-5ed0-9b6a-213e1f2d8466`
-- Verification: `52023f09-c6fe-5f8b-91f7-e318d6c3295e`
-- Report: `52d77cf5-4ea9-55fc-bd5e-cb2ff8e703d4`
-- Authorization: `225e81d2-e645-5c1a-96cb-d4bf9bc69c20`
-- Publication batch: `c6b11b51-6b08-5839-a5bf-3a42f0757dfd`
-- Public event: `80fb8da9-98e9-5388-8e50-f9b09ce590a9`
+- Registration: `c5bf41c3-2345-4424-abef-2906c80d866f`
+- Account: `8a0b37b3-fae1-4ff3-93ef-0e718ef7c2ad`
+- Candidate: `686141c0-47e6-5bd3-88f1-45089eb7bd2e`
+- Verification: `c8542f23-8f67-5391-b398-1bcfee06aeb1`
+- Report: `6f816b75-d170-5e78-a013-bc5e07ea3d70`
+- Authorization: `b8c962de-61ac-584e-b019-b005e4d00066`
+- Publication batch: `9b4c4763-0581-5b70-af40-1f67a75dac44`
+- Public event: `e7b97911-36ee-53d1-a9ef-21095f098dac`
 
 ## Source And Runtime Fingerprints
 
-- Source tree: `5aa4bbe4234d2dca85d7560081fe67d60d219b25`
-- Compose config SHA256: `f12990ca5db459daa30fc289a7c2d7c787384c5bf4d3616ebfa7dbec13e4a8ca`
+- Compose config SHA256: `753f194f5d0863270e88db16c7120845bd3ccfa741075edfca2a99fba582657f`
 - `uv.lock` SHA256: `a8785433e7f7f5889cca945ebc445f432e352e281caf57bd84b117a0cbb56ecb`
-- `frontend/pnpm-lock.yaml` SHA256: `aa6245402301eea803783e0f23691aee1b1c792d26f6d564f9e1d4e14e2128ab`
-- Backend image: `sha256:3a7ac7f9bc8c6d9b408f2a9427c71864b85fd813875a77d8caf68e773d895180`
-- Frontend image: `sha256:b21551ecbcf7cbabb30b9e898a27f49531df909a007fd07d8f3c2484786551c0`
-- Mock Provider image: `sha256:07ae57b6a86492c97d55e3f4490750c7645c1091af2714e296d8b61c094e3ddd`
+- `frontend/pnpm-lock.yaml` SHA256: `3deaa86d71b429a38db5eb2d99db110794448acf2c6958befca5d369b717b295`
+- Backend image: `sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a`
+- Frontend image: `sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2`
+- Mock Provider image: `sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27`
+- Trivy findings at all severities: backend 0, frontend 0, Mock Provider 0
 
 ## Database Invariants
 
@@ -120,49 +137,50 @@ Immutable identifiers for this replay:
 
 ## Quality And Security
 
-| Gate | Result |
+| Gate | Current result |
 | --- | --- |
 | Ruff and frozen contract drift | passed |
 | Python deterministic suite | 449 passed, 1 skipped, 70 deselected |
-| Full PostgreSQL/Keycloak suite | 519 passed, 1 skipped |
-| Python coverage | 91.33%; hard threshold 90%; historical target 91.19% |
-| Vitest | 54 passed |
-| Frontend coverage | 92.80% statements, 83.13% branches, 91.54% functions, 95.37% lines |
-| Playwright Chromium | 3 passed |
+| Standard PostgreSQL suite | 514 passed, 6 skipped |
+| Python coverage | 90.57%; hard threshold 90% |
+| Historical Python observation | 91.19%; not met by the standard-gate run |
+| Vitest | 72 passed |
+| Frontend coverage | 89.12% statements, 81.79% branches, 83.79% functions, 92.38% lines |
+| Playwright Chromium | 8 passed |
+| Browser runtime inspection | three locales rendered; zero console errors/warnings |
 | Go fmt/vet/race/test/build | passed |
 | Python and Node dependency audit | no known vulnerabilities |
-| Gitleaks | push, PR and main remote gates passed |
-| Trivy and container SBOM | push, PR and main remote gates passed |
-| License policy and non-root runtime | push, PR and main remote gates passed |
+| Gitleaks | local and remote history/worktree gates passed |
+| Runtime Trivy | 0 findings at all severities for all three release images |
+| SBOM and license policy | passed |
 
-The single skipped Python test remains the Windows symbolic-link compatibility
-case. It is not a database, identity, RLS, transaction or release-path skip.
+The six standard-suite skips are explicitly reported. They cover separately
+configured Keycloak/reconciler integration, the opt-in Docker database restart
+probe, and the Windows symbolic-link compatibility case. The clean-volume runner
+independently exercised real Keycloak registration and OIDC login. None of these
+skips is represented as a passed test.
 
 ## Current Boundary
 
-The backend identity capability and its mainline replay are complete. The next
-allowed product PR is the frontend identity and internationalization layer:
-
-- email and phone registration;
-- self-service profile and verified contact changes;
-- tenant account administration;
-- Keycloak-delegated recovery;
-- `zh-CN`, `zh-TW` and `en-US` application and login localization.
-
-That PR may consume the frozen identity APIs but may not modify migration
-`0010`, identity persistence, Keycloak authority, RLS, SERIALIZABLE transaction,
-Outbox, SSE or Topic1-Topic4 semantics.
+Frontend identity, account administration and three-language workbench scope is
+complete and replayed from merged main. The next phase is non-functional and
+production acceptance only. Feature development, frozen migration changes and
+Topic1-Topic4 semantic changes are outside that phase unless a separately
+approved defect ADR proves they are necessary.
 
 ## Remaining Release Blockers
 
-1. Merge the current evidence update through all protected-main gates.
-2. Deliver and replay the frontend identity/i18n PR from merged main.
+1. Merge this current-state replay evidence through protected-main gates.
+2. Raise Python coverage toward the 91.19% historical observation or record a
+   reviewed disposition; the 90% hard gate must not be lowered.
 3. Execute 2,000 authenticated SSE connections with reconnect, cursor recovery,
    duplicate suppression, slow-consumer and tenant-isolation evidence.
-4. Complete a minimum eight-hour soak and independent PostgreSQL backup/restore
-   disaster-recovery exercise with measured RPO/RTO.
-5. Complete sealed Provider, production deployment, TLS/secrets/monitoring,
-   cross-browser/WCAG and PII retention/export/deletion acceptance.
+4. Complete a minimum eight-hour soak across generation, verification, review,
+   release and SSE.
+5. Restore a PostgreSQL backup into an independent instance and measure RPO/RTO.
+6. Complete database/index/OIDC/Provider failure drills and verify fail-closed behavior.
+7. Complete sealed Provider, production deployment, TLS/secrets/monitoring,
+   cross-browser/WCAG and PII retention/export/correction/deletion acceptance.
 
-Only after every blocker has evidence may the state advance to
+Only after every blocker has reproducible evidence may the state advance to
 `SYSTEM_ACCEPTED`.
