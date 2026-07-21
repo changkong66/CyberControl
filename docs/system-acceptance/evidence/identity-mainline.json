@@ -1,0 +1,214 @@
+{
+    "schema_version":  "cybercontrol.system-acceptance-evidence.v1",
+    "generated_at":  "2026-07-21T04:31:02.0328402Z",
+    "git":  {
+                "branch":  "main",
+                "commit":  "bc9836532f6300e91dc7c0a906b07dabe754c138",
+                "tree":  "5aa4bbe4234d2dca85d7560081fe67d60d219b25",
+                "require_clean_source":  true,
+                "clean_at_start":  true,
+                "dirty_files_at_start":  [
+
+                                         ],
+                "dirty_files":  [
+
+                                ]
+            },
+    "environment":  {
+                        "compose_project":  "cybercontrol-identity-mainline",
+                        "compose_config_sha256":  "f12990ca5db459daa30fc289a7c2d7c787384c5bf4d3616ebfa7dbec13e4a8ca",
+                        "uv_lock_sha256":  "a8785433e7f7f5889cca945ebc445f432e352e281caf57bd84b117a0cbb56ecb",
+                        "pnpm_lock_sha256":  "aa6245402301eea803783e0f23691aee1b1c792d26f6d564f9e1d4e14e2128ab",
+                        "runtime_image_ids":  {
+                                                  "backend":  "sha256:3a7ac7f9bc8c6d9b408f2a9427c71864b85fd813875a77d8caf68e773d895180",
+                                                  "frontend":  "sha256:b21551ecbcf7cbabb30b9e898a27f49531df909a007fd07d8f3c2484786551c0",
+                                                  "mock_provider":  "sha256:07ae57b6a86492c97d55e3f4490750c7645c1091af2714e296d8b61c094e3ddd"
+                                              },
+                        "command":  {
+                                        "reset_volumes":  false,
+                                        "skip_build":  false,
+                                        "require_clean_source":  true,
+                                        "use_release_postgres_volume":  true,
+                                        "api_base_url":  "http://localhost:8000",
+                                        "frontend_base_url":  "http://localhost:5173",
+                                        "keycloak_base_url":  "http://localhost:8080",
+                                        "evidence_path":  "C:\\Users\\wch06\\Documents\\CyberControl\\docs\\system-acceptance\\evidence\\identity-mainline.json"
+                                    },
+                        "clean_volume_verified":  true,
+                        "postgres_volume":  "cybercontrol_release_postgres",
+                        "alembic_head":  "20260720_0010",
+                        "initial_business_counts":  "0|0|0|0|0",
+                        "api_ready":  "ready",
+                        "frontend_ready":  "live",
+                        "oidc_issuer":  "http://localhost:8080/realms/cybercontrol",
+                        "external_provider_mode":  "local-fixture-only"
+                    },
+    "identity":  {
+                     "tenant_id":  "demo-academy",
+                     "learner_subject_ref":  "7134166c-e241-4622-9e18-df90eb555f2a",
+                     "reviewer_subject_ref":  "817412a6-4cb9-4821-8dea-3847a6710ec0",
+                     "reviewer_roles":  [
+                                            "reviewer"
+                                        ],
+                     "registered_account":  {
+                                                "registration_id":  "e5c242d3-1fd2-4079-a81a-e0336db0db30",
+                                                "account_id":  "17d2cc50-7517-4a5a-86ca-d600c11d37a4",
+                                                "subject_ref":  "554d1a97-56e8-41ae-a8c5-0ed4d80ccb8c",
+                                                "roles":  [
+                                                              "default-roles-cybercontrol",
+                                                              "learner",
+                                                              "offline_access",
+                                                              "uma_authorization"
+                                                          ],
+                                                "profile_version":  1,
+                                                "email_hint":  "r********@example.invalid",
+                                                "learner_admin_http_status":  403,
+                                                "tenant_admin_visible":  true,
+                                                "registration_state":  "COMPLETED",
+                                                "login_via_oidc":  true
+                                            },
+                     "tokens_persisted":  false
+                 },
+    "topic1_topic2":  {
+                          "tenant_id":  "demo-academy",
+                          "learner_ref":  "7134166c-e241-4622-9e18-df90eb555f2a",
+                          "course_id":  "CRS_ATC_001",
+                          "generation_session_id":  null,
+                          "candidates":  [
+
+                                         ]
+                      },
+    "c2_knowledge":  {
+                         "active_index_version_id":  "d2ecf7e3-ce0f-5aa7-b3e1-42c248adfb19",
+                         "chunk_count":  1,
+                         "course_id":  "CRS_ATC_001",
+                         "graph_snapshot_id":  "a8285ea5-f093-416c-a2ad-604350c908aa",
+                         "graph_snapshot_sha256":  "7c7da0e3ee08284d3b290f9b520331fb4325f1e9cd6091c1abb0832f2f4d5daa",
+                         "graph_snapshot_version":  1,
+                         "index_manifest_sha256":  "fc14470fa8a83101dfa0e4802a56b64c787e725a5d8427df87c0ed7d3b68795f",
+                         "index_state":  "READY",
+                         "knowledge_base_sha256":  "d1908cf2bfd071a7e2741ef28ccf64b68baf130e8c524affa5038877504a722c",
+                         "knowledge_base_version":  "system-acceptance-2026.07.19.v3",
+                         "knowledge_base_version_id":  "d2ecf7e3-ce0f-5aa7-b3e1-42c248adfb19",
+                         "source_document_version_id":  "e0383bab-293c-5c1c-a2e0-d088c281f0f5",
+                         "source_sha256":  "ee0c0b6f3184a28ef2142e0b1982a7ff84a4c7d7e0471564d1ce29d74f441899",
+                         "target_kp_id":  "KP_ATC_202_LAPLACE_TRANSFORM",
+                         "tenant_id":  "demo-academy",
+                         "trace_id":  "efb054e5fae24c0d802e87881f05cca3"
+                     },
+    "topic3":  {
+                   "generation_session_id":  "5d2305b0-b8bd-4e89-b564-ec6c833b7cd9",
+                   "state":  "COMPLETED",
+                   "candidate_id":  "54a5f85b-bead-5ed0-9b6a-213e1f2d8466",
+                   "candidate_version":  1,
+                   "candidate_sha256":  "a047a00f6e28fd9d34f116957258bfd33b915194c9113dd6f0b2a6e9822b397e",
+                   "resource_type":  "Lecturer_Doc"
+               },
+    "topic4":  {
+                   "verification_id":  "52023f09-c6fe-5f8b-91f7-e318d6c3295e",
+                   "state_before_release":  "RELEASE_PENDING",
+                   "state_after_release":  "RELEASED",
+                   "report_id":  "52d77cf5-4ea9-55fc-bd5e-cb2ff8e703d4",
+                   "report_sha256":  "1ea62ca86e076bf3b1e2a954f4d0a0495b8f49176cd1c57b025186f40afd83a8",
+                   "decision":  "RELEASE",
+                   "claim_count":  10,
+                   "module_results":  [
+                                          {
+                                              "module":  "C10_PRIVACY",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C11_COMPLIANCE",
+                                              "verdict":  "NOT_APPLICABLE",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C2_RAG",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C3_ACADEMIC",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          },
+                                          {
+                                              "module":  "C9_SECURITY",
+                                              "verdict":  "SUPPORTED",
+                                              "count":  10
+                                          }
+                                      ]
+               },
+    "c12":  {
+                "authorization_id":  "225e81d2-e645-5c1a-96cb-d4bf9bc69c20",
+                "authorization_sha256":  "7467e817cb3a0300196a237d097c90bc4c063a43a484d782f331aaebc6b3198d",
+                "authorization_ttl_seconds":  300,
+                "one_time_use":  true,
+                "publication_batch_id":  "c6b11b51-6b08-5839-a5bf-3a42f0757dfd",
+                "publication_batch_sha256":  "11646f6230ea296f1891e485dba0e027b5baef937d32d11f8344a62acfc4f554",
+                "public_artifact_sha256":  "f5dda257f1ccd0e13736d0476598edf66cd256040560e5d75addfbb9dae3ee9e",
+                "public_event_id":  "80fb8da9-98e9-5388-8e50-f9b09ce590a9",
+                "public_event_sha256":  "0e117ebcb479a4056e3110860bd9cfb62c2519e95fda30f0cfe3eac48730a1c6",
+                "same_key_replay_idempotent":  true,
+                "changed_replay_http_status":  409,
+                "history_record_count":  5
+            },
+    "sse":  {
+                "replay_event":  {
+                                     "sequence":  31,
+                                     "event_type":  "topic4.publication.committed",
+                                     "data":  {
+                                                  "payload":  {
+                                                                  "event_artifact":  {
+                                                                                         "sha256":  "591b334d2079f0c6b857c5d4b9b19b053fb16ce15d1c070b75bb8ea1cda0e723",
+                                                                                         "byte_size":  883,
+                                                                                         "created_at":  "2026-07-21T04:30:52.847791Z",
+                                                                                         "media_type":  "application/json",
+                                                                                         "object_key":  "c12/events/52023f09-c6fe-5f8b-91f7-e318d6c3295e/225e81d2-e645-5c1a-96cb-d4bf9bc69c20/591b334d2079f0c6b857c5d4b9b19b053fb16ce15d1c070b75bb8ea1cda0e723.json",
+                                                                                         "schema_version":  "artifact.object.ref.v1",
+                                                                                         "content_encoding":  "identity",
+                                                                                         "storage_namespace":  "verification-artifacts"
+                                                                                     },
+                                                                  "schema_version":  "topic4.publication.committed.v1",
+                                                                  "authorization_id":  "225e81d2-e645-5c1a-96cb-d4bf9bc69c20",
+                                                                  "publication_batch_id":  "c6b11b51-6b08-5839-a5bf-3a42f0757dfd"
+                                                              },
+                                                  "trace_id":  "9371e8f9a0bce3f9213ab6169c99b3c3",
+                                                  "tenant_id":  "demo-academy",
+                                                  "envelope_id":  "d8f72542-659d-5416-8aac-64bb23d114ad",
+                                                  "partition_key":  "topic4:public:demo-academy:c6b11b51-6b08-5839-a5bf-3a42f0757dfd",
+                                                  "schema_version":  "topic4.publication.sse.v1",
+                                                  "partition_sequence":  0
+                                              },
+                                     "emitted_at":  "2026-07-21T04:30:57.394552+00:00",
+                                     "cursor":  "ZGVtby1hY2FkZW15OjMxLk6063Udj2tK7O4s9Zxi0SZryEzTK3OwOSgPPdn60W0k"
+                                 },
+                "authenticated_stream":  {
+                                             "authenticated":  true,
+                                             "event_id":  "ZGVtby1hY2FkZW15OjMxLk6063Udj2tK7O4s9Zxi0SZryEzTK3OwOSgPPdn60W0k",
+                                             "event_type":  "topic4.publication.committed",
+                                             "publication_batch_id":  "c6b11b51-6b08-5839-a5bf-3a42f0757dfd",
+                                             "replayed":  true
+                                         }
+            },
+    "database":  {
+                     "invariants":  {
+                                        "tenant_tables":  74,
+                                        "forced_rls_tables":  74,
+                                        "append_only_triggers":  57,
+                                        "audit_chain_breaks":  0,
+                                        "outbox_dead":  0,
+                                        "outbox_open":  0,
+                                        "outbox_published":  29,
+                                        "authorization_consumptions":  1,
+                                        "committed_batches":  1,
+                                        "public_stream_events":  1,
+                                        "identity_registered_accounts":  1,
+                                        "identity_completed_registrations":  1,
+                                        "identity_plaintext_contact_matches":  0
+                                    },
+                     "foreign_tenant_visible_verifications":  0,
+                     "foreign_tenant_visible_identity_accounts":  0
+                 }
+}
