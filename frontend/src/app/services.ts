@@ -37,7 +37,7 @@ export function createAppServices(pinia: Pinia): AppServices {
   return {
     oidc: oidcSession,
     api,
-    workbench: new WorkbenchApi(api),
+    workbench: new WorkbenchApi(api, () => tenant.tenantId),
     sse: new SseClient({
       getAccessToken: accessToken,
       getSessionId: () => session.sessionId || null,

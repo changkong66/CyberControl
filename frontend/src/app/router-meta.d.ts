@@ -5,6 +5,6 @@ declare module "vue-router" {
     requiresAuth?: boolean
     requiredScopes?: readonly string[]
     shell?: boolean
-    title?: string
+    titleKey?: string
   }
 }

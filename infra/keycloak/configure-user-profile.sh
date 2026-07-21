@@ -16,3 +16,13 @@ CONFIG_PATH=/tmp/kcadm.config
   --config "$CONFIG_PATH" \
   -r cybercontrol \
   -f /config/user-profile.json
+
+# Realm import is create-only, so existing development volumes must converge
+# through the same idempotent configuration job.
+"$KCADM" update realms/cybercontrol \
+  --config "$CONFIG_PATH" \
+  -s resetPasswordAllowed=true \
+  -s internationalizationEnabled=true \
+  -s 'supportedLocales=["zh-CN","zh-TW","en"]' \
+  -s defaultLocale=zh-CN \
+  -s registrationAllowed=false

@@ -19,10 +19,12 @@ WORKDIR /workspace
 
 COPY --chown=65532:65532 frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml /workspace/frontend/
 COPY --chown=65532:65532 packages/contracts-ts /workspace/packages/contracts-ts
+COPY --chown=65532:65532 schemas /workspace/schemas
 RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend install --frozen-lockfile
 
 COPY --chown=65532:65532 frontend/index.html frontend/tsconfig.json frontend/tsconfig.app.json frontend/tsconfig.node.json /workspace/frontend/
 COPY --chown=65532:65532 frontend/vite.config.ts /workspace/frontend/vite.config.ts
+COPY --chown=65532:65532 frontend/tools /workspace/frontend/tools
 COPY --chown=65532:65532 frontend/public /workspace/frontend/public
 COPY --chown=65532:65532 frontend/src /workspace/frontend/src
 RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend run build
@@ -30,6 +32,7 @@ RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend run build
 FROM ${NGINX_IMAGE} AS runtime
 
 COPY --chown=65532:65532 infra/nginx/frontend.conf /etc/nginx/conf.d/nginx.default.conf
+COPY --chown=65532:65532 infra/nginx/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=builder --chown=65532:65532 /workspace/frontend/dist /usr/share/nginx/html
 
 USER 65532:65532

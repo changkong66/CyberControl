@@ -19,6 +19,9 @@ const learnerScopes = [
   "topic4:revision:read",
   "topic4:trace:read",
   "topic4:sse:read",
+  "account:profile:read",
+  "account:profile:write",
+  "account:contact:write",
 ]
 
 const reviewerScopes = [
@@ -36,6 +39,12 @@ const reviewerScopes = [
   "topic4:review:write",
   "topic4:release:read",
   "topic4:release:write",
+]
+
+const tenantAdminScopes = [
+  ...learnerScopes,
+  "account:admin:read",
+  "account:admin:write",
 ]
 
 function topic1Envelope(data: Record<string, unknown>): Record<string, unknown> {
@@ -71,6 +80,43 @@ function topic3Envelope(payload: Record<string, unknown>): Record<string, unknow
   }
 }
 
+function identityEnvelope(data: Record<string, unknown>): Record<string, unknown> {
+  return {
+    schema_version: "identity.api-envelope.v1",
+    request_id: crypto.randomUUID(),
+    trace_id: "c".repeat(32),
+    data,
+  }
+}
+
+function accountProfile(role = "learner", version = 1, locale = "zh-CN"): Record<string, unknown> {
+  return {
+    schema_version: "account.profile.v1",
+    account_id: role === "tenant-admin" ? "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" : "11111111-1111-4111-8111-111111111111",
+    tenant_id: tenantId,
+    subject_ref: `user:${role}`,
+    display_name: role === "tenant-admin" ? "E2E Tenant Admin" : "E2E Learner",
+    preferred_locale: locale,
+    email_hint: role === "tenant-admin" ? "a***@example.invalid" : "l***@example.invalid",
+    email_verified: true,
+    phone_hint: null,
+    phone_verified: false,
+    status: "ACTIVE",
+    profile_version: version,
+    created_at: "2026-07-21T00:00:00Z",
+    updated_at: "2026-07-21T00:00:00Z",
+  }
+}
+
+function accountAdmin(status = "ACTIVE", version = 1): Record<string, unknown> {
+  return {
+    ...accountProfile("learner", version),
+    schema_version: "account.admin-view.v1",
+    status,
+    disabled_reason_code: status === "DISABLED" ? "POLICY_REVIEW" : null,
+  }
+}
+
 function identity(scopes: string[], role: string): Record<string, unknown> {
   return {
     access_token: "e2e-access-token",
@@ -80,7 +126,7 @@ function identity(scopes: string[], role: string): Record<string, unknown> {
     session_state: "e2e-session",
     profile: {
       sub: `e2e-${role}`,
-      name: role === "reviewer" ? "E2E Reviewer" : "E2E Learner",
+      name: role === "reviewer" ? "E2E Reviewer" : role === "tenant-admin" ? "E2E Tenant Admin" : "E2E Learner",
       preferred_username: role,
       tenant_id: tenantId,
       roles: [role],
@@ -149,12 +195,104 @@ function graph(): Record<string, unknown> {
   }
 }
 
-async function json(route: Route, document: Record<string, unknown>): Promise<void> {
-  await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(document) })
+async function json(
+  route: Route,
+  document: Record<string, unknown>,
+  status = 200,
+): Promise<void> {
+  await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(document) })
 }
 
-async function installApiMocks(page: Page): Promise<{ releaseRequests: Array<{ path: string; body: string }> }> {
+interface ObservedRequest {
+  path: string
+  body: Record<string, unknown> | null
+  headers: Record<string, string>
+}
+
+async function installApiMocks(
+  page: Page,
+  role = "learner",
+): Promise<{
+  releaseRequests: Array<{ path: string; body: string }>
+  identityRequests: ObservedRequest[]
+}> {
   const releaseRequests: Array<{ path: string; body: string }> = []
+  const identityRequests: ObservedRequest[] = []
+  let profileState = accountProfile(role)
+  let accountState = accountAdmin()
+
+  await page.route("**/api/auth/**", async (route) => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname
+    const body = request.postDataJSON() as Record<string, unknown> | null
+    identityRequests.push({ path, body, headers: request.headers() })
+    if (request.headers().authorization) {
+      await json(
+        route,
+        { error: { error_code: "TEST_AUTH_LEAK", safe_message: "Public request carried authentication." }, trace_id: "d".repeat(32) },
+        400,
+      )
+      return
+    }
+    if (path.endsWith("/verification-challenges/verify")) {
+      await json(
+        route,
+        identityEnvelope({
+          challenge: {
+            schema_version: "verification-challenge.receipt.v1",
+            challenge_id: "33333333-3333-4333-8333-333333333333",
+            channel: "EMAIL",
+            purpose: "REGISTER",
+            state: "VERIFIED",
+            delivery_hint: "e***@example.invalid",
+            expires_at: "2099-07-21T00:05:00Z",
+            resend_after_seconds: 60,
+          },
+        }),
+      )
+      return
+    }
+    if (path.endsWith("/verification-challenges")) {
+      const channel = body?.channel === "PHONE" ? "PHONE" : "EMAIL"
+      await json(
+        route,
+        identityEnvelope({
+          challenge: {
+            schema_version: "verification-challenge.receipt.v1",
+            challenge_id: "33333333-3333-4333-8333-333333333333",
+            channel,
+            purpose: "REGISTER",
+            state: "PENDING",
+            delivery_hint: channel === "PHONE" ? "+1******1234" : "e***@example.invalid",
+            expires_at: "2099-07-21T00:05:00Z",
+            resend_after_seconds: 60,
+          },
+        }),
+        202,
+      )
+      return
+    }
+    if (path.endsWith("/register/email") || path.endsWith("/register/phone")) {
+      await json(
+        route,
+        identityEnvelope({
+          registration: {
+            schema_version: "registration.receipt.v1",
+            registration_id: "44444444-4444-4444-8444-444444444444",
+            account_id: "11111111-1111-4111-8111-111111111111",
+            state: "COMPLETED",
+            preferred_locale: String(body?.preferred_locale ?? "zh-CN"),
+            login_required: true,
+            created_at: "2026-07-21T00:00:00Z",
+          },
+        }),
+        201,
+      )
+      return
+    }
+    await route.abort("failed")
+  })
+
   await page.route("**/health/ready", (route) =>
     json(route, {
       status: "ready",
@@ -170,6 +308,126 @@ async function installApiMocks(page: Page): Promise<{ releaseRequests: Array<{ p
     const request = route.request()
     const url = new URL(request.url())
     const path = url.pathname
+    const body = request.postDataJSON() as Record<string, unknown> | null
+
+    if (path.startsWith("/internal/accounts/") || path.startsWith("/internal/tenant/")) {
+      identityRequests.push({ path, body, headers: request.headers() })
+      if (!request.headers().authorization) {
+        await json(
+          route,
+          { error: { error_code: "LIYAN-AUTH-REQUIRED", safe_message: "Authentication required." }, trace_id: "d".repeat(32) },
+          401,
+        )
+        return
+      }
+      if (path === "/internal/accounts/me" && request.method() === "GET") {
+        await json(route, identityEnvelope({ profile: profileState }))
+        return
+      }
+      if (path === "/internal/accounts/me" && request.method() === "PATCH") {
+        profileState = {
+          ...profileState,
+          display_name: String(body?.display_name ?? profileState.display_name),
+          preferred_locale: String(body?.preferred_locale ?? profileState.preferred_locale),
+          profile_version: Number(profileState.profile_version) + 1,
+          updated_at: "2026-07-21T00:10:00Z",
+        }
+        await json(route, identityEnvelope({ profile: profileState }))
+        return
+      }
+      if (path === "/internal/accounts/me/verification-challenges") {
+        const channel = body?.channel === "PHONE" ? "PHONE" : "EMAIL"
+        await json(
+          route,
+          identityEnvelope({
+            challenge: {
+              schema_version: "verification-challenge.receipt.v1",
+              challenge_id: "55555555-5555-4555-8555-555555555555",
+              channel,
+              purpose: channel === "PHONE" ? "CHANGE_PHONE" : "CHANGE_EMAIL",
+              state: "PENDING",
+              delivery_hint: channel === "PHONE" ? "+1******5678" : "n***@example.invalid",
+              expires_at: "2099-07-21T00:05:00Z",
+              resend_after_seconds: 60,
+            },
+          }),
+          202,
+        )
+        return
+      }
+      if (path === "/internal/accounts/me/verification-challenges/verify") {
+        await json(
+          route,
+          identityEnvelope({
+            challenge: {
+              schema_version: "verification-challenge.receipt.v1",
+              challenge_id: "55555555-5555-4555-8555-555555555555",
+              channel: "EMAIL",
+              purpose: "CHANGE_EMAIL",
+              state: "VERIFIED",
+              delivery_hint: "n***@example.invalid",
+              expires_at: "2099-07-21T00:05:00Z",
+              resend_after_seconds: 60,
+            },
+          }),
+        )
+        return
+      }
+      if (path === "/internal/accounts/me/contact") {
+        profileState = {
+          ...profileState,
+          email_hint: "n***@example.invalid",
+          email_verified: true,
+          profile_version: Number(profileState.profile_version) + 1,
+          updated_at: "2026-07-21T00:12:00Z",
+        }
+        await json(route, identityEnvelope({ profile: profileState }))
+        return
+      }
+      if (path === "/internal/tenant/accounts") {
+        await json(route, identityEnvelope({ accounts: [accountState] }))
+        return
+      }
+      if (path.endsWith("/audit")) {
+        await json(
+          route,
+          identityEnvelope({
+            audit_entries: [
+              {
+                schema_version: "identity.audit-entry.v1",
+                event_id: "66666666-6666-4666-8666-666666666666",
+                sequence: 1,
+                action: "IDENTITY_ACCOUNT_STATUS_CHANGED",
+                outcome: "SUCCEEDED",
+                actor_ref: "user:tenant-admin",
+                target_ref: `account:${String(accountState.account_id)}`,
+                trace_id: "d".repeat(32),
+                metadata: {},
+                occurred_at: "2026-07-21T00:00:00Z",
+                previous_hash: "0".repeat(64),
+                event_hash: "e".repeat(64),
+                hash_algorithm: "SHA-256",
+              },
+            ],
+          }),
+        )
+        return
+      }
+      if (path.endsWith("/disable")) {
+        accountState = accountAdmin("DISABLED", Number(accountState.profile_version) + 1)
+        await json(route, identityEnvelope({ account: accountState }))
+        return
+      }
+      if (path.endsWith("/restore")) {
+        accountState = accountAdmin("ACTIVE", Number(accountState.profile_version) + 1)
+        await json(route, identityEnvelope({ account: accountState }))
+        return
+      }
+      if (path.startsWith("/internal/tenant/accounts/")) {
+        await json(route, identityEnvelope({ account: accountState }))
+        return
+      }
+    }
 
     if (path.endsWith("/sse/stream")) {
       await route.fulfill({
@@ -232,7 +490,7 @@ async function installApiMocks(page: Page): Promise<{ releaseRequests: Array<{ p
     }
     await json(route, topic3Envelope({ sessions: [], claims: [], evidence: [], events: [], records: [], tasks: [] }))
   })
-  return { releaseRequests }
+  return { releaseRequests, identityRequests }
 }
 
 test("learner can traverse workbench surfaces without client identity headers", async ({ page }) => {
@@ -295,4 +553,113 @@ test("reviewer starts Topic3 generation without blocking on the SSE loop", async
   await page.getByRole("button", { name: "启动协同生成" }).click()
   await expect(page).toHaveURL(/\/agents\?course=CRS_ATC_001&session=[0-9a-f-]{36}$/u)
   await expect(page.getByRole("button", { name: "启动协同生成" })).toBeEnabled()
+})
+
+test("learner edits profile, re-verifies contact, and remains blocked from tenant administration", async ({ page }) => {
+  await installIdentity(page.context(), learnerScopes, "learner")
+  const { identityRequests } = await installApiMocks(page, "learner")
+
+  await page.goto("/account/profile")
+  await expect(page.getByRole("heading", { name: "账户资料", exact: true }).first()).toBeVisible()
+  await page.getByLabel("显示名称").fill("Updated Learner")
+  await page.getByLabel("首选语言").selectOption("en-US")
+  await page.getByRole("button", { name: "保存资料" }).click()
+  await expect(page.getByText("Account profile updated.")).toBeVisible()
+  await expect(page.locator("html")).toHaveAttribute("lang", "en-US")
+
+  await page.getByLabel("New contact").fill("new-contact@example.invalid")
+  await page.getByRole("button", { name: "Send change code" }).click()
+  await page.getByLabel("Six-digit verification code").fill("123456")
+  await page.getByRole("button", { name: "Verify and apply change" }).click()
+  await expect(page.getByText("Verified contact updated.")).toBeVisible()
+
+  await page.goto("/tenant/accounts")
+  await expect(page).toHaveURL(/\/forbidden(?:\?|$)/u)
+  await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible()
+  const update = identityRequests.find(
+    (request) => request.path === "/internal/accounts/me" && request.body !== null,
+  )
+  expect(update?.body).toEqual({
+    display_name: "Updated Learner",
+    preferred_locale: "en-US",
+    expected_version: 1,
+  })
+  expect(update?.headers.authorization).toBe("Bearer e2e-access-token")
+  expect(update?.headers["x-tenant-id"]).toBeUndefined()
+  const contactRequests = identityRequests.filter((request) =>
+    request.path.startsWith("/internal/accounts/me/")
+  )
+  expect(contactRequests.map((request) => request.path)).toEqual([
+    "/internal/accounts/me/verification-challenges",
+    "/internal/accounts/me/verification-challenges/verify",
+    "/internal/accounts/me/contact",
+  ])
+  expect(contactRequests[0]?.body).toMatchObject({
+    channel: "EMAIL",
+    purpose: "CHANGE_EMAIL",
+    identifier: "new-contact@example.invalid",
+  })
+  expect(contactRequests[2]?.body).toMatchObject({
+    channel: "EMAIL",
+    identifier: "new-contact@example.invalid",
+    expected_version: 2,
+  })
+  for (const request of contactRequests) {
+    expect(request.headers.authorization).toBe("Bearer e2e-access-token")
+    expect(request.headers["idempotency-key"]).toMatch(/^identity-/u)
+    expect(request.headers["x-tenant-id"]).toBeUndefined()
+  }
+})
+
+test("tenant administrator inspects audit and performs CAS disable and restore", async ({ page }) => {
+  await installIdentity(page.context(), tenantAdminScopes, "tenant-admin")
+  const { identityRequests } = await installApiMocks(page, "tenant-admin")
+
+  await page.goto("/tenant/accounts")
+  await expect(page.getByRole("heading", { name: "租户账户管理" })).toBeVisible()
+  await page.getByRole("button", { name: /E2E Learner/u }).click()
+  await expect(page.getByText("IDENTITY_ACCOUNT_STATUS_CHANGED")).toBeVisible()
+
+  await page.getByRole("button", { name: "停用账户" }).click()
+  await page.getByRole("dialog").getByRole("button", { name: "停用账户" }).click()
+  await expect(page.getByText("账户状态已更新。")).toBeVisible()
+  await expect(page.getByRole("button", { name: "恢复账户" })).toBeVisible()
+
+  await page.getByRole("button", { name: "恢复账户" }).click()
+  await page.getByRole("dialog").getByRole("button", { name: "恢复账户" }).click()
+  await expect(page.getByRole("button", { name: "停用账户" })).toBeVisible()
+
+  const mutations = identityRequests.filter(
+    (request) => request.path.endsWith("/disable") || request.path.endsWith("/restore"),
+  )
+  expect(mutations.map((request) => request.body)).toEqual([
+    { expected_version: 1, reason_code: "ADMIN_ACTION" },
+    { expected_version: 2, reason_code: null },
+  ])
+  for (const request of mutations) {
+    expect(request.headers.authorization).toBe("Bearer e2e-access-token")
+    expect(request.headers["idempotency-key"]).toMatch(/^identity-account-status-/u)
+    expect(request.headers["x-tenant-id"]).toBeUndefined()
+    expect(request.headers["x-subject-ref"]).toBeUndefined()
+  }
+})
+
+test("all three locales render the registration surface without mobile overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await installApiMocks(page)
+  await page.goto("/register")
+
+  const cases = [
+    { locale: "zh-CN", heading: "创建学习者账户" },
+    { locale: "zh-TW", heading: "建立學習者帳戶" },
+    { locale: "en-US", heading: "Create a learner account" },
+  ]
+  for (const localeCase of cases) {
+    await page.locator(".locale-switcher select").selectOption(localeCase.locale)
+    await expect(page.getByRole("heading", { name: localeCase.heading })).toBeVisible()
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+    ).toBe(true)
+    expect(await page.locator("body").innerText()).not.toMatch(/(?:register|profile|locale)\.[A-Za-z]/u)
+  }
 })

@@ -4,6 +4,7 @@ import { computed, ref } from "vue"
 import { userToIdentity } from "../auth/claims"
 import { oidcSession, type OidcSession } from "../auth/session"
 import type { AuthenticatedUser, OidcUserLike } from "../auth/types"
+import { translate } from "../i18n"
 import { clearAllTenantCaches } from "../shared/cache"
 import { useSessionStore } from "./session"
 import { useTenantStore } from "./tenant"
@@ -40,7 +41,7 @@ export const useAuthStore = defineStore("auth", () => {
       else status.value = "idle"
     } catch (error) {
       status.value = "error"
-      errorMessage.value = error instanceof Error ? error.message : "无法恢复登录状态。"
+      errorMessage.value = error instanceof Error ? error.message : translate("errors.authRestore")
     } finally {
       initialized.value = true
     }
@@ -53,7 +54,18 @@ export const useAuthStore = defineStore("auth", () => {
       await session.login(returnTo)
     } catch (error) {
       status.value = "error"
-      errorMessage.value = error instanceof Error ? error.message : "登录请求失败。"
+      errorMessage.value = error instanceof Error ? error.message : translate("errors.authRedirect")
+    }
+  }
+
+  async function recover(returnTo?: string, session: OidcSession = oidcSession): Promise<void> {
+    status.value = "loading"
+    errorMessage.value = null
+    try {
+      await session.recover(returnTo)
+    } catch (error) {
+      status.value = "error"
+      errorMessage.value = error instanceof Error ? error.message : translate("errors.recoveryRedirect")
     }
   }
 
@@ -65,7 +77,7 @@ export const useAuthStore = defineStore("auth", () => {
       return session.consumeReturnTo()
     } catch (error) {
       status.value = "error"
-      errorMessage.value = error instanceof Error ? error.message : "登录回调无效。"
+      errorMessage.value = error instanceof Error ? error.message : translate("errors.authCallback")
       throw error
     }
   }
@@ -100,6 +112,7 @@ export const useAuthStore = defineStore("auth", () => {
     authenticated,
     restore,
     login,
+    recover,
     completeCallback,
     logout,
     clearLocalState,

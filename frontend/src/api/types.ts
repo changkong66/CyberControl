@@ -41,6 +41,31 @@ export interface Topic1DataEnvelope<T> {
   data: T
 }
 
+export interface IdentityDataEnvelope<T> {
+  schema_version?: "identity.api-envelope.v1"
+  request_id: string
+  trace_id: string
+  data: T
+}
+
+export interface ProfileUpdateInput {
+  display_name: string
+  preferred_locale: "zh-CN" | "zh-TW" | "en-US"
+  expected_version: number
+}
+
+export interface ContactChangeInput {
+  channel: "EMAIL" | "PHONE"
+  identifier: string
+  challenge_id: string
+  expected_version: number
+}
+
+export interface AccountStatusInput {
+  expected_version: number
+  reason_code?: string | null
+}
+
 export interface CourseGraphView extends Topic1GraphContentV1 {}
 
 export interface GenerationView {

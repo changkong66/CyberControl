@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { LoaderCircle } from "@lucide/vue"
+import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 
-withDefaults(defineProps<{ label?: string }>(), { label: "正在加载" })
+const props = defineProps<{ label?: string }>()
+const { t } = useI18n()
+const resolvedLabel = computed(() => props.label ?? t("common.loading"))
 </script>
 
 <template>
   <div class="state-row" role="status">
     <LoaderCircle class="spin" :size="20" aria-hidden="true" />
-    <span>{{ label }}</span>
+    <span>{{ resolvedLabel }}</span>
   </div>
 </template>
