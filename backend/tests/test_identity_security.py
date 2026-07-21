@@ -54,8 +54,11 @@ def test_identity_cipher_is_tenant_bound_and_detects_tampering() -> None:
     with pytest.raises(LiyanError) as wrong_tenant:
         cipher.decrypt(encrypted, tenant_id="tenant-b", field_name="email")
     assert wrong_tenant.value.code == ErrorCode.IDENTITY_INTEGRITY_FAILED
+    version, nonce, payload = encrypted.split(".", 2)
+    replacement = "A" if payload[0] != "A" else "B"
+    tampered = f"{version}.{nonce}.{replacement}{payload[1:]}"
     with pytest.raises(LiyanError):
-        cipher.decrypt(encrypted[:-1] + "A", tenant_id="tenant-a", field_name="email")
+        cipher.decrypt(tampered, tenant_id="tenant-a", field_name="email")
 
 
 def test_signed_invitation_is_required_and_tenant_bound() -> None:
