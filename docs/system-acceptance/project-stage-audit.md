@@ -2,211 +2,153 @@
 
 ## 1. Precise Stage Position
 
-CyberControl has completed the engineering foundation, Topic1-Topic4 backend,
-and the frontend business workbench. The protected main branch is
-`8df24c6c79c0674809e5891329d4fab405bb090e`; PRs #16-#26 are merged and protected
-main Release Quality Gates run 29731316528 completed 8/8 jobs successfully.
+CyberControl has completed Phase1.1, Topic1-Topic4, the business workbench, the
+Keycloak-backed identity backend and a protected-main clean external-volume
+replay. Protected `main` is
+`bc9836532f6300e91dc7c0a906b07dabe754c138`; Release Quality Gates Run
+29801095074 completed 8/8 jobs successfully.
 
-The project is now in **Phase 7 system acceptance and release closure**, not
-Phase 6 frontend implementation. PR #25, its PR/push gates and the merged-main
-clean external-volume replay passed. The project is now a `RELEASE_CANDIDATE`,
-not yet `SYSTEM_ACCEPTED`.
+The project is in **Phase 7 release closure**, specifically the transition from
+backend identity completion to frontend identity self-service and
+internationalization. It is a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
 
-Weighted implementation estimate: **about 90%**.
+Weighted implementation estimate: **about 92%**.
 
-This estimate is not an acceptance state. It assigns 50% to the backend product
-chain, 25% to the frontend workbench, 10% to reproducible local acceptance, and
-15% to production operations and final non-functional gates. The first three
-areas are substantially complete; production deployment, long-running resilience
-and external integration account for most remaining work.
+This estimate is not an acceptance state. Product scope and reproducible local
+delivery are substantially complete. Production load, long-running resilience,
+disaster recovery, external Provider and operational controls represent most of
+the remaining work.
 
 | Area | Maturity | Objective assessment |
 | --- | --- | --- |
-| Phase1.1 foundation | 100% | merged, protected, reproducible |
-| Topic1-Topic4 backend | 100% feature complete | frozen business scope; current patch fixes acceptance/runtime integration defects |
-| Frontend workbench | about 95% | business surfaces delivered; real report rendered; some semantic and breadth gaps remain |
-| Local demonstrable product | about 95% | real OIDC and trusted release chain passes on clean data |
-| Production operations | about 45% | CI and secure containers exist; deployment, soak, DR and real Provider gates remain |
+| Phase1.1 foundation | 100% | merged, protected and reproducible |
+| Topic1-Topic4 backend | 100% feature complete | frozen trusted-learning and release chain |
+| Identity backend | 100% current scope | merged, remote CI green and mainline replayed |
+| Frontend workbench | about 95% | core business surfaces complete; identity UI and i18n remain |
+| Local demonstrable product | about 97% | clean-volume registration-to-release chain passes |
+| Production operations | about 45% | CI and secure containers exist; load, DR and deployment gates remain |
 
 ## 2. Completed And Frozen Assets
 
-### 2.1 Phase1.1 Production Foundation
+### 2.1 Platform Foundation
 
-- Async FastAPI and SQLAlchemy runtime on PostgreSQL 16.
-- OIDC/JWKS authentication and trusted `TenantContext`.
-- Protected main has 68 tenant tables with RLS and FORCE RLS; the additive
-  identity candidate raises the tested branch schema to 74/74.
-- SERIALIZABLE transaction helpers, global idempotency and CAS controls.
-- Append-only evidence, audit SHA chain and Artifact Store.
-- Transactional Outbox, persistent SSE replay, signed cursors and recovery.
-- Reproducible Python, Node and Go toolchains and frozen lockfiles.
-- Non-root production containers, SBOM, license policy, Trivy and Gitleaks gates.
-- Solo-maintainer protected-branch governance without disabling quality controls.
+- Async FastAPI and SQLAlchemy on PostgreSQL 16.
+- OIDC/JWKS authentication and trusted server-derived `TenantContext`.
+- 74 tenant tables with RLS and FORCE RLS.
+- SERIALIZABLE transactions, idempotency, CAS and bounded retry controls.
+- Append-only evidence, SHA-linked audit, Artifact Store and transactional Outbox.
+- Persistent tenant SSE replay with signed cursors and recovery.
+- Reproducible Python, Node and Go toolchains with frozen lockfiles.
+- Non-root containers and mandatory SBOM, license, Trivy and Gitleaks gates.
 
-### 2.2 Topic1 Authoritative Knowledge Topology
+### 2.2 Topic1-Topic4 Product Chain
 
-- Course, knowledge-point, prerequisite, misconception, textbook and golden-question models.
-- Immutable graph snapshots, import/export and rollback semantics.
-- Repository/service/API layers and frozen cross-language contracts.
-- Tenant isolation, revision CAS, append-only audit and acceptance archive.
+- Topic1 authoritative course, graph, prerequisite, textbook and question data.
+- Topic2 six-dimensional profile, Ebbinghaus memory and adaptive path planning.
+- Topic3 five-Agent generation with immutable Blueprint and Candidate resources.
+- Topic4 C1-C12 Claim extraction, specialist verification, revision, review and
+  server-derived atomic publication.
+- Human review CAS and C12 one-time authorization.
+- Topic3-to-Topic4 automatic handoff and authenticated/public SSE projections.
+- Frozen cross-language contracts and real PostgreSQL integration coverage.
 
-### 2.3 Topic2 Adaptive Learning
+### 2.3 Frontend Business Workbench
 
-- Six-dimensional behavior profile and immutable profile snapshots.
-- Ebbinghaus memory decay, review reinforcement and forgetting risk.
-- Adaptive path planning with prerequisite repair and deterministic replay.
-- Tenant-scoped repository, APIs, idempotency and PostgreSQL concurrency tests.
+- Vue 3, Vite, TypeScript strict, Pinia and Vue Router.
+- Keycloak Authorization Code + PKCE login and scope guards.
+- Envelope validation and prohibition of client-controlled tenant headers.
+- Bearer-authenticated fetch-based SSE with cursor isolation and deduplication.
+- Knowledge, learning, Agent, verification, revision, review and publication pages.
+- Desktop/mobile workbench, report print/export and service-derived SHA views.
+- 54 Vitest tests and three Playwright scenarios.
 
-### 2.4 Topic3 Five-Agent Generation Plane
+### 2.4 Identity Backend
 
-- Lecturer, MindMap, Tester, CodeSandbox and Extension agents.
-- Immutable Blueprint, DAG execution, retries and persisted Candidate resources.
-- Provider allowlist and local fixture mode without committed vendor secrets.
-- Outbox-backed workflow completion and authenticated persistent SSE.
-- Topic3 Candidate output automatically consumed by Topic4.
+- Additive migration `20260720_0010`; migrations `0001-0009` unchanged.
+- Keycloak-only password and OIDC authority.
+- Email/phone registration, verification challenge, profile/contact change,
+  tenant account list/detail/audit and disable/restore APIs.
+- Encrypted contact projection and keyed lookup digests.
+- Six FORCE RLS identity tables, append-only evidence, audit and Outbox.
+- Durable compensation and least-privilege reconciliation catalog.
+- Restart lease recovery and claim-token compare-and-set.
+- Loopback-only development inbox and production fail-closed settings.
 
-### 2.5 Topic4 Trusted Verification And Release
+### 2.5 Mainline Acceptance
 
-- C1 Claim extraction, state machine, DAG planning, aggregation and review routing.
-- C2 local BM25, graph expansion, formula signatures and hashed Faiss vectors.
-- C3 academic formula, theorem, numeric and stability verification.
-- C4 graph, C5 quiz, C6 code and C7 extension specialist verification.
-- C8 immutable two-cycle revision with serialization and state-machine re-entry.
-- C9 injection, C10 privacy and C11 compliance cross-cutting gates.
-- C12 v2 server-derived, one-time authorization and SERIALIZABLE atomic publication.
-- Human review read/write APIs with scope, CAS, audit, RLS and Outbox.
-- 25 Topic4 OpenAPI operations in the running application.
+- Identity backend PR #27 merged through protected main.
+- Acceptance/runtime PR #28 merged through protected main.
+- Push, PR and main workflows each passed all eight jobs.
+- A real replay found and closed missing identity Outbox runtime handlers.
+- Clean `cybercontrol_release_postgres` replay passed from main `bc98365`.
+- Registration, OIDC login, learner authorization, tenant administration, RLS,
+  Topic1-Topic4, C12 and authenticated SSE all passed.
+- 519 Python tests passed with 91.33% coverage.
+- Outbox ended at 29 published, zero open and zero dead messages.
 
-### 2.6 Frontend Business Workbench
+## 3. Current Boundary
 
-- Vue 3, Vite, TypeScript strict, Pinia and Vue Router architecture.
-- Real Keycloak OIDC PKCE login, callback, renewal, logout and scope guards.
-- API Envelope validation and no client-controlled tenant identity headers.
-- Bearer-authenticated fetch-based SSE with cursor partitioning and deduplication.
-- Topic1 knowledge, Topic2 learning, Topic3 agents, Topic4 verification/revision,
-  review and publication pages.
-- Responsive desktop/mobile shell, report printing and service-derived hash views.
-- Terminal Verification matrices distinguish `NOT_REQUIRED` from active
-  `PENDING`/`RUNNING` states.
-- Vitest 54 tests and Playwright 3 integration scenarios.
+The current evidence branch may update only current-state acceptance assets. It
+must not modify historical Topic acceptance snapshots.
 
-### 2.7 Current Local System Acceptance
+After that evidence PR merges, the only allowed product branch is a frontend
+identity/i18n branch from the latest main. It may implement:
 
-- Clean PostgreSQL volume and migration head verification.
-- Topic1 -> Topic2 -> Topic3 -> Topic4 -> C12 -> SSE real local chain.
-- A release-eligible persisted report and browser rendering of its 10 Claims.
-- 516 Python tests with 91.41% coverage; one Windows symbolic-link test skipped.
-- 100,000-chunk C2 benchmark p95 17.502 ms.
-- 200 concurrent verifications and 200 concurrent release attempts.
-- Database restart, Outbox duplicate, replay, tamper and cross-tenant tests.
-- Trivy zero findings on all three runtime images and Gitleaks zero findings.
-- Docker Desktop data image officially migrated to `D:\Docker\wsl` with image and
-  volume inventory hashes preserved; isolated release volume created.
+- email and phone registration UI;
+- self-service profile and verified contact changes;
+- tenant account administration UI;
+- Keycloak-delegated recovery;
+- `zh-CN`, `zh-TW` and `en-US` localization;
+- frontend tests, accessibility regression and merged-main replay.
 
-### 2.8 Identity Backend Candidate
-
-- Additive migration `20260720_0010`; migrations `0001` through `0009` unchanged.
-- Keycloak remains the only password and OIDC subject authority.
-- Email/phone registration, verification challenges, profile/contact changes,
-  tenant account list/detail/audit and disable/restore APIs are implemented.
-- Six identity tables use FORCE RLS; registration/consent evidence is append-only.
-- Email and phone values are encrypted at rest and indexed by keyed digests;
-  plaintext passwords, password hashes, codes and Keycloak tokens are not stored.
-- Keycloak/PostgreSQL partial failures use durable encrypted compensation jobs.
-- A restricted catalog login can read only reconciliation `tenant_id` values;
-  stale claims are recovered after restart and claim-token CAS blocks late workers.
-- The development fixture inbox is loopback-only and production settings reject
-  development secrets, HTTP Keycloak, fixture inbox and tenant fallback.
-- Local evidence: 516 passed, 1 skipped, 91.41% Python coverage; remote PR CI is pending.
-
-## 3. Current Work And Exact Boundary
-
-Current branch: `codex/account-registration-backend`.
-
-The branch contains the additive Keycloak-backed registration and account
-projection backend. Historical migrations `0001` through `0009` and all frozen
-Topic1-Topic4 contract fields remain unchanged. New migration `0010`, versioned
-identity contracts, public registration APIs, account/profile administration,
-encrypted PII projection, verification challenges, audit/Outbox evidence and a
-restart-safe compensation reconciler are committed locally.
-
-Current status:
-
-- PR #26: merged by standard Squash Merge;
-- protected main: `8df24c6c79c0674809e5891329d4fab405bb090e`;
-- PR, push and protected-main CI: 8/8 jobs successful;
-- merged-main clean-volume replay: passed on `cybercontrol_release_postgres`;
-- final Verification state: `RELEASED`; authenticated SSE replay passed;
-- official Docker data migration: completed and accepted with no asset loss;
-- source traceability: dirty-source rejection and successful clean-source replay
-  both passed; Compose, lockfile and runtime image fingerprints are archived.
-- identity backend source: three conventional commits are complete and local
-  PostgreSQL/Keycloak gates passed; branch push, PR, remote CI, merge and
-  merged-main release-volume replay remain pending.
+It may not modify migrations, identity backend semantics, TenantContext, RLS,
+SERIALIZABLE transactions, Outbox, SSE, C12 or Topic1-Topic4 contracts.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Current Evidence Closure
+### 4.1 P0 Immediate Product Closure
 
-1. Push `codex/account-registration-backend`, create the backend PR and require
-   all eight remote Release Quality Gates to pass.
-2. Squash Merge through protected main, then replay registration -> OIDC login ->
-   Topic1-Topic4 -> C12 -> SSE on `cybercontrol_release_postgres`.
-3. Do not mark `SYSTEM_ACCEPTED` until every final non-functional gate below has evidence.
+1. Merge the mainline evidence PR with 8/8 gates.
+2. Build the frontend registration, account and three-language layer in one
+   serial PR from the latest main.
+3. Replay a newly registered learner through OIDC and the complete trusted
+   publication chain from the merged frontend main.
 
-### 4.2 P1 Product Acceptance Gaps
+### 4.2 P1 Final Non-Functional Acceptance
 
-1. Add `zh-CN`, `zh-TW` and `en-US` frontend plus Keycloak theme localization
-   after the backend PR is merged and replayed.
-2. Add real-data browser E2E for registration, account isolation, knowledge,
-   learning, all five Agent resources,
-   review CAS conflicts, publication history and account-switch cache isolation.
-3. Execute 2,000 simultaneous authenticated SSE connections with reconnect,
-   cursor recovery, duplicate delivery and slow-consumer measurements.
-4. Execute an 8-hour minimum soak with continuous generation, verification,
-   Outbox dispatch, SSE and publication while monitoring memory and queue depth.
-5. Perform backup/restore disaster recovery into a separate PostgreSQL instance;
-   measure RPO/RTO and verify audit, Artifact Store and Outbox consistency.
-6. Execute sealed-environment integration with real approved Providers. No
-   credentials may be committed, logged or embedded in evidence.
-7. Build a human-reviewed academic golden set. The 100,000-chunk benchmark is a
-   deterministic performance corpus, not 100,000 manually validated facts.
+1. Test 2,000 authenticated SSE connections, including reconnect,
+   `Last-Event-ID`, duplicate suppression, slow consumers and tenant isolation.
+2. Run at least eight hours of continuous generation, verification, review,
+   release and SSE while measuring memory, queue depth and Outbox lag.
+3. Restore PostgreSQL backup into an independent instance and measure RPO/RTO.
+4. Verify audit chain, Artifact Store, Outbox and publication consistency after recovery.
+5. Test database restart, Faiss corruption, OIDC outage and Provider circuit
+   behavior as fail-closed scenarios.
+6. Run approved real Providers only in a sealed environment with externally
+   injected secrets.
+7. Expand a human-reviewed academic golden set and report accuracy, false
+   positives and false negatives separately from the 100,000-chunk performance corpus.
 
 ### 4.3 P1 Production Operations
 
-- Production deployment target, TLS/domain, secret manager and environment policy.
-- Managed PostgreSQL backup, point-in-time recovery and capacity plan.
-- Metrics dashboards, alert rules, SLOs, on-call runbook and incident response.
-- Artifact retention, privacy deletion policy and tenant offboarding procedure.
-- Cross-browser and WCAG accessibility audit.
-- Release signing, provenance and rollback rehearsal.
+- Select and rehearse the production deployment target.
+- Configure TLS, domain, secret manager, monitoring, alerting and SLOs.
+- Define managed PostgreSQL backup/PITR, capacity and rollback policy.
+- Define incident response, tenant offboarding and artifact retention.
+- Complete cross-browser and WCAG accessibility audits.
+- Complete PII retention, export, correction and deletion workflows.
+- Add release signing, provenance and rollback rehearsal.
 
 ### 4.4 P2 Maintenance
 
-- Resolve Dependabot major upgrades in isolated PRs after the release candidate is frozen.
-- Remove or archive stale local branches after accepted merges.
-- Reconcile current-state README/roadmap wording. Historical acceptance snapshots
-  should remain immutable; a new current-state index should supersede them.
+- Process major dependency upgrades in isolated PRs after release-candidate closure.
+- Archive stale branches only after their merge and evidence are confirmed.
+- Keep historical acceptance reports immutable and update only current-state indexes.
 
-## 5. Documentation Drift Findings
+## 5. Final Audit Judgment
 
-- `README.md` still names `190ed863...` and Phase 6 as current.
-- `docs/roadmap/implementation-sequence.md` still marks frontend integration active.
-- `docs/topic4/acceptance-status.json` records `business_code_started=false`; this
-  is valid as a Topic4 acceptance-time snapshot but is not a current project status.
-- `docs/frontend/acceptance-report.md` states that no real C12 commit was claimed
-  for its earlier long-lived volume. The new clean-volume evidence supersedes that
-  limitation without rewriting the historical report.
-
-`docs/system-acceptance/acceptance-status.json` is the authoritative current-state
-document. Historical Topic and frontend reports remain time-point snapshots.
-
-## 6. Final Audit Judgment
-
-The protected-main product remains a reproducible release candidate with a real
-release-eligible record. The additive identity backend is locally complete and
-source-committed, but is not yet part of protected main. The immediate sequence is
-backend PR -> 8/8 CI -> Squash Merge -> clean-volume mainline replay; only then may
-the frontend registration/account-management and three-language PR begin. Final
-load, soak, DR, sealed Provider and production operations gates still separate the
-project from `SYSTEM_ACCEPTED`.
+The backend and current trusted-learning product chain are no longer the
+blocking area. The immediate development target is the frontend identity and
+internationalization layer. Once that layer is merged and replayed, final load,
+soak, DR, sealed Provider, deployment, accessibility and privacy-lifecycle work
+still separates the release candidate from `SYSTEM_ACCEPTED`.

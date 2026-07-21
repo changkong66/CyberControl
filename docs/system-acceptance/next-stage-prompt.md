@@ -1,115 +1,181 @@
-# Next Stage Prompt: Registration, Accounts And Three-Language Workbench
+# Next Stage Prompt: Frontend Identity And Three-Language Workbench
 
 ```text
-# CyberControl Phase 7.2: additive identity self-service and i18n
+# CyberControl Phase 7.3: frontend registration, account management and i18n
 
-Continue only after the mainline evidence PR for protected main
-40c9a590614d3fb57011061fac02669d86946240 is merged and its CI is green.
-The project is currently RELEASE_CANDIDATE, not SYSTEM_ACCEPTED.
+Execute this task only after the current identity-mainline evidence PR is merged
+and its protected-main Release Quality Gates pass. Always branch from the latest
+remote main; do not assume a stale SHA.
+
+The project is RELEASE_CANDIDATE, not SYSTEM_ACCEPTED.
 
 ## Fixed facts
 
-- Protected main: 40c9a590614d3fb57011061fac02669d86946240
-- PR #25 merged; protected-main CI Run 29729849367 passed 8/8
-- Merged-main clean-volume replay passed from
-  docs/system-acceptance/evidence/release-eligible-mainline.json
-- PostgreSQL volume used: cybercontrol_release_postgres
-- Alembic head: 20260716_0009; migrations 0001-0009 and frozen Topic contracts are immutable
-- Keycloak OIDC Authorization Code + PKCE is the only identity and password authority
-- Existing tenant context, FORCE RLS, SERIALIZABLE, CAS, append-only audit, Outbox and C12 semantics are frozen
-- Current local quality evidence: 474 passed, 1 skipped, Python coverage 91.21%; 54 Vitest; 3 Playwright
-- No real SMS, email, AI-provider or production secret may enter source, logs or fixtures
+- Protected main currently includes identity backend PR #27 and acceptance PR #28.
+- Current accepted main before the evidence PR: bc9836532f6300e91dc7c0a906b07dabe754c138.
+- Protected-main CI Run 29801095074 passed 8/8 jobs.
+- Clean external-volume evidence is in
+  docs/system-acceptance/evidence/identity-mainline.json.
+- Alembic head is 20260720_0010; migrations 0001-0010 are immutable for this task.
+- Keycloak Authorization Code + PKCE is the only identity and password authority.
+- TenantID, roles and scopes come only from verified OIDC claims and backend TenantContext.
+- Existing RLS, SERIALIZABLE, CAS, audit, Outbox, SSE and C12 semantics are frozen.
+- Current quality evidence: 519 Python passed, 1 skipped, 91.33% coverage;
+  54 Vitest; 3 Playwright; push/PR/main gates each 8/8.
+- No real SMS, email, AI Provider or production secret may enter source, logs or fixtures.
 
-## Mandatory sequencing
+## Branch and sequencing
 
-1. Merge the documentation-only mainline evidence PR.
-2. Create and merge the backend registration/account PR with all Release Quality Gates green.
-3. Rebase frontend work from the merged backend main and create the frontend registration/i18n PR.
-4. Run a clean-volume registration-to-OIDC replay from merged main.
-5. Only then continue to the final G0-G12 non-functional gates.
+1. Confirm the evidence PR is merged and latest main CI is 8/8 green.
+2. From latest main create `codex/frontend-identity-i18n`.
+3. Do not modify backend Python, migrations, generated identity contract meaning,
+   repository governance or historical acceptance snapshots.
+4. Complete i18n infrastructure before page implementation.
+5. Complete registration before account self-service and tenant administration.
+6. Complete Vitest and Playwright before opening the PR.
+7. Merge only after push and PR workflows are both 8/8 green.
+8. Replay registered-user OIDC and the trusted release chain from merged main.
 
-Any failed CI, dirty source, missing evidence, contract drift or security ambiguity stops the sequence.
+Any backend contract gap, dirty source, failed CI, identity ambiguity or security
+boundary uncertainty stops the task. Document the gap instead of changing the
+frozen backend in this PR.
 
-## Backend PR: Keycloak-backed registration and account projection
+## Existing backend APIs to consume
 
-Create a branch from the latest protected main. Add an ADR before coding:
+Public registration:
 
-- Keycloak alone stores passwords and password hashes.
-- The application database stores only non-secret account projections and encrypted contact values plus lookup digests.
-- Keycloak Admin API is an external side effect; use a registration state machine, idempotency, retry, compensation and reconciliation.
-- Default production registration requires a server-verified invitation; local demo may use demo-academy only under explicit development configuration.
-- New accounts receive learner only. Reviewer/admin roles and tenant changes are server-authorized and never client-controlled.
+- POST /api/auth/verification-challenges
+- POST /api/auth/verification-challenges/verify
+- POST /api/auth/register/email
+- POST /api/auth/register/phone
 
-Add only migration 0010. Every new table must have FORCE RLS, append-only protections where applicable, audit and Outbox coverage. Do not modify 0001-0009.
+Authenticated account self-service:
 
-Add versioned contracts and generated Python/JSON Schema/TypeScript/Go artifacts:
+- GET /internal/accounts/me
+- PATCH /internal/accounts/me
+- POST /internal/accounts/me/verification-challenges
+- POST /internal/accounts/me/verification-challenges/verify
+- POST /internal/accounts/me/contact
 
-- UserRegisterByEmailCommandV1
-- UserRegisterByPhoneCommandV1
-- VerificationChallengeRequestV1
-- VerificationChallengeVerifyV1
-- AccountProfileV1
-- AccountAdminViewV1
+Tenant administration:
 
-Required server capabilities:
+- GET /internal/tenant/accounts
+- GET /internal/tenant/accounts/{account_id}
+- GET /internal/tenant/accounts/{account_id}/audit
+- POST /internal/tenant/accounts/{account_id}/disable
+- POST /internal/tenant/accounts/{account_id}/restore
+- GET /internal/tenant/registrations/{registration_id}
 
-- email and E.164 phone registration
-- verification challenge send/verify with hashed codes, five-minute expiry, attempt limits and multidimensional rate limits
-- uniform anti-enumeration responses
-- Idempotency-Key on every write and replay conflict detection
-- current-user profile read/edit for non-sensitive fields
-- verified contact change workflow
-- tenant-admin account list/detail and suspend/restore
-- audit and Outbox records for every lifecycle change
-- reconciliation for Keycloak success/database failure, timeout and retry paths
-- real PostgreSQL and real Keycloak integration tests for RLS, concurrency, compensation and permissions
+The development verification-code inbox is loopback-only test infrastructure.
+Production UI must never depend on it.
 
-The local fixture must use a loopback-only test inbox, never console-print a usable code, and never contain real credentials.
+## Internationalization foundation
 
-## Frontend PR: registration, account management and i18n
+- Add and lock `vue-i18n` using the existing pnpm workflow.
+- Locales: `zh-CN`, `zh-TW`, `en-US`.
+- Default and missing-key fallback: `zh-CN`.
+- Store the authenticated user's preference through the existing profile API.
+- Persist only a non-sensitive pre-login locale preference in session-scoped storage.
+- Map application locale to Keycloak `ui_locales`; use explicit mapping when
+  Keycloak expects `en` instead of `en-US`.
+- Configure the Keycloak realm/login theme for Simplified Chinese, Traditional
+  Chinese and English without enabling Keycloak native public self-registration.
+- Move all user-visible shell, auth, registration, account, validation, error,
+  empty-state, date and number text into message catalogs.
+- Add a CI test that fails on missing locale keys or user-visible hard-coded text
+  in the new identity surfaces.
+- Do not claim that academic source data, historical AI output or persisted
+  knowledge content has been translated.
 
-Branch from the merged backend main. Use the existing Vue 3, Pinia, Router, AJV, OIDC PKCE and fetch/SSE layers. Do not add identity headers or change Topic1-Topic4 contracts.
+## Required routes and behavior
 
-Locales:
+### /register
 
-- zh-CN (default fallback)
-- zh-TW
-- en-US
+- Email and E.164 phone segmented modes.
+- Normalize identifiers before request submission.
+- Request and verify a challenge, then submit the matching versioned register command.
+- Use a 60-second resend countdown, password policy feedback and accessible errors.
+- Every write uses a fresh valid Idempotency-Key.
+- Use uniform user-facing responses that do not reveal whether an account exists.
+- Never log password, code, Token or raw contact data.
+- Registration success never auto-logs in; redirect to the standard OIDC login.
 
-Move all user-visible shell, login, registration, account, permission, validation, error, empty-state, date and number text into vue-i18n messages. Pass ui_locales to Keycloak; do not transmit language or tenant identity in custom headers. Do not claim that academic knowledge or historical AI content has been translated.
+### /account/profile
 
-Routes:
+- Load the current account through the authenticated profile endpoint.
+- Edit display name and locale with expected-version CAS.
+- Email or phone changes require a new challenge and verification.
+- Handle CAS conflicts by reloading authoritative state and preserving a safe user draft.
+- Never expose TenantID, subject, roles or scopes as editable fields.
 
-- /register
-- /account/profile
-- /account/recovery
-- /tenant/accounts
+### /tenant/accounts
 
-Security requirements:
+- Require account administration read/write scopes in router and command guards.
+- List only the current tenant's accounts and show status, masked contacts and audit history.
+- Disable or restore with expected-version CAS and explicit confirmation.
+- Learner/reviewer users without admin scope receive the standard 403 surface.
+- No cross-tenant cache entry may survive logout, 401/403 or OIDC tenant change.
 
-- token remains in the existing session-scoped OIDC storage, never localStorage
-- no X-Tenant-ID, X-Subject-Ref, role or Scope request headers
-- tenant identity is display/cache context only and comes from verified claims
-- passwords, codes, tokens and raw PII are absent from logs, telemetry and error reports
-- 401/403, logout and tenant change clear private caches and SSE cursors
-- all responses pass Envelope and runtime schema validation
+### /account/recovery
 
-Required tests:
+- Delegate password recovery to Keycloak's supported OIDC/account action flow.
+- Do not add an application password-reset endpoint or store recovery secrets.
+- Preserve and validate post-recovery return targets against a local allowlist.
 
-- registration success, duplicate, invalid/expired code, rate limit and network failure
-- registered account logs in through existing PKCE and receives correct tenant/learner scopes
-- contact re-verification and profile editing
-- learner/reviewer/admin access separation and cross-tenant cache clearing
-- locale switch, fallback and missing-key detection, including Keycloak ui_locales
-- mobile layout, accessibility and Playwright end-to-end coverage
+## Security requirements
 
-## Acceptance and release rules
+- Continue using session-scoped OIDC storage; never use localStorage for Tokens.
+- Never send X-Tenant-ID, X-Subject-Ref, role or scope identity headers.
+- Send only Authorization, valid X-Trace-ID, X-Session-ID, Idempotency-Key and
+  Last-Event-ID where the existing client permits them.
+- Validate every response Envelope and runtime schema.
+- Redact password, verification code, Token, raw email and raw phone from logs,
+  telemetry, test traces and screenshots.
+- Clear identity/profile/account caches and SSE cursors on logout, 401/403 or tenant change.
+- Keep CSP, non-root container and Nginx proxy-buffering controls unchanged.
 
-- Keep Python coverage >= 91.19% observed and CI threshold unchanged at 90%.
-- Keep frontend thresholds at statements/functions/lines >=80% and branches >=75%.
-- Run real PostgreSQL, real Keycloak, contract drift, Go race, SBOM/license, Trivy and Gitleaks gates.
-- Commit implementation, tests and evidence separately; use conventional messages.
-- Every evidence record includes source SHA, migration head, dataset version/hash, image IDs and exact command flags.
-- Do not start 2,000-SSE, soak, DR or sealed-provider final gates until registration/i18n is merged and replayed from main.
-- Do not mark SYSTEM_ACCEPTED until all final non-functional and production-operation evidence is complete.
+## Tests
+
+Vitest and MSW must cover:
+
+- email and phone registration success;
+- duplicate/anti-enumeration response, invalid or expired code, rate limit and network failure;
+- idempotent retry and conflicting replay handling;
+- registered account redirected to and authenticated through existing OIDC PKCE;
+- profile edit, locale persistence, contact re-verification and CAS conflict;
+- learner/reviewer/admin route and command separation;
+- tenant-change, logout and 401/403 cache cleanup;
+- locale switching, `zh-CN` fallback, missing-key failure and Keycloak `ui_locales` mapping;
+- password/code/Token/PII redaction from client logs and error objects.
+
+Playwright must cover desktop and mobile:
+
+1. choose locale before login;
+2. register by local email fixture without exposing the code in browser logs;
+3. complete OIDC login as the new learner;
+4. edit profile and locale;
+5. confirm learner cannot access tenant administration;
+6. confirm tenant-admin can list, inspect, disable and restore the account;
+7. verify account switching clears prior-tenant state;
+8. verify all three locales render without overflow or missing-key placeholders.
+
+Maintain frontend thresholds at statements/functions/lines >=80% and branches
+>=75%. TypeScript strict, build, pnpm audit, SBOM/license, Trivy and Gitleaks must
+all pass.
+
+## Delivery and replay
+
+- Commit i18n foundation, identity pages, tests and evidence separately with
+  allowed Conventional Commit types.
+- Create a standard PR to protected main; no admin override or ruleset changes.
+- Require both push and pull_request workflows to pass all eight jobs.
+- Squash Merge only when GitHub reports mergeable_state=clean.
+- Wait for merged-main 8/8 CI.
+- Recreate the protected release volume only after verifying labels and no mounts.
+- Replay registration -> OIDC -> Topic1 -> Topic3 -> Topic4 -> C12 -> SSE from
+  merged main and archive source SHA, dataset hashes and image IDs.
+
+Stop after the frontend identity/i18n replay is archived. The 2,000-SSE, eight-hour
+soak, DR, sealed Provider and production-operation gates remain separate final tasks.
+Do not mark SYSTEM_ACCEPTED.
 ```
