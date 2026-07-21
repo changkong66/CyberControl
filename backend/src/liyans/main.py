@@ -34,6 +34,7 @@ from liyans.core.provider_policy import ProviderPolicyRegistry
 from liyans.core.settings import get_settings
 from liyans.domains.compliance.service import ComplianceBuilderPolicy, ComplianceEvidenceService
 from liyans.domains.identity.keycloak import KeycloakAdminClient
+from liyans.domains.identity.outbox import register_identity_outbox_handlers
 from liyans.domains.identity.service import IdentityReconciliationWorker, IdentityService
 from liyans.domains.knowledge.artifact_writer import KnowledgeArtifactWriter
 from liyans.domains.knowledge.postgres_repository import PostgresKnowledgeRepository
@@ -455,6 +456,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             Topic4PublicationSSEConsumer(app.state.sse_broker, topic4_metrics),
         )
         outbox_sse_bridge = DurableOutboxSSEBridge(app.state.sse_broker)
+        register_identity_outbox_handlers(message_bus, outbox_sse_bridge)
         for event_type in DOMAIN_OUTBOX_EVENT_TYPES:
             message_bus.register(event_type, outbox_sse_bridge)
         for event_type in TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES:
