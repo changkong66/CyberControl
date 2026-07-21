@@ -4,8 +4,8 @@
 
 CyberControl has completed the engineering foundation, Topic1-Topic4 backend,
 and the frontend business workbench. The protected main branch is
-`40c9a590614d3fb57011061fac02669d86946240`; PRs #16-#25 are merged and protected
-main Release Quality Gates run 29729849367 completed 8/8 jobs successfully.
+`8df24c6c79c0674809e5891329d4fab405bb090e`; PRs #16-#26 are merged and protected
+main Release Quality Gates run 29731316528 completed 8/8 jobs successfully.
 
 The project is now in **Phase 7 system acceptance and release closure**, not
 Phase 6 frontend implementation. PR #25, its PR/push gates and the merged-main
@@ -34,7 +34,8 @@ and external integration account for most remaining work.
 
 - Async FastAPI and SQLAlchemy runtime on PostgreSQL 16.
 - OIDC/JWKS authentication and trusted `TenantContext`.
-- 68 tenant tables with RLS and FORCE RLS in the current schema.
+- Protected main has 68 tenant tables with RLS and FORCE RLS; the additive
+  identity candidate raises the tested branch schema to 74/74.
 - SERIALIZABLE transaction helpers, global idempotency and CAS controls.
 - Append-only evidence, audit SHA chain and Artifact Store.
 - Transactional Outbox, persistent SSE replay, signed cursors and recovery.
@@ -94,7 +95,7 @@ and external integration account for most remaining work.
 - Clean PostgreSQL volume and migration head verification.
 - Topic1 -> Topic2 -> Topic3 -> Topic4 -> C12 -> SSE real local chain.
 - A release-eligible persisted report and browser rendering of its 10 Claims.
-- 474 Python tests with 91.21% coverage; one Windows symbolic-link test skipped.
+- 516 Python tests with 91.41% coverage; one Windows symbolic-link test skipped.
 - 100,000-chunk C2 benchmark p95 17.502 ms.
 - 200 concurrent verifications and 200 concurrent release attempts.
 - Database restart, Outbox duplicate, replay, tamper and cross-tenant tests.
@@ -102,49 +103,73 @@ and external integration account for most remaining work.
 - Docker Desktop data image officially migrated to `D:\Docker\wsl` with image and
   volume inventory hashes preserved; isolated release volume created.
 
+### 2.8 Identity Backend Candidate
+
+- Additive migration `20260720_0010`; migrations `0001` through `0009` unchanged.
+- Keycloak remains the only password and OIDC subject authority.
+- Email/phone registration, verification challenges, profile/contact changes,
+  tenant account list/detail/audit and disable/restore APIs are implemented.
+- Six identity tables use FORCE RLS; registration/consent evidence is append-only.
+- Email and phone values are encrypted at rest and indexed by keyed digests;
+  plaintext passwords, password hashes, codes and Keycloak tokens are not stored.
+- Keycloak/PostgreSQL partial failures use durable encrypted compensation jobs.
+- A restricted catalog login can read only reconciliation `tenant_id` values;
+  stale claims are recovered after restart and claim-token CAS blocks late workers.
+- The development fixture inbox is loopback-only and production settings reject
+  development secrets, HTTP Keycloak, fixture inbox and tenant fallback.
+- Local evidence: 516 passed, 1 skipped, 91.41% Python coverage; remote PR CI is pending.
+
 ## 3. Current Work And Exact Boundary
 
-Current branch: `codex/system-acceptance-mainline-evidence`.
+Current branch: `codex/account-registration-backend`.
 
-The branch contains only the merged-main replay evidence and current-state
-documentation. All runtime, test and acceptance tooling changes are already
-Squash Merged through PR #25. No frozen migration or contract field changed.
+The branch contains the additive Keycloak-backed registration and account
+projection backend. Historical migrations `0001` through `0009` and all frozen
+Topic1-Topic4 contract fields remain unchanged. New migration `0010`, versioned
+identity contracts, public registration APIs, account/profile administration,
+encrypted PII projection, verification challenges, audit/Outbox evidence and a
+restart-safe compensation reconciler are committed locally.
 
 Current status:
 
-- PR #25: merged by standard Squash Merge;
-- protected main: `40c9a590614d3fb57011061fac02669d86946240`;
+- PR #26: merged by standard Squash Merge;
+- protected main: `8df24c6c79c0674809e5891329d4fab405bb090e`;
 - PR, push and protected-main CI: 8/8 jobs successful;
 - merged-main clean-volume replay: passed on `cybercontrol_release_postgres`;
 - final Verification state: `RELEASED`; authenticated SSE replay passed;
 - official Docker data migration: completed and accepted with no asset loss;
 - source traceability: dirty-source rejection and successful clean-source replay
   both passed; Compose, lockfile and runtime image fingerprints are archived.
+- identity backend source: three conventional commits are complete and local
+  PostgreSQL/Keycloak gates passed; branch push, PR, remote CI, merge and
+  merged-main release-volume replay remain pending.
 
 ## 4. Remaining Work
 
 ### 4.1 P0 Current Evidence Closure
 
-1. Merge this documentation-only mainline evidence update through normal PR CI.
-2. Do not mark `SYSTEM_ACCEPTED` until every final non-functional gate below has evidence.
+1. Push `codex/account-registration-backend`, create the backend PR and require
+   all eight remote Release Quality Gates to pass.
+2. Squash Merge through protected main, then replay registration -> OIDC login ->
+   Topic1-Topic4 -> C12 -> SSE on `cybercontrol_release_postgres`.
+3. Do not mark `SYSTEM_ACCEPTED` until every final non-functional gate below has evidence.
 
 ### 4.2 P1 Product Acceptance Gaps
 
-1. Add Keycloak-backed email/phone registration, account profile and tenant account
-   administration through additive migration 0010 and versioned contracts.
-2. Add `zh-CN`, `zh-TW` and `en-US` frontend plus Keycloak theme localization.
-3. Add real-data browser E2E for registration, account isolation, knowledge,
+1. Add `zh-CN`, `zh-TW` and `en-US` frontend plus Keycloak theme localization
+   after the backend PR is merged and replayed.
+2. Add real-data browser E2E for registration, account isolation, knowledge,
    learning, all five Agent resources,
    review CAS conflicts, publication history and account-switch cache isolation.
-4. Execute 2,000 simultaneous authenticated SSE connections with reconnect,
+3. Execute 2,000 simultaneous authenticated SSE connections with reconnect,
    cursor recovery, duplicate delivery and slow-consumer measurements.
-5. Execute an 8-hour minimum soak with continuous generation, verification,
+4. Execute an 8-hour minimum soak with continuous generation, verification,
    Outbox dispatch, SSE and publication while monitoring memory and queue depth.
-6. Perform backup/restore disaster recovery into a separate PostgreSQL instance;
+5. Perform backup/restore disaster recovery into a separate PostgreSQL instance;
    measure RPO/RTO and verify audit, Artifact Store and Outbox consistency.
-7. Execute sealed-environment integration with real approved Providers. No
+6. Execute sealed-environment integration with real approved Providers. No
    credentials may be committed, logged or embedded in evidence.
-8. Build a human-reviewed academic golden set. The 100,000-chunk benchmark is a
+7. Build a human-reviewed academic golden set. The 100,000-chunk benchmark is a
    deterministic performance corpus, not 100,000 manually validated facts.
 
 ### 4.3 P1 Production Operations
@@ -178,9 +203,10 @@ document. Historical Topic and frontend reports remain time-point snapshots.
 
 ## 6. Final Audit Judgment
 
-The product is backend-complete, frontend-complete for the intended workbench
-scope, and reproducible from protected main with a real release-eligible record.
-It is not yet a production release. After this evidence-only PR, the next product
-iteration is additive registration/account management and three-language support,
-followed by a new mainline replay and the outstanding load, soak, DR, sealed
-Provider and production operations gates.
+The protected-main product remains a reproducible release candidate with a real
+release-eligible record. The additive identity backend is locally complete and
+source-committed, but is not yet part of protected main. The immediate sequence is
+backend PR -> 8/8 CI -> Squash Merge -> clean-volume mainline replay; only then may
+the frontend registration/account-management and three-language PR begin. Final
+load, soak, DR, sealed Provider and production operations gates still separate the
+project from `SYSTEM_ACCEPTED`.
