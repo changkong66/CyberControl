@@ -10,6 +10,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
+import subprocess
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -45,6 +47,22 @@ def _write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
     path.write_bytes(encoded + b"\n")
+
+
+def _git_revision(revision: str) -> str:
+    if revision not in {"HEAD", "HEAD^{tree}"}:
+        raise ValueError("unsupported Git revision for dataset evidence")
+    git_path = shutil.which("git")
+    if git_path is None:
+        raise RuntimeError("Git is required to bind dataset evidence to source")
+    completed = subprocess.run(  # noqa: S603 - absolute executable and revision allowlist.
+        [git_path, "rev-parse", revision],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip()
 
 
 def _performance_rows(count: int, knowledge_point_count: int) -> Iterable[dict[str, object]]:
@@ -231,6 +249,8 @@ def main() -> int:
 
     descriptor = {
         "schema_version": "phase7.dataset-registry.v1",
+        "source_commit": _git_revision("HEAD"),
+        "source_tree": _git_revision("HEAD^{tree}"),
         "datasets": [
             {
                 "dataset_id": PERFORMANCE_DATASET_ID,

@@ -124,3 +124,11 @@ def test_phase7_human_golden_set_remains_blocked_without_review_attestation() ->
 
     assert golden_status["state"] == "MISSING_HUMAN_REVIEWED_GOLDEN_SET"
     assert golden_status["acceptance_eligible"] is False
+
+
+def test_phase7_dataset_inventory_binds_git_commit_and_tree() -> None:
+    git_revision = PHASE7_DATASET_TOOL["_git_revision"]
+
+    for revision in (git_revision("HEAD"), git_revision("HEAD^{tree}")):
+        assert len(revision) == 40
+        assert set(revision) <= set("0123456789abcdef")
