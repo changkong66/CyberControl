@@ -20,7 +20,12 @@ export interface OidcUserLike {
 
 export interface OidcManagerLike {
   getUser(): Promise<OidcUserLike | null>
-  signinRedirect(args?: { state?: Record<string, string> }): Promise<void>
+  signinRedirect(args?: {
+    state?: Record<string, string>
+    ui_locales?: string
+    prompt?: string
+    extraQueryParams?: Record<string, string | number | boolean>
+  }): Promise<void>
   signinCallback(url?: string): Promise<OidcUserLike>
   signinSilent(): Promise<OidcUserLike>
   signoutRedirect(args?: { post_logout_redirect_uri?: string }): Promise<void>

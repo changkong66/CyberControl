@@ -37,6 +37,7 @@ export interface ApiRequestOptions {
   traceId?: string
   envelope?: EnvelopeKind | "none"
   signal?: AbortSignal
+  authentication?: "optional" | "required" | "none"
 }
 
 export class ApiClientError extends Error {
@@ -46,13 +47,35 @@ export class ApiClientError extends Error {
   readonly details: unknown
 
   constructor(status: number, code: string, message: string, traceId: string | null, details?: unknown) {
-    super(message)
+    super(redactSensitiveText(message))
     this.name = "ApiClientError"
     this.status = status
     this.code = code
     this.traceId = traceId
-    this.details = details
+    this.details = redactSensitiveDetails(details)
   }
+}
+
+const SENSITIVE_FIELD = /(?:authorization|password|passcode|verification.?code|token|secret|email|phone|identifier)/iu
+const EMAIL_VALUE = /[^\s@]+@[^\s@]+\.[^\s@]+/gu
+const PHONE_VALUE = /\+[1-9][0-9 .()\-]{7,20}/gu
+const JWT_VALUE = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/gu
+
+export function redactSensitiveText(value: string): string {
+  return value.replace(EMAIL_VALUE, "[REDACTED]").replace(PHONE_VALUE, "[REDACTED]").replace(JWT_VALUE, "[REDACTED]")
+}
+
+export function redactSensitiveDetails(value: unknown, depth = 0): unknown {
+  if (depth > 5) return "[REDACTED]"
+  if (typeof value === "string") return redactSensitiveText(value)
+  if (Array.isArray(value)) return value.map((item) => redactSensitiveDetails(item, depth + 1))
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+      key,
+      SENSITIVE_FIELD.test(key) ? "[REDACTED]" : redactSensitiveDetails(item, depth + 1),
+    ]),
+  )
 }
 
 export function createTraceId(): string {
@@ -66,8 +89,10 @@ function safeTraceId(candidate?: string): string {
 }
 
 function joinUrl(baseUrl: string, path: string): string {
-  if (/^https?:\/\//u.test(path)) return path
-  return `${baseUrl.replace(/\/$/u, "")}/${path.replace(/^\//u, "")}`
+  if (!/^\/(?!\/)/u.test(path)) {
+    throw new TypeError("API request paths must be same-origin root paths.")
+  }
+  return `${baseUrl.replace(/\/$/u, "")}${path}`
 }
 
 function rejectReservedHeaders(headers: Headers): void {
@@ -93,6 +118,7 @@ export class ApiClient {
   }
 
   async request<T>(path: string, options: ApiRequestOptions = {}): Promise<ApiResult<T>> {
+    const url = joinUrl(this.baseUrl, path)
     const traceId = safeTraceId(options.traceId)
     const headers = new Headers(options.headers)
     rejectReservedHeaders(headers)
@@ -100,7 +126,11 @@ export class ApiClient {
     headers.set("X-Trace-ID", traceId)
     const sessionId = this.getSessionId()
     if (sessionId) headers.set("X-Session-ID", sessionId)
-    const accessToken = await this.getAccessToken()
+    const authentication = options.authentication ?? "optional"
+    const accessToken = authentication === "none" ? null : await this.getAccessToken()
+    if (authentication === "required" && !accessToken) {
+      throw new ApiClientError(401, "AUTH_REQUIRED", "Authentication required.", traceId)
+    }
     if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`)
 
     let body: BodyInit | undefined
@@ -109,7 +139,7 @@ export class ApiClient {
       body = JSON.stringify(options.json)
     }
 
-    const response = await this.fetcher(joinUrl(this.baseUrl, path), {
+    const response = await this.fetcher(url, {
       method: options.method ?? (body ? "POST" : "GET"),
       headers,
       body,
@@ -133,7 +163,7 @@ export class ApiClient {
       )
     }
 
-    if (options.envelope === "topic1" || options.envelope === "topic3") {
+    if (options.envelope && options.envelope !== "none") {
       assertEnvelope(document, options.envelope)
     }
     return { data: document as T, traceId: responseTraceId, response }

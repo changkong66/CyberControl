@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue"
+import { computed } from "vue"
+import { useI18n } from "vue-i18n"
 
 const props = withDefaults(
   defineProps<{
@@ -7,11 +9,15 @@ const props = withDefaults(
     title: string
     message: string
     confirmLabel?: string
+    cancelLabel?: string
   }>(),
-  { confirmLabel: "确认" },
+  { confirmLabel: undefined, cancelLabel: undefined },
 )
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
+const { t } = useI18n()
+const resolvedConfirmLabel = computed(() => props.confirmLabel ?? t("common.confirm"))
+const resolvedCancelLabel = computed(() => props.cancelLabel ?? t("common.cancel"))
 
 function syncOpen(open: boolean): void {
   if (open && !dialog.value?.open) dialog.value?.showModal()
@@ -34,8 +40,8 @@ function cancel(): void {
     <h2>{{ title }}</h2>
     <p>{{ message }}</p>
     <div class="dialog-actions">
-      <button class="secondary-button" type="button" @click="cancel">取消</button>
-      <button class="primary-button" type="button" @click="$emit('confirm')">{{ confirmLabel }}</button>
+      <button class="secondary-button" type="button" @click="cancel">{{ resolvedCancelLabel }}</button>
+      <button class="primary-button" type="button" @click="$emit('confirm')">{{ resolvedConfirmLabel }}</button>
     </div>
   </dialog>
 </template>

@@ -1,8 +1,13 @@
 import type {
+  AccountAdminViewV1,
+  AccountProfileV1,
   CandidateV1,
   ClaimV1,
   EvidenceRefV1,
   HumanReviewTaskV1,
+  IdentityAuditEntryV1,
+  RegistrationReceiptV1,
+  RegistrationStatusV1,
   ReleaseAuthorizationPayloadV1,
   Topic1CourseV1,
   Topic1GraphContentV1,
@@ -12,14 +17,23 @@ import type {
   Topic2MemoryStateV1,
   Topic2StudentProfileV1,
   Topic3EnvelopeV1,
+  UserRegisterByEmailCommandV1,
+  UserRegisterByPhoneCommandV1,
+  VerificationChallengeReceiptV1,
+  VerificationChallengeRequestV1,
+  VerificationChallengeVerifyV1,
   VerificationReportV1,
 } from "@liyans/contracts"
 
 import { type ApiClient, type ApiResult } from "./client"
+import { assertIdentityContract, assertIdentityContractList } from "./schemas"
 import {
+  type AccountStatusInput,
+  type ContactChangeInput,
   type CourseGraphView,
   type GenerationView,
   type JsonObject,
+  type ProfileUpdateInput,
   type PublicationHistoryItem,
   type ReleaseCommitResult,
   type ReleaseDerivationInput,
@@ -38,7 +52,17 @@ import {
 } from "./types"
 
 export class WorkbenchApi {
-  constructor(private readonly client: ApiClient) {}
+  constructor(
+    private readonly client: ApiClient,
+    private readonly getTrustedTenantId: () => string | null = () => null,
+  ) {}
+
+  private assertTrustedTenant(document: { tenant_id: string }): void {
+    const trustedTenantId = this.getTrustedTenantId()
+    if (trustedTenantId && document.tenant_id !== trustedTenantId) {
+      throw new Error("The identity response crossed the trusted tenant boundary.")
+    }
+  }
 
   private async topic1<T>(path: string, options: Parameters<ApiClient["request"]>[1] = {}): Promise<ApiResult<T>> {
     const result = await this.client.request<unknown>(path, { ...options, envelope: "topic1" })
@@ -48,6 +72,176 @@ export class WorkbenchApi {
   private async topic3<T>(path: string, options: Parameters<ApiClient["request"]>[1] = {}): Promise<ApiResult<T>> {
     const result = await this.client.request<unknown>(path, { ...options, envelope: "topic3" })
     return { ...result, data: requirePayload<T>(result.data, "Topic 3") }
+  }
+
+  private async identity<T>(
+    path: string,
+    dataKey: string,
+    contract: Parameters<typeof assertIdentityContract>[1],
+    options: Parameters<ApiClient["request"]>[1] = {},
+  ): Promise<ApiResult<T>> {
+    const result = await this.client.request<unknown>(path, {
+      ...options,
+      authentication: path.startsWith("/api/auth/") ? "none" : "required",
+      envelope: "identity",
+    })
+    const data = requireData<JsonObject>(result.data, "Identity")
+    const document = data[dataKey]
+    assertIdentityContract(document, contract)
+    if (contract === "accountProfile" || contract === "accountAdmin") {
+      this.assertTrustedTenant(document as AccountProfileV1)
+    }
+    return { ...result, data: document as T }
+  }
+
+  async requestRegistrationChallenge(
+    command: VerificationChallengeRequestV1,
+    idempotencyKey = newIdempotencyKey("identity-challenge"),
+  ): Promise<ApiResult<VerificationChallengeReceiptV1>> {
+    assertIdentityContract(command, "challengeRequest")
+    return this.identity("/api/auth/verification-challenges", "challenge", "challengeReceipt", {
+      method: "POST",
+      json: command,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  async verifyRegistrationChallenge(
+    command: VerificationChallengeVerifyV1,
+    idempotencyKey = newIdempotencyKey("identity-verify"),
+  ): Promise<ApiResult<VerificationChallengeReceiptV1>> {
+    assertIdentityContract(command, "challengeVerify")
+    return this.identity("/api/auth/verification-challenges/verify", "challenge", "challengeReceipt", {
+      method: "POST",
+      json: command,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  async registerByEmail(
+    command: UserRegisterByEmailCommandV1,
+    idempotencyKey = newIdempotencyKey("identity-register-email"),
+  ): Promise<ApiResult<RegistrationReceiptV1>> {
+    assertIdentityContract(command, "registerEmail")
+    return this.identity("/api/auth/register/email", "registration", "registrationReceipt", {
+      method: "POST",
+      json: command,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  async registerByPhone(
+    command: UserRegisterByPhoneCommandV1,
+    idempotencyKey = newIdempotencyKey("identity-register-phone"),
+  ): Promise<ApiResult<RegistrationReceiptV1>> {
+    assertIdentityContract(command, "registerPhone")
+    return this.identity("/api/auth/register/phone", "registration", "registrationReceipt", {
+      method: "POST",
+      json: command,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  getAccountProfile(): Promise<ApiResult<AccountProfileV1>> {
+    return this.identity("/internal/accounts/me", "profile", "accountProfile")
+  }
+
+  updateAccountProfile(
+    input: ProfileUpdateInput,
+    idempotencyKey = newIdempotencyKey("identity-profile"),
+  ): Promise<ApiResult<AccountProfileV1>> {
+    return this.identity("/internal/accounts/me", "profile", "accountProfile", {
+      method: "PATCH",
+      json: input,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  requestContactChallenge(
+    command: VerificationChallengeRequestV1,
+    idempotencyKey = newIdempotencyKey("identity-contact-challenge"),
+  ): Promise<ApiResult<VerificationChallengeReceiptV1>> {
+    assertIdentityContract(command, "challengeRequest")
+    return this.identity("/internal/accounts/me/verification-challenges", "challenge", "challengeReceipt", {
+      method: "POST",
+      json: command,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  verifyContactChallenge(
+    command: VerificationChallengeVerifyV1,
+    idempotencyKey = newIdempotencyKey("identity-contact-verify"),
+  ): Promise<ApiResult<VerificationChallengeReceiptV1>> {
+    assertIdentityContract(command, "challengeVerify")
+    return this.identity("/internal/accounts/me/verification-challenges/verify", "challenge", "challengeReceipt", {
+      method: "POST",
+      json: command,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  changeAccountContact(
+    input: ContactChangeInput,
+    idempotencyKey = newIdempotencyKey("identity-contact-change"),
+  ): Promise<ApiResult<AccountProfileV1>> {
+    return this.identity("/internal/accounts/me/contact", "profile", "accountProfile", {
+      method: "POST",
+      json: input,
+      headers: { "Idempotency-Key": idempotencyKey },
+    })
+  }
+
+  async listTenantAccounts(offset = 0, limit = 50): Promise<ApiResult<AccountAdminViewV1[]>> {
+    const result = await this.client.request<unknown>(
+      `/internal/tenant/accounts${queryString({ offset, limit })}`,
+      { authentication: "required", envelope: "identity" },
+    )
+    const accounts = requireData<{ accounts: unknown }>(result.data, "Identity").accounts
+    assertIdentityContractList(accounts, "accountAdmin")
+    for (const account of accounts as AccountAdminViewV1[]) this.assertTrustedTenant(account)
+    return { ...result, data: accounts as AccountAdminViewV1[] }
+  }
+
+  getTenantAccount(accountId: string): Promise<ApiResult<AccountAdminViewV1>> {
+    return this.identity(`/internal/tenant/accounts/${encodeURIComponent(accountId)}`, "account", "accountAdmin")
+  }
+
+  async listTenantAccountAudit(
+    accountId: string,
+    offset = 0,
+    limit = 50,
+  ): Promise<ApiResult<IdentityAuditEntryV1[]>> {
+    const result = await this.client.request<unknown>(
+      `/internal/tenant/accounts/${encodeURIComponent(accountId)}/audit${queryString({ offset, limit })}`,
+      { authentication: "required", envelope: "identity" },
+    )
+    const entries = requireData<{ audit_entries: unknown }>(result.data, "Identity").audit_entries
+    assertIdentityContractList(entries, "auditEntry")
+    return { ...result, data: entries as IdentityAuditEntryV1[] }
+  }
+
+  setTenantAccountEnabled(
+    accountId: string,
+    enabled: boolean,
+    input: AccountStatusInput,
+    idempotencyKey = newIdempotencyKey("identity-account-status"),
+  ): Promise<ApiResult<AccountAdminViewV1>> {
+    const action = enabled ? "restore" : "disable"
+    return this.identity(
+      `/internal/tenant/accounts/${encodeURIComponent(accountId)}/${action}`,
+      "account",
+      "accountAdmin",
+      { method: "POST", json: input, headers: { "Idempotency-Key": idempotencyKey } },
+    )
+  }
+
+  getTenantRegistrationStatus(registrationId: string): Promise<ApiResult<RegistrationStatusV1>> {
+    return this.identity(
+      `/internal/tenant/registrations/${encodeURIComponent(registrationId)}`,
+      "registration",
+      "registrationStatus",
+    )
   }
 
   async listCourses(): Promise<ApiResult<Topic1CourseV1[]>> {

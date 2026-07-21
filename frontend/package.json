@@ -6,9 +6,11 @@
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
+    "generate:validators": "node tools/generate-validators.mjs",
+    "check:validators": "node tools/generate-validators.mjs --check",
+    "build": "node tools/generate-validators.mjs --check && vue-tsc --noEmit -p tsconfig.app.json && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
+    "typecheck": "node tools/generate-validators.mjs --check && vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
@@ -24,9 +26,11 @@
     "oidc-client-ts": "3.3.0",
     "pinia": "3.0.3",
     "vue": "^3.5.13",
+    "vue-i18n": "11.1.12",
     "vue-router": "4.5.1"
   },
   "devDependencies": {
+    "@intlify/devtools-types": "11.1.12",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.0",
