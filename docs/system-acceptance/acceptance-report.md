@@ -2,32 +2,41 @@
 
 ## Decision
 
-Protected `main` revision `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
+Protected `main` revision `d25ed4dd92afd37720c158e4828794853ba8670a`
 is accepted as a **release candidate** with the frontend identity and
-internationalization scope complete. PR #30 passed both remote workflows,
-merged through the protected branch, passed the merged-main workflow, and was
-replayed from a newly recreated external PostgreSQL release volume.
+internationalization product scope complete. PR #30 passed both remote
+workflows, merged through the protected branch, passed the merged-main
+workflow, and was replayed from a newly recreated external PostgreSQL release
+volume. PR #32 then archived that replay evidence and passed its own protected
+main Release Quality Gates run.
 
 Formal state:
-`FRONTEND_IDENTITY_I18N_MAINLINE_REPLAY_ACCEPTED_FINAL_GATES_PENDING`.
+`PHASE7_GATE_B_BLOCKED_HUMAN_REVIEWED_GOLDEN_SET_MISSING`.
 
-The project is not `SYSTEM_ACCEPTED`. High-load SSE, long-duration soak,
+The project is not `SYSTEM_ACCEPTED`. Gate A preflight is accepted. Gate B has
+materialized the synthetic performance corpus but is blocked until an
+independently human-reviewed, licensed academic golden fact set is supplied.
+Under the serial acceptance rule, high-load SSE, long-duration soak,
 independent backup/restore and disaster recovery, sealed Provider integration,
-production deployment, cross-browser/WCAG and PII lifecycle evidence remain
-open.
+production deployment, cross-browser/WCAG and PII lifecycle evidence have not
+started.
 
 ## Evaluated Baseline
 
-- Protected `main`: `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
-- Source tree: `01c1705debb4b869721b9b9432ed2747064921b8`
+- Protected `main`: `d25ed4dd92afd37720c158e4828794853ba8670a`
+- Protected-main tree: `2c92d3475644ced0ac154e4471ae4d62b6ed1e5d`
+- Evaluated product source: `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
+- Evaluated product tree: `01c1705debb4b869721b9b9432ed2747064921b8`
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Push CI: [Run 29830793779](https://github.com/changkong66/CyberControl/actions/runs/29830793779), 8/8
 - Pull-request CI: [Run 29830972987](https://github.com/changkong66/CyberControl/actions/runs/29830972987), 8/8
-- Protected-main CI: [Run 29831570652](https://github.com/changkong66/CyberControl/actions/runs/29831570652), 8/8
+- Product protected-main CI: [Run 29831570652](https://github.com/changkong66/CyberControl/actions/runs/29831570652), 8/8
+- Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
+- Current protected-main CI: [Run 29840722346](https://github.com/changkong66/CyberControl/actions/runs/29840722346), 8/8
 - Alembic head: `20260720_0010`
 - Historical migrations `0001` through `0009`: unchanged
 - Mainline evidence: [frontend-identity-i18n-mainline.json](evidence/frontend-identity-i18n-mainline.json)
-- Evidence SHA256: `c61ae5e8b5b4c3a516aaf3c8ed746df6217687f963726a5ea05d2c7fae736b6e`
+- Evidence file SHA256: `bbda0423786ee5ec035bab5dbd26eb3dfc6e135cf96f95980ab31b2523b4f5c9`
 - Browser evidence: [frontend-identity-i18n-browser.json](evidence/frontend-identity-i18n-browser.json)
 
 ## Closure Delivered
@@ -140,9 +149,9 @@ Immutable identifiers for this replay:
 | Gate | Current result |
 | --- | --- |
 | Ruff and frozen contract drift | passed |
-| Python deterministic suite | 449 passed, 1 skipped, 70 deselected |
-| Standard PostgreSQL suite | 514 passed, 6 skipped |
-| Python coverage | 90.57%; hard threshold 90% |
+| Python deterministic suite | 453 passed, 1 skipped, 70 deselected |
+| Standard PostgreSQL suite | 518 passed, 6 skipped |
+| Python coverage | 90.61%; hard threshold 90% |
 | Historical Python observation | 91.19%; not met by the standard-gate run |
 | Vitest | 72 passed |
 | Frontend coverage | 89.12% statements, 81.79% branches, 83.79% functions, 92.38% lines |
@@ -160,25 +169,59 @@ probe, and the Windows symbolic-link compatibility case. The clean-volume runner
 independently exercised real Keycloak registration and OIDC login. None of these
 skips is represented as a passed test.
 
+## Phase 7.4 Progress
+
+Gate A preflight passed from clean tooling commit
+`f81a31a9753055aeedcc9962362482634798801e`. It records the D-drive Docker
+Desktop location, external release volume, source/lock fingerprints, image
+digests, network topology and host resource limits without storing container
+environment values.
+
+Gate B materialized a 100,000-record deterministic synthetic performance corpus
+at `D:\CyberControlAcceptance\phase7\datasets\phase7-c2-synthetic-retrieval-performance.v1.jsonl`.
+Its SHA256 is `12614d0eb5a59dccf841d1ef8479efec905fa7cff3d7f4d5f6214e9fe9dd4393`.
+The corpus is eligible only for retrieval performance measurements. It cannot be
+used to claim academic accuracy, hallucination rates, or breadth of coverage.
+
+Gate B is blocked because the repository contains neither the required
+human-reviewed facts JSONL nor the SHA256-bound `ACCEPTED` review attestation.
+The machine-readable inventory and the detailed boundary report are retained in
+`docs/system-acceptance/evidence/phase7-dataset-inventory.json` and
+`docs/system-acceptance/evidence/phase7-dataset-boundary-report.md`.
+
+The complete local Release Quality Gates were then replayed on source commit
+`4c0fd18daa76960fe172805ad4e5b278dd7c9a19` using a PostgreSQL instance on
+port `55432` whose data volume is distinct from `cybercontrol_release_postgres`.
+All gates passed, including the full migration cycle, PostgreSQL regression,
+container runtime constraints, Trivy and Gitleaks. The retained summary is
+[phase7-local-quality-gates.json](evidence/phase7-local-quality-gates.json).
+This quality result does not satisfy or bypass the missing human-review evidence.
+
 ## Current Boundary
 
 Frontend identity, account administration and three-language workbench scope is
-complete and replayed from merged main. The next phase is non-functional and
-production acceptance only. Feature development, frozen migration changes and
-Topic1-Topic4 semantic changes are outside that phase unless a separately
+complete and replayed from merged main. Phase 7.4 may only complete its dataset
+boundary until Gate B is accepted. Feature development, frozen migration changes
+and Topic1-Topic4 semantic changes remain outside this phase unless a separately
 approved defect ADR proves they are necessary.
 
 ## Remaining Release Blockers
 
-1. Merge this current-state replay evidence through protected-main gates.
-2. Raise Python coverage toward the 91.19% historical observation or record a
-   reviewed disposition; the 90% hard gate must not be lowered.
-3. Execute 2,000 authenticated SSE connections with reconnect, cursor recovery,
+1. Supply a licensed, independently human-reviewed academic fact set and an
+   SHA256-bound `ACCEPTED` review attestation, then pass the Gate B validator.
+2. Raise the current 90.61% Python coverage toward the 91.19% historical
+   observation or record a reviewed disposition; the 90% hard gate must not be
+   lowered.
+3. After Gate B is accepted, execute 2,000 authenticated SSE connections with
+   reconnect, cursor recovery,
    duplicate suppression, slow-consumer and tenant-isolation evidence.
-4. Complete a minimum eight-hour soak across generation, verification, review,
+4. After Gate C is accepted, complete a minimum eight-hour soak across
+   generation, verification, review,
    release and SSE.
-5. Restore a PostgreSQL backup into an independent instance and measure RPO/RTO.
-6. Complete database/index/OIDC/Provider failure drills and verify fail-closed behavior.
+5. After Gate D is accepted, restore a PostgreSQL backup into an independent
+   instance and measure RPO/RTO.
+6. After Gate E is accepted, complete database/index/OIDC/Provider failure
+   drills and verify fail-closed behavior.
 7. Complete sealed Provider, production deployment, TLS/secrets/monitoring,
    cross-browser/WCAG and PII retention/export/correction/deletion acceptance.
 
