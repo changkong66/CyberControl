@@ -158,6 +158,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:9000/health/ready >/dev/null; then
               break
             fi
+            printf 'Waiting for Keycloak readiness (%s/60)\n' "$attempt"
             if ! docker inspect --format '{{.State.Running}}' cybercontrol-keycloak-it \
               | grep --quiet true; then
               docker logs cybercontrol-keycloak-it
