@@ -13,7 +13,7 @@ flowchart LR
   Auth --> Router["Vue Router\nscope guards"]
   Router --> Pages["Topic workbench pages"]
   Pages --> Facade["Typed WorkbenchApi"]
-  Facade --> Envelope["ApiClient\nEnvelope + AJV"]
+  Facade --> Envelope["ApiClient\nstatic contract validators"]
   Envelope --> API["Frozen FastAPI\nTopic1-Topic4"]
   Pages --> SSE["Fetch SSE client\nheartbeat/reconnect/dedup"]
   SSE --> API
@@ -26,6 +26,8 @@ flowchart LR
 | --- | --- | --- |
 | App composition | `frontend/src/app` | Router, shell, dependency injection |
 | Identity | `frontend/src/auth`, `frontend/src/stores/auth.ts` | PKCE, session storage, claim validation, logout cleanup |
+| Account lifecycle | `frontend/src/identity`, identity pages | registration challenges, profile CAS, verified contact changes, tenant account administration |
+| Internationalization | `frontend/src/i18n` | `zh-CN`, `zh-TW`, `en-US`, Keycloak locale mapping, date/number formatting |
 | Transport | `frontend/src/api/client.ts`, `frontend/src/streaming/sse.ts` | approved headers, trace/session IDs, runtime envelope checks, stream replay |
 | API facade | `frontend/src/api/facade.ts`, `frontend/src/api/types.ts` | one typed method per frozen endpoint; URL and idempotency ownership |
 | Shared UI | `frontend/src/shared/components` | status, risk, evidence, hash, report, release and empty-state controls |
@@ -56,6 +58,35 @@ access. Read-only identities can inspect records without being shown an enabled
 memory refresh, path generation, Agent generation, verification requeue, review,
 or release action.
 
+## Account Lifecycle
+
+Keycloak is the credential authority. Public email/phone registration uses
+versioned backend contracts, a server-owned challenge, and an operation-stable
+`Idempotency-Key`. The browser submits a password only over the protected
+registration request and clears the local form after success. It never stores
+the password, verification code, invitation token, Keycloak management token,
+tenant assignment, role, or Scope.
+
+Application account pages project only non-sensitive profile data. Email and
+phone changes require a new challenge. Profile and account status mutations
+carry server versions for CAS and preserve the same idempotency key across an
+ambiguous retry. Tenant account responses are compared with the tenant from the
+validated OIDC identity before rendering.
+
+## Contract Validation And CSP
+
+`frontend/tools/generate-validators.mjs` compiles the selected frozen JSON
+Schemas and the existing Topic envelope checks into deterministic AJV
+standalone ESM. Generated source and declarations are committed and checked
+for drift on Windows and Linux. The runtime facade imports only static
+validation functions; it does not instantiate AJV or call `eval`, `Function`,
+or CommonJS `require`.
+
+This keeps production `script-src 'self'` intact without `unsafe-eval`. Nginx
+applies the same security headers to SPA, asset, public API, protected API, and
+health responses. Hashed assets are immutable; HTML and API responses are
+`no-store`.
+
 ## Streaming
 
 `SseClient` uses `fetch()` and `ReadableStream`, because native `EventSource`
@@ -70,6 +101,10 @@ The shell uses a fixed desktop navigation rail and a mobile drawer. Dense data
 surfaces use tables, timelines, lists and a graph canvas; repeated items are
 not wrapped in nested decorative cards. Print styles expose only the report
 section for browser PDF export.
+
+Public identity surfaces and the authenticated shell share the same locale
+catalog. The locale is session-scoped, is cleared with the browser session, and
+is passed to Keycloak only through the standard `ui_locales` OIDC parameter.
 
 ## Local Fixture Boundary
 

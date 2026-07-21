@@ -12,6 +12,11 @@ also owns `Last-Event-ID`. Mutating facade methods generate an
 client rejects caller-supplied tenant, subject, role, scope, trace and session
 headers.
 
+The client accepts only same-origin root request paths such as `/internal/...`
+or `/api/...`. Absolute and scheme-relative paths fail before the access token
+is read. Public registration methods set `authentication: "none"`; the Nginx
+`/api/` proxy also removes `Authorization`.
+
 Write controls are enabled only when the validated OIDC permission claim
 contains the matching backend Scope:
 
@@ -23,6 +28,10 @@ contains the matching backend Scope:
 | Requeue Topic4 verification | `topic4:verification:execute` |
 | Submit human review | `topic4:review:write` |
 | Derive/commit C12 release | `topic4:release:write` |
+| Read/update own profile | `account:profile:read`, `account:profile:write` |
+| Change verified contact | `account:contact:write` |
+| Read tenant accounts/audit | `account:admin:read` |
+| Disable/restore tenant account | `account:admin:write` |
 
 ## Endpoint Groups
 
@@ -37,6 +46,9 @@ contains the matching backend Scope:
 | C12 v2 | `deriveAuthorization`, `commitPublication` | `/internal/topic4/release/.../derive`, `/commit` |
 | Human review | `listReviewTasks`, `submitReview` | `/internal/topic4/reviews/...` |
 | Public events | `replayPublicEvents`, `services.sse.run` | `/internal/topic4/sse/...` |
+| Registration | challenge, verify, email/phone registration | `/api/auth/...` |
+| Own account | profile and verified-contact methods | `/internal/accounts/me...` |
+| Tenant account admin | list, detail, audit, disable/restore | `/internal/tenant/accounts...` |
 
 The browser facade intentionally has no `createVerification` method and no
 deprecated C12 v1 method.
@@ -47,6 +59,13 @@ Topic1 returns `Topic1ApiEnvelopeV1.data`; Topic2-Topic4 return the frozen
 `Topic3EnvelopeV1.payload`. `requireData` and `requirePayload` fail closed when
 the expected section is absent. HTTP errors are represented by
 `ApiClientError`, which retains the server trace ID and safe error code.
+
+Identity endpoints return `IdentityApiEnvelopeV1.data`. The nested profile,
+account, challenge, registration, and audit documents are checked against
+build-time generated standalone validators before the typed facade returns
+them. Account documents are also checked against the tenant from the trusted
+OIDC session. Error details redact password, verification code, Token, email,
+phone, and identifier fields before reaching UI state.
 
 ## Release Example
 
