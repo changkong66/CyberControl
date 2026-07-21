@@ -1,0 +1,21 @@
+﻿{
+    "schema_version":  "phase7.c3-postgres-environment.v1",
+    "generated_at_utc":  "2026-07-21T19:53:12.9389768Z",
+    "source_commit":  "557bcca967ade6b8f6aa3f4925ecdaee0334f423",
+    "report_sha256":  "41f0d569a0b65e1ba0b9241baa25defcb2c474d6ab5c38d15a348ab21b948f50",
+    "container_name":  "cybercontrol-phase7-c3-gate-b-postgres",
+    "container_id":  "fd4c1d958d4b40d3c6a4022bdf98507b986eaf9ac347948368aaca85b75608f1",
+    "image_digest":  "postgres@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+    "postgres_server_version":  "16.14-alpine",
+    "database":  "liyans",
+    "migration_head":  "20260720_0010",
+    "volume_name":  "cybercontrol_phase7_c3_gate_b_postgres",
+    "volume_destination":  "/var/lib/postgresql/data",
+    "release_volume_used":  false,
+    "runtime_role":  "liyans_app",
+    "migration_role":  "liyans_migrator",
+    "runtime_role_restricted":  true,
+    "migration_role_restricted":  true,
+    "health":  "healthy",
+    "release_volume_untouched":  true
+}
