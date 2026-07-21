@@ -139,7 +139,8 @@ def test_phase7_dataset_inventory_rejects_dirty_source(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setitem(PHASE7_DATASET_TOOL, "_git_status", lambda: [" M source.py"])
+    main = PHASE7_DATASET_TOOL["main"]
+    monkeypatch.setitem(main.__globals__, "_git_status", lambda: [" M source.py"])
     monkeypatch.setattr(
         sys,
         "argv",
@@ -151,4 +152,4 @@ def test_phase7_dataset_inventory_rejects_dirty_source(
     )
 
     with pytest.raises(SystemExit, match="requires a clean source tree"):
-        PHASE7_DATASET_TOOL["main"]()
+        main()
