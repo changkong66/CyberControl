@@ -1,0 +1,724 @@
+{
+    "schema_version":  "cybercontrol.phase7-preflight.v1",
+    "generated_at_utc":  "2026-07-21T15:33:18.8908870Z",
+    "gate":  "A",
+    "result":  "PREFLIGHT_CAPTURED",
+    "git":  {
+                "branch":  "codex/phase7-final-nonfunctional-acceptance",
+                "commit":  "f81a31a9753055aeedcc9962362482634798801e",
+                "tree":  "0bdf0b9712fe9db7eca7185c471dd62ea708ecd0",
+                "clean_at_start":  true,
+                "dirty_files_at_start":  [
+
+                                         ]
+            },
+    "baselines":  {
+                      "protected_main":  {
+                                             "reference":  "origin/main",
+                                             "commit":  "d25ed4dd92afd37720c158e4828794853ba8670a",
+                                             "tree":  "2c92d3475644ced0ac154e4471ae4d62b6ed1e5d"
+                                         },
+                      "running_product":  {
+                                              "source_evidence_path":  "${REPOSITORY_ROOT}\\docs\\system-acceptance\\evidence\\frontend-identity-i18n-mainline.json",
+                                              "source_evidence_sha256":  "bbda0423786ee5ec035bab5dbd26eb3dfc6e135cf96f95980ab31b2523b4f5c9",
+                                              "source_commit":  "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
+                                              "source_tree":  "01c1705debb4b869721b9b9432ed2747064921b8",
+                                              "compose_config_sha256":  "753f194f5d0863270e88db16c7120845bd3ccfa741075edfca2a99fba582657f",
+                                              "image_ids":  {
+                                                                "backend":  "sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a",
+                                                                "frontend":  "sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2",
+                                                                "mock_provider":  "sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27"
+                                                            },
+                                              "image_ids_match_source_evidence":  true
+                                          }
+                  },
+    "source_inputs":  {
+                          "compose_config_sha256":  "753f194f5d0863270e88db16c7120845bd3ccfa741075edfca2a99fba582657f",
+                          "files":  [
+                                        {
+                                            "path":  "infra/docker-compose.yml",
+                                            "sha256":  "e05d3b2c233909a7fae981943208ccebf5543c908f8aeb840638e8e993b6360d"
+                                        },
+                                        {
+                                            "path":  "infra/docker-compose.release.yml",
+                                            "sha256":  "fc95bcc3cd247eb3b8503d32aaab9eb59b3943b67636b3e5b04f00a5f1b07e00"
+                                        },
+                                        {
+                                            "path":  "uv.lock",
+                                            "sha256":  "a8785433e7f7f5889cca945ebc445f432e352e281caf57bd84b117a0cbb56ecb"
+                                        },
+                                        {
+                                            "path":  "frontend/pnpm-lock.yaml",
+                                            "sha256":  "3deaa86d71b429a38db5eb2d99db110794448acf2c6958befca5d369b717b295"
+                                        }
+                                    ]
+                      },
+    "host":  {
+                 "os":  {
+                            "caption":  "Microsoft Windows 11 Home China",
+                            "version":  "10.0.26200",
+                            "build_number":  "26200",
+                            "architecture":  "64-bit",
+                            "last_boot_time_utc":  "2026-07-15T21:46:20.0227100Z"
+                        },
+                 "cpu":  {
+                             "name":  "AMD Ryzen 7 8745H with Radeon 780M Graphics",
+                             "physical_cores":  8,
+                             "logical_processors":  16
+                         },
+                 "memory":  {
+                                "total_bytes":  16438382592,
+                                "free_bytes":  3867549696
+                            },
+                 "disks":  [
+                               {
+                                   "name":  "C",
+                                   "used_bytes":  193102176256,
+                                   "free_bytes":  21647233024
+                               },
+                               {
+                                   "name":  "D",
+                                   "used_bytes":  133425999872,
+                                   "free_bytes":  54171582464
+                               },
+                               {
+                                   "name":  "E",
+                                   "used_bytes":  91285893120,
+                                   "free_bytes":  16087236608
+                               }
+                           ]
+             },
+    "docker":  {
+                   "server_version":  "29.6.1",
+                   "operating_system":  "Docker Desktop",
+                   "kernel_version":  "6.6.87.2-microsoft-standard-WSL2",
+                   "architecture":  "x86_64",
+                   "storage_driver":  "overlayfs",
+                   "cgroup_version":  "2",
+                   "cpu_limit":  16,
+                   "memory_limit_bytes":  7958888448,
+                   "root_dir":  "/var/lib/docker",
+                   "desktop_disk_location":  "D:\\Docker\\wsl\\DockerDesktopWSL",
+                   "data_vhdx":  {
+                                     "path":  "D:\\Docker\\wsl\\DockerDesktopWSL\\disk\\docker_data.vhdx",
+                                     "bytes":  33936113664,
+                                     "gib":  31.61,
+                                     "last_write_time_utc":  "2026-07-21T15:33:10.3738508Z"
+                                 },
+                   "release_volume":  {
+                                          "name":  "cybercontrol_release_postgres",
+                                          "driver":  "local",
+                                          "scope":  "local",
+                                          "created_at":  "2026-07-21T12:57:53Z",
+                                          "labels":  {
+                                                         "com.cybercontrol.data-class":  "isolated-clean-postgres",
+                                                         "com.cybercontrol.purpose":  "release-acceptance"
+                                                     },
+                                          "mountpoint":  "/var/lib/docker/volumes/cybercontrol_release_postgres/_data"
+                                      },
+                   "containers":  [
+                                      {
+                                          "id":  "bbb66006feaec6f4a6e759c06dd0c48e9b344e874b2a71e17ee8f9657a40bc26",
+                                          "name":  "cybercontrol-frontend-mainline-frontend-1",
+                                          "service":  "frontend",
+                                          "state":  "running",
+                                          "health":  "healthy",
+                                          "restart_count":  0,
+                                          "image_reference":  "cybercontrol-frontend-mainline-frontend",
+                                          "image_id":  "sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2",
+                                          "image_manifest_digest":  "sha256:26449866a082598fda48bd90e629ddef783fcc21822f44a992edd9c7fb181b28",
+                                          "runtime_user":  "65532:65532",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+                                                        "8080/tcp":  [
+                                                                         {
+                                                                             "host_ip":  "0.0.0.0",
+                                                                             "host_port":  "5173"
+                                                                         },
+                                                                         {
+                                                                             "host_ip":  "::",
+                                                                             "host_port":  "5173"
+                                                                         }
+                                                                     ]
+                                                    },
+                                          "mounts":  [
+
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "PATH",
+                                                                             "SSL_CERT_FILE"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "63ba3f282f739c381567d0d9c95f7adc0942974ae7aa5dec581a3f3aaa5dd85d",
+                                          "name":  "cybercontrol-frontend-mainline-api-1",
+                                          "service":  "api",
+                                          "state":  "running",
+                                          "health":  "healthy",
+                                          "restart_count":  0,
+                                          "image_reference":  "cybercontrol-frontend-mainline-api",
+                                          "image_id":  "sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a",
+                                          "image_manifest_digest":  "sha256:15071f7884ef00b10f0f5caa40f594d3e8569739f10275ef44e764cbc5a89af3",
+                                          "runtime_user":  "10001:10001",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+                                                        "8000/tcp":  [
+                                                                         {
+                                                                             "host_ip":  "127.0.0.1",
+                                                                             "host_port":  "8000"
+                                                                         }
+                                                                     ]
+                                                    },
+                                          "mounts":  [
+                                                         {
+                                                             "type":  "volume",
+                                                             "name":  "cybercontrol-frontend-mainline_liyans-runtime",
+                                                             "source":  "/var/lib/docker/volumes/cybercontrol-frontend-mainline_liyans-runtime/_data",
+                                                             "destination":  "/var/lib/liyans",
+                                                             "read_write":  true
+                                                         }
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "GPG_KEY",
+                                                                             "LANG",
+                                                                             "LIYAN_ARTIFACT_ROOT",
+                                                                             "LIYAN_AUDIT_LOG_PATH",
+                                                                             "LIYAN_DATABASE_URL",
+                                                                             "LIYAN_ENVIRONMENT",
+                                                                             "LIYAN_IDENTITY_ENCRYPTION_SECRET",
+                                                                             "LIYAN_IDENTITY_LOOKUP_PEPPER",
+                                                                             "LIYAN_IDENTITY_RECONCILER_DATABASE_URL",
+                                                                             "LIYAN_KEYCLOAK_ADMIN_BASE_URL",
+                                                                             "LIYAN_KEYCLOAK_ADMIN_CLIENT_ID",
+                                                                             "LIYAN_KEYCLOAK_ADMIN_CLIENT_SECRET",
+                                                                             "LIYAN_KEYCLOAK_ADMIN_REALM",
+                                                                             "LIYAN_OIDC_ALGORITHMS",
+                                                                             "LIYAN_OIDC_AUDIENCE",
+                                                                             "LIYAN_OIDC_ISSUER",
+                                                                             "LIYAN_OIDC_JWKS_URL",
+                                                                             "LIYAN_OIDC_ROLES_CLAIM",
+                                                                             "LIYAN_OIDC_SCOPE_CLAIM",
+                                                                             "LIYAN_OIDC_TENANT_CLAIM",
+                                                                             "LIYAN_OUTBOX_DISPATCHER_DATABASE_URL",
+                                                                             "LIYAN_OUTBOX_PUBLISHER_ENABLED",
+                                                                             "LIYAN_PROVIDER_EXTERNAL_ENABLED",
+                                                                             "LIYAN_REGISTRATION_ALLOW_DEVELOPMENT_FALLBACK",
+                                                                             "LIYAN_REGISTRATION_DEVELOPMENT_TENANT_ID",
+                                                                             "LIYAN_REGISTRATION_ENABLED",
+                                                                             "LIYAN_REGISTRATION_FIXTURE_INBOX_ENABLED",
+                                                                             "LIYAN_REPOSITORY_ROOT",
+                                                                             "LIYAN_SPARK_TEXT_API_KEY",
+                                                                             "LIYAN_SPARK_TEXT_ENDPOINT",
+                                                                             "LIYAN_SPARK_TEXT_MODEL_ALIAS",
+                                                                             "LIYAN_SSE_CURSOR_SECRET",
+                                                                             "LIYAN_SSE_NOTIFICATION_DATABASE_URL",
+                                                                             "LIYAN_SSE_NOTIFICATION_ENABLED",
+                                                                             "LIYAN_VERIFICATION_CODE_PEPPER",
+                                                                             "LIYAN_XFYUN_CODE_API_KEY",
+                                                                             "LIYAN_XFYUN_CODE_ENDPOINT",
+                                                                             "LIYAN_XFYUN_CODE_MODEL_ALIAS",
+                                                                             "PATH",
+                                                                             "PYTHON_SHA256",
+                                                                             "PYTHON_VERSION",
+                                                                             "PYTHONDONTWRITEBYTECODE",
+                                                                             "PYTHONUNBUFFERED"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "ff0b46236a04599ca007d8067a53e8707ab9446d1c337e2beabff75b9485c3c2",
+                                          "name":  "cybercontrol-frontend-mainline-tenant-bind-1",
+                                          "service":  "tenant-bind",
+                                          "state":  "exited",
+                                          "health":  null,
+                                          "restart_count":  0,
+                                          "image_reference":  "postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                          "image_id":  "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                          "image_manifest_digest":  "sha256:7a396fd264a2067788b6551122b50f162bf6136312c7fc9d74381cb92c648382",
+                                          "runtime_user":  "",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+
+                                                    },
+                                          "mounts":  [
+                                                         {
+                                                             "type":  "bind",
+                                                             "name":  null,
+                                                             "source":  "${REPOSITORY_ROOT}\\infra\\postgres\\dev\\bind-demo-tenant.sql",
+                                                             "destination":  "/scripts/bind-demo-tenant.sql",
+                                                             "read_write":  false
+                                                         },
+                                                         {
+                                                             "type":  "volume",
+                                                             "name":  "e8a87018aadb1b86cf6dfb8a2adeadebaa81646f8ee4fe90e862846183866827",
+                                                             "source":  "/var/lib/docker/volumes/e8a87018aadb1b86cf6dfb8a2adeadebaa81646f8ee4fe90e862846183866827/_data",
+                                                             "destination":  "/var/lib/postgresql/data",
+                                                             "read_write":  true
+                                                         }
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "DOCKER_PG_LLVM_DEPS",
+                                                                             "GOSU_VERSION",
+                                                                             "LANG",
+                                                                             "PATH",
+                                                                             "PG_MAJOR",
+                                                                             "PG_SHA256",
+                                                                             "PG_VERSION",
+                                                                             "PGDATA",
+                                                                             "PGPASSWORD"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "31adfc624ab508dd2f5ab50b795e675e34a3e0b85aef3b989afcc1792367dd6a",
+                                          "name":  "cybercontrol-frontend-mainline-migrate-1",
+                                          "service":  "migrate",
+                                          "state":  "exited",
+                                          "health":  "unhealthy",
+                                          "restart_count":  0,
+                                          "image_reference":  "cybercontrol-frontend-mainline-migrate",
+                                          "image_id":  "sha256:4cd71e46f8b6af063b3d15274beaf3990468837a9d268a8ba88f2dbea2d8437d",
+                                          "image_manifest_digest":  "sha256:c0bbfb35a23fb7cbfea802a34b2a97f9a6ace92edc1ec3c55bc84eb3aaf71dc5",
+                                          "runtime_user":  "10001:10001",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+
+                                                    },
+                                          "mounts":  [
+
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "GPG_KEY",
+                                                                             "LANG",
+                                                                             "LIYAN_DATABASE_MIGRATION_URL",
+                                                                             "LIYAN_DATABASE_URL",
+                                                                             "LIYAN_ENVIRONMENT",
+                                                                             "LIYAN_REPOSITORY_ROOT",
+                                                                             "LIYAN_SSE_CURSOR_SECRET",
+                                                                             "PATH",
+                                                                             "PYTHON_SHA256",
+                                                                             "PYTHON_VERSION",
+                                                                             "PYTHONDONTWRITEBYTECODE",
+                                                                             "PYTHONUNBUFFERED"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "c98b4bee3a847ee38bd2a7bd9c8faaca05ab08eaf69afc8870e5033cc44c2e95",
+                                          "name":  "cybercontrol-frontend-mainline-postgres-role-bootstrap-1",
+                                          "service":  "postgres-role-bootstrap",
+                                          "state":  "exited",
+                                          "health":  null,
+                                          "restart_count":  0,
+                                          "image_reference":  "postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                          "image_id":  "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                          "image_manifest_digest":  "sha256:7a396fd264a2067788b6551122b50f162bf6136312c7fc9d74381cb92c648382",
+                                          "runtime_user":  "",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+
+                                                    },
+                                          "mounts":  [
+                                                         {
+                                                             "type":  "volume",
+                                                             "name":  "cb7bfd6ec8938e959f050f63bebfd093b2944ff1a0b7e6508252734d3d2fe70b",
+                                                             "source":  "/var/lib/docker/volumes/cb7bfd6ec8938e959f050f63bebfd093b2944ff1a0b7e6508252734d3d2fe70b/_data",
+                                                             "destination":  "/var/lib/postgresql/data",
+                                                             "read_write":  true
+                                                         },
+                                                         {
+                                                             "type":  "bind",
+                                                             "name":  null,
+                                                             "source":  "${REPOSITORY_ROOT}\\infra\\postgres\\init\\001-runtime-role.sql",
+                                                             "destination":  "/scripts/001-runtime-role.sql",
+                                                             "read_write":  false
+                                                         }
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "DOCKER_PG_LLVM_DEPS",
+                                                                             "GOSU_VERSION",
+                                                                             "LANG",
+                                                                             "PATH",
+                                                                             "PG_MAJOR",
+                                                                             "PG_SHA256",
+                                                                             "PG_VERSION",
+                                                                             "PGDATA",
+                                                                             "PGPASSWORD"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "bd48ab62fc5f368d7a16f59fd6a37c5a6abb7ad8e5a9ae824febb1b15593d6ea",
+                                          "name":  "cybercontrol-frontend-mainline-keycloak-config-1",
+                                          "service":  "keycloak-config",
+                                          "state":  "exited",
+                                          "health":  null,
+                                          "restart_count":  0,
+                                          "image_reference":  "quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+                                          "image_id":  "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+                                          "image_manifest_digest":  "sha256:1362a9d9f13ab325231ea133610cc905e12805804abc7acbef552dd613720aa6",
+                                          "runtime_user":  "1000",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+
+                                                    },
+                                          "mounts":  [
+                                                         {
+                                                             "type":  "bind",
+                                                             "name":  null,
+                                                             "source":  "${REPOSITORY_ROOT}\\infra\\keycloak\\configure-user-profile.sh",
+                                                             "destination":  "/scripts/configure-user-profile.sh",
+                                                             "read_write":  false
+                                                         },
+                                                         {
+                                                             "type":  "bind",
+                                                             "name":  null,
+                                                             "source":  "${REPOSITORY_ROOT}\\infra\\keycloak\\user-profile.json",
+                                                             "destination":  "/config/user-profile.json",
+                                                             "read_write":  false
+                                                         }
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "KC_RUN_IN_CONTAINER",
+                                                                             "KEYCLOAK_ADMIN_SERVER_URL",
+                                                                             "KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD",
+                                                                             "KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME",
+                                                                             "LANG",
+                                                                             "PATH"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "c3b5fc42fd8d01890eb27527979caff624f4a713974a57539c28de3764a8e366",
+                                          "name":  "cybercontrol-frontend-mainline-postgres-1",
+                                          "service":  "postgres",
+                                          "state":  "running",
+                                          "health":  "healthy",
+                                          "restart_count":  0,
+                                          "image_reference":  "postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                          "image_id":  "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                          "image_manifest_digest":  "sha256:7a396fd264a2067788b6551122b50f162bf6136312c7fc9d74381cb92c648382",
+                                          "runtime_user":  "",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+                                                        "5432/tcp":  [
+                                                                         {
+                                                                             "host_ip":  "0.0.0.0",
+                                                                             "host_port":  "5432"
+                                                                         },
+                                                                         {
+                                                                             "host_ip":  "::",
+                                                                             "host_port":  "5432"
+                                                                         }
+                                                                     ]
+                                                    },
+                                          "mounts":  [
+                                                         {
+                                                             "type":  "volume",
+                                                             "name":  "cybercontrol_release_postgres",
+                                                             "source":  "/var/lib/docker/volumes/cybercontrol_release_postgres/_data",
+                                                             "destination":  "/var/lib/postgresql/data",
+                                                             "read_write":  true
+                                                         },
+                                                         {
+                                                             "type":  "bind",
+                                                             "name":  null,
+                                                             "source":  "/run/desktop/mnt/host/c/Users/wch06/Documents/CyberControl/infra/postgres/init",
+                                                             "destination":  "/docker-entrypoint-initdb.d",
+                                                             "read_write":  false
+                                                         }
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "DOCKER_PG_LLVM_DEPS",
+                                                                             "GOSU_VERSION",
+                                                                             "LANG",
+                                                                             "PATH",
+                                                                             "PG_MAJOR",
+                                                                             "PG_SHA256",
+                                                                             "PG_VERSION",
+                                                                             "PGDATA",
+                                                                             "POSTGRES_DB",
+                                                                             "POSTGRES_PASSWORD",
+                                                                             "POSTGRES_USER"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "ef7606cc62509330272fe53261c64a9ca49190caffb07b783725aa8dd34f1c2c",
+                                          "name":  "cybercontrol-frontend-mainline-keycloak-1",
+                                          "service":  "keycloak",
+                                          "state":  "running",
+                                          "health":  "healthy",
+                                          "restart_count":  0,
+                                          "image_reference":  "quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+                                          "image_id":  "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+                                          "image_manifest_digest":  "sha256:1362a9d9f13ab325231ea133610cc905e12805804abc7acbef552dd613720aa6",
+                                          "runtime_user":  "1000",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  false,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+                                                        "8080/tcp":  [
+                                                                         {
+                                                                             "host_ip":  "0.0.0.0",
+                                                                             "host_port":  "8080"
+                                                                         },
+                                                                         {
+                                                                             "host_ip":  "::",
+                                                                             "host_port":  "8080"
+                                                                         }
+                                                                     ]
+                                                    },
+                                          "mounts":  [
+                                                         {
+                                                             "type":  "bind",
+                                                             "name":  null,
+                                                             "source":  "${REPOSITORY_ROOT}\\infra\\keycloak\\cybercontrol-realm.json",
+                                                             "destination":  "/opt/keycloak/data/import/cybercontrol-realm.json",
+                                                             "read_write":  false
+                                                         }
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "KC_BOOTSTRAP_ADMIN_PASSWORD",
+                                                                             "KC_BOOTSTRAP_ADMIN_USERNAME",
+                                                                             "KC_HEALTH_ENABLED",
+                                                                             "KC_HOSTNAME",
+                                                                             "KC_HOSTNAME_BACKCHANNEL_DYNAMIC",
+                                                                             "KC_HOSTNAME_STRICT",
+                                                                             "KC_RUN_IN_CONTAINER",
+                                                                             "LANG",
+                                                                             "PATH"
+                                                                         ]
+                                      },
+                                      {
+                                          "id":  "aa76a8c5afb9b243463ecd12bc539b12f7fa909ddbc3d2daffc9594e42b45a55",
+                                          "name":  "cybercontrol-frontend-mainline-mock-provider-1",
+                                          "service":  "mock-provider",
+                                          "state":  "running",
+                                          "health":  "healthy",
+                                          "restart_count":  0,
+                                          "image_reference":  "cybercontrol-frontend-mainline-mock-provider",
+                                          "image_id":  "sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27",
+                                          "image_manifest_digest":  "sha256:f28869026e268611b6737293df340bd2cdc7a4a0b53a64040b855e5fb8e146f8",
+                                          "runtime_user":  "10002:10002",
+                                          "privileged":  false,
+                                          "read_only_rootfs":  true,
+                                          "resources":  {
+                                                            "memory_bytes":  0,
+                                                            "nano_cpus":  0,
+                                                            "pids_limit":  null,
+                                                            "shm_bytes":  67108864
+                                                        },
+                                          "ports":  {
+                                                        "8090/tcp":  [
+
+                                                                     ]
+                                                    },
+                                          "mounts":  [
+
+                                                     ],
+                                          "environment_variable_names":  [
+                                                                             "FIXTURE_PROVIDER_TOKEN",
+                                                                             "GPG_KEY",
+                                                                             "LANG",
+                                                                             "PATH",
+                                                                             "PORT",
+                                                                             "PYTHON_SHA256",
+                                                                             "PYTHON_VERSION",
+                                                                             "PYTHONDONTWRITEBYTECODE",
+                                                                             "PYTHONUNBUFFERED"
+                                                                         ]
+                                      }
+                                  ],
+                   "images":  [
+                                  {
+                                      "id":  "sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a",
+                                      "repo_digests":  [
+                                                           "cybercontrol-frontend-mainline-api@sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a"
+                                                       ],
+                                      "created":  "2026-07-21T10:39:51.682479496Z",
+                                      "os":  "linux",
+                                      "architecture":  "amd64"
+                                  },
+                                  {
+                                      "id":  "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+                                      "repo_digests":  [
+                                                           "quay.io/keycloak/keycloak@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0"
+                                                       ],
+                                      "created":  "2026-07-09T06:59:21.764260561Z",
+                                      "os":  "linux",
+                                      "architecture":  "amd64"
+                                  },
+                                  {
+                                      "id":  "sha256:4cd71e46f8b6af063b3d15274beaf3990468837a9d268a8ba88f2dbea2d8437d",
+                                      "repo_digests":  [
+                                                           "cybercontrol-frontend-mainline-migrate@sha256:4cd71e46f8b6af063b3d15274beaf3990468837a9d268a8ba88f2dbea2d8437d"
+                                                       ],
+                                      "created":  "2026-07-21T10:39:51.682479496Z",
+                                      "os":  "linux",
+                                      "architecture":  "amd64"
+                                  },
+                                  {
+                                      "id":  "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                                      "repo_digests":  [
+                                                           "postgres@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777"
+                                                       ],
+                                      "created":  "2026-07-07T17:47:20.839800572Z",
+                                      "os":  "linux",
+                                      "architecture":  "amd64"
+                                  },
+                                  {
+                                      "id":  "sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2",
+                                      "repo_digests":  [
+                                                           "cybercontrol-frontend-mainline-frontend@sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2"
+                                                       ],
+                                      "created":  "2026-07-21T11:02:29.165315193Z",
+                                      "os":  "linux",
+                                      "architecture":  "amd64"
+                                  },
+                                  {
+                                      "id":  "sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27",
+                                      "repo_digests":  [
+                                                           "cybercontrol-frontend-mainline-mock-provider@sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27"
+                                                       ],
+                                      "created":  "2026-07-20T06:32:41.918755975Z",
+                                      "os":  "linux",
+                                      "architecture":  "amd64"
+                                  }
+                              ],
+                   "network":  {
+                                   "name":  "cybercontrol-frontend-mainline_default",
+                                   "driver":  "bridge",
+                                   "scope":  "local",
+                                   "internal":  false,
+                                   "attachable":  false,
+                                   "ipam":  [
+                                                {
+                                                    "Subnet":  "172.21.0.0/16",
+                                                    "Gateway":  "172.21.0.1"
+                                                }
+                                            ],
+                                   "containers":  [
+                                                      {
+                                                          "name":  "cybercontrol-frontend-mainline-postgres-1",
+                                                          "ipv4_address":  "172.21.0.3/16",
+                                                          "ipv6_address":  ""
+                                                      },
+                                                      {
+                                                          "name":  "cybercontrol-frontend-mainline-keycloak-1",
+                                                          "ipv4_address":  "172.21.0.4/16",
+                                                          "ipv6_address":  ""
+                                                      },
+                                                      {
+                                                          "name":  "cybercontrol-frontend-mainline-frontend-1",
+                                                          "ipv4_address":  "172.21.0.6/16",
+                                                          "ipv6_address":  ""
+                                                      },
+                                                      {
+                                                          "name":  "cybercontrol-frontend-mainline-api-1",
+                                                          "ipv4_address":  "172.21.0.5/16",
+                                                          "ipv6_address":  ""
+                                                      },
+                                                      {
+                                                          "name":  "cybercontrol-frontend-mainline-mock-provider-1",
+                                                          "ipv4_address":  "172.21.0.2/16",
+                                                          "ipv6_address":  ""
+                                                      }
+                                                  ]
+                               }
+               },
+    "tools":  {
+                  "git":  {
+                              "available":  true,
+                              "version":  "git version 2.55.0.windows.2"
+                          },
+                  "docker":  {
+                                 "available":  true,
+                                 "version":  "29.6.1|29.6.1"
+                             },
+                  "docker_compose":  {
+                                         "available":  true,
+                                         "version":  "Docker Compose version v5.3.0"
+                                     },
+                  "uv":  {
+                             "available":  true,
+                             "version":  "uv 0.11.28 (ebf0f43d7 2026-07-07 x86_64-pc-windows-msvc)"
+                         },
+                  "python":  {
+                                 "available":  true,
+                                 "version":  "Python 3.11.15"
+                             },
+                  "node":  {
+                               "available":  true,
+                               "version":  "v22.20.0"
+                           },
+                  "pnpm":  {
+                               "available":  true,
+                               "version":  "11.9.0"
+                           },
+                  "go":  {
+                             "available":  true,
+                             "version":  "go version go1.26.5 windows/amd64"
+                         },
+                  "trivy":  {
+                                "available":  false,
+                                "version":  null
+                            },
+                  "gitleaks":  {
+                                   "available":  false,
+                                   "version":  null
+                               }
+              },
+    "security":  {
+                     "container_environment_values_recorded":  false,
+                     "sensitive_value_scan_passed":  true
+                 }
+}
