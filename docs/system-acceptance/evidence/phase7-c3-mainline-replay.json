@@ -1,0 +1,1613 @@
+{
+  "schema_version": "phase7.c3-academic-accuracy-evidence.v1",
+  "generated_at_utc": "2026-07-22T03:01:48.562582+00:00",
+  "source_commit": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
+  "source_tree": "c9821405359f59fee9fb993873ed3ba7f55e8b00",
+  "clean_source": true,
+  "dirty_files_at_start": [],
+  "dataset_id": "phase7-academic-human-reviewed-facts.v1",
+  "facts_content_sha256": "c6f70ff86b7803fa6a0a82bcf5742019c495d8941ed95e62f5e52ea9cf0332dd",
+  "review_content_sha256": "fec0ad0d817ffdf5d4e879ab63a01009b3be8932a81618e7bd4d38ffb78d04cc",
+  "source_ledger_content_sha256": "f683441fe1b23057e525fc839f5495d358e03bc3d8dd8f26aa2b8ca6a81b88cc",
+  "accuracy_policy_version": "phase7.c3-accuracy-policy.v1",
+  "accuracy_policy_content_sha256": "137adf72c20c2f91f37759a581950209a99556838d41c664dc25122fa1a700b9",
+  "evidence_input_policy": "ONE_REVIEWED_SUPPORTED_PARAPHRASE_PER_TOPIC_NO_LABEL_LEAKAGE",
+  "ephemeral_cleanup_required": true,
+  "release_volume_used": false,
+  "execution": {
+    "runtime_role": {
+      "role": "liyans_app",
+      "database": "liyans",
+      "server_version": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "superuser": false,
+      "bypass_rls": false,
+      "restricted": true
+    },
+    "migration_role": {
+      "role": "liyans_migrator",
+      "database": "liyans",
+      "server_version": "PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "superuser": false,
+      "bypass_rls": false,
+      "restricted": true
+    },
+    "primary_tenant_id": "p7-c3-f39abab6aa8f47ea",
+    "adversarial_tenant_id": "p7-c3-other-f39abab6aa8f47ea",
+    "participating_table_rls": [
+      {
+        "table": "topic3_generated_candidates",
+        "rls": true,
+        "force_rls": true
+      },
+      {
+        "table": "topic4_claims",
+        "rls": true,
+        "force_rls": true
+      },
+      {
+        "table": "topic4_evidence_bundles",
+        "rls": true,
+        "force_rls": true
+      },
+      {
+        "table": "topic4_evidence_refs",
+        "rls": true,
+        "force_rls": true
+      },
+      {
+        "table": "topic4_query_plans",
+        "rls": true,
+        "force_rls": true
+      },
+      {
+        "table": "topic4_retrieval_runs",
+        "rls": true,
+        "force_rls": true
+      },
+      {
+        "table": "topic4_verifications",
+        "rls": true,
+        "force_rls": true
+      }
+    ],
+    "primary_visible_counts": {
+      "claims": 72,
+      "query_plans": 72,
+      "retrieval_runs": 72,
+      "evidence_refs": 1152,
+      "evidence_bundles": 72
+    },
+    "adversarial_visible_primary_counts": {
+      "claims": 0,
+      "query_plans": 0,
+      "retrieval_runs": 0,
+      "evidence_refs": 0,
+      "evidence_bundles": 0
+    },
+    "adversarial_repository_evidence_ref_count": 0,
+    "changed_content_replay": {
+      "rejected": true,
+      "error_type": "IntegrityError",
+      "original_record_sha256": "52758fc66f2b91e495c7185a3c8da0cab271a43ec4a4e380573cf2d4b3724e35",
+      "stored_record_sha256": "52758fc66f2b91e495c7185a3c8da0cab271a43ec4a4e380573cf2d4b3724e35",
+      "original_preserved": true
+    },
+    "database_checks": {
+      "runtime_role_restricted": true,
+      "migration_role_restricted": true,
+      "all_participating_tables_present": true,
+      "all_participating_tables_force_rls": true,
+      "foreign_visible_rows_zero": true,
+      "foreign_repository_evidence_refs_zero": true,
+      "changed_content_replay_rejected": true,
+      "changed_content_original_preserved": true
+    },
+    "database_passed": true,
+    "knowledge_base": {
+      "knowledge_base_version_id": "c1294670-b28d-5cf3-9a6a-655120c421f6",
+      "knowledge_base_record_sha256": "5c02b4b46015f6d5068ed2ff665fddd307876c4fb7c2d9f2f535545d7dfee465",
+      "index_build_manifest_id": "9f87df71-ee41-5f95-aa25-3d2e5632b7e1",
+      "index_manifest_record_sha256": "f5b50ed2f9c893e0391b8f970afa5c8b92beb01adaff3cf0305645a16c062db7",
+      "source_version_count": 4
+    },
+    "retrieval": [
+      {
+        "fact_id": "C3-001-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "e0da048bd990d6fa4cb5cfc16b260e13175ce00b67f7e086bb81d70b5be3fd94"
+      },
+      {
+        "fact_id": "C3-001-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "2ec42f449dd315d0c18ffa94cc2bda2ab041a2ae03275394526a6923d22f5d97"
+      },
+      {
+        "fact_id": "C3-001-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "f6028dcf107bc787f84f1bdd4993fef07f1a3cd513bd3a82bd9a319dacefb93d"
+      },
+      {
+        "fact_id": "C3-002-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "e536115f99d6d6d098ae8d7defd92480f40bae5098bec96bb2305c2302d0df1a"
+      },
+      {
+        "fact_id": "C3-002-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "269b821112a9a4c1ec25fa5a1a15b81a8d3150fc13284ad38b53c5d33313fd0c"
+      },
+      {
+        "fact_id": "C3-002-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "09dabe4df4ad07bfcdb42a52c3669fb202db832f7d6248446754f18f3ff69c2e"
+      },
+      {
+        "fact_id": "C3-003-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "67b8ad1ad89039c42ed9711aff794ecaa2890ab6904340615e5accdb746ac785"
+      },
+      {
+        "fact_id": "C3-003-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "91a2c965bd7a2cbcd7d4b5815469bd3a9f776ff436920a7b3e39ded9645c9724"
+      },
+      {
+        "fact_id": "C3-003-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "e54e1b06fb2968165514eb77f215459f371d6ad96445fb9b97d9d06f2376ba19"
+      },
+      {
+        "fact_id": "C3-004-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "282b5b848c4f3853bc168f898de35cc328fe6d29f93d4e931b4c7ffc6794931b"
+      },
+      {
+        "fact_id": "C3-004-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "2f4a1cbf32df19077a9314ede00af0d332df01fc2fba894923c380f7334198e5"
+      },
+      {
+        "fact_id": "C3-004-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "7b422681407294b075546edbc6a6235e5f1354cf477660d623b587f8a4be1726"
+      },
+      {
+        "fact_id": "C3-005-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "89f5e73192817609435f1c65bb6cbe36c2dc9492c71671c9f14b75b5acdca1d0"
+      },
+      {
+        "fact_id": "C3-005-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "bbeca9a784651785451ddefe7760d7beb5fc0a189a2eb04a2d34d6909c138cd7"
+      },
+      {
+        "fact_id": "C3-005-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "756001b74fbde50c915bb3533ada417e6edc5f21c5116e5867bfb012c5ce5c5e"
+      },
+      {
+        "fact_id": "C3-006-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "c1d22aac2407f2c147b496c5f43bf18e82c93a0269e56de2b8c0816a7f0cf259"
+      },
+      {
+        "fact_id": "C3-006-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "0085cffb277826ef53d0a15c69422c8220137a428c5717f64ed66d90ed10e547"
+      },
+      {
+        "fact_id": "C3-006-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "cbcf055d809c4870484037f46e4f2e70079a8459ab10fb0dd9a7588c22df6ad8"
+      },
+      {
+        "fact_id": "C3-007-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "dcb975bfa0e94802f7c4dafcd59a74b0e7c53a553deba6e0947eda506f07281f"
+      },
+      {
+        "fact_id": "C3-007-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "9e9f25cd14b752929e9eeeaab63647552fefc5ec03e7f100482f88f99951492e"
+      },
+      {
+        "fact_id": "C3-007-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "3225570fbd03bbdce6e67f9adb18b8b61f9c1660cd5d5ebd125f2ff6e4ff7b45"
+      },
+      {
+        "fact_id": "C3-008-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "01cfdab4397973f90c00d97752cd9fa36a6021ec0948811e3d830fa9b992c767"
+      },
+      {
+        "fact_id": "C3-008-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "17b4290a66ca3c443cbb5b7911907eabd7353e403327919a9c4e0574fce76299"
+      },
+      {
+        "fact_id": "C3-008-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "fa1a303f5b371a05748d4b325ff2cdd4c99c81581f126fcaebe40ede64dcd6d5"
+      },
+      {
+        "fact_id": "C3-009-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "8804f9338938b16358fa984b69ff839f0f6235d437e93fb183a495790d6dfc09"
+      },
+      {
+        "fact_id": "C3-009-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "af007256773ed39fd76f46c4d6fabbd34febf8c83aeeea6ef26ebc41d381f65f"
+      },
+      {
+        "fact_id": "C3-009-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "8ed477afeb5f89467076ac492f1ca196541a596a5031dfffe31f31ec366bef99"
+      },
+      {
+        "fact_id": "C3-010-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "740e5f7409e79b9e4fe4ff01d8d0e62212ce01b9be5d2eec2739be627d53c606"
+      },
+      {
+        "fact_id": "C3-010-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "9f52b4fe9ea319afda287b993e1ea4093e6388e76ec5f43f918b70231bdc6c81"
+      },
+      {
+        "fact_id": "C3-010-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "b87a98a47f795cceac47b932ade0448cbd6838db2a569b71ef2b6c669e6afb8b"
+      },
+      {
+        "fact_id": "C3-011-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "681ebe745b5967ccdd144c49121bb947113db21365ea745cf3cf962afc2641dd"
+      },
+      {
+        "fact_id": "C3-011-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "0dfef0f8133542d4d13772a66797ef89fb3d2e9ff13c53516f47e9fa45b83aca"
+      },
+      {
+        "fact_id": "C3-011-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "5816431f19f58051a548e16f5676ea9d52f733a1e49174501c586053a402dd82"
+      },
+      {
+        "fact_id": "C3-012-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "9f11b95520d476d40f6c1b61adf30b89e593497f93efcb06056760ecd21dd1a6"
+      },
+      {
+        "fact_id": "C3-012-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "16dc3a4193addcfb159fe551216483ee866da6a33a881eb11999fdb85d662a89"
+      },
+      {
+        "fact_id": "C3-012-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "bf0fb6890426ba748691667d526aad367539a45f7b784fc8af2a3401dabf21b4"
+      },
+      {
+        "fact_id": "C3-013-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "98571264dcb4fac42b52d43fdc48252dd432301e08eb039d7c92b773b5e5c15a"
+      },
+      {
+        "fact_id": "C3-013-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "93dbb38acd09a99a9831529661fe0c592eda4d5f0941e35b163c6ebb3805582b"
+      },
+      {
+        "fact_id": "C3-013-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "5efeb7d5b7489d72f98ee249d6e6061e43d9bb14b0d2a04fccdfd02b698658c7"
+      },
+      {
+        "fact_id": "C3-014-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "00683baf8a96dd4cfc29f165f15d0ca29f373999412d0708a33d946b69106112"
+      },
+      {
+        "fact_id": "C3-014-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "6ec225891388096ceebfddf8df89d5d05793629b874b2352d7e7a8ca81ff6f3b"
+      },
+      {
+        "fact_id": "C3-014-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "074579991f81eb93c36ca376ed0de5690d3deacfd7e30f21ca483a2b743286a8"
+      },
+      {
+        "fact_id": "C3-015-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "a4a50245e04867fdc8e5bdd6d2e05c8351a9408e05df4fb898e3df323b6bea39"
+      },
+      {
+        "fact_id": "C3-015-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "8a0e047c0170f246fc07582b4f89d4885ddf92fbe563cbb7a488acd94522533b"
+      },
+      {
+        "fact_id": "C3-015-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "61c56ae6fc96f6587adfeeff857370439d3bb1f56a14cc5b35f449b566bf1695"
+      },
+      {
+        "fact_id": "C3-016-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "edb1cde106444d47019bd20a6105187856d09ad831fc74d5787f64df13392414"
+      },
+      {
+        "fact_id": "C3-016-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "2379c9ecc8dfa0f4e09982467559dfb80e78b8682bf789f7f55dbb2f6519814e"
+      },
+      {
+        "fact_id": "C3-016-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "8baee6e5ddb11ec45a5d0505e1270179e1dd92c48b1ea5387240434c322c6b65"
+      },
+      {
+        "fact_id": "C3-017-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "0a04b402b488172bbd928c67bd2fd4e24750abda77c2bf28f6ccd72eb52676bd"
+      },
+      {
+        "fact_id": "C3-017-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "e7d61a69af38077b4e713228ccd4ee4ad4d5bb59d76a0860da4593a2b0c3fcae"
+      },
+      {
+        "fact_id": "C3-017-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "e1acd1f48424d0ec6feff5262b4f1b53eaac5fae1c3d33d806c337d3ec2db416"
+      },
+      {
+        "fact_id": "C3-018-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "fa2b889e045f28c9e922f7ecef93e8560cfa7573953149769fc1311c9d4d3369"
+      },
+      {
+        "fact_id": "C3-018-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "ba6b0f081ee6294ccb43c27ddbd34a5d6324c4c3b143756bd9aeeeec777a499a"
+      },
+      {
+        "fact_id": "C3-018-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "6ed2dc6902bfbe21780279503debe4470b07e69db477eadc7e5b2ce1c7e137b1"
+      },
+      {
+        "fact_id": "C3-019-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "58e2f0bb68dca3434a6b349c99bf860d82a0521fc233437e51737ef4b17a4980"
+      },
+      {
+        "fact_id": "C3-019-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "c6e4322ab637ff684f080bc682f860d5b5563f4fd862c66e61e19129c4bdeb29"
+      },
+      {
+        "fact_id": "C3-019-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "9b996bfc0f55b43deeb3a39ed8e5e64c5000f59e424230700bcbb4ca4c712f59"
+      },
+      {
+        "fact_id": "C3-020-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "cab4f4509dc6d36aa50164e162d254b5d8ed813ab0aa4be4b8c328284ee62591"
+      },
+      {
+        "fact_id": "C3-020-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "7b9300998ac4d1cebe7a4a3a0a6c36f512605298af79776ab6ef8573c1d2ef8b"
+      },
+      {
+        "fact_id": "C3-020-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "fa5a12183eee538ed081541cb4e1fa4cdc8213182e46042b8e71116d1d1a4e55"
+      },
+      {
+        "fact_id": "C3-021-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "e9c805573677819c388df2c91ddf9d0b344a0b04b5a8a4bc203c689b6e9d2ec8"
+      },
+      {
+        "fact_id": "C3-021-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "f4c83b97dbf5e1073e5d14a9fde2b29d44bb631292bd5c2bbed83d4687fffcde"
+      },
+      {
+        "fact_id": "C3-021-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "3c0c8e28914aa040ea948781c65697976bbd7456e32ce90a0d9045816fa13cfa"
+      },
+      {
+        "fact_id": "C3-022-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "502fa96a1f5686e171efefc351deb2381edf664080ef4ffad60019433ad06c78"
+      },
+      {
+        "fact_id": "C3-022-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "b167b08818068a056f0c898c5fd77daa01f1aeaf99756ed261fbeaa1506a038c"
+      },
+      {
+        "fact_id": "C3-022-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "b9b308b4af0804405604ed246cb2314ec031735d9c5452820b57f8b8b462ff57"
+      },
+      {
+        "fact_id": "C3-023-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "ab80835469229f2e80bfe6faf5ea0f15d9c6b2e9986ee84147a6a07a45a5ac48"
+      },
+      {
+        "fact_id": "C3-023-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "d0b8e379ba371a53a835d2a23e6900acfd55be2a7fd051fc9dcadd838e101170"
+      },
+      {
+        "fact_id": "C3-023-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "2ed59d345fcba51a476538e2b3d0b7e7f8bf654336666a80b13b4e8709017bc0"
+      },
+      {
+        "fact_id": "C3-024-SUP",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "5024bcc769dd0a6bda87a474a46373e551358e0ff8537e1b24e1dcf0a7bfcdfd"
+      },
+      {
+        "fact_id": "C3-024-CON",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "64aa6bc580c96821b1cfa72127da3d897932331cf6e5031d5ef1e65457b74295"
+      },
+      {
+        "fact_id": "C3-024-ABS",
+        "status": "SUCCEEDED",
+        "evidence_ref_count": 16,
+        "bundle_sha256": "3254d4c9d2d6c5484bd9a556466baef2da462816990be86c6cfe09774885f714"
+      }
+    ],
+    "result_records": [
+      {
+        "fact_id": "C3-001-SUP",
+        "topic": "controller_structure_selection",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "6f686ad21f0a0f74ef12451cdbee006c10c146d64c32636be9723e19ec149b93",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-001-CON",
+        "topic": "controller_structure_selection",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_ORDER_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "b46250a03be8598fa06b02e6327614b864be32ac7e976a31bffdc6de826076a9",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-001-ABS",
+        "topic": "controller_structure_selection",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "d832a56a5f860ee514914fa0e465c1ca5828c0eff2e6a16a1a2aa822855be18c",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-002-SUP",
+        "topic": "steady_state_integrator_condition",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8766285714285714,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "f146ef3d57efb1c238a9225e02d8c8655e45e61c63bda633d3c05205d13d2f0a",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-002-CON",
+        "topic": "steady_state_integrator_condition",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_DEPENDENCY_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "4bd210ac59e2daa73840c252cf1da4367a3509b11df950b12b8ba8e459c9713e",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-002-ABS",
+        "topic": "steady_state_integrator_condition",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "909811b3ab962f5d0ef3ad77e0ab99fd02c0c4b167956af2fba380ea8f1971b0",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-003-SUP",
+        "topic": "derivative_measurement_noise",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "100222d15bc31d41c604da74542f1856de52b92ab3c06e969953a6c5db903e3e",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-003-CON",
+        "topic": "derivative_measurement_noise",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CAUSAL_EFFECT_REVERSED",
+          "C3_SEMANTIC_CONTRADICTED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "3bb9208b4bc8f5aeba23b29e172d18a53b99990cae472b4b62aff41b08174b39",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-003-ABS",
+        "topic": "derivative_measurement_noise",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "f34dec363eaaa025a5e6fd322ea454a8195bc47846c1efbc3fafe1f36c48b9f7",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-004-SUP",
+        "topic": "settling_time_definition",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8766285714285714,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "9d07d7c74cd2449eb6055efb6bdfcbb33f4242a2a19d6097bd3adfc759607ecc",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-004-CON",
+        "topic": "settling_time_definition",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_TEMPORAL_CONDITION_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "0933b5cbe127bbadb8ada39f2d4ed0e2eb446e519feb269fb5b712d71227c909",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-004-ABS",
+        "topic": "settling_time_definition",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "35c6154c33b1ddc2bfba61be15a4bd2e2a3d32b438d72d83cbff1f1de70e8237",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-005-SUP",
+        "topic": "damping_response_classes",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8648,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "aa58df43ed9209e24e08151a9c3d4dcd1e6f04af6788691af2112a46e7b33697",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-005-CON",
+        "topic": "damping_response_classes",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CLASS_DISTINCTION_DENIED",
+          "C3_SEMANTIC_CONTRADICTED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "eeabb7c1618397dc0dbf23f1cd0bcc35182314d7a2f4c299a97e768770cd5121",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-005-ABS",
+        "topic": "damping_response_classes",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "b48405b9b7a8c32a096aaac0fc52de6f0e80d4971844c5eb285bc1a9ded8a54b",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-006-SUP",
+        "topic": "model_free_tuning",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "2a9e84948f276d27a74d1ed4ec2809f3a935ac4e255b69200784b241615c2719",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-006-CON",
+        "topic": "model_free_tuning",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_MODEL_REQUIREMENT_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "b5aaa0816183b85b795805a18d332e0b5d89f05f9fd4bdd115b4271a42c91bc7",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-006-ABS",
+        "topic": "model_free_tuning",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "467200db5c4a54e8f6c5a64f987983c9dc32be7beabdce89bf98c32fbb249283",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-007-SUP",
+        "topic": "relay_critical_parameters",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8770666666666668,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "39488a459b122add489367f26a18988b5a6c1ba250d64d0ecff30f69c0942fe9",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-007-CON",
+        "topic": "relay_critical_parameters",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PERSISTENCE_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "2df1766ac45f65e3843671ee26626e1cc107448432be97781a7e88be33af441f",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-007-ABS",
+        "topic": "relay_critical_parameters",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "e42475c378b768a382fba10b5748af87008c6bf73f93cc2382e417297ab9714a",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-008-SUP",
+        "topic": "fopdt_application_scope",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8664727272727273,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "18155e479ed2aa4681484e418253f209731e8b5d7505fc400058383283277ff4",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-008-CON",
+        "topic": "fopdt_application_scope",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "9a8f4742a7d7ed2c799de7ac769375e02f54e7e0c45deab05f9d17edfea9e53f",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-008-ABS",
+        "topic": "fopdt_application_scope",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "4237bfa6da0bca8abdabe4625002ddd3975200b381113e586614dd623b95cab8",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-009-SUP",
+        "topic": "optimization_error_indices",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8700571428571429,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "e095e800c939445cf1b2ef3593c4378c1f9d8222c142f54f913cbc2c8e40930e",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-009-CON",
+        "topic": "optimization_error_indices",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_NUMERIC_ASSOCIATION_CONFLICT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "c717481cfc1c088001b6ff188a29bce8195ae70a172533485daa8af5a4307291",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-009-ABS",
+        "topic": "optimization_error_indices",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "83733231e735cf1d99f42a669bc9f80b90889c47830360847a2254d63b0de462",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-010-SUP",
+        "topic": "gain_phase_margin_geometry",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8678666666666667,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "031d0aa551e4bc5eafdce95e3419bd3d3c223456deebe06d6cdff51d011cda60",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-010-CON",
+        "topic": "gain_phase_margin_geometry",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_DIRECTION_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "6214bb622b937ff6242b619458df0987aedf80550da38450e5e0bbe9e876c41a",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-010-ABS",
+        "topic": "gain_phase_margin_geometry",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "588965aa4ee5ec199edfdb5d254f895c48fb78a5352150b1f2b3ac4d8d718694",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-011-SUP",
+        "topic": "sampling_and_hold",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "c383013394163147435796afadc2a8b88c8b033a87f027cc524ac534dba03a04",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-011-CON",
+        "topic": "sampling_and_hold",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "b391038d14dc1a3b793b52409c6e83146ea9c2b5b7ddcb605226e6eed4973b81",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-011-ABS",
+        "topic": "sampling_and_hold",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "54444362ef355a136a62bb2048a312e154e39885d140b2ae0bd97d399d00edae",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-012-SUP",
+        "topic": "exact_state_space_discretization",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "4dce974bedca9b2c795f978ae4f9b11d4fe776706171ca8ae75bf46c52fa14a8",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-012-CON",
+        "topic": "exact_state_space_discretization",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_MATHEMATICAL_FORM_REPLACED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "d159f97e2048cad43f9c97ecc66f55bbda4a2070701e3b99219a83274a63341c",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-012-ABS",
+        "topic": "exact_state_space_discretization",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "7f93b62adb8466bccbaec719b3bf9d8bb286a9269183d4745b532d7a2580f1ef",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-013-SUP",
+        "topic": "tustin_transformation",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8766285714285714,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "f2194aa4c4ad7f0520c02c96cdbb81384ba567528279f022481d57fc1a472893",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-013-CON",
+        "topic": "tustin_transformation",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_DENOMINATOR_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "fa8d7ed10092b7169bc4988569c42ece7c9b934a39a15df6252150757f0afa87",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-013-ABS",
+        "topic": "tustin_transformation",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "e9330ab931ad37c961e89684a391f947647d1da629a88032215122ab29acef72",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-014-SUP",
+        "topic": "sampling_period_quality",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8748363636363637,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "3e5e74a8a5e1deb3a914873ec6c3991c36f79c3ec69bc7983c3518f8710782cb",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-014-CON",
+        "topic": "sampling_period_quality",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "d8a4ec5887c140ffa553ee28d516d8eb60bdf1973d77ff5e6ba848812a22cbe2",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-014-ABS",
+        "topic": "sampling_period_quality",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "02b7bfdbe91ec868a4e0d90bdf71322c65fe5e28b0d4393ad82c3c9088fae9b3",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-015-SUP",
+        "topic": "sampling_rate_tradeoff",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.876123076923077,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "377c8a552e4e85e51718367eb8f58fe2d8b88556854ba834c942f13cfee445db",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-015-CON",
+        "topic": "sampling_rate_tradeoff",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_COST_QUALITY_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "7cd76ce3b9459ac4d9c76f346177f4acc569967e359b73b1654878ceba2c5a68",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-015-ABS",
+        "topic": "sampling_rate_tradeoff",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "18736964041148ba6b07860f51ace82dfd79b279a0f7adf6e90da4464a1b3b34",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-016-SUP",
+        "topic": "digital_control_design_phases",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.876123076923077,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "f7fda07f473f71f9dee96e36431d8dd46fd9786ed4fff9b5c85f82e4ed1fb397",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-016-CON",
+        "topic": "digital_control_design_phases",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "987c11e1dccb65bbae29d2185d8cd8b1a732ad314c6e0d0031f07676daa56778",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-016-ABS",
+        "topic": "digital_control_design_phases",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "1d815d4eb83a31f14c154af59a805a2d009d3783bd0e71d2cccb41b2fd89704e",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-017-SUP",
+        "topic": "pi_application_domains",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8678666666666667,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "a08f2b1c372792f748c3dacd67523931d4a66f2237d60ffbd2348251f02357ce",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-017-CON",
+        "topic": "pi_application_domains",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "90760bf939f62fa379eb488ed81ab615386c9a1cc971fd54dc227cb82c72f40c",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-017-ABS",
+        "topic": "pi_application_domains",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "8a60473f5338d936c105f768652d8e86b5932ee0a6634f7d08cb0cbef75a2de5",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-018-SUP",
+        "topic": "right_half_plane_pole_instability",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8729777777777779,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "c8e608fc308d6ebfb029fac8cd914de1a0caf4b3dc6f274ab656ace65b505e95",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-018-CON",
+        "topic": "right_half_plane_pole_instability",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_STABILITY_POLARITY_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "27f413863620012c177cdd2a772588b17610787033b14c8a9e1bdc6090285dd6",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-018-ABS",
+        "topic": "right_half_plane_pole_instability",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "590e7e91518cb9857545744db6ba244c667d8561264625da37595140845fbfd3",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-019-SUP",
+        "topic": "state_matrix_pole_relation",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8748363636363637,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "3e85836b79c26850e07a715c4485f3c12e02db1988a3b94413a4bf07fba51c3e",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-019-CON",
+        "topic": "state_matrix_pole_relation",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_QUANTIFIER_SCOPE_REVERSED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "435fea830a0117a86a817a5e572c2c9b4d051533d512b077984b1ed3999eb0b2",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-019-ABS",
+        "topic": "state_matrix_pole_relation",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "db42f55817dd550ddb819969452a36669584ff060e3637b8f464831394fc36c7",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-020-SUP",
+        "topic": "system_identification_definition",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8748363636363637,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "9f2a6803540971c87ef07345087801267d52340f2c39777d1e64a120b1a1f270",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-020-CON",
+        "topic": "system_identification_definition",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "52dce68f870d8500e70019c31e677c2d226d70c8a8970701f219bae956e065b0",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-020-ABS",
+        "topic": "system_identification_definition",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "8fa3ab05e32c63f72e8e632442ba08e981ca178233269dc2551ffa1ad64d72d3",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-021-SUP",
+        "topic": "relay_limit_cycle_information",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "7f8e9a423e0c5b9e8cbcc82cb7f2495a949b782a86da61084ef08fe386f83870",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-021-CON",
+        "topic": "relay_limit_cycle_information",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "c681ec8ad56583becb6a74840a2f1b5a8f5539eba345b26a3a3621ec9ddac15f",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-021-ABS",
+        "topic": "relay_limit_cycle_information",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "d8ec546001afdd19341b3dad86e3dd1e1229f4a4085e5cab687270904617fc17",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-022-SUP",
+        "topic": "relay_ultimate_gain_period",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "a6fb701ccc52da09f6de0bdef07bd8a3cdf5267c6b782b9424bda1b4c24ac0c7",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-022-CON",
+        "topic": "relay_ultimate_gain_period",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "ff6ed125d5db45805f6601c83e626be996913e7fce476030c2b74c71e4f8e2d3",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-022-ABS",
+        "topic": "relay_ultimate_gain_period",
+        "difficulty": "INTERMEDIATE",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "e318db66f339e365bbb4559e8c9edcd9aa26a700e7a2702e8d8298da2fcb54b7",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-023-SUP",
+        "topic": "open_closed_loop_identification",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8717,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "b5a562bb16e17fbeb49b70acbd38ae21e88d4b1c2f87ae4a0661a6cad104a152",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-023-CON",
+        "topic": "open_closed_loop_identification",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "f5a51955ce2876186a739e71233250c71754f66ce688df7d03b4dc84990f20a7",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-023-ABS",
+        "topic": "open_closed_loop_identification",
+        "difficulty": "FOUNDATIONAL",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "57191fa2405c2ef084144c0ff13601d1195b4874c2f43f35f949a78f5ff836e5",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-024-SUP",
+        "topic": "negative_feedback_state_estimator",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "SUPPORTED",
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8832,
+        "finding_codes": [],
+        "evidence_ref_count": 16,
+        "result_sha256": "1c4049b540797e14eae0adf190c743e57fa66a3224452af696153e2f7a1b08b0",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-024-CON",
+        "topic": "negative_feedback_state_estimator",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "CONTRADICTED",
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "c34ece25f6dc67976bce62b3d999b5600e79d2fba41253c14f59158dd84c395c",
+        "deterministic": true
+      },
+      {
+        "fact_id": "C3-024-ABS",
+        "topic": "negative_feedback_state_estimator",
+        "difficulty": "ADVANCED",
+        "expected_outcome": "INSUFFICIENT_EVIDENCE",
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
+        "evidence_ref_count": 16,
+        "result_sha256": "f7c72eb86e2ba14f9c1743806ebdf2f2c87fabb4d059840eac3d1575cf94d463",
+        "deterministic": true
+      }
+    ],
+    "missing_results": 0,
+    "nondeterministic_results": 0,
+    "metrics": {
+      "record_count": 72,
+      "correct_count": 72,
+      "overall_accuracy": 1.0,
+      "confusion_matrix": {
+        "CONTRADICTED": {
+          "CONTRADICTED": 24
+        },
+        "INSUFFICIENT_EVIDENCE": {
+          "INSUFFICIENT_EVIDENCE": 24
+        },
+        "SUPPORTED": {
+          "SUPPORTED": 24
+        }
+      },
+      "per_class": {
+        "CONTRADICTED": {
+          "tp": 24,
+          "fp": 0,
+          "tn": 48,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "INSUFFICIENT_EVIDENCE": {
+          "tp": 24,
+          "fp": 0,
+          "tn": 48,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "SUPPORTED": {
+          "tp": 24,
+          "fp": 0,
+          "tn": 48,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      },
+      "abstention_accuracy": 1.0,
+      "critical_unsafe_false_negative_fact_ids": [],
+      "critical_unsafe_false_negatives": 0,
+      "unexpected_actual_outcomes": []
+    },
+    "threshold_evaluation": {
+      "thresholds": {
+        "overall_accuracy": 0.9,
+        "per_class_precision": 0.9,
+        "per_class_recall": 0.9,
+        "abstention_accuracy": 0.9,
+        "critical_unsafe_false_negatives": 0,
+        "missing_results": 0,
+        "nondeterministic_results": 0
+      },
+      "checks": {
+        "overall_accuracy": true,
+        "abstention_accuracy": true,
+        "critical_unsafe_false_negatives": true,
+        "missing_results": true,
+        "nondeterministic_results": true,
+        "CONTRADICTED.precision": true,
+        "CONTRADICTED.recall": true,
+        "INSUFFICIENT_EVIDENCE.precision": true,
+        "INSUFFICIENT_EVIDENCE.recall": true,
+        "SUPPORTED.precision": true,
+        "SUPPORTED.recall": true
+      },
+      "passed": true,
+      "failed_checks": []
+    },
+    "evidence_input_count": 24,
+    "evidence_input_sha256": "9351b4fa597ae7354c1b766ad16e3951a0d69ac72538a28d8873a42325256ffc"
+  },
+  "local_gate_state": "C3_ACCURACY_AND_POSTGRES_CONTROLS_ACCEPTED",
+  "gate_b_local_eligible": true,
+  "report_sha256": "53097324fa556c593ed63d3721a9a3e9509a1088d5ef820ca18df954e5d3a18b"
+}

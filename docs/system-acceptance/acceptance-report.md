@@ -2,45 +2,53 @@
 
 ## Decision
 
-Protected `main` revision `84427f2555ff5e510e886e357a8ee1ca53f3fbe8`
-is accepted as a **release candidate** with the frontend identity and
-internationalization product scope complete. PR #30 passed both remote
-workflows, merged through the protected branch, passed the merged-main
-workflow, and was replayed from a newly recreated external PostgreSQL release
-volume. PR #32 then archived that replay evidence and passed its own protected
-main Release Quality Gates run. PR #33 subsequently merged the Phase 7 dataset
-boundary controls and passed protected-main Release Quality Gates Run
-29852791180.
+Protected `main` revision `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
+is accepted as a **release candidate**. PR #34 archived the hash-bound academic
+Gate B evidence and PR #35 added the ADR-0013 C3 semantic verifier v2 while
+preserving v1 behavior. Both changes passed their push and pull-request Release
+Quality Gates at 8/8 before protected Squash Merge. The resulting main revision
+then passed Release Quality Gates Run 29887219266 at 8/8.
 
 Formal state:
-`PHASE7_GATE_B_LOCAL_ACCEPTED_REMOTE_CI_PENDING`.
+`PHASE7_GATE_B_MAINLINE_ACCEPTED_GATE_C_READY`.
 
-The project is not `SYSTEM_ACCEPTED`. Gate A preflight is accepted. Gate B now
-has a hash-bound, licensed, owner-reviewed academic set with the single-owner
-conflict explicitly disclosed, plus a clean-source C3 v2 run against restricted
-PostgreSQL 16. That local run classified all 72 records correctly and produced
-zero unsafe `CONTRADICTED -> SUPPORTED` decisions. Gate B is not yet a mainline
-acceptance result: the evidence and remediation PRs still require 8/8 remote CI,
-protected merge, and replay from merged main. Under the serial acceptance rule,
-Gate C and later production tests remain locked.
+The project is not `SYSTEM_ACCEPTED`. Gate A and Gate B are accepted. The final
+Gate B replay was executed from the merged protected-main source and tree, using
+a fresh isolated PostgreSQL 16 volume, restricted roles and clean source. It
+classified all 72 records correctly, produced zero unsafe
+`CONTRADICTED -> SUPPORTED` decisions, passed all RLS/replay controls, verified
+86 content-addressed artifacts, left `cybercontrol_release_postgres` untouched,
+and removed its temporary container and volume. Gate C is the only newly
+unlocked execution gate; Gates D-G remain serially locked.
 
 ## Evaluated Baseline
 
-- Protected `main`: `84427f2555ff5e510e886e357a8ee1ca53f3fbe8`
-- Protected-main tree: `c078052fa3d445aec4cb6be71b916317e12ceb30`
-- Evaluated product source: `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
-- Evaluated product tree: `01c1705debb4b869721b9b9432ed2747064921b8`
+- Protected `main` and evaluated Gate B source:
+  `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
+- Protected-main and evaluated Gate B tree:
+  `c9821405359f59fee9fb993873ed3ba7f55e8b00`
+- Gate B evidence PR: [#34](https://github.com/changkong66/CyberControl/pull/34),
+  Squash Merge `412085e1586e3d497e5e6f944d4f34e258896d8b`
+- PR #34 push CI: [Run 29886312423](https://github.com/changkong66/CyberControl/actions/runs/29886312423), 8/8
+- PR #34 pull-request CI: [Run 29886314403](https://github.com/changkong66/CyberControl/actions/runs/29886314403), 8/8
+- C3 remediation PR: [#35](https://github.com/changkong66/CyberControl/pull/35),
+  Squash Merge `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
+- PR #35 retargeted push CI: [Run 29886959510](https://github.com/changkong66/CyberControl/actions/runs/29886959510), 8/8
+- PR #35 retargeted pull-request CI: [Run 29886962210](https://github.com/changkong66/CyberControl/actions/runs/29886962210), 8/8
+- Current protected-main CI: [Run 29887219266](https://github.com/changkong66/CyberControl/actions/runs/29887219266), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
-- Push CI: [Run 29830793779](https://github.com/changkong66/CyberControl/actions/runs/29830793779), 8/8
-- Pull-request CI: [Run 29830972987](https://github.com/changkong66/CyberControl/actions/runs/29830972987), 8/8
-- Product protected-main CI: [Run 29831570652](https://github.com/changkong66/CyberControl/actions/runs/29831570652), 8/8
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
-- Current protected-main CI: [Run 29852791180](https://github.com/changkong66/CyberControl/actions/runs/29852791180), 8/8
 - Alembic head: `20260720_0010`
 - Historical migrations `0001` through `0009`: unchanged
-- Mainline evidence: [frontend-identity-i18n-mainline.json](evidence/frontend-identity-i18n-mainline.json)
-- Evidence file SHA256: `bbda0423786ee5ec035bab5dbd26eb3dfc6e135cf96f95980ab31b2523b4f5c9`
-- Browser evidence: [frontend-identity-i18n-browser.json](evidence/frontend-identity-i18n-browser.json)
+- Gate B mainline report: [phase7-c3-mainline-replay.json](evidence/phase7-c3-mainline-replay.json)
+- Gate B internal report SHA256:
+  `53097324fa556c593ed63d3721a9a3e9509a1088d5ef820ca18df954e5d3a18b`
+- Gate B report file SHA256:
+  `de6fc5d9a99dcdbaba261351df6be53be732191c67146f5a3694015c6d486421`
+- Artifact manifest SHA256:
+  `0051e36d9f0da848a14e071a19b50551714bd171a6948ac6b8fe0d76d264e212`
+- PostgreSQL environment SHA256:
+  `eac9258d33c9cde87e3d451d736513248d953fe37e513532c4ced73987614e9e`
 
 ## Closure Delivered
 
@@ -153,8 +161,8 @@ Immutable identifiers for this replay:
 | --- | --- |
 | Ruff and frozen contract drift | passed |
 | Python deterministic suite | 453 passed, 1 skipped, 70 deselected |
-| Standard PostgreSQL suite | 518 passed, 6 skipped |
-| Python coverage | 90.61%; hard threshold 90% |
+| Standard PostgreSQL suite | 559 passed, 4 skipped |
+| Python coverage | 90.94%; hard threshold 90% |
 | Historical Python observation | 91.19%; not met by the standard-gate run |
 | Vitest | 72 passed |
 | Frontend coverage | 89.12% statements, 81.79% branches, 83.79% functions, 92.38% lines |
@@ -166,11 +174,9 @@ Immutable identifiers for this replay:
 | Runtime Trivy | 0 findings at all severities for all three release images |
 | SBOM and license policy | passed |
 
-The six standard-suite skips are explicitly reported. They cover separately
-configured Keycloak/reconciler integration, the opt-in Docker database restart
-probe, and the Windows symbolic-link compatibility case. The clean-volume runner
-independently exercised real Keycloak registration and OIDC login. None of these
-skips is represented as a passed test.
+The four standard-suite skips are explicitly reported and are not represented
+as passed tests. The latest PostgreSQL integration result and coverage value are
+the PR #35 clean-commit observation recorded in that protected PR.
 
 ## Phase 7.4 Progress
 
@@ -199,41 +205,41 @@ compatibility extensions. The default `C3AcademicHandler` and
 `EvidenceRefV1`; fact IDs, topic labels, expected outcomes and reviewer
 rationales are not available to product logic.
 
-The formal local Gate B run is bound to source commit
-`a23cbe38a116c493223579a4675bf595f90b8252` and tree
-`69ee20617e780c2091791aa8e98cff777b2ffc93`. It used a fresh isolated
-PostgreSQL 16 volume, restricted non-superuser/non-`BYPASSRLS` roles, FORCE RLS,
-cross-tenant adversarial reads and changed-content replay. Accuracy was 72/72;
-all three class precision/recall values and abstention accuracy were `1.0`, and
-all database controls passed. The report is retained in
-[phase7-c3-accuracy.json](evidence/phase7-c3-accuracy.json).
+The historical local Gate B run is retained at
+[phase7-c3-accuracy.json](evidence/phase7-c3-accuracy.json). The authoritative
+mainline replay is bound to source commit
+`7e2a1d7cc3efc55ce27044e10959c4f5889a85da` and tree
+`c9821405359f59fee9fb993873ed3ba7f55e8b00`. It used PostgreSQL 16.14 on a new
+isolated volume with `liyans_app` and `liyans_migrator` both non-superuser and
+without `BYPASSRLS`. Accuracy was 72/72; all three class precision/recall values
+and abstention accuracy were `1.0`; missing and nondeterministic results were
+zero; cross-tenant visibility was zero; changed-content replay was rejected.
 
-The complete local Release Quality Gates were then replayed on source commit
-`4c0fd18daa76960fe172805ad4e5b278dd7c9a19` using a PostgreSQL instance on
-port `55432` whose data volume is distinct from `cybercontrol_release_postgres`.
-All gates passed, including the full migration cycle, PostgreSQL regression,
-container runtime constraints, Trivy and Gitleaks. The retained summary is
-[phase7-local-quality-gates.json](evidence/phase7-local-quality-gates.json).
-This historical quality result does not replace the required remote CI and
-merged-main replay for the new C3 remediation commits.
+PR #34 passed push Run 29886312423 and pull-request Run 29886314403. After it
+was Squash Merged, PR #35 was retargeted to `main`, passed push Run 29886959510
+and pull-request Run 29886962210, and was Squash Merged. The resulting main
+passed Run 29887219266. Each run completed all eight jobs successfully. The
+clean-source Gate B replay then verified 86 artifacts totaling 360,284 bytes.
+The formal replay used neither the development database nor
+`cybercontrol_release_postgres`; metadata for the release volume was identical
+before and after, and the temporary replay container and volume were removed.
 
 ## Current Boundary
 
-Frontend identity, account administration and three-language workbench scope is
-complete and replayed from merged main. The only immediate work permitted is to
-push the dataset-evidence branch and C3 remediation branch, merge both through
-protected PRs with 8/8 checks, then replay Gate B from the resulting main SHA.
-Gate C and unrelated feature development remain locked.
+Frontend identity, account administration, three-language workbench and Gate B
+mainline acceptance are complete. This current-state evidence must first pass a
+protected evidence PR. After that archive merges, Gate C may execute the 2,000
+authenticated SSE load plan. Gates D-G and unrelated feature development remain
+locked.
 
 ## Remaining Release Blockers
 
-1. Merge the Gate B dataset evidence and C3 v2 remediation through protected
-   pull requests with 8/8 green checks, then replay the exact benchmark from
-   merged main before declaring Gate B accepted.
-2. Raise the current 90.61% Python coverage toward the 91.19% historical
+1. Merge this current-state Gate B replay archive through a protected evidence
+   PR with 8/8 green checks.
+2. Raise the current 90.94% Python coverage toward the 91.19% historical
    observation or record a reviewed disposition; the 90% hard gate must not be
    lowered.
-3. After Gate B is accepted, execute 2,000 authenticated SSE connections with
+3. Execute 2,000 authenticated SSE connections with
    reconnect, cursor recovery,
    duplicate suppression, slow-consumer and tenant-isolation evidence.
 4. After Gate C is accepted, complete a minimum eight-hour soak across

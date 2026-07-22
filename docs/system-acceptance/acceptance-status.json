@@ -1,20 +1,20 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-22T02:03:44.5611055Z",
+  "generated_at_utc": "2026-07-22T03:11:34.0029404Z",
   "state": "RELEASE_CANDIDATE",
-  "formal_release_state": "PHASE7_GATE_B_LOCAL_ACCEPTED_REMOTE_CI_PENDING",
+  "formal_release_state": "PHASE7_GATE_B_MAINLINE_ACCEPTED_GATE_C_READY",
   "baseline": {
-    "protected_main_sha": "84427f2555ff5e510e886e357a8ee1ca53f3fbe8",
-    "protected_main_tree_sha": "c078052fa3d445aec4cb6be71b916317e12ceb30",
-    "product_source_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
-    "product_source_tree_sha": "01c1705debb4b869721b9b9432ed2747064921b8",
+    "protected_main_sha": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
+    "protected_main_tree_sha": "c9821405359f59fee9fb993873ed3ba7f55e8b00",
+    "product_source_sha": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
+    "product_source_tree_sha": "c9821405359f59fee9fb993873ed3ba7f55e8b00",
     "frontend_identity_i18n_pr": 30,
     "frontend_identity_i18n_pr_url": "https://github.com/changkong66/CyberControl/pull/30",
     "frontend_source_sha": "db5228960be95ec769cd6ec69f19daa4e6f990bb",
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 29852791180,
+    "protected_main_ci_run": 29887219266,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
     "protected_main_ci_jobs_successful": 8,
@@ -26,7 +26,19 @@
     "working_tree_clean_before_replay": true,
     "remote_ci_covers_protected_main": true,
     "phase7_dataset_boundary_pr": 33,
-    "phase7_dataset_boundary_pr_url": "https://github.com/changkong66/CyberControl/pull/33"
+    "phase7_dataset_boundary_pr_url": "https://github.com/changkong66/CyberControl/pull/33",
+    "phase7_gate_b_evidence_pr": 34,
+    "phase7_gate_b_evidence_pr_url": "https://github.com/changkong66/CyberControl/pull/34",
+    "phase7_gate_b_evidence_merge_sha": "412085e1586e3d497e5e6f944d4f34e258896d8b",
+    "phase7_gate_b_evidence_push_ci_run": 29886312423,
+    "phase7_gate_b_evidence_pr_ci_run": 29886314403,
+    "phase7_c3_remediation_pr": 35,
+    "phase7_c3_remediation_pr_url": "https://github.com/changkong66/CyberControl/pull/35",
+    "phase7_c3_remediation_retargeted_head_sha": "a98902002825e2c8f6701497a18eecc3a3a9539f",
+    "phase7_c3_remediation_merge_sha": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
+    "phase7_c3_remediation_push_ci_run": 29886959510,
+    "phase7_c3_remediation_pr_ci_run": 29886962210,
+    "phase7_gate_b_main_ci_run": 29887219266
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -50,7 +62,7 @@
       "release_volume": "cybercontrol_release_postgres"
     },
     "gate_b": {
-      "state": "LOCAL_ACCEPTED_REMOTE_CI_PENDING",
+      "state": "MAINLINE_ACCEPTED",
       "dataset_evidence_branch": "codex/phase7-gate-b-academic-golden",
       "remediation_branch": "codex/phase7-c3-semantic-remediation-v2",
       "evaluation_source_commit": "a23cbe38a116c493223579a4675bf595f90b8252",
@@ -98,6 +110,44 @@
         "nondeterministic_results": 0,
         "database_controls_passed": true,
         "thresholds_passed": true
+      },
+      "mainline_replay": {
+        "state": "MAINLINE_ACCEPTED",
+        "source_commit": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
+        "source_tree": "c9821405359f59fee9fb993873ed3ba7f55e8b00",
+        "report_path": "docs/system-acceptance/evidence/phase7-c3-mainline-replay.json",
+        "report_internal_sha256": "53097324fa556c593ed63d3721a9a3e9509a1088d5ef820ca18df954e5d3a18b",
+        "report_file_sha256": "de6fc5d9a99dcdbaba261351df6be53be732191c67146f5a3694015c6d486421",
+        "artifact_manifest_path": "docs/system-acceptance/evidence/phase7-c3-mainline-replay-artifact-manifest.json",
+        "artifact_manifest_sha256": "0051e36d9f0da848a14e071a19b50551714bd171a6948ac6b8fe0d76d264e212",
+        "postgres_environment_path": "docs/system-acceptance/evidence/phase7-c3-mainline-replay-postgres-environment.json",
+        "postgres_environment_sha256": "eac9258d33c9cde87e3d451d736513248d953fe37e513532c4ced73987614e9e",
+        "artifact_count": 86,
+        "artifact_bytes": 360284,
+        "record_count": 72,
+        "correct_count": 72,
+        "overall_accuracy": 1.0,
+        "abstention_accuracy": 1.0,
+        "critical_unsafe_false_negatives": 0,
+        "missing_results": 0,
+        "nondeterministic_results": 0,
+        "database_controls_passed": true,
+        "thresholds_passed": true,
+        "migration_head": "20260720_0010",
+        "postgres_version": "16.14-alpine",
+        "runtime_role_restricted": true,
+        "migration_role_restricted": true,
+        "temporary_container": "cybercontrol-phase7-c3-mainline-replay-20260722",
+        "temporary_volume": "cybercontrol_phase7_c3_mainline_replay_20260722",
+        "temporary_resources_removed": true,
+        "release_volume_used": false,
+        "release_volume_untouched": true,
+        "evidence_pr_push_ci_run": 29886312423,
+        "evidence_pr_ci_run": 29886314403,
+        "remediation_push_ci_run": 29886959510,
+        "remediation_pr_ci_run": 29886962210,
+        "protected_main_ci_run": 29887219266,
+        "all_remote_ci_jobs_successful": true
       }
     },
     "local_quality_gate": {
@@ -109,7 +159,7 @@
       "postgres_test_instance_isolated_from_release_volume": true,
       "full_release_quality_gates_passed": true
     },
-    "gates_c_through_g": "LOCKED_PENDING_GATE_B_REMOTE_CI_AND_MAINLINE_REPLAY"
+    "gates_c_through_g": "GATE_C_UNLOCKED_GATES_D_THROUGH_G_LOCKED"
   },
   "identity_backend": {
     "state": "MAINLINE_ACCEPTED",
@@ -184,10 +234,10 @@
     "identity_plaintext_contact_matches": 0
   },
   "quality": {
-    "python_tests_total": 524,
-    "python_tests_passed": 518,
-    "python_tests_skipped": 6,
-    "python_coverage_percent": 90.61,
+    "python_tests_total": 563,
+    "python_tests_passed": 559,
+    "python_tests_skipped": 4,
+    "python_coverage_percent": 90.94,
     "python_coverage_hard_threshold_percent": 90.0,
     "python_coverage_historical_observation_percent": 91.19,
     "python_historical_observation_met_by_standard_gate": false,
@@ -219,20 +269,23 @@
     "backend_runtime_user": "10001:10001"
   },
   "next_stage": {
-    "name": "PHASE7_GATE_B_REMOTE_CI_AND_MAINLINE_REPLAY",
+    "name": "PHASE7_GATE_C_AUTHENTICATED_SSE_LOAD_ACCEPTANCE",
     "allowed_scope": [
-      "push the academic evidence and C3 remediation branches",
-      "create and merge protected stacked pull requests with 8/8 green checks",
-      "replay Gate B from the merged protected-main commit and archive current-state evidence"
+      "archive the Gate B merged-main replay evidence through a protected evidence PR",
+      "define resource-aware pass and fail thresholds for 2,000 authenticated SSE connections",
+      "execute reconnect, Last-Event-ID recovery, duplicate suppression, slow-consumer and tenant-isolation load acceptance",
+      "archive Gate C metrics without starting Gate D until Gate C is protected-main accepted"
     ],
-    "gates_c_through_g_locked": true,
+    "gate_c_unlocked": true,
+    "gates_c_through_g_locked": false,
+    "gates_d_through_g_locked": true,
     "backend_feature_changes_allowed": false,
     "frontend_product_feature_changes_allowed": false,
     "topic1_topic4_contract_changes_allowed": false
   },
   "blocking_items": [
-    "Merge the Gate B evidence and C3 semantic remediation through protected pull requests, obtain 8/8 remote CI, and replay the accepted benchmark from merged main before unlocking Gate C.",
-    "Raise or formally disposition the standard-gate Python coverage observation of 90.61% versus the historical 91.19% target without lowering the 90% hard gate.",
+    "Merge the current Gate B replay evidence and status update through a protected pull request with 8/8 green checks before treating the evidence archive as mainline current state.",
+    "Raise or formally disposition the standard-gate Python coverage observation of 90.94% versus the historical 91.19% target without lowering the 90% hard gate.",
     "Complete 2,000 authenticated SSE load acceptance.",
     "Complete a minimum eight-hour soak test.",
     "Complete independent backup/restore and disaster-recovery evidence with measured RPO/RTO.",
