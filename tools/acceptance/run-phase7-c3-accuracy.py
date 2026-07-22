@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Phase 7 C3 golden set through real PostgreSQL and frozen interfaces."""
+"""Run the Phase 7 C3 golden set through real PostgreSQL and versioned interfaces."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 from liyans.core.settings import Settings
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.domains.academic.evidence_source import PostgresAcademicEvidenceSource
-from liyans.domains.academic.handler import C3AcademicHandler
+from liyans.domains.academic.handler import C3AcademicHandlerV2
 from liyans.domains.knowledge.artifact_writer import KnowledgeArtifactWriter
 from liyans.domains.knowledge.ingestion import SourceImportCommand
 from liyans.domains.knowledge.lifecycle import (
@@ -107,6 +107,7 @@ LEDGER_PATH = ROOT / "docs/system-acceptance/evidence/phase7-academic-source-led
 POLICY_PATH = ROOT / "docs/system-acceptance/phase7-c3-accuracy-policy.md"
 DATASET_ID = "phase7-academic-human-reviewed-facts.v1"
 POLICY_VERSION = "phase7.c3-accuracy-policy.v1"
+HARNESS_VERSION = "phase7-c3-accuracy-harness-v2"
 COURSE_ID = "CRS_PHASE7_C3_GOLDEN"
 BLOCK_ID = "phase7-c3-golden-claims"
 EXPECTED_OUTCOMES = ("CONTRADICTED", "INSUFFICIENT_EVIDENCE", "SUPPORTED")
@@ -406,7 +407,7 @@ def _candidate_and_spans(
         blocks=[block],
         provenance=CandidateProvenanceV1(
             agent=SourceAgent.LECTURER,
-            agent_build_version="phase7-c3-accuracy-harness-v1",
+            agent_build_version=HARNESS_VERSION,
             prompt_bundle_version="not-applicable-reviewed-fixture",
             provider_alias="local",
             provider_request_ids=[],
@@ -498,7 +499,7 @@ def _verification_request(
 def _runtime_versions() -> VerifierRuntimeVersions:
     return VerifierRuntimeVersions(
         state_machine_version="c1-state-machine-v1",
-        verifier_build_version="phase7-c3-accuracy-harness-v1",
+        verifier_build_version=HARNESS_VERSION,
         policy_version=POLICY_VERSION,
         prompt_bundle_version="not-applicable-reviewed-fixture",
         retrieval_pipeline_version="local-hybrid-rag-v1",
@@ -718,7 +719,7 @@ def _runtime_services(
         database,
         PostgresOutboxRepository(database),
         instance_id="phase7-c3-accuracy",
-        build_version="phase7-c3-accuracy-harness-v1",
+        build_version=HARNESS_VERSION,
     )
     indexes = HotReloadableRAGIndex()
     lifecycle = KnowledgeBaseLifecycleService(
@@ -1001,7 +1002,7 @@ async def _execute_c3(
     plan = _dispatch_plan(claims, context=context, now=now)
     bundle = await BoundedModuleExecutor(
         {
-            VerificationModule.C3_ACADEMIC: C3AcademicHandler(
+            VerificationModule.C3_ACADEMIC: C3AcademicHandlerV2(
                 PostgresAcademicEvidenceSource(database, services.knowledge_repository),
                 services.object_store,
             )
