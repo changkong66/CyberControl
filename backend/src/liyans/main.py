@@ -352,7 +352,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             VerificationStateMachine(),
             VerifierRuntimeVersions(
                 state_machine_version="c1-state-machine-v1",
-                verifier_build_version="topic4-runtime-v1",
+                verifier_build_version="topic4-runtime-c3-semantic-v2",
                 policy_version="topic4-policy-v1",
                 prompt_bundle_version="topic4-prompts-v1",
                 retrieval_pipeline_version="local-hybrid-rag-v1",

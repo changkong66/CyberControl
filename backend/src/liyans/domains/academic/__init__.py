@@ -11,7 +11,7 @@ from .formula import (
     FormulaSecurityError,
     SafeFormulaParser,
 )
-from .handler import C3AcademicHandler, C3HandlerPolicy
+from .handler import C3AcademicHandler, C3AcademicHandlerV2, C3HandlerPolicy
 from .numeric import (
     NumericAssertion,
     NumericAssertionExtractor,
@@ -21,6 +21,7 @@ from .numeric import (
     NumericVerificationSummary,
     UnitNormalizer,
 )
+from .semantic import SemanticClaimVerifierV2, SemanticVerifierPolicy
 from .stability import (
     StabilityAnalyzer,
     StabilityModelBuilder,
@@ -37,6 +38,7 @@ from .theorem import (
 
 __all__ = [
     "C3AcademicHandler",
+    "C3AcademicHandlerV2",
     "C3HandlerPolicy",
     "ClaimFactVerifier",
     "DerivationChecker",
@@ -55,6 +57,8 @@ __all__ = [
     "NumericVerificationSummary",
     "PostgresAcademicEvidenceSource",
     "SafeFormulaParser",
+    "SemanticClaimVerifierV2",
+    "SemanticVerifierPolicy",
     "StabilityAnalyzer",
     "StabilityModelBuilder",
     "StabilityPolicy",
