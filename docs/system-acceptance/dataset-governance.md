@@ -19,8 +19,10 @@ result is a performance observation, not a quality or accuracy result.
 The human-reviewed academic set is accepted only when its JSONL facts and review
 attestation pass `tools/acceptance/build-phase7-dataset-inventory.py` with
 `--require-human-reviewed-golden`. The attestation binds the reviewer decision
-to the exact facts SHA256. It must state source citation, license expression,
-reviewer subject reference, review time, policy version, and `ACCEPTED`.
+to the exact facts, source-ledger, and review-policy SHA256 values. It must state
+source citation, license expression, reviewer subject reference, qualification,
+ownership conflict and disposition, review time, policy version, rights review,
+class counts, and `ACCEPTED`.
 
 No model-generated, benchmark-generated, or pre-existing demonstration fixture
 may be relabelled as human-reviewed solely because it has a source citation or
@@ -29,8 +31,10 @@ independent academic review.
 
 ## Current Boundary
 
-At this point the repository contains a deterministic 100,000-record benchmark
-generator and a local Topic1 fixture. It does not contain a qualifying human
-reviewed academic golden fact set or review attestation. Consequently accuracy
-metrics are not yet eligible for release acceptance, and Phase 7 must remain
-below `SYSTEM_ACCEPTED`.
+The Gate B branch now contains a structurally valid 72-record C3 set, a
+commercial-use source ledger, a review policy, and an `ACCEPTED` hash-bound
+human attestation. The exact-hash human-review prerequisite is complete, so the
+set is eligible for module-specific release accuracy execution. Phase 7 remains
+below `SYSTEM_ACCEPTED` until clean-commit validation, module-specific accuracy
+execution, real PostgreSQL isolation evidence, CI, protected-main merge, and
+mainline replay all pass.
