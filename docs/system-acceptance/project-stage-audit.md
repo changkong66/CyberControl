@@ -5,14 +5,14 @@
 CyberControl has completed Phase1.1, Topic1-Topic4, the complete business
 workbench, the Keycloak-backed identity backend, frontend registration/account
 management, and `zh-CN`/`zh-TW`/`en-US` localization. Protected `main` is
-`84427f2555ff5e510e886e357a8ee1ca53f3fbe8`; Release Quality Gates Run
-29852791180 completed 8/8 jobs successfully.
+`7e2a1d7cc3efc55ce27044e10959c4f5889a85da`; Release Quality Gates Run
+29887219266 completed 8/8 jobs successfully.
 
 The project is in **Phase 7 release closure**, at the boundary between product
 completion and final non-functional/production acceptance. Gate A preflight is
-accepted. Gate B has passed its clean-source local C3 v2 accuracy and PostgreSQL
-controls, but still requires remote CI, protected merge and merged-main replay.
-It is a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
+accepted. Gate B has now passed protected PR closure, remote 8/8 CI and
+clean-source merged-main PostgreSQL replay. It is a `RELEASE_CANDIDATE`, not
+`SYSTEM_ACCEPTED`; Gate C is the next unlocked gate.
 
 Feature completeness is not an acceptance state. The remaining work is smaller
 in feature count but high in operational risk, external review dependency and
@@ -25,8 +25,8 @@ elapsed test time.
 | Identity backend | 100% current product scope | registration, projection, administration and recovery boundary complete |
 | Frontend workbench | 100% current product scope | business, identity and three-language surfaces merged |
 | Local demonstrable product | accepted release candidate | clean-volume registration-to-release chain passes from merged main |
-| Dataset and C3 accuracy boundary | local accepted, mainline pending | 72 owner-reviewed records pass at 100% with zero unsafe false negatives; PR/CI/replay remains |
-| Production operations | not started | serial gate blocks load, soak, DR and target deployment work until Gate B mainline acceptance |
+| Dataset and C3 accuracy boundary | mainline accepted | 72 owner-reviewed records pass at 100% with zero unsafe false negatives from protected-main replay |
+| Production operations | Gate C ready | load testing may begin only after the Gate B replay archive PR is merged; soak, DR and deployment remain serially locked |
 
 ## 2. Completed And Frozen Assets
 
@@ -104,35 +104,44 @@ elapsed test time.
   `a23cbe38a116c493223579a4675bf595f90b8252` classified 72/72 correctly,
   produced zero unsafe `CONTRADICTED -> SUPPORTED` decisions, passed FORCE RLS
   adversarial reads and rejected changed-content replay.
-- The Phase 7 acceptance branch passed the complete local Release Quality Gates
-  at `4c0fd18daa76960fe172805ad4e5b278dd7c9a19`: 518 standard-suite tests passed,
-  six were explicitly skipped, coverage was 90.61%, and Trivy/Gitleaks passed.
+- PR #34 merged the academic evidence through protected main after push Run
+  29886312423 and pull-request Run 29886314403 each passed 8/8 jobs.
+- PR #35 was retargeted to `main`, merged the C3 semantic verifier v2 through
+  protected main after push Run 29886959510 and pull-request Run 29886962210 each
+  passed 8/8 jobs, and produced main SHA
+  `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`.
+- The resulting protected main passed Run 29887219266 at 8/8 jobs.
+- The merged-main Gate B replay at `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
+  and tree `c9821405359f59fee9fb993873ed3ba7f55e8b00` used a fresh PostgreSQL 16
+  volume, classified 72/72 correctly, produced zero unsafe false negatives,
+  verified 86 artifacts, left `cybercontrol_release_postgres` untouched and
+  removed temporary replay resources.
+- The latest recorded Python quality observation is 559 passed, four skipped and
+  90.94% line coverage; this passes the 90% hard gate but remains below the
+  historical 91.19% observation target.
 
 ## 3. Current Boundary
 
-The current stacked branches may contain only the already-reviewed academic
-evidence and the ADR-0013 C3 v2 compatibility remediation. They must not modify
-historical Topic acceptance snapshots, migrations, identity authority,
-TenantContext, RLS, SERIALIZABLE transactions, Outbox, SSE or C12 semantics.
+The current Gate B replay evidence branch may contain only current-state replay
+evidence and status documentation for the already merged PR #34/#35 work. It
+must not modify historical Topic acceptance snapshots, migrations, identity
+authority, TenantContext, RLS, SERIALIZABLE transactions, Outbox, SSE or C12
+semantics.
 
-The only allowed immediate next activity is Gate B mainline closure: push the
-dataset-evidence branch and C3 remediation branch, pass protected PR CI, merge
-them in dependency order, and rerun Gate B from the resulting main SHA. Any
-later product defect must use another isolated PR and ADR, then be replayed from
-a new main baseline.
+The only allowed immediate next activity is to merge the Gate B replay evidence
+archive through protected PR flow. After that archive has 8/8 CI and merges,
+Gate C may begin. Any later product defect must use another isolated PR and ADR,
+then be replayed from a new main baseline.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Gate B Mainline Closure
+### 4.1 P0 Gate B Evidence Archive
 
-1. Push `codex/phase7-gate-b-academic-golden` and merge its evidence PR into
-   protected main with 8/8 green checks.
-2. Push `codex/phase7-c3-semantic-remediation-v2`, merge its C3 v2 PR after the
-   evidence dependency is available, and retain v1 compatibility.
-3. From the resulting protected-main SHA, recreate a fresh isolated PostgreSQL
-   volume and reproduce the 72/72, zero-unsafe-false-negative Gate B result.
-4. Keep the formal state at `RELEASE_CANDIDATE` until every final gate passes.
-5. Address the standard-gate Python coverage observation: 90.61% passes the 90%
+1. Push `codex/phase7-gate-b-mainline-replay` and merge its current-state replay
+   evidence PR into protected main with 8/8 green checks.
+2. Keep the formal project state at `RELEASE_CANDIDATE` until every final gate
+   passes.
+3. Address the standard-gate Python coverage observation: 90.94% passes the 90%
    hard gate but is below the historical 91.19% observation target.
 
 ### 4.2 P1 High-Load And Stability Acceptance
