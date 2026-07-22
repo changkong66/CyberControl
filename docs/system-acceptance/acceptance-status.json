@@ -1,20 +1,20 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-22T03:11:34.0029404Z",
+  "generated_at_utc": "2026-07-22T03:45:46.2235946Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_B_MAINLINE_ACCEPTED_GATE_C_READY",
   "baseline": {
-    "protected_main_sha": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
-    "protected_main_tree_sha": "c9821405359f59fee9fb993873ed3ba7f55e8b00",
-    "product_source_sha": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
-    "product_source_tree_sha": "c9821405359f59fee9fb993873ed3ba7f55e8b00",
+    "protected_main_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
+    "protected_main_tree_sha": "7cfd4171840d9d0b274f16c5d7ba70a8cc9402dc",
+    "product_source_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
+    "product_source_tree_sha": "7cfd4171840d9d0b274f16c5d7ba70a8cc9402dc",
     "frontend_identity_i18n_pr": 30,
     "frontend_identity_i18n_pr_url": "https://github.com/changkong66/CyberControl/pull/30",
     "frontend_source_sha": "db5228960be95ec769cd6ec69f19daa4e6f990bb",
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 29887219266,
+    "protected_main_ci_run": 29888873754,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
     "protected_main_ci_jobs_successful": 8,
@@ -38,7 +38,14 @@
     "phase7_c3_remediation_merge_sha": "7e2a1d7cc3efc55ce27044e10959c4f5889a85da",
     "phase7_c3_remediation_push_ci_run": 29886959510,
     "phase7_c3_remediation_pr_ci_run": 29886962210,
-    "phase7_gate_b_main_ci_run": 29887219266
+    "phase7_gate_b_main_ci_run": 29887219266,
+    "phase7_gate_b_replay_archive_pr": 36,
+    "phase7_gate_b_replay_archive_pr_url": "https://github.com/changkong66/CyberControl/pull/36",
+    "phase7_gate_b_replay_archive_head_sha": "a252d0fc20f1ce10681bfbd0ebfc946a68fe5b4f",
+    "phase7_gate_b_replay_archive_merge_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
+    "phase7_gate_b_replay_archive_push_ci_run": 29888597039,
+    "phase7_gate_b_replay_archive_pr_ci_run": 29888658077,
+    "phase7_gate_b_replay_archive_main_ci_run": 29888873754
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -147,7 +154,14 @@
         "remediation_push_ci_run": 29886959510,
         "remediation_pr_ci_run": 29886962210,
         "protected_main_ci_run": 29887219266,
-        "all_remote_ci_jobs_successful": true
+        "all_remote_ci_jobs_successful": true,
+        "archive_state": "MAINLINE_ARCHIVED",
+        "archive_pr": 36,
+        "archive_merge_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
+        "archive_push_ci_run": 29888597039,
+        "archive_pr_ci_run": 29888658077,
+        "archive_main_ci_run": 29888873754,
+        "archive_all_ci_jobs_successful": true
       }
     },
     "local_quality_gate": {
@@ -271,7 +285,6 @@
   "next_stage": {
     "name": "PHASE7_GATE_C_AUTHENTICATED_SSE_LOAD_ACCEPTANCE",
     "allowed_scope": [
-      "archive the Gate B merged-main replay evidence through a protected evidence PR",
       "define resource-aware pass and fail thresholds for 2,000 authenticated SSE connections",
       "execute reconnect, Last-Event-ID recovery, duplicate suppression, slow-consumer and tenant-isolation load acceptance",
       "archive Gate C metrics without starting Gate D until Gate C is protected-main accepted"
@@ -284,7 +297,6 @@
     "topic1_topic4_contract_changes_allowed": false
   },
   "blocking_items": [
-    "Merge the current Gate B replay evidence and status update through a protected pull request with 8/8 green checks before treating the evidence archive as mainline current state.",
     "Raise or formally disposition the standard-gate Python coverage observation of 90.94% versus the historical 91.19% target without lowering the 90% hard gate.",
     "Complete 2,000 authenticated SSE load acceptance.",
     "Complete a minimum eight-hour soak test.",

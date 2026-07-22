@@ -2,12 +2,14 @@
 
 ## Decision
 
-Protected `main` revision `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
+Protected-main Gate B archive baseline `a6024716ebbe2311daf73b9409fd84e9ed512f59`
 is accepted as a **release candidate**. PR #34 archived the hash-bound academic
 Gate B evidence and PR #35 added the ADR-0013 C3 semantic verifier v2 while
 preserving v1 behavior. Both changes passed their push and pull-request Release
 Quality Gates at 8/8 before protected Squash Merge. The resulting main revision
-then passed Release Quality Gates Run 29887219266 at 8/8.
+then passed Release Quality Gates Run 29887219266 at 8/8. PR #36 subsequently
+archived the merged-main Gate B replay evidence; its push, pull-request and
+post-merge main runs each completed all eight jobs successfully.
 
 Formal state:
 `PHASE7_GATE_B_MAINLINE_ACCEPTED_GATE_C_READY`.
@@ -23,9 +25,12 @@ unlocked execution gate; Gates D-G remain serially locked.
 
 ## Evaluated Baseline
 
-- Protected `main` and evaluated Gate B source:
-  `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
-- Protected-main and evaluated Gate B tree:
+- Gate B replay archive baseline:
+  `a6024716ebbe2311daf73b9409fd84e9ed512f59`
+- Gate B replay archive tree:
+  `7cfd4171840d9d0b274f16c5d7ba70a8cc9402dc`
+- Evaluated Gate B replay source commit/tree:
+  `7e2a1d7cc3efc55ce27044e10959c4f5889a85da` /
   `c9821405359f59fee9fb993873ed3ba7f55e8b00`
 - Gate B evidence PR: [#34](https://github.com/changkong66/CyberControl/pull/34),
   Squash Merge `412085e1586e3d497e5e6f944d4f34e258896d8b`
@@ -35,7 +40,12 @@ unlocked execution gate; Gates D-G remain serially locked.
   Squash Merge `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
 - PR #35 retargeted push CI: [Run 29886959510](https://github.com/changkong66/CyberControl/actions/runs/29886959510), 8/8
 - PR #35 retargeted pull-request CI: [Run 29886962210](https://github.com/changkong66/CyberControl/actions/runs/29886962210), 8/8
-- Current protected-main CI: [Run 29887219266](https://github.com/changkong66/CyberControl/actions/runs/29887219266), 8/8
+- Gate B replay-source main CI: [Run 29887219266](https://github.com/changkong66/CyberControl/actions/runs/29887219266), 8/8
+- Gate B replay archive PR: [#36](https://github.com/changkong66/CyberControl/pull/36),
+  Squash Merge `a6024716ebbe2311daf73b9409fd84e9ed512f59`
+- PR #36 push CI: [Run 29888597039](https://github.com/changkong66/CyberControl/actions/runs/29888597039), 8/8
+- PR #36 pull-request CI: [Run 29888658077](https://github.com/changkong66/CyberControl/actions/runs/29888658077), 8/8
+- Post-merge protected-main CI: [Run 29888873754](https://github.com/changkong66/CyberControl/actions/runs/29888873754), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -226,30 +236,27 @@ before and after, and the temporary replay container and volume were removed.
 
 ## Current Boundary
 
-Frontend identity, account administration, three-language workbench and Gate B
-mainline acceptance are complete. This current-state evidence must first pass a
-protected evidence PR. After that archive merges, Gate C may execute the 2,000
-authenticated SSE load plan. Gates D-G and unrelated feature development remain
-locked.
+Frontend identity, account administration, three-language workbench, Gate B
+mainline acceptance and the Gate B evidence archive are complete on protected
+main through PR #36. Gate C may now execute the 2,000 authenticated SSE load plan.
+Gates D-G and unrelated feature development remain locked.
 
 ## Remaining Release Blockers
 
-1. Merge this current-state Gate B replay archive through a protected evidence
-   PR with 8/8 green checks.
-2. Raise the current 90.94% Python coverage toward the 91.19% historical
+1. Raise the current 90.94% Python coverage toward the 91.19% historical
    observation or record a reviewed disposition; the 90% hard gate must not be
    lowered.
-3. Execute 2,000 authenticated SSE connections with
+2. Execute 2,000 authenticated SSE connections with
    reconnect, cursor recovery,
    duplicate suppression, slow-consumer and tenant-isolation evidence.
-4. After Gate C is accepted, complete a minimum eight-hour soak across
+3. After Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review,
    release and SSE.
-5. After Gate D is accepted, restore a PostgreSQL backup into an independent
+4. After Gate D is accepted, restore a PostgreSQL backup into an independent
    instance and measure RPO/RTO.
-6. After Gate E is accepted, complete database/index/OIDC/Provider failure
+5. After Gate E is accepted, complete database/index/OIDC/Provider failure
    drills and verify fail-closed behavior.
-7. Complete sealed Provider, production deployment, TLS/secrets/monitoring,
+6. Complete sealed Provider, production deployment, TLS/secrets/monitoring,
    cross-browser/WCAG and PII retention/export/correction/deletion acceptance.
 
 Only after every blocker has reproducible evidence may the state advance to
