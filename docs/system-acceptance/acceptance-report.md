@@ -2,29 +2,32 @@
 
 ## Decision
 
-Protected `main` revision `d25ed4dd92afd37720c158e4828794853ba8670a`
+Protected `main` revision `84427f2555ff5e510e886e357a8ee1ca53f3fbe8`
 is accepted as a **release candidate** with the frontend identity and
 internationalization product scope complete. PR #30 passed both remote
 workflows, merged through the protected branch, passed the merged-main
 workflow, and was replayed from a newly recreated external PostgreSQL release
 volume. PR #32 then archived that replay evidence and passed its own protected
-main Release Quality Gates run.
+main Release Quality Gates run. PR #33 subsequently merged the Phase 7 dataset
+boundary controls and passed protected-main Release Quality Gates Run
+29852791180.
 
 Formal state:
-`PHASE7_GATE_B_BLOCKED_HUMAN_REVIEWED_GOLDEN_SET_MISSING`.
+`PHASE7_GATE_B_LOCAL_ACCEPTED_REMOTE_CI_PENDING`.
 
-The project is not `SYSTEM_ACCEPTED`. Gate A preflight is accepted. Gate B has
-materialized the synthetic performance corpus but is blocked until an
-independently human-reviewed, licensed academic golden fact set is supplied.
-Under the serial acceptance rule, high-load SSE, long-duration soak,
-independent backup/restore and disaster recovery, sealed Provider integration,
-production deployment, cross-browser/WCAG and PII lifecycle evidence have not
-started.
+The project is not `SYSTEM_ACCEPTED`. Gate A preflight is accepted. Gate B now
+has a hash-bound, licensed, owner-reviewed academic set with the single-owner
+conflict explicitly disclosed, plus a clean-source C3 v2 run against restricted
+PostgreSQL 16. That local run classified all 72 records correctly and produced
+zero unsafe `CONTRADICTED -> SUPPORTED` decisions. Gate B is not yet a mainline
+acceptance result: the evidence and remediation PRs still require 8/8 remote CI,
+protected merge, and replay from merged main. Under the serial acceptance rule,
+Gate C and later production tests remain locked.
 
 ## Evaluated Baseline
 
-- Protected `main`: `d25ed4dd92afd37720c158e4828794853ba8670a`
-- Protected-main tree: `2c92d3475644ced0ac154e4471ae4d62b6ed1e5d`
+- Protected `main`: `84427f2555ff5e510e886e357a8ee1ca53f3fbe8`
+- Protected-main tree: `c078052fa3d445aec4cb6be71b916317e12ceb30`
 - Evaluated product source: `8f0966f96dad8a6be34bd4ab11c985d001dd0185`
 - Evaluated product tree: `01c1705debb4b869721b9b9432ed2747064921b8`
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
@@ -32,7 +35,7 @@ started.
 - Pull-request CI: [Run 29830972987](https://github.com/changkong66/CyberControl/actions/runs/29830972987), 8/8
 - Product protected-main CI: [Run 29831570652](https://github.com/changkong66/CyberControl/actions/runs/29831570652), 8/8
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
-- Current protected-main CI: [Run 29840722346](https://github.com/changkong66/CyberControl/actions/runs/29840722346), 8/8
+- Current protected-main CI: [Run 29852791180](https://github.com/changkong66/CyberControl/actions/runs/29852791180), 8/8
 - Alembic head: `20260720_0010`
 - Historical migrations `0001` through `0009`: unchanged
 - Mainline evidence: [frontend-identity-i18n-mainline.json](evidence/frontend-identity-i18n-mainline.json)
@@ -183,11 +186,27 @@ Its SHA256 is `12614d0eb5a59dccf841d1ef8479efec905fa7cff3d7f4d5f6214e9fe9dd4393`
 The corpus is eligible only for retrieval performance measurements. It cannot be
 used to claim academic accuracy, hallucination rates, or breadth of coverage.
 
-Gate B is blocked because the repository contains neither the required
-human-reviewed facts JSONL nor the SHA256-bound `ACCEPTED` review attestation.
-The machine-readable inventory and the detailed boundary report are retained in
-`docs/system-acceptance/evidence/phase7-dataset-inventory.json` and
-`docs/system-acceptance/evidence/phase7-dataset-boundary-report.md`.
+Gate B now contains 72 licensed academic records, balanced as 24 `SUPPORTED`,
+24 `CONTRADICTED`, and 24 `INSUFFICIENT_EVIDENCE`. The exact facts, source
+ledger and review policy are SHA256-bound to the named owner-review decision.
+The review packet explicitly discloses the single-maintainer conflict and does
+not claim independent institutional peer review.
+
+ADR-0013 adds `C3AcademicHandlerV2` and `SemanticClaimVerifierV2` as explicit
+compatibility extensions. The default `C3AcademicHandler` and
+`ClaimFactVerifier` retain v1 behavior and the artifact schema remains
+`c3-academic-finding.v1`. Runtime inputs contain only `ClaimV1` and immutable
+`EvidenceRefV1`; fact IDs, topic labels, expected outcomes and reviewer
+rationales are not available to product logic.
+
+The formal local Gate B run is bound to source commit
+`a23cbe38a116c493223579a4675bf595f90b8252` and tree
+`69ee20617e780c2091791aa8e98cff777b2ffc93`. It used a fresh isolated
+PostgreSQL 16 volume, restricted non-superuser/non-`BYPASSRLS` roles, FORCE RLS,
+cross-tenant adversarial reads and changed-content replay. Accuracy was 72/72;
+all three class precision/recall values and abstention accuracy were `1.0`, and
+all database controls passed. The report is retained in
+[phase7-c3-accuracy.json](evidence/phase7-c3-accuracy.json).
 
 The complete local Release Quality Gates were then replayed on source commit
 `4c0fd18daa76960fe172805ad4e5b278dd7c9a19` using a PostgreSQL instance on
@@ -195,20 +214,22 @@ port `55432` whose data volume is distinct from `cybercontrol_release_postgres`.
 All gates passed, including the full migration cycle, PostgreSQL regression,
 container runtime constraints, Trivy and Gitleaks. The retained summary is
 [phase7-local-quality-gates.json](evidence/phase7-local-quality-gates.json).
-This quality result does not satisfy or bypass the missing human-review evidence.
+This historical quality result does not replace the required remote CI and
+merged-main replay for the new C3 remediation commits.
 
 ## Current Boundary
 
 Frontend identity, account administration and three-language workbench scope is
-complete and replayed from merged main. Phase 7.4 may only complete its dataset
-boundary until Gate B is accepted. Feature development, frozen migration changes
-and Topic1-Topic4 semantic changes remain outside this phase unless a separately
-approved defect ADR proves they are necessary.
+complete and replayed from merged main. The only immediate work permitted is to
+push the dataset-evidence branch and C3 remediation branch, merge both through
+protected PRs with 8/8 checks, then replay Gate B from the resulting main SHA.
+Gate C and unrelated feature development remain locked.
 
 ## Remaining Release Blockers
 
-1. Supply a licensed, independently human-reviewed academic fact set and an
-   SHA256-bound `ACCEPTED` review attestation, then pass the Gate B validator.
+1. Merge the Gate B dataset evidence and C3 v2 remediation through protected
+   pull requests with 8/8 green checks, then replay the exact benchmark from
+   merged main before declaring Gate B accepted.
 2. Raise the current 90.61% Python coverage toward the 91.19% historical
    observation or record a reviewed disposition; the 90% hard gate must not be
    lowered.

@@ -1,8 +1,8 @@
 {
   "schema_version": "phase7.c3-academic-accuracy-evidence.v1",
-  "generated_at_utc": "2026-07-21T19:50:33.040881+00:00",
-  "source_commit": "557bcca967ade6b8f6aa3f4925ecdaee0334f423",
-  "source_tree": "dd6eeddabf785d50b89d5ca41dbb434a86a57463",
+  "generated_at_utc": "2026-07-22T01:57:46.114617+00:00",
+  "source_commit": "a23cbe38a116c493223579a4675bf595f90b8252",
+  "source_tree": "69ee20617e780c2091791aa8e98cff777b2ffc93",
   "clean_source": true,
   "dirty_files_at_start": [],
   "dataset_id": "phase7-academic-human-reviewed-facts.v1",
@@ -31,8 +31,8 @@
       "bypass_rls": false,
       "restricted": true
     },
-    "primary_tenant_id": "p7-c3-ccd16042d3e8484a",
-    "adversarial_tenant_id": "p7-c3-other-ccd16042d3e8484a",
+    "primary_tenant_id": "p7-c3-0471728c82544cd2",
+    "adversarial_tenant_id": "p7-c3-other-0471728c82544cd2",
     "participating_table_rls": [
       {
         "table": "topic3_generated_candidates",
@@ -88,8 +88,8 @@
     "changed_content_replay": {
       "rejected": true,
       "error_type": "IntegrityError",
-      "original_record_sha256": "48d7932774a6b377928c2a50f96304194006a016076077cb72052ebd5a5b6517",
-      "stored_record_sha256": "48d7932774a6b377928c2a50f96304194006a016076077cb72052ebd5a5b6517",
+      "original_record_sha256": "e837b546151b11298307dfa8779dc470b52752accdc0123584f7bb0fb1ff3ac7",
+      "stored_record_sha256": "e837b546151b11298307dfa8779dc470b52752accdc0123584f7bb0fb1ff3ac7",
       "original_preserved": true
     },
     "database_checks": {
@@ -104,10 +104,10 @@
     },
     "database_passed": true,
     "knowledge_base": {
-      "knowledge_base_version_id": "c632d16c-ad9c-5b26-a7e4-97a4d7fe379e",
-      "knowledge_base_record_sha256": "a2867e016fea0f1a27001180f99617ff875bfb0ae68adcf7251e9dee7ed5c972",
-      "index_build_manifest_id": "ab17f629-cb6f-5e75-9961-4620ca20dad1",
-      "index_manifest_record_sha256": "49f10fbfd4d998daa6aabb8234f043b05282aa5811381a2ad11e5576291873e3",
+      "knowledge_base_version_id": "fda30e44-9a61-5bd4-b99e-69f805a1ce84",
+      "knowledge_base_record_sha256": "67968aaa3ef360fc331a50759d680f25a6500e72afeda7d5e49148df433aedec",
+      "index_build_manifest_id": "679fffab-cb49-5951-96aa-c4d6f92e026a",
+      "index_manifest_record_sha256": "233de3b7db6e0329a8af6b0611b2a2e85bacedf4f1765ceec1f7ed3e6a7e776c",
       "source_version_count": 4
     },
     "retrieval": [
@@ -115,433 +115,433 @@
         "fact_id": "C3-001-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "5e2bc4d6d5dc6f5b861cd12036e64042872f8448eda567004694aedfee58622f"
+        "bundle_sha256": "2fd486a11ddb1d2f5e27815a413982d5d66a3fb6ea0280aef43bdde3ef38a92e"
       },
       {
         "fact_id": "C3-001-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "0548391287e90417d89057e07936e591c6c5de17076e4dc4c080d1938184e6aa"
+        "bundle_sha256": "87670917fc74c43019f8f4baeaab31d9b5d96739a1d7f67a0217072f9b17fda5"
       },
       {
         "fact_id": "C3-001-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "93c1f4bd9955466a0ac61005c226e44936fe570022e3857e28bffebecfb84fcf"
+        "bundle_sha256": "41a66c06e64efa0f9e721bfcefa35251d9eba27c5a9f1f86b3635a28bff542fc"
       },
       {
         "fact_id": "C3-002-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "f206604bbe9cc6582aaf38d38e7fb4e0acfee90f7db1be73cd30826d74125d1d"
+        "bundle_sha256": "8003ce0901253e9a5d36e95a7b630baf86d61c9fdc279b8790a6e49f00950683"
       },
       {
         "fact_id": "C3-002-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "678568d674eb5631f9f8468b85e6d4f5f146930b15e1264acfbb566ef776b78f"
+        "bundle_sha256": "8364aa77d227f276700952ac0d3bd200bb5d32f7557463e1f4205be3574ef70e"
       },
       {
         "fact_id": "C3-002-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "1324e1d24cceb2dab5c5552f1952a6c96bc371f82a29334f16f5e7e1ba7fc8c0"
+        "bundle_sha256": "869c9d250d09361fef0fd3a26c7c6fa5997fdf331cb569480bb47105a8480100"
       },
       {
         "fact_id": "C3-003-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "9976d8235fc36b58e3a18d38a328409dcd82c20bcd1953fcaeb567d758399d99"
+        "bundle_sha256": "62f83a700801063f80570be6a66e5db7237a4049ee3cb16ec309a16771916e97"
       },
       {
         "fact_id": "C3-003-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "7c1cec01d75a416d445c90f58aa0430e5bbc89d22de5e81640d10e13c5169866"
+        "bundle_sha256": "fe48fd3937125fd79763db60bfeb060de7392c917d4e493ec1391cb2e07077f5"
       },
       {
         "fact_id": "C3-003-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "da51409857e8aa8a1cc530b9bc4f372b0d81643a1c50495dc7f45e17d9465ad1"
+        "bundle_sha256": "9bdb67505aa1b06af1636c9a2803abda01ae77aa06e57ba890b38dd58c8f6d89"
       },
       {
         "fact_id": "C3-004-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "9b117a96355ebbfcbff4638458b5a8fe7ad3459078dba51a89ff328ca7664839"
+        "bundle_sha256": "c93a2bee7ccf01a75549fe8794319f9c6a1b98e3b06c4366fde3db34d3785413"
       },
       {
         "fact_id": "C3-004-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "d4709e28a94f32c43f7da7d7054f2f6778dded6d3617f47fc243112933e4fd3b"
+        "bundle_sha256": "b96bc441019c17cfc925c1e70abe87749eb62cbfcd88cdcfc392e48e5f37d173"
       },
       {
         "fact_id": "C3-004-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "5862caf243c21e5e3827a684538a75c9f7f2f5e01d391d9ffdddc5342d59327c"
+        "bundle_sha256": "8214646330c53efd150137e9793b6c6bf4ec635f5a672b78c58e7dc72489dcbe"
       },
       {
         "fact_id": "C3-005-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "93ad92ce1c99a99d3c2e840c7b76d617d4f9f95e8ebddf5617c29fa11ec4f3cc"
+        "bundle_sha256": "cc11982a61d67748ae743cc902c31d6babc85788aebda81bfb59f7b538cf6c94"
       },
       {
         "fact_id": "C3-005-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "e618fa8f0c9956bbf627c3f221a590b7cbfc27a1a43e05ff23aba4ec2e8ff2d1"
+        "bundle_sha256": "77dca78e917370404b6a486c1b77604739c6ee2b4bfed6468517e6894f0bf690"
       },
       {
         "fact_id": "C3-005-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "4055d888cdc3efbceff056cdb683b4811134346461f644c70f60f5862c8353a2"
+        "bundle_sha256": "3790fdc97ece95952bf5ff725e93e5864e72b279b8cdf50bad3ecd57b95cf135"
       },
       {
         "fact_id": "C3-006-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "caafde8229f79af821f3a079679f33de803bb789fac38a7a66f35bab9b763895"
+        "bundle_sha256": "05ac27f323bdf34af5659db3820754873de2aff51c8c507173f3f0074576f217"
       },
       {
         "fact_id": "C3-006-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "d049c70a434ec0c75b8d0dc96dc218dadd7b9c874a3d7d2e8ee36a5b3cbd89fa"
+        "bundle_sha256": "014075545d355a2803b646f6a047615e361521d4e2ac3c98b635dcb5ce867de8"
       },
       {
         "fact_id": "C3-006-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "6e1223dcc7dbff4f1dc8274138b52fa08ce14185f2fb3aa75e6e26ce07b14683"
+        "bundle_sha256": "66c8f640afc841458bc820a83012cc01e90a1f42908650e6e26560e28ca197cc"
       },
       {
         "fact_id": "C3-007-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "486bc7328a08358f0be78cf46eed2c9a660556a5b1943fa5d43a825f6e3202b2"
+        "bundle_sha256": "f6c75c37e9a1b727175754abc032de2ceda5ab0d1405d396fcd7bca8ea5f257e"
       },
       {
         "fact_id": "C3-007-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "d1db28f3db98f76bee39ee1e47f27a985dd6c8c2b94638781428cbedd607b8cf"
+        "bundle_sha256": "5f518128a40b0eff559044b02928bcd136fc71d1605e806fdab9ce3cbaa6f304"
       },
       {
         "fact_id": "C3-007-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "b53044d0096d8b49d7efdc7024bdd502c6971216bafb304ff1e9c52312f6ef0a"
+        "bundle_sha256": "4084a4df648f541d50b24f74841c54f7cbfe27496e896bb825ee07fae0744c24"
       },
       {
         "fact_id": "C3-008-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "2df464433766cf975d48b18fe3dfe5f059f7b87e6fece04f7b806b95c97b5cb7"
+        "bundle_sha256": "88c1da0dd280a9b00cba61260001cf4f7b6f1418ceac0e98283f91cd2c8dcfee"
       },
       {
         "fact_id": "C3-008-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "01db6ab3489325b445fcec0d50d9bc64f801538168a7ee8b7cfa02e1397fffb3"
+        "bundle_sha256": "cf5951aaf5ea2982984dcef190ed8ca032c5fe834c5e88e3083047a0aab5653e"
       },
       {
         "fact_id": "C3-008-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "7cd7b1fef6daf754f4f7319e76e552bdf9919f4bdc6e58a5acb3e60d6e82303e"
+        "bundle_sha256": "50148977f19f8f084cf72c5779d5b02d6ac943b2397a5a6f8d712fd00f4e2040"
       },
       {
         "fact_id": "C3-009-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "a343821c36eadf264dce3c4adc39cc9aaaba87b016404e45601e939341de7699"
+        "bundle_sha256": "459dce20fed754ab9c55616ad205772a18c079c2177785abe23863cd1fe840e0"
       },
       {
         "fact_id": "C3-009-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "6864063bfedc60104601bf5dc76f84bc770899fc294c23f65ae73502d6063ee2"
+        "bundle_sha256": "f729771fe58dfc562e157f37cab336068e46312d622dd5b82bbe66103a33af5c"
       },
       {
         "fact_id": "C3-009-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "1849a763534c4aa241eb095be6e38d7b5c77ae68fef1476e91dfc491f98166df"
+        "bundle_sha256": "70b2b3f9fd903aa0a246790dde4a12fbe8c24c43e244181cd89a54a8bd6db7d0"
       },
       {
         "fact_id": "C3-010-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "fe4b6b0c207bfd034f4abbe210645a0a5d9f75c2df5a2c7e8d601c562b694ce2"
+        "bundle_sha256": "567e027f048740a396bccbdf7eb9dc3d131a27834c0c7d147774d966fdf172f4"
       },
       {
         "fact_id": "C3-010-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "9a494c5806e6a6e56e67623d40b9661ce915472d9990f437474c9a3ca597f642"
+        "bundle_sha256": "3b9e82db913d12214c4ae7364f8c3354e6a0667456d9adbecad0f0f4ac5afe1d"
       },
       {
         "fact_id": "C3-010-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "6994514cdb0e888ea8d8b546aab24d4703e0ae2644647267a7a6120acc3a1507"
+        "bundle_sha256": "ada3e9ae02994d2d8df9506212349117b4539d77f49fca88839f128dd4a494c4"
       },
       {
         "fact_id": "C3-011-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "10b4a17ad414803a0dc303c39e4d1c400f1dcd98816bc284c916d64dc095b947"
+        "bundle_sha256": "e3eab0f54a781383db9c2fb4cdb72cc2ff0fbae7d9edfc6bab0a5166c0ee8690"
       },
       {
         "fact_id": "C3-011-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "597cbf82ca15a703dedab64b5facc5c30bf3d698836158bd93541883397e9e55"
+        "bundle_sha256": "a33e3e62a69f394fe3cfab2a5727344b1606028aecadcabd681f6468185755be"
       },
       {
         "fact_id": "C3-011-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "7ed17e0dc6b2619b8fb0234b5e34c4b8904778f1e5bf464800b59d3605613ec3"
+        "bundle_sha256": "47edb2ec56f9f15e7b24df3ff13f0b6c59d0a669e9e28d886a270525931f03cc"
       },
       {
         "fact_id": "C3-012-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "4f0a2a6550cd302cde759d066ec80ba764b02da5508e5f123de6eb529fc86284"
+        "bundle_sha256": "be87d4c20c79a0760b9e312d170bf838c7c98c788f4331075eb4f77f96e76e3a"
       },
       {
         "fact_id": "C3-012-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "91b0a1d4e48b362317c7a252b92c3fe735721eadb3e4e5278380b4021a29c7d8"
+        "bundle_sha256": "b4771cc055a245981f5ab753b63464429b8e3ed2d28aeb7985ea74b134856813"
       },
       {
         "fact_id": "C3-012-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "2c9bdaff49061394b7d4bb57818c82426e04f1c0a26f9328142d9ee0a2077c69"
+        "bundle_sha256": "52a2e228daa29c2529909385f80f1172e4e124d32c4da74417054d5984a7d5f1"
       },
       {
         "fact_id": "C3-013-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "cc04935035e224cfafc1b06333783cc27b2baf9b4b7947f6b22e8f7b91186ab7"
+        "bundle_sha256": "fccedece3d97a7abd029ebce05fc55e6d5194288d990078627aed2b93db21da5"
       },
       {
         "fact_id": "C3-013-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "a02e2feab301108d4bf216ebb78baa25f271dc9880b50c25950cd9c8d4a2f6d0"
+        "bundle_sha256": "9b9d9792744a00596938acfeee44859519f79f3ae6756460114dbe74a6e6f6a0"
       },
       {
         "fact_id": "C3-013-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "4a5e959ad1ac475e761696325395154ab54282975ef87f5059f20bbc8a2b9f09"
+        "bundle_sha256": "a921de6b87c74f9e101584b74d2d3813c045ead5828d314d9e0f1d0769846a5d"
       },
       {
         "fact_id": "C3-014-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "fffd877ef8c1246bca56c1c8fb9fe6dd73a62b7655334ab680c1518d981c5929"
+        "bundle_sha256": "3b9ef73d1f2504f4282f2461ae334c876c1fa8ba16ee42a81d5b6fc5adaa5df5"
       },
       {
         "fact_id": "C3-014-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "e2a9dd95a31d6527cf1dced0abe7c97773b9b8c76d1bf13bf9c70bbc7ef70953"
+        "bundle_sha256": "0002bc64c4174ff1abffc8ed0daea7faa3e5abb5cf73340db9ef3b43f574aa0c"
       },
       {
         "fact_id": "C3-014-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "12ab38ccbf831c0adecfa9d1835312375dbfe299864ed101fc6515185c30267d"
+        "bundle_sha256": "e13da67e9600d20aadcd82b9b28185750d3c6c5c4bb45f92b7f023a182445d62"
       },
       {
         "fact_id": "C3-015-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "ca69d7937aebaaa2658d68724e66b775664e9210350e627c97076eaecf666d22"
+        "bundle_sha256": "8b1ffe98f90f801c81596d26c005f4060f3933eafcf80c52c9d5b1799d921824"
       },
       {
         "fact_id": "C3-015-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "e3eea2e2e9cb89340cf7e064ae9557b151afe711712b27c50a61d19f0da6bf18"
+        "bundle_sha256": "9d225f3e34a66fedd5055896a0f7297b9e4f4f7764e18cf1015596f9ab49c28a"
       },
       {
         "fact_id": "C3-015-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "a471e874a94e5424ef41206a44b83894052e154d39d056433787f121cb745d13"
+        "bundle_sha256": "bf75711afa26d7821b26a2b72708de2ea88cf776229656e7359e9c5a4e9f353b"
       },
       {
         "fact_id": "C3-016-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "a065e0545fc6d43ce809a56a683b9142dc1d67fdc7b7892b6b2b65c4c62d5eb2"
+        "bundle_sha256": "90f5b4bc6a12a2deac0fbd8b80de24c3861d943cd58fa2ef15f5a02497492c44"
       },
       {
         "fact_id": "C3-016-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "4302f270043c39df99efd60a0c227900d66c851dd68200c848eed3bf19378718"
+        "bundle_sha256": "6f52938634012601699aee4aafad78751df00c155e2da849ea78f971a03a6cee"
       },
       {
         "fact_id": "C3-016-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "bdf8485fdc8097d9ec615b128e0c93a23bda13d43abb41014b400974c6b5e4d5"
+        "bundle_sha256": "2a0d90eff198da8fdef08f42a41899198c7583d54e9d6896a4c854c2a11f7d93"
       },
       {
         "fact_id": "C3-017-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "b6839c7d7db864daa6302d210e23d3a05264c1019000f73c03202b2bccaf95f6"
+        "bundle_sha256": "6327c1f5527421fd743b70d90e98cbae491f24e8ece67108f8dce9f08cbce503"
       },
       {
         "fact_id": "C3-017-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "9c2d62b6b0417f1b2803fc1beabc0e56fa0ee3c4bd677c7e2ac834a1ad59080a"
+        "bundle_sha256": "4d054891f82e1a1316ed25ee15d21c2730ab64732f904bdf7ed1d1ee8c06753a"
       },
       {
         "fact_id": "C3-017-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "4a1c6df90d232f7e4068bb03462c9a96bf9068db9f1aa0cee46985c5837808ca"
+        "bundle_sha256": "a868799e8d29e8996e7181734fec77244f3550b53289807470c083dbc034c475"
       },
       {
         "fact_id": "C3-018-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "863c4622d524bd4cb48e2e9ab1a655c184eaa27d678a07d097e0236aa579a90a"
+        "bundle_sha256": "20c79b0acf36c32b4624f4887b675eea6b12e5d1c6336c695c8759c3f724d77d"
       },
       {
         "fact_id": "C3-018-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "5f6a5aa80165fb8947ebd8e7d13f8157090106e7acc11937bd7ac1847e4f2b99"
+        "bundle_sha256": "2edd095e5bd67ac50365bf04e44c5846b8b132affa50f602f013cfda97873cd8"
       },
       {
         "fact_id": "C3-018-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "e431f5e4ec09fed4bf8a1366c730d3cae854f41704ec9c53af2820b6d682938b"
+        "bundle_sha256": "98812335de97aa0fc0d64ad84e9cbe83d1e459f577933845400be6203bed93bc"
       },
       {
         "fact_id": "C3-019-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "1b006a9a010e9b0c1be688786e5baa24e9b1a6b319a6c0ad03d3cab1876c26c3"
+        "bundle_sha256": "119e3e0759dbc39d1126db5076492ef7b060334f621b3079e57c8f9f0ff4c4da"
       },
       {
         "fact_id": "C3-019-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "a07bbc9768a10b1a1acd1ee7b188df89c1c23cf8bc7da9c5ac44c2c00ad1fc82"
+        "bundle_sha256": "53c307a71a40f370a48351b374caa3372b3015509481139b13b514564205335c"
       },
       {
         "fact_id": "C3-019-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "406a807f3ed75a912db0ed5deb4dee36964eada217450e2afb436956bafbd80b"
+        "bundle_sha256": "6fffde1a0d67fca13540a6b25f55b646f165f8097a6b65a6c3f0aa9015032c7c"
       },
       {
         "fact_id": "C3-020-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "f9f9d2970d0b3e6712c7b9ece67e1afd9dc3b48492d126f98997543b83ce7197"
+        "bundle_sha256": "0d5a0cbe16324ea1579a25ca24eb4e739287b5e741bccc99d70c036c90bb4cc3"
       },
       {
         "fact_id": "C3-020-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "af4811481c79519748ce3e0886055090ebe32bdb46d4df881469588a6c1085eb"
+        "bundle_sha256": "4066d38f32f260db40cefcd398efc61c4c47494d061568ce7646163ca70e8e76"
       },
       {
         "fact_id": "C3-020-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "91c276fb87583f5628fed5fd5a3744fa118fa867dfbb541f321d7a979ae20937"
+        "bundle_sha256": "f6d86819d3ef5f276d0ff9c72908e1c548b395a708c9d79b4fecb285e3e275c4"
       },
       {
         "fact_id": "C3-021-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "63be403e5850d12966649fb798bc7200a9816a63e7338324abe0595fcd79a605"
+        "bundle_sha256": "977b96b6159a06528b130965e3d61e2f15bb8c6bdbd2222b7211b638a3f5a8a5"
       },
       {
         "fact_id": "C3-021-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "20daa55f530859df3ca8607ce669a45835345a9e30fc20620ce0b1cd3fc4f120"
+        "bundle_sha256": "cfdcb5804555b3b34b1fdbafd80d9c28871beb4196ff7cd03b401eb961a90159"
       },
       {
         "fact_id": "C3-021-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "0c2bad3758914c0f58303275172b68f9057417ca468423cede7d899056d67b8a"
+        "bundle_sha256": "af801444e67b860f2a8bc554a47d9bc1054f2b92baa2aedc403efa910d27fdf9"
       },
       {
         "fact_id": "C3-022-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "74e4a741429af7bf84274022eab74424b834a370b05ec1addb1c6bc3f8e2cf53"
+        "bundle_sha256": "42c1ef6002646a39a35de7b0d4524c9985fe83c524e4f64525056bf45ad693f6"
       },
       {
         "fact_id": "C3-022-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "a61298de4b04f328198feb0584f13062519484ae5f11665d0b7b75a47ba34c1f"
+        "bundle_sha256": "fb0c655b46a60b051a694cf3eb59cbd19623086e4da26e9241ab61a96acf876c"
       },
       {
         "fact_id": "C3-022-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "173eb5829075afdab6d35746130af0a5df308a6637caa25de6948d158202d5f6"
+        "bundle_sha256": "c0daa60c95c3ebe546e424a24f0becb70c3c872f2cd97b76a5cb4d5c7046f674"
       },
       {
         "fact_id": "C3-023-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "85a4038cf81e3acd0433828b5ca0705b3683f542cf48e5eabb6aa518816bcc0f"
+        "bundle_sha256": "fa0df2b1cd866af15dbe65da4e67e12da77ea87061f726928165bfe0768e5f62"
       },
       {
         "fact_id": "C3-023-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "dc39fad5c38a9b70a43c5805505b7de3fc72d0bbdb3beead24e130c57341e610"
+        "bundle_sha256": "e45ae17b6b71a26090d1436feb5441744d05ce76d246e9e5e8605a626a653cac"
       },
       {
         "fact_id": "C3-023-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "68d6a41c9de14ac4a777b3b0c46cfdef7b55f6442c3a0d23f8fdf9cd4b4eb524"
+        "bundle_sha256": "7ffd1515af575cff24d3b6dd539050b7126a102209172a542fbd3e7a60717c6f"
       },
       {
         "fact_id": "C3-024-SUP",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "e9370d05a42cb71845118af8c5983490646de34274ad2c8664392fb0c7fe51da"
+        "bundle_sha256": "36de7397e38b25208aed51d8183afd28df107d172242fc7c5e8d5544c328361d"
       },
       {
         "fact_id": "C3-024-CON",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "927b01ff6252735fbbf2e8f8083443a059f5b1a6698bb7210ac4db1cc14bc8de"
+        "bundle_sha256": "c529929170241fa0605928bebd42423c3ca87150cf09db468f863dff1008c86a"
       },
       {
         "fact_id": "C3-024-ABS",
         "status": "SUCCEEDED",
         "evidence_ref_count": 16,
-        "bundle_sha256": "bba4dc7d24bc723b2c6317a3c4f756f3d4e89fffa65636a79acdb523403e80d2"
+        "bundle_sha256": "43a1cafbe53e71ab7e37ed99c5479a812bf28ed617f7ff1d868ffbdfda5fb922"
       }
     ],
     "result_records": [
@@ -551,10 +551,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "ee7cb7fc230363d79751e2b914f69243022ac932397fcb4d7d63536a43114a7b",
+        "result_sha256": "d86b1c7ef3732bfb9c636c830080eb331cf41a05a02368f85f914928c186307c",
         "deterministic": true
       },
       {
@@ -562,11 +562,14 @@
         "topic": "controller_structure_selection",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8524,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_ORDER_REVERSED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "4506fe231064f4a53b70a65101a42779895b30b4e2ce7a905533bd5f7ef39806",
+        "result_sha256": "a5c4f295467a52b8f2fe1d4b7d4172b11998f5ec30cc39750247492e29ef8bc8",
         "deterministic": true
       },
       {
@@ -575,12 +578,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "ea3405fd49b5006d67c534b6717431ac96be4b770bc6eed91ae06641a4ce76f3",
+        "result_sha256": "31c15bc0cf11c1bcff9d8f2571c0e1461531ed6bd9161d4ba74aead35fb816a8",
         "deterministic": true
       },
       {
@@ -589,10 +592,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8766285714285714,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "ebeebbc6a645002a0c9c3a219a83232d183269eaaec6ffc3e4efa06c9f7172d6",
+        "result_sha256": "5cd136dd69fa5ca37739ba7eed6b8c40cef8fac51c5eed0a1761040b7f1c53bb",
         "deterministic": true
       },
       {
@@ -600,11 +603,14 @@
         "topic": "steady_state_integrator_condition",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.930246153846154,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_DEPENDENCY_REVERSED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "9f630ec8fb8720586b82dfe50a586080475e47739a64d474d6f44618dc6b4228",
+        "result_sha256": "fbed4f5821af6561ce23be2dd34affef64b0e0c18a786399fdc29850b7372621",
         "deterministic": true
       },
       {
@@ -613,12 +619,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "966e4a8c46eb70b45d7a13e384bfa1258262b2647b729fa500890500bbbcfe7c",
+        "result_sha256": "0277c3873028dd634cfc9df150593fb05ed49713c5303c87657b6a75742f0a49",
         "deterministic": true
       },
       {
@@ -627,10 +633,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "e6ee7edd49163e7a5678eb429df3534edae4ef32469e1f25fb8f8801e3c12a26",
+        "result_sha256": "3dd50634b33f264e67a71f13a890950d55133ea58cb84b2ad833a0662a8d4769",
         "deterministic": true
       },
       {
@@ -638,13 +644,14 @@
         "topic": "derivative_measurement_noise",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_CAUSAL_EFFECT_REVERSED",
+          "C3_SEMANTIC_CONTRADICTED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "15f19786c30291acda9d47ac0a0fada31c829459b783b8bb6ec6f0982f61ddcc",
+        "result_sha256": "72887865458350b5ddc1fb7dfac56c5fb025489205af923e550e8357be025581",
         "deterministic": true
       },
       {
@@ -653,12 +660,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "bdcb811fbab58963f513a71ebf59a55810b0ad324e721754e4a2a2972f807e28",
+        "result_sha256": "fbd55a41d3d6737f1c0de839f2f7730b586e734569cf1f812e50b3cbe6c5491f",
         "deterministic": true
       },
       {
@@ -667,10 +674,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8766285714285714,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "3f2e236ece3d37d9dfb76f5ac99f8101e7043659ec79482fb8b1bebe07850664",
+        "result_sha256": "66d46c1539bdf9df46a7caca27fb88589581c82dd8b1459b75a21acd86a3450f",
         "deterministic": true
       },
       {
@@ -678,11 +685,14 @@
         "topic": "settling_time_definition",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8018000000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_TEMPORAL_CONDITION_REVERSED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "909f908c3c5d234107f3ae65b68527fa51b017e733e309c8315ee440d0bdb841",
+        "result_sha256": "171bca13595cb00f202cddc2bd8ff458fa4b5d3b9fa0ae871361580bd3115315",
         "deterministic": true
       },
       {
@@ -691,12 +701,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "33b93b95a2cf6cd158a075e1d5234b95b77c96c5ef0a351c3c662ae04bb333d3",
+        "result_sha256": "157118af04a78284c45afadb839fbf4a1ec305481468cac43c2b8cc5640cf9b0",
         "deterministic": true
       },
       {
@@ -705,10 +715,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8648,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "62b78ae8e0dd6adb52697c53db5b4b5e7b3ea34991d02b70d64265f4bf332624",
+        "result_sha256": "61a785033cdae162b5ddae52aa58a12c5c19b5f8679e89bf174d3c0eca7df373",
         "deterministic": true
       },
       {
@@ -716,11 +726,14 @@
         "topic": "damping_response_classes",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8432000000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CLASS_DISTINCTION_DENIED",
+          "C3_SEMANTIC_CONTRADICTED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "455c064aca7df6a43a47e27a7d1c81389142bc67e809eedb4476e3efc3f7aa60",
+        "result_sha256": "e665cd35fcb3c1640bae6a0a987e91010dc415a9d3a186311c78f388704a985c",
         "deterministic": true
       },
       {
@@ -729,13 +742,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "e4c9014b654c9c689b941d0ac2cbea5f51c4f4c26aa2d84db17ad94780d6cdf8",
+        "result_sha256": "593c21f00a8fdc3f2643b216f8a0daeae9d2c6472a0be47505061f257289daec",
         "deterministic": true
       },
       {
@@ -744,10 +756,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.92,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "d86ea2c6d0644a51d4d3b197a7290a9f5a2a06d9498db8df7a76ab524554bd3f",
+        "result_sha256": "459506860e802cc9c475cec99e0ff7f6b66280ee704fa0415c085edf983e033d",
         "deterministic": true
       },
       {
@@ -755,11 +767,14 @@
         "topic": "model_free_tuning",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8271000000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_MODEL_REQUIREMENT_REVERSED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "94cfa305ab7bedcd1dd3a6e2c1b23787ac978e754aaaea9d48179018ec95eba2",
+        "result_sha256": "6bbb47e71fa1a9bab93f7a7846b30fe2e5f2637927e133fe6ef94c6e9858cfba",
         "deterministic": true
       },
       {
@@ -768,12 +783,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "d5c663f2ee08d97c63e09db35b1f735da503df7a424cfa263d12bf5bf64c3edb",
+        "result_sha256": "e11254f2a12e38d0674548c9ad17d5bb5c591fe6e5b49f76475bdd74b546f669",
         "deterministic": true
       },
       {
@@ -782,10 +797,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.92,
+        "confidence": 0.8770666666666668,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "c43b9bce7668f55b805878b3dca0433229540215df199cae32b24106f229a3e2",
+        "result_sha256": "472728e51b044e782264f8c86b203a0f99c45c87eb17c7e5e2b6da133debe921",
         "deterministic": true
       },
       {
@@ -793,13 +808,14 @@
         "topic": "relay_critical_parameters",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PERSISTENCE_REVERSED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "2294d7f10f1cff99c7246265a53f91aec9f0a38f47fb986d74465ef5b14d7529",
+        "result_sha256": "550e0fd74a1c3c0bf68d774a87a58cc6a5a92d9ab48910adc86d9e05d3247680",
         "deterministic": true
       },
       {
@@ -808,12 +824,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "5287b039b41b4d3e71babe3e57d142ea9c5cb558693a77c47ce57bd7f8e9937a",
+        "result_sha256": "3b71701aa1c772da4d61836548499855a04b35ae73a4315c05d56c28f5da0fa6",
         "deterministic": true
       },
       {
@@ -822,10 +838,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.92,
+        "confidence": 0.8664727272727273,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "a5d264004b70e065a383cd5aeeec32969fd86fe8c29c2082d0b8a635d75b77a7",
+        "result_sha256": "2363e6dc89d92e6a4dfbea274ad6a8c539af187be42479e839db329d55852fdb",
         "deterministic": true
       },
       {
@@ -833,11 +849,14 @@
         "topic": "fopdt_application_scope",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8271000000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "e1b368a40d6eee05d391ecb2da26764c9fe0f0ff7564804ae9e5f16010cb01ba",
+        "result_sha256": "807bf35a02b7a226c03031ff99ed832549a3ceab3ce44e7e1f3544f4b65d6eb4",
         "deterministic": true
       },
       {
@@ -846,12 +865,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "efda73caae39c8f0390286fd87c91ad81cf4b86882f39a211c40b52a09338002",
+        "result_sha256": "ed15a853609a565a8bb4aba4bae8a14da33c2db6fbd1a1e9f85fdb35ec297668",
         "deterministic": true
       },
       {
@@ -860,10 +879,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8700571428571429,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "7ce10669598b2b32d0378da890202a7c0fedad6d148cb3c3a79d22d49b2592b4",
+        "result_sha256": "ee28aeca04b9ff389337a01d44057eea7346177fa419ec26ac87b8722bb1e121",
         "deterministic": true
       },
       {
@@ -871,13 +890,14 @@
         "topic": "optimization_error_indices",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
         "finding_codes": [
-          "C3_THEOREM_UNREGISTERED"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_NUMERIC_ASSOCIATION_CONFLICT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "95692b3e7ecf590818e8872c0cb432223486c40d5f768cbe512a440bc5ab4312",
+        "result_sha256": "e49a8698591d235443e6ba031595882ec22df5cafec5016f95ae73a5960999c7",
         "deterministic": true
       },
       {
@@ -886,13 +906,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_THEOREM_UNREGISTERED"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "3eda0193e9512b28fdae827a01cde5ba216355cddbd247301cfb2bd140bb9555",
+        "result_sha256": "770803aaf39750cf3bd0668c154b28b094764afa771c149d687583d938709cf7",
         "deterministic": true
       },
       {
@@ -901,10 +920,10 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8678666666666667,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "cd41d1b2274c77aea55d636f20dc609089971a1c6470bafe95c81fb6a65ffe6a",
+        "result_sha256": "a29d8100998f24785ef9cc2df150025badd38a91c3b6217858dc976376b4dd75",
         "deterministic": true
       },
       {
@@ -912,11 +931,14 @@
         "topic": "gain_phase_margin_geometry",
         "difficulty": "ADVANCED",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.9102285714285714,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_DIRECTION_REVERSED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "00f91610ea078785977f83dbdf4e81b3d2085805bd8df835b2d301518704224c",
+        "result_sha256": "4df3cf39e863180d9fc733b230b4de9422bba4cfb7c30ea8320d5bde65177fae",
         "deterministic": true
       },
       {
@@ -925,12 +947,12 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "8128ae2215872b2fb0577383e8a031432499eaf2c9ac83422562c8d09afc0204",
+        "result_sha256": "1ba32a6482129a4e43a86d36ac8fb66b61996ccee124dc8eb77da389d9a0369e",
         "deterministic": true
       },
       {
@@ -939,10 +961,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "b35cc0313a00600bcbfd0313e0da05aa4628e4b5ba088707ec044d20f4e1c944",
+        "result_sha256": "0b6f5fba637aff3cd6bfa6314bff7ade92b18332207f600ccc7761bbbc0d64f7",
         "deterministic": true
       },
       {
@@ -950,11 +972,14 @@
         "topic": "sampling_and_hold",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.83216,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "557c2e3cdf0e7feda53fdc26d343f7c2a42d6dbd3186e38d3c9e07e3b9c2aa7a",
+        "result_sha256": "8f8b6a349cb5947d4215f1c30492b1c0c9fc28069d1bb0178f024ef102561c9f",
         "deterministic": true
       },
       {
@@ -963,12 +988,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "98f5253462f804b62bedeb3caf24fa79dac557ecc0199ad3d98d962cef244606",
+        "result_sha256": "50434c6eb74e72519536aa803e30ff1eecc37e38b373259506b08b24619674e9",
         "deterministic": true
       },
       {
@@ -977,10 +1002,10 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "a2f58f223f2b8fa84d4a7bc08454956db9ba5531f9a1a7ec85a48541b7f54427",
+        "result_sha256": "be661a3058d970c3e133c8263604b62cf96cc48dbc2792fa5fb80d3d1c9a58fc",
         "deterministic": true
       },
       {
@@ -988,11 +1013,14 @@
         "topic": "exact_state_space_discretization",
         "difficulty": "ADVANCED",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8524,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_MATHEMATICAL_FORM_REPLACED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "7533ebf8d9641181927bbdc270ac056b037c5655e8efdb60ff0191943d678e58",
+        "result_sha256": "1c7ba00492227b4a4d347612d9f85934c29c28300bfe94a801d09731924483f9",
         "deterministic": true
       },
       {
@@ -1001,12 +1029,12 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "1fa77e97c42c3dcac7f9a924c72f29b429d918d2d1f5c616fe62d853637930cb",
+        "result_sha256": "ae218f3c2138d627f90ab1581f1a829294a71b66be5a9ddaf8392dce28037b0d",
         "deterministic": true
       },
       {
@@ -1015,10 +1043,10 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8766285714285714,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "8f71b02344cb10e72c9e2b06fbafa99939e6fe40e28b26483cd502b4fc5874c9",
+        "result_sha256": "7383ff90958eed32013de11f941dbac34826f7d94cb276c03e14075829063075",
         "deterministic": true
       },
       {
@@ -1026,11 +1054,14 @@
         "topic": "tustin_transformation",
         "difficulty": "ADVANCED",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8271000000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_DENOMINATOR_DENIED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "85f8f641064199625b8a32deca9b1690a81320cc37b7ff94563a8899836abc68",
+        "result_sha256": "c8f293570a821651683b37aeb90384b4359d9fe730dafe54f97c148691a1d979",
         "deterministic": true
       },
       {
@@ -1039,12 +1070,12 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "b56f88ab405e01fdfd9ac3d578e6ba63132a83626cc2a7e3510c575c7a3d4072",
+        "result_sha256": "06fd31e9d6da699af53202037574e24001f4c973b6ec0678dd6e612a797fb30b",
         "deterministic": true
       },
       {
@@ -1052,13 +1083,11 @@
         "topic": "sampling_period_quality",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
-        "finding_codes": [
-          "C3_STABILITY_MODEL_UNRESOLVED"
-        ],
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8748363636363637,
+        "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "8a76356933b9f0015d064d9efe5c7a13b4616bfd33e8739563fa1b48209bc35b",
+        "result_sha256": "1162b99b21f2d9cbbffbda31aa03793e1232ade0fcbf80bf60c57871f8149073",
         "deterministic": true
       },
       {
@@ -1066,14 +1095,14 @@
         "topic": "sampling_period_quality",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "f81e0f847d5aacc11e5751a16274b5b67507f838240e0b9dff6069807f6dbda3",
+        "result_sha256": "e190fbab4de276c4703616fb584fd9e59325cf13024581ea919a5c4fcb898206",
         "deterministic": true
       },
       {
@@ -1082,13 +1111,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "e6aec5de0fb6f2a37811b9eac3f3401b54f1139f5b721ce68c8a0f36caa77672",
+        "result_sha256": "2e5589c50c3955c655fa367498aeaa7f9ea1edd09ae7fcbe3a9d13b315d7f26f",
         "deterministic": true
       },
       {
@@ -1097,10 +1125,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.876123076923077,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "d240b67691b69ebb2c952ed82f12dfdbe38a21b780709286ea8a07d08942a82c",
+        "result_sha256": "ba2632f6ecdea09f4fd6055c021aa0d0fb1faf60dd70c6d07d20af220dc6389b",
         "deterministic": true
       },
       {
@@ -1108,13 +1136,14 @@
         "topic": "sampling_rate_tradeoff",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_COST_QUALITY_REVERSED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "441204117a0edf0c677687b5be79f131012387c4c8ce37b59589f668642782ed",
+        "result_sha256": "84629bdab2843193cc77e14735be1cbf81f5733f0b865e33d713b97a5b2dad34",
         "deterministic": true
       },
       {
@@ -1123,12 +1152,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "f7d210afe678efc891a4a923b685bae087a7ddf920b20def488e5e772451dcf6",
+        "result_sha256": "0c7a1de879b83888f774d7516e4e0ca909ef892e4d240ca7c4486fde1f61f93a",
         "deterministic": true
       },
       {
@@ -1136,13 +1165,11 @@
         "topic": "digital_control_design_phases",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
-        "finding_codes": [
-          "C3_STABILITY_MODEL_UNRESOLVED"
-        ],
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.876123076923077,
+        "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "c429e7b423bc308eec1d7ea95cc28d32f406218783aa64b2760f4bcc88619d22",
+        "result_sha256": "29fc7f95fa2ae47841ad52b6e24309b7b09533d5408d81b48357bcc2e767853c",
         "deterministic": true
       },
       {
@@ -1150,13 +1177,14 @@
         "topic": "digital_control_design_phases",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
         "finding_codes": [
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "689dddd254094afc5e902441b80315e65a3d7aad2323bb2d9960392689deae9e",
+        "result_sha256": "eadf7b41c8a94a0ed398c732c79b11d258e3b690df7ef99a8d231bfdc0b670b3",
         "deterministic": true
       },
       {
@@ -1165,13 +1193,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "be52a68b319f0cf3230095d407d26eaef2f549119e0589f9f97b044ef1623d32",
+        "result_sha256": "66e1c199a951f6b76808e8c2308a4b840654e9d273d739de2d4c6e958949b348",
         "deterministic": true
       },
       {
@@ -1180,10 +1207,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8678666666666667,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "4b9910f1d7969ff2c4952f999f8e159a6b574dd111c4e7dcf7df7518b768d0c7",
+        "result_sha256": "5304a0de443f87f796d43e370337db9536e343df36355bb5b54700d394bdfefe",
         "deterministic": true
       },
       {
@@ -1191,11 +1218,14 @@
         "topic": "pi_application_domains",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8234857142857144,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "9ef74e76ec52037ddd24cd71eeeb51e6c6773f39889b0d3422ed82f5c2cc4bee",
+        "result_sha256": "9f51fd88fcaee91c67b6c80826b51d9b911b15f3846915df231611236babb4da",
         "deterministic": true
       },
       {
@@ -1204,12 +1234,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "2ced497300538095b6600b1ae516126a93ea16cfb412cb38078a1e6160c2a8a4",
+        "result_sha256": "d4c9c8218d4150b0bebd9e604f9d96e5268cd17c8112723f019b5d60555a6d3a",
         "deterministic": true
       },
       {
@@ -1217,13 +1247,11 @@
         "topic": "right_half_plane_pole_instability",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
-        "finding_codes": [
-          "C3_STABILITY_MODEL_UNRESOLVED"
-        ],
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8729777777777779,
+        "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "a6be7d6f418018efb1520fc70ab3821759332b5b87e6e6519653dd19a37cb2f2",
+        "result_sha256": "c1f5de1486065c4a7d7e0004c733459b40525efc2b04e6c1dc56e767b4bb21b8",
         "deterministic": true
       },
       {
@@ -1231,13 +1259,14 @@
         "topic": "right_half_plane_pole_instability",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.9108,
         "finding_codes": [
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_STABILITY_POLARITY_REVERSED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "32e27c0e83a5e283841fad907ff8f2f0218e45872045d08119697d54d7552f10",
+        "result_sha256": "d4c4a55bfccd2608beca16af2872f07b327ced25d6fb5eb54351a2023ff5d727",
         "deterministic": true
       },
       {
@@ -1246,13 +1275,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "d26841c258eea0f3a6012556332db0caa511354982bdd3b4025f10cdff63c838",
+        "result_sha256": "ba0e84a2dd0ff6e381bfaa05ed4e147cadbac15fcca2f49536848a2f4250abb9",
         "deterministic": true
       },
       {
@@ -1260,14 +1288,11 @@
         "topic": "state_matrix_pole_relation",
         "difficulty": "ADVANCED",
         "expected_outcome": "SUPPORTED",
-        "actual_outcome": "CONTRADICTED",
-        "confidence": 0.25,
-        "finding_codes": [
-          "C3_FACT_CONTRADICTED",
-          "C3_STABILITY_MODEL_UNRESOLVED"
-        ],
+        "actual_outcome": "SUPPORTED",
+        "confidence": 0.8748363636363637,
+        "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "6ee8e4a1907af6d5d2157e74e488741827ae1060956dda5829b6c4b3ce19ae5c",
+        "result_sha256": "4d009804d0b2aafb2a9b81e62edff58d9040f757cc06d3823460f6af3548f309",
         "deterministic": true
       },
       {
@@ -1276,13 +1301,13 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "CONTRADICTED",
         "actual_outcome": "CONTRADICTED",
-        "confidence": 0.25,
+        "confidence": 0.9108,
         "finding_codes": [
-          "C3_FACT_CONTRADICTED",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_QUANTIFIER_SCOPE_REVERSED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "5f542ab17ef4e28394edbd76c72f789ed4d4467e76d859ab56c3d4df81a7d46f",
+        "result_sha256": "410feae7ac1eae63926aab788e216fe3933255d72dc4f7f151cbb9962227cef5",
         "deterministic": true
       },
       {
@@ -1291,12 +1316,12 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "5eac27c2d99b2892c343c192fa2b0f0804d46e0df0e3e6b7765b1d89f02aac09",
+        "result_sha256": "3555d3769ccd11298b613707b2951ef40e74fb77f93fa79dccc041759a8e2ddf",
         "deterministic": true
       },
       {
@@ -1305,10 +1330,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8748363636363637,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "3a241a55494c0ac79284da033c509bb65a870afa37827da253764db342234b28",
+        "result_sha256": "4b14b283e9234f1b24226f58d45184267e5fbc9f9d6685bfc2b7a989e667ae95",
         "deterministic": true
       },
       {
@@ -1316,13 +1341,14 @@
         "topic": "system_identification_definition",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "7d031585b7216b23c5d8425b1b69361212d339eb6605cf1699fc17d8b24381b6",
+        "result_sha256": "249e173d2f93fddffc3a45a6a545cf6194a2c730d110ad6fe211497ec4a8ca3b",
         "deterministic": true
       },
       {
@@ -1331,12 +1357,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "9b38e3aaa5beb075a452a75074aa6faafd498a543ae8f0e6429610a1b3734476",
+        "result_sha256": "6e5ffb9b1d9463f419f1eae09485d22cb541081f334df1910aca4cc102726db0",
         "deterministic": true
       },
       {
@@ -1345,10 +1371,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "146bf2d11933e058465a07e7d474ec27dd7c00b7dccda54dda5626ec3feb79e4",
+        "result_sha256": "15ead32a7fe0ebcbaebc90b32be18da3f9b446c5a66fda9ee05aa173afbd7780",
         "deterministic": true
       },
       {
@@ -1356,13 +1382,14 @@
         "topic": "relay_limit_cycle_information",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "c27cbe2974d7ef44c7568ec0497f8e7fef45e25da29ea923a0470d7b259334a7",
+        "result_sha256": "48fd1599b0458ce4912d1e86cbfc0a549b828eebeb2bf9f13be1263337a497f8",
         "deterministic": true
       },
       {
@@ -1371,12 +1398,12 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "e9ac3c3d4e5f4c14293a5979a2d6f7add5b2e77278eb1580605536f08ec26cd4",
+        "result_sha256": "efde8015c0d4c74ee4d2cf41ce64541f9cc7b980184dfbbf405e371f8ed612c4",
         "deterministic": true
       },
       {
@@ -1385,10 +1412,10 @@
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.92,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "3920917fdb698470894d63713f6ccf4ab27d5ab7cf8edc3709e46462605e11d6",
+        "result_sha256": "6a2b110abc9709710a5cdbfd27490508f18975c175bacc06d4a28313adf894cc",
         "deterministic": true
       },
       {
@@ -1396,13 +1423,14 @@
         "topic": "relay_ultimate_gain_period",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "f8504c258b4f28c3153775ecd02b939897644dc62be80b456b3471a563a9545a",
+        "result_sha256": "550583cc9b81e962073dd168272da940593e274a06362487d57024911147ec0a",
         "deterministic": true
       },
       {
@@ -1410,11 +1438,13 @@
         "topic": "relay_ultimate_gain_period",
         "difficulty": "INTERMEDIATE",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.788,
-        "finding_codes": [],
+        "actual_outcome": "INSUFFICIENT_EVIDENCE",
+        "confidence": 0.3,
+        "finding_codes": [
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "5de81ae652dcdc42e62609c6e00e74790c1205c2ca35df8bfe7be65a18604a8c",
+        "result_sha256": "051230ef541fb1c24bdbe95d640325d4a29570f1dccb688747b0201ed979da1c",
         "deterministic": true
       },
       {
@@ -1423,10 +1453,10 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8717,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "4b35531c41bb23a8bbee22947f51f1ac931830e91a59465e3603398521903468",
+        "result_sha256": "27a69e87dd7640923b22fbd409e6b1da8c20245407718b2e3fa1ae8ef0ae9d15",
         "deterministic": true
       },
       {
@@ -1434,11 +1464,14 @@
         "topic": "open_closed_loop_identification",
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8156000000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "81ab7a375b1183c0e46fd6dfbcf5cd54fbcb75455ddf3412adf3649ab50fcfd5",
+        "result_sha256": "8db25991290d8e367583865e752383afcd52bf121610295d1ae0a9913f93e8a4",
         "deterministic": true
       },
       {
@@ -1447,13 +1480,12 @@
         "difficulty": "FOUNDATIONAL",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT",
-          "C3_STABILITY_MODEL_UNRESOLVED"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "6008b12be3e7a6a1060cfeec2a55d4790c4a31e1702b8c2d12783b1623bb464b",
+        "result_sha256": "9de5887ebe11bd5d68a1dcea3944590f57d58f92314b392c93688d9e53af82de",
         "deterministic": true
       },
       {
@@ -1462,10 +1494,10 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "SUPPORTED",
         "actual_outcome": "SUPPORTED",
-        "confidence": 0.9536,
+        "confidence": 0.8832,
         "finding_codes": [],
         "evidence_ref_count": 16,
-        "result_sha256": "25bbf5093fddc034332115a9ea5c5a7a1e407fede1753896e6ccf0eed2c9b9f6",
+        "result_sha256": "a4137abb415bbdd763b9551cc5181fde232a46c0dfd8842fbeb9dfa37942a659",
         "deterministic": true
       },
       {
@@ -1473,11 +1505,14 @@
         "topic": "negative_feedback_state_estimator",
         "difficulty": "ADVANCED",
         "expected_outcome": "CONTRADICTED",
-        "actual_outcome": "SUPPORTED",
-        "confidence": 0.8625200000000001,
-        "finding_codes": [],
+        "actual_outcome": "CONTRADICTED",
+        "confidence": 0.8924,
+        "finding_codes": [
+          "C3_SEMANTIC_CONTRADICTED",
+          "C3_SEMANTIC_PREDICATE_DENIED"
+        ],
         "evidence_ref_count": 16,
-        "result_sha256": "269b2ffb3cb047457f10271ecefa18659f5f68df859a7aee1de695cd42f58555",
+        "result_sha256": "ad20aae41dd17ff17a9363ad0ce44526783e4a39b05df61f616e1938cf099b3e",
         "deterministic": true
       },
       {
@@ -1486,12 +1521,12 @@
         "difficulty": "ADVANCED",
         "expected_outcome": "INSUFFICIENT_EVIDENCE",
         "actual_outcome": "INSUFFICIENT_EVIDENCE",
-        "confidence": 0.25,
+        "confidence": 0.3,
         "finding_codes": [
-          "C3_FACT_COVERAGE_INSUFFICIENT"
+          "C3_SEMANTIC_COVERAGE_INSUFFICIENT"
         ],
         "evidence_ref_count": 16,
-        "result_sha256": "88896c5d20d61e32cf25d0dc87c5e2b45641eb4830a6ca86a64d98e1832c70e6",
+        "result_sha256": "5edc8f10aeeb96656183d9478adfb88953cc2128d1f696abfb463533cfe88c20",
         "deterministic": true
       }
     ],
@@ -1499,67 +1534,48 @@
     "nondeterministic_results": 0,
     "metrics": {
       "record_count": 72,
-      "correct_count": 44,
-      "overall_accuracy": 0.611111,
+      "correct_count": 72,
+      "overall_accuracy": 1.0,
       "confusion_matrix": {
         "CONTRADICTED": {
-          "CONTRADICTED": 1,
-          "INSUFFICIENT_EVIDENCE": 10,
-          "SUPPORTED": 13
+          "CONTRADICTED": 24
         },
         "INSUFFICIENT_EVIDENCE": {
-          "INSUFFICIENT_EVIDENCE": 23,
-          "SUPPORTED": 1
+          "INSUFFICIENT_EVIDENCE": 24
         },
         "SUPPORTED": {
-          "CONTRADICTED": 1,
-          "INSUFFICIENT_EVIDENCE": 3,
-          "SUPPORTED": 20
+          "SUPPORTED": 24
         }
       },
       "per_class": {
         "CONTRADICTED": {
-          "tp": 1,
-          "fp": 1,
-          "tn": 47,
-          "fn": 23,
-          "precision": 0.5,
-          "recall": 0.041667
+          "tp": 24,
+          "fp": 0,
+          "tn": 48,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
         },
         "INSUFFICIENT_EVIDENCE": {
-          "tp": 23,
-          "fp": 13,
-          "tn": 35,
-          "fn": 1,
-          "precision": 0.638889,
-          "recall": 0.958333
+          "tp": 24,
+          "fp": 0,
+          "tn": 48,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
         },
         "SUPPORTED": {
-          "tp": 20,
-          "fp": 14,
-          "tn": 34,
-          "fn": 4,
-          "precision": 0.588235,
-          "recall": 0.833333
+          "tp": 24,
+          "fp": 0,
+          "tn": 48,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0
         }
       },
-      "abstention_accuracy": 0.958333,
-      "critical_unsafe_false_negative_fact_ids": [
-        "C3-001-CON",
-        "C3-002-CON",
-        "C3-004-CON",
-        "C3-005-CON",
-        "C3-006-CON",
-        "C3-008-CON",
-        "C3-010-CON",
-        "C3-011-CON",
-        "C3-012-CON",
-        "C3-013-CON",
-        "C3-017-CON",
-        "C3-023-CON",
-        "C3-024-CON"
-      ],
-      "critical_unsafe_false_negatives": 13,
+      "abstention_accuracy": 1.0,
+      "critical_unsafe_false_negative_fact_ids": [],
+      "critical_unsafe_false_negatives": 0,
       "unexpected_actual_outcomes": []
     },
     "threshold_evaluation": {
@@ -1573,33 +1589,25 @@
         "nondeterministic_results": 0
       },
       "checks": {
-        "overall_accuracy": false,
+        "overall_accuracy": true,
         "abstention_accuracy": true,
-        "critical_unsafe_false_negatives": false,
+        "critical_unsafe_false_negatives": true,
         "missing_results": true,
         "nondeterministic_results": true,
-        "CONTRADICTED.precision": false,
-        "CONTRADICTED.recall": false,
-        "INSUFFICIENT_EVIDENCE.precision": false,
+        "CONTRADICTED.precision": true,
+        "CONTRADICTED.recall": true,
+        "INSUFFICIENT_EVIDENCE.precision": true,
         "INSUFFICIENT_EVIDENCE.recall": true,
-        "SUPPORTED.precision": false,
-        "SUPPORTED.recall": false
+        "SUPPORTED.precision": true,
+        "SUPPORTED.recall": true
       },
-      "passed": false,
-      "failed_checks": [
-        "CONTRADICTED.precision",
-        "CONTRADICTED.recall",
-        "INSUFFICIENT_EVIDENCE.precision",
-        "SUPPORTED.precision",
-        "SUPPORTED.recall",
-        "critical_unsafe_false_negatives",
-        "overall_accuracy"
-      ]
+      "passed": true,
+      "failed_checks": []
     },
     "evidence_input_count": 24,
     "evidence_input_sha256": "9351b4fa597ae7354c1b766ad16e3951a0d69ac72538a28d8873a42325256ffc"
   },
-  "local_gate_state": "BLOCKED_C3_ACCURACY_OR_POSTGRES_CONTROLS",
-  "gate_b_local_eligible": false,
-  "report_sha256": "c9e9f6fce42af978948cb2376d5533296935f482f803480cf4febda2a58b6262"
+  "local_gate_state": "C3_ACCURACY_AND_POSTGRES_CONTROLS_ACCEPTED",
+  "gate_b_local_eligible": true,
+  "report_sha256": "4a339ad73470720612437bd14cfe51dc53e0649a2c1046908a7bc3cd81c067f4"
 }

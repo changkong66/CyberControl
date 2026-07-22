@@ -1,157 +1,100 @@
-# Next Stage Prompt: Phase 7 Gate B Academic Dataset Completion
+# Next Stage Prompt: Phase 7 Gate B Remote CI and Mainline Replay
 
 ```text
-# CyberControl Phase 7.4 Gate B: human-reviewed academic dataset and accuracy boundary
+# CyberControl Phase 7 Gate B: protected PR closure and merged-main replay
 
-You are the release-quality and academic-evidence architect for a single-maintainer,
-multi-tenant trusted AI education platform. Work from real repository state, real
-PostgreSQL, real Keycloak, real containers, real CI and retained evidence. Do not
-fabricate reviewer decisions, source licenses, dataset provenance, metrics, test
-results, commits, CI status or release state.
+You are the release-quality architect for a single-maintainer, multi-tenant
+trusted AI education platform. Work from real repository state, real
+PostgreSQL, real containers, real CI and retained evidence. Do not fabricate
+commits, PRs, CI results, metrics, database evidence or release state.
 
-This task is Gate B only. Do not begin the 2,000 authenticated SSE load test,
-eight-hour soak, backup/restore, failure drills, sealed Provider integration or
-production deployment work until Gate B is accepted with reproducible evidence.
+This task is limited to closing the already locally accepted Gate B. Do not
+start Gate C (2,000 authenticated SSE load), Gate D (eight-hour soak), backup
+and restore, failure drills, sealed Provider integration, target deployment or
+new product features until this task is complete.
 
-## Fixed Baseline
+## Current Facts
 
-- Repository: C:\Users\wch06\Documents\CyberControl
-- Protected main before this evidence branch: d25ed4dd92afd37720c158e4828794853ba8670a
-- Protected-main Release Quality Gates: Run 29840722346, 8/8 successful
-- Product source replayed on the protected release volume:
-  8f0966f96dad8a6be34bd4ab11c985d001dd0185
-- Current state: RELEASE_CANDIDATE
-- Gate A: ACCEPTED
-  - docs/system-acceptance/evidence/phase7-preflight.json
-  - Docker Desktop data disk: D:\Docker\wsl\DockerDesktopWSL
-  - Protected release volume: cybercontrol_release_postgres
-- Gate B: BLOCKED_HUMAN_REVIEWED_GOLDEN_SET_MISSING
-  - docs/system-acceptance/evidence/phase7-dataset-inventory.json
-  - docs/system-acceptance/evidence/phase7-dataset-boundary-report.md
-  - Existing 100,000-record synthetic corpus SHA256:
-    12614d0eb5a59dccf841d1ef8479efec905fa7cff3d7f4d5f6214e9fe9dd4393
-- Keycloak remains the only password and OIDC identity authority.
-- Migrations 0001 through 0010, Topic1-Topic4 contracts, RLS, SERIALIZABLE
-  semantics, audit chain, Outbox, SSE protocol and C12 release semantics are
-  frozen.
+- Protected main before the stacked Gate B PRs:
+  `84427f2555ff5e510e886e357a8ee1ca53f3fbe8`
+- Protected-main Release Quality Gates:
+  Run `29852791180`, 8/8 successful.
+- Evidence branch:
+  `codex/phase7-gate-b-academic-golden`
+- C3 remediation branch:
+  `codex/phase7-c3-semantic-remediation-v2`
+- Gate B local report:
+  `docs/system-acceptance/evidence/phase7-c3-accuracy.json`
+- Local report source commit:
+  `a23cbe38a116c493223579a4675bf595f90b8252`
+- Local result: 72/72 correct, all class precision/recall and abstention
+  accuracy `1.0`, zero unsafe `CONTRADICTED -> SUPPORTED` decisions, restricted
+  PostgreSQL roles, FORCE RLS adversarial reads and changed-content replay all
+  passed.
+- This is owner-reviewed evidence with a recorded single-maintainer conflict;
+  it must never be described as independent institutional peer review.
 
 ## Non-Negotiable Boundaries
 
-1. Do not modify product behavior, migrations, frozen contracts, tenant/RLS
-   rules, transaction semantics, audit/Outbox/SSE behavior, Keycloak authority
-   or C12 semantics.
-2. Do not relabel generated benchmark chunks, existing Topic1 demo fixtures,
-   model output, a Git author, or a source citation as human review.
-3. Do not include copyrighted source text unless its license or permission is
-   explicitly recorded and permits the intended use. A citation alone is not a
-   rights grant.
-4. Do not put reviewer PII, passwords, OIDC Tokens, API keys or raw production
-   prompts in the repository, logs or evidence. Store only the minimum reviewer
-   subject reference permitted by policy.
-5. Do not lower the Python 90% coverage gate, disable CI, alter branch protection
-   or use an administrator bypass.
-6. Start from the latest protected main after the current Gate A/B evidence PR
-   has merged with 8/8 green checks. Use one new branch:
-   codex/phase7-gate-b-academic-golden
-7. Preserve all historical acceptance snapshots. Update only current-state
-   evidence, reports and status after each objectively passed step.
+1. Do not alter migrations `0001` through `0010`, frozen contracts,
+   `TenantContext`, FORCE RLS, SERIALIZABLE behavior, audit, Outbox, SSE,
+   Keycloak authority or C12 semantics.
+2. Preserve the default `C3AcademicHandler` and `ClaimFactVerifier` v1 behavior.
+   The production composition may use the explicit `C3AcademicHandlerV2` only as
+   recorded by ADR-0013.
+3. Do not use fact IDs, topics, expected outcomes or reviewer rationales in
+   product runtime inputs. Do not change the accepted human-review files.
+4. Do not use admin bypasses, force pushes, direct pushes to main, disabled CI,
+   fabricated approvals or fabricated CI evidence.
+5. Do not use `cybercontrol_release_postgres` for a new formal replay; create a
+   fresh named PostgreSQL 16 volume and record its container, image, role,
+   migration and cleanup evidence.
+6. Keep Gate C through Gate G locked until the remediation PR is merged and the
+   merged-main replay is accepted.
 
-## Required Human Input
+## Required Sequence
 
-Before any metric is calculated, obtain a named human subject-matter reviewer
-decision. A repository maintainer may be the reviewer only when their relevant
-qualification, conflict disposition and review policy are recorded. The coding
-agent must not create, sign or infer this decision.
+1. Read-only preflight:
+   - fetch `origin`;
+   - verify the evidence and remediation branch tips;
+   - verify clean worktrees;
+   - recompute the report, manifest and PostgreSQL-environment file hashes;
+   - verify the report is clean-source, `gate_b_local_eligible=true`, source
+     bindings match, and temporary formal PostgreSQL resources were removed.
+2. Push `codex/phase7-gate-b-academic-golden` and create its PR to `main`.
+   Do not amend its accepted review history.
+3. Push `codex/phase7-c3-semantic-remediation-v2` and create a stacked PR whose
+   base is the evidence branch. Its description must identify ADR-0013, v1
+   compatibility, label-channel exclusion, 72/72 metrics, zero unsafe false
+   negatives, real PostgreSQL controls and the separate `fast-uri` security
+   override.
+4. Wait for each PR's complete Release Quality Gates. Record every actual run
+   URL and all eight successful jobs. A failed or absent job blocks the next
+   step.
+5. Squash merge the evidence PR through normal protected-branch flow. Retarget
+   the remediation PR to `main` only after GitHub shows the evidence base is
+   merged. Then wait for the retargeted PR CI again and squash merge it normally.
+6. Fetch the resulting `origin/main`, create a fresh isolated PostgreSQL 16
+   volume, migrate to head and rerun the C3 Gate B harness without
+   `--allow-dirty-source`. The report must bind the new main SHA and again meet
+   every threshold with zero unsafe false negatives.
+7. Archive only current-state replay evidence and status in a new evidence PR.
+   Merge it with 8/8 green checks. Historical blocked reports and ADR-0012 must
+   remain historical records.
 
-The reviewer supplies two UTF-8 files:
+## Gate B Mainline Acceptance
 
-1. tests/golden/phase7-academic-golden-facts.v1.jsonl
-2. tests/golden/phase7-academic-golden-review.v1.json
+Gate B may advance from `LOCAL_ACCEPTED_REMOTE_CI_PENDING` to
+`MAINLINE_ACCEPTED` only when all of these are evidenced:
 
-Every JSONL fact must contain:
+- both stacked PRs are merged through protected flow;
+- every associated Release Quality Gates run is 8/8 successful;
+- the final clean-source PostgreSQL replay binds the merged `main` SHA;
+- report, artifact manifest and PostgreSQL environment evidence cross-reference
+  the same internal report SHA;
+- release volume remains untouched and the temporary replay volume is removed;
+- no historical snapshot is rewritten to imply a different past result.
 
-- fact_id: stable, unique identifier
-- claim: exact claim or test input
-- expected_outcome: reviewer-approved expected result
-- citations: non-empty source citations with locators
-- license_expression: source-use license or permission expression
-
-The review JSON must contain:
-
-- schema_version: phase7.academic-golden-review.v1
-- dataset_id: phase7-academic-human-reviewed-facts.v1
-- facts_content_sha256: SHA256 of the exact JSONL file
-- reviewer_subject_ref: policy-approved human reviewer reference
-- reviewed_at_utc: ISO-8601 timestamp
-- review_policy_version: immutable review-policy identifier
-- decision: ACCEPTED
-
-Do not add fake placeholder facts or an ACCEPTED attestation merely to unblock
-the pipeline. Missing facts, missing licensing, duplicate identifiers, a hash
-mismatch, or any decision other than ACCEPTED is a blocking result.
-
-## Dataset Quality Design
-
-The reviewed set must be explicitly scoped. It must distinguish academic fact
-correctness from security, privacy, license and code-compliance findings. It must
-include supported, unsupported, ambiguous and adversarial examples where the
-corresponding Topic4 module has a meaningful verdict. Record module coverage and
-class balance; a module with too few reviewed examples is reported as
-insufficient, not assigned a misleading aggregate score.
-
-Before evaluation, publish a review policy that defines:
-
-- source eligibility and license review procedure;
-- reviewer qualification, independence/conflict handling and adjudication;
-- module-to-label mapping and treatment of NOT_APPLICABLE;
-- minimum per-module sample count and class balance;
-- precision, recall, false-positive and false-negative calculation;
-- severity-weighted failure policy, especially for unsafe false negatives;
-- tenant isolation strategy and retention/deletion rules for the dataset.
-
-## Required Implementation And Verification
-
-1. Add only acceptance tooling, tests, evidence and documentation needed to
-   validate and evaluate the reviewer-supplied facts. Do not change frozen
-   product APIs or domain semantics.
-2. Run the existing dataset validator from a clean source tree:
-
-   python tools/acceptance/build-phase7-dataset-inventory.py \
-     --output docs/system-acceptance/evidence/phase7-dataset-inventory.json \
-     --performance-corpus-output D:\CyberControlAcceptance\phase7\datasets\phase7-c2-synthetic-retrieval-performance.v1.jsonl \
-     --performance-corpus-size 100000 \
-     --knowledge-point-count 100 \
-     --require-human-reviewed-golden
-
-3. Validate the inventory JSON, the JSONL SHA256, the review binding, duplicate
-   identifiers and required fields. Record the exact source commit and tree,
-   dataset hashes, command version and reviewer policy version.
-4. Build a reproducible accuracy harness that uses real PostgreSQL and the
-   frozen Topic4 module interfaces. It must record TP, FP, TN, FN, precision,
-   recall and abstentions separately by module; never use a Fake database as
-   evidence for tenant isolation, transactions or module behavior.
-5. Include adversarial cross-tenant and changed-content replay cases. Cross-
-   tenant data visibility must remain zero.
-6. Run targeted tests plus the full Windows Release Quality Gates. Archive exact
-   test counts, coverage, SBOM/license, Trivy and Gitleaks results.
-7. Create a dedicated PR, wait for 8/8 checks, use standard Squash Merge, then
-   replay Gate B from the merged main and update the current status only if all
-   evidence remains valid.
-
-## Gate B Acceptance
-
-Gate B may transition from BLOCKED to DATASET_BOUNDARY_ACCEPTED only when all
-of the following are true:
-
-- the reviewer files are present and validate with --require-human-reviewed-golden;
-- source license/permission and reviewer policy evidence are complete;
-- the facts SHA256 exactly matches the ACCEPTED attestation;
-- module coverage and class-balance limitations are reported explicitly;
-- accuracy metrics are reproducible, module-specific and based only on the
-  reviewed set;
-- real PostgreSQL tenant-isolation checks pass with zero cross-tenant exposure;
-- the full quality gate is green on the exact source commit;
-- the evidence PR has been merged and replayed from protected main.
-
-If any condition fails, retain RELEASE_CANDIDATE and stop. Do not begin Gate C.
+If any item fails, retain `RELEASE_CANDIDATE` and
+`PHASE7_GATE_B_LOCAL_ACCEPTED_REMOTE_CI_PENDING`; do not begin Gate C.
 ```

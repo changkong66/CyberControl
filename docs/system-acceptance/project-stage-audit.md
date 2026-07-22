@@ -5,13 +5,14 @@
 CyberControl has completed Phase1.1, Topic1-Topic4, the complete business
 workbench, the Keycloak-backed identity backend, frontend registration/account
 management, and `zh-CN`/`zh-TW`/`en-US` localization. Protected `main` is
-`d25ed4dd92afd37720c158e4828794853ba8670a`; Release Quality Gates Run
-29840722346 completed 8/8 jobs successfully.
+`84427f2555ff5e510e886e357a8ee1ca53f3fbe8`; Release Quality Gates Run
+29852791180 completed 8/8 jobs successfully.
 
 The project is in **Phase 7 release closure**, at the boundary between product
 completion and final non-functional/production acceptance. Gate A preflight is
-accepted, while Gate B is blocked on a real human-reviewed academic golden
-dataset requirement. It is a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
+accepted. Gate B has passed its clean-source local C3 v2 accuracy and PostgreSQL
+controls, but still requires remote CI, protected merge and merged-main replay.
+It is a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
 
 Feature completeness is not an acceptance state. The remaining work is smaller
 in feature count but high in operational risk, external review dependency and
@@ -24,8 +25,8 @@ elapsed test time.
 | Identity backend | 100% current product scope | registration, projection, administration and recovery boundary complete |
 | Frontend workbench | 100% current product scope | business, identity and three-language surfaces merged |
 | Local demonstrable product | accepted release candidate | clean-volume registration-to-release chain passes from merged main |
-| Dataset boundary | blocked | performance corpus exists; licensed human-reviewed academic facts are absent |
-| Production operations | not started | serial gate blocks load, soak, DR and target deployment work |
+| Dataset and C3 accuracy boundary | local accepted, mainline pending | 72 owner-reviewed records pass at 100% with zero unsafe false negatives; PR/CI/replay remains |
+| Production operations | not started | serial gate blocks load, soak, DR and target deployment work until Gate B mainline acceptance |
 
 ## 2. Completed And Frozen Assets
 
@@ -95,34 +96,41 @@ elapsed test time.
 - Gate A preflight captured Docker D-drive location, release-volume provenance,
   image/source binding and resource limits without recording secrets.
 - Gate B materialized a content-addressed 100,000-record synthetic performance
-  corpus, but correctly rejected it as academic accuracy evidence.
+  corpus and correctly kept it separate from academic accuracy evidence.
+- The named owner/expert accepted a licensed 72-record academic set with the
+  single-maintainer conflict disclosed and no independent peer-review claim.
+- ADR-0013 preserves v1 behavior while adding an explicit C3 semantic v2
+  runtime. The label-blind clean-source PostgreSQL run at
+  `a23cbe38a116c493223579a4675bf595f90b8252` classified 72/72 correctly,
+  produced zero unsafe `CONTRADICTED -> SUPPORTED` decisions, passed FORCE RLS
+  adversarial reads and rejected changed-content replay.
 - The Phase 7 acceptance branch passed the complete local Release Quality Gates
   at `4c0fd18daa76960fe172805ad4e5b278dd7c9a19`: 518 standard-suite tests passed,
   six were explicitly skipped, coverage was 90.61%, and Trivy/Gitleaks passed.
 
 ## 3. Current Boundary
 
-The current acceptance branch may update only acceptance tooling, current-state
-assets and generated evidence. It must not modify historical Topic acceptance
-snapshots, product behavior, migrations, identity authority, TenantContext, RLS,
-SERIALIZABLE transactions, Outbox, SSE or C12 semantics.
+The current stacked branches may contain only the already-reviewed academic
+evidence and the ADR-0013 C3 v2 compatibility remediation. They must not modify
+historical Topic acceptance snapshots, migrations, identity authority,
+TenantContext, RLS, SERIALIZABLE transactions, Outbox, SSE or C12 semantics.
 
-The only allowed immediate next activity is Gate B completion: a qualified human
-reviewer must supply licensed academic facts and a SHA256-bound acceptance
-attestation. Any product code change discovered during later acceptance must be
-isolated in a defect PR with an ADR when it touches a frozen boundary, then
-replayed from a new main baseline.
+The only allowed immediate next activity is Gate B mainline closure: push the
+dataset-evidence branch and C3 remediation branch, pass protected PR CI, merge
+them in dependency order, and rerun Gate B from the resulting main SHA. Any
+later product defect must use another isolated PR and ADR, then be replayed from
+a new main baseline.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Dataset Boundary
+### 4.1 P0 Gate B Mainline Closure
 
-1. Supply `tests/golden/phase7-academic-golden-facts.v1.jsonl` with per-fact
-   citations and license expressions.
-2. Supply `tests/golden/phase7-academic-golden-review.v1.json` with a qualified
-   reviewer subject, policy version, SHA256 binding and `ACCEPTED` decision.
-3. Run the dataset inventory with `--require-human-reviewed-golden`; it must
-   succeed before Gate C begins.
+1. Push `codex/phase7-gate-b-academic-golden` and merge its evidence PR into
+   protected main with 8/8 green checks.
+2. Push `codex/phase7-c3-semantic-remediation-v2`, merge its C3 v2 PR after the
+   evidence dependency is available, and retain v1 compatibility.
+3. From the resulting protected-main SHA, recreate a fresh isolated PostgreSQL
+   volume and reproduce the 72/72, zero-unsafe-false-negative Gate B result.
 4. Keep the formal state at `RELEASE_CANDIDATE` until every final gate passes.
 5. Address the standard-gate Python coverage observation: 90.61% passes the 90%
    hard gate but is below the historical 91.19% observation target.

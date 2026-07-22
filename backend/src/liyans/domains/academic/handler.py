@@ -34,6 +34,7 @@ from .formula import (
     SafeFormulaParser,
 )
 from .numeric import NumericFactVerifier, NumericVerificationSummary
+from .semantic import SemanticClaimVerifierV2, SemanticVerifierPolicy
 from .stability import StabilityAnalyzer, StabilityModelBuilder
 from .theorem import (
     EvidenceConditionResolver,
@@ -42,6 +43,7 @@ from .theorem import (
 )
 
 C3_HANDLER_VERSION = "c3-academic-handler-v1"
+C3_HANDLER_VERSION_V2 = "c3-academic-handler-v2"
 _STABILITY_SIGNAL = re.compile(
     r"(?:stable|stability|unstable|hurwitz|routh|jury|pole|"
     r"\u7a33\u5b9a|\u4e0d\u7a33\u5b9a|\u7279\u5f81\u6839|\u6781\u70b9)",
@@ -67,6 +69,16 @@ class AcademicEvidenceSource(Protocol):
         verification_id: UUID,
         claim_id: UUID,
     ) -> Sequence[EvidenceRefV1]: ...
+
+
+class AcademicFactVerifier(Protocol):
+    def verify(
+        self,
+        claim: ClaimV1,
+        evidence: tuple[EvidenceRefV1, ...],
+        *,
+        tenant_id: str | None = None,
+    ) -> FactCoverageResult: ...
 
 
 EvidenceLoader = Callable[
@@ -108,7 +120,11 @@ class C3AcademicHandler:
         *,
         policy: C3HandlerPolicy | None = None,
         theorem_registry: TheoremRegistry | None = None,
+        fact_verifier: AcademicFactVerifier | None = None,
+        handler_version: str = C3_HANDLER_VERSION,
     ) -> None:
+        if not handler_version or len(handler_version) > 128:
+            raise ValueError("C3 handler version must contain 1 to 128 characters")
         self._evidence_source = evidence_source
         self._artifact_store = artifact_store
         self._policy = policy or C3HandlerPolicy()
@@ -119,7 +135,8 @@ class C3AcademicHandler:
         self._stability_builder = StabilityModelBuilder()
         self._stability = StabilityAnalyzer()
         self._numeric = NumericFactVerifier()
-        self._facts = ClaimFactVerifier()
+        self._facts = fact_verifier or ClaimFactVerifier()
+        self._handler_version = handler_version
         self._theorem_registry = theorem_registry or TheoremRegistry()
         self._theorem_resolver = EvidenceConditionResolver()
         self._theorem_verifier = TheoremVerifier()
@@ -554,8 +571,8 @@ class C3AcademicHandler:
             default=VerificationVerdict.NOT_APPLICABLE,
         )
 
-    @staticmethod
     def _document(
+        self,
         context: ModuleExecutionContext,
         evidence: tuple[EvidenceRefV1, ...],
         formula: _FormulaAnalysis,
@@ -569,7 +586,7 @@ class C3AcademicHandler:
     ) -> dict[str, object]:
         return {
             "schema_version": "c3-academic-finding.v1",
-            "handler_version": C3_HANDLER_VERSION,
+            "handler_version": self._handler_version,
             "trace_id": context.claim.trace_id,
             "tenant_id": context.claim.tenant_id,
             "verification_id": str(context.verification_id),
@@ -678,7 +695,7 @@ class C3AcademicHandler:
     ) -> ModuleFinding:
         document = {
             "schema_version": "c3-academic-finding.v1",
-            "handler_version": C3_HANDLER_VERSION,
+            "handler_version": self._handler_version,
             "trace_id": context.claim.trace_id,
             "tenant_id": context.claim.tenant_id,
             "verification_id": str(context.verification_id),
@@ -711,3 +728,67 @@ class C3AcademicHandler:
         if "evidence" in message:
             return "C3_EVIDENCE_INTEGRITY_FAILED"
         return "C3_HANDLER_VALIDATION_FAILED"
+
+
+class C3AcademicHandlerV2(C3AcademicHandler):
+    """Versioned semantic extension; direct C3AcademicHandler callers remain on v1."""
+
+    def __init__(
+        self,
+        evidence_source: AcademicEvidenceSource | EvidenceLoader,
+        artifact_store: ArtifactObjectStore,
+        *,
+        policy: C3HandlerPolicy | None = None,
+        theorem_registry: TheoremRegistry | None = None,
+        semantic_policy: SemanticVerifierPolicy | None = None,
+    ) -> None:
+        super().__init__(
+            evidence_source,
+            artifact_store,
+            policy=policy,
+            theorem_registry=theorem_registry,
+            fact_verifier=SemanticClaimVerifierV2(semantic_policy),
+            handler_version=C3_HANDLER_VERSION_V2,
+        )
+
+    def _analyze_stability(
+        self,
+        claim: ClaimV1,
+        context: ModuleExecutionContext,
+    ) -> tuple[tuple[dict[str, object], ...], VerificationVerdict, float, tuple[str, ...]]:
+        if not _STABILITY_SIGNAL.search(claim.normalized_statement):
+            return (), VerificationVerdict.NOT_APPLICABLE, 1.0, ()
+        if not self._has_resolvable_stability_model(claim.normalized_statement):
+            return (), VerificationVerdict.NOT_APPLICABLE, 1.0, ()
+        return super()._analyze_stability(claim, context)
+
+    def _has_resolvable_stability_model(self, statement: str) -> bool:
+        for expression in self._parser.extract(statement):
+            parsed = self._parser.parse(expression)
+            symbol_name = "z" if "z" in parsed.symbols else "s" if "s" in parsed.symbols else None
+            if symbol_name is None:
+                continue
+            symbol = next(
+                (item for item in parsed.residual.free_symbols if str(item) == symbol_name), None
+            )
+            if symbol is not None and self._stability_coefficients(parsed, symbol) is not None:
+                return True
+        return False
+
+    def _analyze_theorem(
+        self,
+        claim: ClaimV1,
+        context: ModuleExecutionContext,
+        evidence: tuple[EvidenceRefV1, ...],
+    ) -> tuple[tuple[dict[str, object], ...], VerificationVerdict, float, tuple[str, ...]]:
+        if not _THEOREM_SIGNAL.search(claim.normalized_statement):
+            return (), VerificationVerdict.NOT_APPLICABLE, 1.0, ()
+        matches = [
+            entry
+            for entry in self._theorem_registry.list_for_tenant(claim.tenant_id)
+            if entry.theorem_key.casefold() in claim.normalized_statement.casefold()
+            or entry.name.casefold() in claim.normalized_statement.casefold()
+        ]
+        if not matches:
+            return (), VerificationVerdict.NOT_APPLICABLE, 1.0, ()
+        return super()._analyze_theorem(claim, context, evidence)

@@ -56,7 +56,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, current_tenant, tenant_scope
 from liyans.domains.academic.evidence_source import PostgresAcademicEvidenceSource
-from liyans.domains.academic.handler import C3AcademicHandler
+from liyans.domains.academic.handler import C3AcademicHandlerV2
 from liyans.domains.code.evidence_source import PostgresCodeEvidenceSource
 from liyans.domains.code.handler import C6CodeHandler
 from liyans.domains.compliance.evidence_source import ComplianceEvidenceBundle
@@ -1603,7 +1603,7 @@ def build_topic4_handlers(
             artifact_store,
             metrics,
         ),
-        VerificationModule.C3_ACADEMIC: C3AcademicHandler(
+        VerificationModule.C3_ACADEMIC: C3AcademicHandlerV2(
             PostgresAcademicEvidenceSource(database, knowledge_repository),
             artifact_store,
         ),
