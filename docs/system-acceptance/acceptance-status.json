@@ -1,11 +1,11 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-21T19:50:33.040881Z",
+  "generated_at_utc": "2026-07-22T02:03:44.5611055Z",
   "state": "RELEASE_CANDIDATE",
-  "formal_release_state": "PHASE7_GATE_B_BLOCKED_C3_ACCURACY_THRESHOLD",
+  "formal_release_state": "PHASE7_GATE_B_LOCAL_ACCEPTED_REMOTE_CI_PENDING",
   "baseline": {
-    "protected_main_sha": "d25ed4dd92afd37720c158e4828794853ba8670a",
-    "protected_main_tree_sha": "2c92d3475644ced0ac154e4471ae4d62b6ed1e5d",
+    "protected_main_sha": "84427f2555ff5e510e886e357a8ee1ca53f3fbe8",
+    "protected_main_tree_sha": "c078052fa3d445aec4cb6be71b916317e12ceb30",
     "product_source_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "product_source_tree_sha": "01c1705debb4b869721b9b9432ed2747064921b8",
     "frontend_identity_i18n_pr": 30,
@@ -14,7 +14,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 29840722346,
+    "protected_main_ci_run": 29852791180,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
     "protected_main_ci_jobs_successful": 8,
@@ -24,7 +24,9 @@
     "mainline_replay_evidence_merge_sha": "d25ed4dd92afd37720c158e4828794853ba8670a",
     "mainline_replay_evidence_main_ci_run": 29840722346,
     "working_tree_clean_before_replay": true,
-    "remote_ci_covers_protected_main": true
+    "remote_ci_covers_protected_main": true,
+    "phase7_dataset_boundary_pr": 33,
+    "phase7_dataset_boundary_pr_url": "https://github.com/changkong66/CyberControl/pull/33"
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -48,20 +50,24 @@
       "release_volume": "cybercontrol_release_postgres"
     },
     "gate_b": {
-      "state": "BLOCKED_C3_ACCURACY_THRESHOLD",
-      "evaluation_branch": "codex/phase7-gate-b-academic-golden",
-      "evaluation_source_commit": "557bcca967ade6b8f6aa3f4925ecdaee0334f423",
-      "evaluation_source_tree": "dd6eeddabf785d50b89d5ca41dbb434a86a57463",
+      "state": "LOCAL_ACCEPTED_REMOTE_CI_PENDING",
+      "dataset_evidence_branch": "codex/phase7-gate-b-academic-golden",
+      "remediation_branch": "codex/phase7-c3-semantic-remediation-v2",
+      "evaluation_source_commit": "a23cbe38a116c493223579a4675bf595f90b8252",
+      "evaluation_source_tree": "69ee20617e780c2091791aa8e98cff777b2ffc93",
       "inventory_path": "docs/system-acceptance/evidence/phase7-dataset-inventory.json",
       "inventory_sha256": "ad218c75e5b0bcbecf28d1c8f9a9de06fc62503829bfe49bf9dc14b40b3273b0",
       "report_path": "docs/system-acceptance/evidence/phase7-c3-accuracy.json",
-      "report_internal_sha256": "c9e9f6fce42af978948cb2376d5533296935f482f803480cf4febda2a58b6262",
-      "report_file_sha256": "41f0d569a0b65e1ba0b9241baa25defcb2c474d6ab5c38d15a348ab21b948f50",
+      "report_internal_sha256": "4a339ad73470720612437bd14cfe51dc53e0649a2c1046908a7bc3cd81c067f4",
+      "report_file_sha256": "a42a6b376bbd5f8906564e598d505d6d2fb680505a61346fb57439f4e02afb09",
       "artifact_manifest_path": "docs/system-acceptance/evidence/phase7-c3-artifact-manifest.json",
-      "artifact_manifest_sha256": "2bdcaa3702c97fe3766dc592610b66801352934a47e850fc1dd2200e8f03b3f2",
+      "artifact_manifest_sha256": "862e6fad50cf59fdd176bd97b1d063e0eeced5dfab8153ffbb54f4ed573bbb66",
       "postgres_environment_path": "docs/system-acceptance/evidence/phase7-c3-postgres-environment.json",
-      "postgres_environment_sha256": "e2d07609663939d95daca3ccde416697e58cf6ed2f2a2a54bd6a81bc1e762284",
-      "tooling_source_commit": "557bcca967ade6b8f6aa3f4925ecdaee0334f423",
+      "postgres_environment_sha256": "f1bc0ac39f6e550fabd821936147fedfe9b2b7c2752460ecb5bd06aceb0e6470",
+      "tooling_source_commit": "a23cbe38a116c493223579a4675bf595f90b8252",
+      "runtime_handler_version": "c3-academic-handler-v2",
+      "v1_compatibility_preserved": true,
+      "runtime_label_channel_present": false,
       "synthetic_performance_corpus": {
         "record_count": 100000,
         "sha256": "12614d0eb5a59dccf841d1ef8479efec905fa7cff3d7f4d5f6214e9fe9dd4393",
@@ -69,7 +75,7 @@
       },
       "human_reviewed_academic_golden_set": {
         "state": "ACCEPTED_HASH_BOUND_OWNER_REVIEW",
-        "accuracy_acceptance_eligible": false,
+        "accuracy_acceptance_eligible": true,
         "facts_sha256": "c6f70ff86b7803fa6a0a82bcf5742019c495d8941ed95e62f5e52ea9cf0332dd",
         "source_ledger_sha256": "f683441fe1b23057e525fc839f5495d358e03bc3d8dd8f26aa2b8ca6a81b88cc",
         "review_policy_sha256": "bc7a0ca0ca21b2e06bfa869e4d86a80e33ddaa1402df947df7c209c4f77fc12e",
@@ -84,14 +90,14 @@
       },
       "accuracy_result": {
         "record_count": 72,
-        "correct_count": 44,
-        "overall_accuracy": 0.611111,
-        "abstention_accuracy": 0.958333,
-        "critical_unsafe_false_negatives": 13,
+        "correct_count": 72,
+        "overall_accuracy": 1.0,
+        "abstention_accuracy": 1.0,
+        "critical_unsafe_false_negatives": 0,
         "missing_results": 0,
         "nondeterministic_results": 0,
         "database_controls_passed": true,
-        "thresholds_passed": false
+        "thresholds_passed": true
       }
     },
     "local_quality_gate": {
@@ -103,7 +109,7 @@
       "postgres_test_instance_isolated_from_release_volume": true,
       "full_release_quality_gates_passed": true
     },
-    "gates_c_through_g": "NOT_STARTED_SERIAL_GATE_B_BLOCK"
+    "gates_c_through_g": "LOCKED_PENDING_GATE_B_REMOTE_CI_AND_MAINLINE_REPLAY"
   },
   "identity_backend": {
     "state": "MAINLINE_ACCEPTED",
@@ -213,11 +219,11 @@
     "backend_runtime_user": "10001:10001"
   },
   "next_stage": {
-    "name": "PHASE7_GATE_B_C3_ACCURACY_REMEDIATION",
+    "name": "PHASE7_GATE_B_REMOTE_CI_AND_MAINLINE_REPLAY",
     "allowed_scope": [
-      "versioned C3 semantic-verification remediation",
-      "label-leakage-resistant contradiction benchmark",
-      "real PostgreSQL Gate B rerun and current-state evidence update"
+      "push the academic evidence and C3 remediation branches",
+      "create and merge protected stacked pull requests with 8/8 green checks",
+      "replay Gate B from the merged protected-main commit and archive current-state evidence"
     ],
     "gates_c_through_g_locked": true,
     "backend_feature_changes_allowed": false,
@@ -225,7 +231,7 @@
     "topic1_topic4_contract_changes_allowed": false
   },
   "blocking_items": [
-    "Remediate C3 semantic contradiction handling and pass the existing Gate B thresholds, including zero CONTRADICTED-to-SUPPORTED unsafe false negatives.",
+    "Merge the Gate B evidence and C3 semantic remediation through protected pull requests, obtain 8/8 remote CI, and replay the accepted benchmark from merged main before unlocking Gate C.",
     "Raise or formally disposition the standard-gate Python coverage observation of 90.61% versus the historical 91.19% target without lowering the 90% hard gate.",
     "Complete 2,000 authenticated SSE load acceptance.",
     "Complete a minimum eight-hour soak test.",
