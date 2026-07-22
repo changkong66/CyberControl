@@ -4,9 +4,10 @@
 
 CyberControl has completed Phase1.1, Topic1-Topic4, the complete business
 workbench, the Keycloak-backed identity backend, frontend registration/account
-management, and `zh-CN`/`zh-TW`/`en-US` localization. Protected `main` is
-`7e2a1d7cc3efc55ce27044e10959c4f5889a85da`; Release Quality Gates Run
-29887219266 completed 8/8 jobs successfully.
+management, and `zh-CN`/`zh-TW`/`en-US` localization. The Gate B replay archive
+baseline is
+`a6024716ebbe2311daf73b9409fd84e9ed512f59`; Release Quality Gates Run
+29888873754 completed 8/8 jobs successfully.
 
 The project is in **Phase 7 release closure**, at the boundary between product
 completion and final non-functional/production acceptance. Gate A preflight is
@@ -119,42 +120,52 @@ elapsed test time.
 - The latest recorded Python quality observation is 559 passed, four skipped and
   90.94% line coverage; this passes the 90% hard gate but remains below the
   historical 91.19% observation target.
+- PR #36 archived the current-state replay evidence through protected main. Its
+  push Run 29888597039, pull-request Run 29888658077 and post-merge main Run
+  29888873754 each completed all eight jobs successfully.
 
 ## 3. Current Boundary
 
-The current Gate B replay evidence branch may contain only current-state replay
-evidence and status documentation for the already merged PR #34/#35 work. It
-must not modify historical Topic acceptance snapshots, migrations, identity
-authority, TenantContext, RLS, SERIALIZABLE transactions, Outbox, SSE or C12
-semantics.
+The current protected main contains the Gate B replay evidence and status
+documentation for the already merged PR #34/#35 work. Any future acceptance
+branch must not modify historical Topic acceptance snapshots, migrations,
+identity authority, TenantContext, RLS, SERIALIZABLE transactions, Outbox, SSE or
+C12 semantics.
 
-The only allowed immediate next activity is to merge the Gate B replay evidence
-archive through protected PR flow. After that archive has 8/8 CI and merges,
-Gate C may begin. Any later product defect must use another isolated PR and ADR,
-then be replayed from a new main baseline.
+The only allowed immediate next activity is Gate C acceptance planning and
+execution from current protected main. Any later product defect must use another
+isolated PR and ADR, then be replayed from a new main baseline.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Gate B Evidence Archive
+### 4.1 Gate B Evidence Archive - Completed
 
-1. Push `codex/phase7-gate-b-mainline-replay` and merge its current-state replay
-   evidence PR into protected main with 8/8 green checks.
-2. Keep the formal project state at `RELEASE_CANDIDATE` until every final gate
+1. PR #36 merged the current-state replay evidence into protected main at
+   `a6024716ebbe2311daf73b9409fd84e9ed512f59`.
+2. Its push, pull-request and post-merge main runs were all 8/8.
+3. Keep the formal project state at `RELEASE_CANDIDATE` until every final gate
    passes.
-3. Address the standard-gate Python coverage observation: 90.94% passes the 90%
+
+### 4.2 P0 Gate C Authenticated SSE Acceptance
+
+1. Define resource-aware pass/fail thresholds before generating load.
+2. Test 2,000 authenticated SSE connections, including reconnect,
+   `Last-Event-ID`, duplicate suppression, slow consumers and tenant isolation.
+3. Archive raw metrics and evidence through protected PR flow; any failed
+   threshold keeps Gate D locked.
+4. Address the standard-gate Python coverage observation: 90.94% passes the 90%
    hard gate but is below the historical 91.19% observation target.
 
-### 4.2 P1 High-Load And Stability Acceptance
+### 4.3 P1 Gate D Soak Acceptance
 
-1. Only after Gate B acceptance, test 2,000 authenticated SSE connections,
-   including reconnect,
-   `Last-Event-ID`, duplicate suppression, slow consumers and tenant isolation.
-2. Run at least eight hours of continuous generation, verification, review,
+1. Only after Gate C acceptance, run at least eight hours of continuous
+   generation, verification, review,
    release and SSE while recording memory, CPU, connection pools, queue depth,
    Outbox lag and error rates.
-3. Define pass/fail thresholds before running the load and soak tests.
+2. Define soak-specific pass/fail thresholds before execution and archive the
+   complete time series and failure evidence.
 
-### 4.3 P1 Disaster Recovery
+### 4.4 P1 Disaster Recovery
 
 1. Take a versioned PostgreSQL backup and restore it into an independent instance.
 2. Measure and report RPO/RTO; do not infer them from configuration.
@@ -163,7 +174,7 @@ then be replayed from a new main baseline.
 4. Test database restart, Faiss/BM25 corruption, OIDC outage and Provider circuit
    behavior as explicit fail-closed scenarios.
 
-### 4.4 P1 Production Operations
+### 4.5 P1 Production Operations
 
 - Select and rehearse the target deployment platform.
 - Configure domain, TLS, secret manager, monitoring, alerts and SLOs.
@@ -174,7 +185,7 @@ then be replayed from a new main baseline.
 - Complete PII retention, export, correction and deletion workflows.
 - Define incident response, tenant offboarding and artifact retention.
 
-### 4.5 P2 Maintenance
+### 4.6 P2 Maintenance
 
 - Process major dependency upgrades in isolated PRs after release closure.
 - Archive stale branches only after merge and evidence are confirmed.

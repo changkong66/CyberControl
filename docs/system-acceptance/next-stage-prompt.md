@@ -1,7 +1,7 @@
-# Next Stage Prompt: Gate B Evidence Archive and Gate C SSE Acceptance
+# Next Stage Prompt: Gate C Authenticated SSE Acceptance
 
 ```text
-# CyberControl Phase 7: archive merged-main Gate B evidence, then execute Gate C
+# CyberControl Phase 7 Gate C: 2,000 authenticated SSE acceptance
 
 You are the release-quality architect for a single-maintainer, multi-tenant
 trusted AI education platform. Work only from the real repository, real
@@ -10,8 +10,10 @@ commit, PR, CI result, metric, database result, load result or release state.
 
 ## Current accepted facts
 
-- Protected main: `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
-- Protected-main tree: `c9821405359f59fee9fb993873ed3ba7f55e8b00`
+- Gate B evaluated source: `7e2a1d7cc3efc55ce27044e10959c4f5889a85da`
+- Gate B evaluated source tree: `c9821405359f59fee9fb993873ed3ba7f55e8b00`
+- Gate B replay archive baseline: `a6024716ebbe2311daf73b9409fd84e9ed512f59`
+- Gate B replay archive tree: `7cfd4171840d9d0b274f16c5d7ba70a8cc9402dc`
 - PR #34 merged the Gate B academic evidence at
   `412085e1586e3d497e5e6f944d4f34e258896d8b`.
 - PR #35 was retargeted to `main` and merged the C3 v2 remediation at the
@@ -19,6 +21,10 @@ commit, PR, CI result, metric, database result, load result or release state.
 - PR #34 push/PR runs: `29886312423`, `29886314403`, both 8/8.
 - PR #35 retargeted push/PR runs: `29886959510`, `29886962210`, both 8/8.
 - Resulting main run: `29887219266`, 8/8.
+- PR #36 archived the merged-main replay evidence at
+  `a6024716ebbe2311daf73b9409fd84e9ed512f59`.
+- PR #36 push/PR runs: `29888597039`, `29888658077`, both 8/8.
+- PR #36 post-merge main run: `29888873754`, 8/8.
 - Mainline Gate B report:
   `docs/system-acceptance/evidence/phase7-c3-mainline-replay.json`
 - Mainline artifact manifest:
@@ -41,26 +47,12 @@ commit, PR, CI result, metric, database result, load result or release state.
   untouched, and removed temporary resources.
 - Formal project state remains `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`.
 
-## Mandatory first step: evidence archive PR
-
-1. Verify the working tree contains only the three current-state replay evidence
-   files and the four current-state documents. Do not rewrite historical
-   acceptance snapshots, accepted review files, ADR history or product code.
-2. Recompute all evidence hashes and validate JSON, report internal SHA, source
-   commit/tree bindings, artifact count/bytes and temporary-resource cleanup.
-3. Commit the evidence and current-state status as a separate evidence-only
-   commit on `codex/phase7-gate-b-mainline-replay`.
-4. Push the branch and create a normal PR to protected `main`. Do not use an
-   admin bypass, force push, direct main push or fabricated approval.
-5. Wait for all eight Release Quality Gates. Record the real run URL and each
-   job result. A failed, missing or stale check blocks merge.
-6. Squash Merge only after 8/8 success, then verify the post-merge main SHA and
-   its 8/8 protected-main run. Only then is the evidence archive closed.
-
 ## Gate C: 2,000 authenticated SSE acceptance
 
-Gate C is the only newly unlocked execution scope. Create a new `codex/`
-acceptance branch from the post-archive main SHA. Do not modify product behavior,
+Gate B and its evidence archive are complete. Gate C is the only newly unlocked
+execution scope. Fetch the latest protected `main`, verify it is clean and its
+most recent Release Quality Gates run is 8/8, then create a new `codex/`
+acceptance branch from that exact SHA. Do not modify product behavior,
 frozen contracts, migrations, RLS, SERIALIZABLE transactions, Outbox, C12,
 Keycloak authority or the accepted C3 evidence while running the test.
 
