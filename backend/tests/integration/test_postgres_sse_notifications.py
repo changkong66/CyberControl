@@ -17,6 +17,26 @@ RUNTIME_URL = os.getenv("LIYAN_TEST_DATABASE_URL")
 
 
 @pytest.mark.asyncio
+async def test_postgres_replay_subscription_close_removes_replay_subscriber(
+    postgres_runtime,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    broker = SSEBroker(PostgresSSEReplayLog(database), subscriber_queue_size=16)
+    with tenant_scope(context):
+        replayed = await broker.publish(
+            context.tenant_id,
+            "generation.progress",
+            {"progress": 10},
+        )
+        stream = broker.subscribe(context.tenant_id, heartbeat_seconds=60)
+        assert await anext(stream) == replayed
+
+    assert broker.active_tenants() == (context.tenant_id,)
+    await stream.aclose()
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
 async def test_two_instances_receive_once_and_recover_disconnect_gap(
     postgres_runtime,
 ) -> None:

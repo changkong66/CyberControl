@@ -18,6 +18,7 @@ from liyans.core.settings import Settings
         ({"idempotency_retention_seconds": 0}, "durations must be positive"),
         ({"outbox_publisher_batch_size": 0}, "between one and 1000"),
         ({"outbox_publisher_poll_seconds": 0}, "timing settings must be positive"),
+        ({"outbox_publisher_delivery_timeout_seconds": 0}, "timing settings must be positive"),
         ({"sse_notification_queue_size": 0}, "between one and 100000"),
         ({"sse_notification_reconnect_base_seconds": 0}, "timing settings must be positive"),
         (

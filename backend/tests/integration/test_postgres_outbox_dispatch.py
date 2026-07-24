@@ -290,6 +290,52 @@ async def test_outbox_failure_retries_then_enters_dead_state(
 
 
 @pytest.mark.asyncio
+async def test_cancelled_outbox_delivery_returns_claim_to_pending_immediately(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    message = await _append(
+        database,
+        context,
+        partition=f"{context.tenant_id}:cancelled-delivery",
+        sequence=0,
+    )
+    sink_started = asyncio.Event()
+
+    async def blocking_sink(_message: OutboxMessage) -> None:
+        sink_started.set()
+        await asyncio.Event().wait()
+
+    publisher = OutboxPublisher(
+        PostgresOutboxDispatcherRepository(postgres_dispatcher),
+        blocking_sink,
+        worker_id="cancelled-delivery-worker",
+        batch_size=1000,
+    )
+    task = asyncio.create_task(publisher.run_once())
+    await sink_started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    with tenant_scope(context):
+        async with database.transaction(context=session_context_from_tenant(context)) as session:
+            state = (
+                await session.execute(
+                    select(
+                        OutboxMessageModel.state,
+                        OutboxMessageModel.claimed_by,
+                        OutboxMessageModel.claimed_at,
+                        OutboxMessageModel.claim_expires_at,
+                        OutboxMessageModel.last_error_code,
+                    ).where(OutboxMessageModel.outbox_id == message.outbox_id)
+                )
+            ).one()
+    assert state == (OutboxStatus.PENDING.value, None, None, None, "CancelledError")
+
+
+@pytest.mark.asyncio
 async def test_restart_recovers_claim_and_duplicate_completion_marks_outbox_published(
     postgres_runtime,
     postgres_dispatcher,
