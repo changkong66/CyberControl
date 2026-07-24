@@ -10,6 +10,9 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 APPROVED_HTTP_METHODS: Final = frozenset(
     {"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"}
 )
+APPROVED_DATABASE_POOL_NAMES: Final = frozenset(
+    {"api", "identity-reconciler", "outbox-dispatcher", "other"}
+)
 
 
 class PlatformMetrics:
@@ -53,6 +56,24 @@ class PlatformMetrics:
             "liyans_component_ready",
             "Whether a required process component is ready (1) or degraded (0).",
             ("component",),
+            registry=self.registry,
+        )
+        self._database_pool_checked_out = Gauge(
+            "liyans_database_pool_checked_out",
+            "Connections currently checked out from a named SQLAlchemy pool.",
+            ("pool",),
+            registry=self.registry,
+        )
+        self._database_pool_capacity = Gauge(
+            "liyans_database_pool_capacity",
+            "Configured maximum size of a named SQLAlchemy pool.",
+            ("pool",),
+            registry=self.registry,
+        )
+        self._database_pool_acquisition_timeouts = Counter(
+            "liyans_database_pool_acquisition_timeouts_total",
+            "SQLAlchemy connection acquisition timeouts.",
+            ("pool",),
             registry=self.registry,
         )
 
@@ -100,6 +121,26 @@ class PlatformMetrics:
 
     def set_component_ready(self, component: str, ready: bool) -> None:
         self._component_ready.labels(component).set(1 if ready else 0)
+
+    @staticmethod
+    def _database_pool_label(pool_name: str) -> str:
+        return pool_name if pool_name in APPROVED_DATABASE_POOL_NAMES else "other"
+
+    def set_database_pool_capacity(self, pool_name: str, capacity: int) -> None:
+        if capacity < 1:
+            raise ValueError("database pool capacity must be positive")
+        label = self._database_pool_label(pool_name)
+        self._database_pool_capacity.labels(label).set(capacity)
+        self._database_pool_checked_out.labels(label).set(0)
+        self._database_pool_acquisition_timeouts.labels(label).inc(0)
+
+    def observe_database_pool_checkout(self, pool_name: str, delta: int) -> None:
+        if delta == 0:
+            return
+        self._database_pool_checked_out.labels(self._database_pool_label(pool_name)).inc(delta)
+
+    def observe_database_pool_acquisition_timeout(self, pool_name: str) -> None:
+        self._database_pool_acquisition_timeouts.labels(self._database_pool_label(pool_name)).inc()
 
 
 class HTTPMetricsMiddleware:

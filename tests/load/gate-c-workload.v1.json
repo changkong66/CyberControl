@@ -1,0 +1,23 @@
+{
+  "schema_version": "cybercontrol.gate-c-workload.v1",
+  "tenant_ids": ["gate-c-alpha", "gate-c-beta"],
+  "principals_per_tenant": 10,
+  "worker_processes": 4,
+  "stream_path": "/internal/topic4/sse/stream",
+  "publish_path": "/internal/topic3/sse/events",
+  "event_type": "topic4.gate-c.probe",
+  "baseline_events_per_second_per_tenant": 1.0,
+  "burst_events_per_second_per_tenant": 5.0,
+  "burst_seconds": 30,
+  "burst_interval_seconds": 300,
+  "publisher_start_delay_seconds": 30,
+  "publisher_drain_seconds": 30,
+  "forced_disconnect_after_sustain_seconds": 5,
+  "duplicate_replay_percent": 5,
+  "slow_consumer_percent": 5,
+  "slow_consumer_delay_ms": 100,
+  "probe_payload_bytes": 512,
+  "workflow_interval_seconds": 300,
+  "token_refresh_skew_seconds": 60,
+  "expired_token_probe_grace_seconds": 35
+}
