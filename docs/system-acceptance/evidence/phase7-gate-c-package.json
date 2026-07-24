@@ -1,0 +1,17 @@
+{
+  "bytes": 1913634,
+  "finalization_jwt_scan": "passed",
+  "finalized_by": "tests/load/gate_c/finalize.py",
+  "finalized_evidence_secrets_directory_present": false,
+  "github_asset_bytes": 1913634,
+  "github_asset_digest": "sha256:ed3e3357f2a54368513cc0364416202d9fb2a086db95f5346184f72bb7b5d48c",
+  "github_asset_id": 488453532,
+  "github_asset_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-failed-20260724-63d62f0/gate-c-20260724T120822Z-63d62f071176-failed-evidence-v1.zip",
+  "github_release_id": 359334944,
+  "github_release_immutable": false,
+  "github_release_tag": "phase7-gate-c-failed-20260724-63d62f0",
+  "github_release_url": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-failed-20260724-63d62f0",
+  "package": "gate-c-20260724T120822Z-63d62f071176-failed-evidence-v1.zip",
+  "schema_version": "cybercontrol.gate-c-package.v1",
+  "sha256": "ed3e3357f2a54368513cc0364416202d9fb2a086db95f5346184f72bb7b5d48c"
+}
