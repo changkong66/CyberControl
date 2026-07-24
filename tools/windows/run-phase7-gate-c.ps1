@@ -8,6 +8,9 @@ param(
 
     [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c",
 
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$')]
+    [string]$PostgresVolumeName,
+
     [switch]$SkipBuild,
 
     [switch]$KeepEnvironment
@@ -28,8 +31,8 @@ $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 $sourceTree = (& git -C $root rev-parse "HEAD^{tree}").Trim()
 $branch = (& git -C $root branch --show-current).Trim()
 $status = @(& git -C $root status --porcelain=v1 --untracked-files=all)
-$volumeName = if ($Mode -eq "Full") {
-    "cybercontrol_gate_c_postgres"
+$volumeName = if (-not [string]::IsNullOrWhiteSpace($PostgresVolumeName)) {
+    $PostgresVolumeName
 }
 else {
     "cybercontrol_gate_c_smoke_postgres"
@@ -191,6 +194,9 @@ function Save-ComposeDiagnostics {
 }
 
 if ($Mode -eq "Full") {
+    if ([string]::IsNullOrWhiteSpace($PostgresVolumeName)) {
+        throw "Full Gate C acceptance requires an explicit fresh -PostgresVolumeName."
+    }
     if ($branch -ne "main") {
         throw "Full Gate C acceptance must run from main; current branch is $branch."
     }
