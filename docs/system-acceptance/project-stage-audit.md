@@ -10,10 +10,11 @@ baseline is
 29888873754 completed 8/8 jobs successfully.
 
 The project is in **Phase 7 release closure**, at the boundary between product
-completion and final non-functional/production acceptance. Gate A preflight is
-accepted. Gate B has now passed protected PR closure, remote 8/8 CI and
-clean-source merged-main PostgreSQL replay. It is a `RELEASE_CANDIDATE`, not
-`SYSTEM_ACCEPTED`; Gate C is the next unlocked gate.
+completion and final non-functional/production acceptance. Gate A and Gate B are
+accepted. The first formal Gate C run failed its frozen reliability thresholds,
+and PR #39 has archived that failure through protected main. It remains a
+`RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G are locked while the scoped
+Gate C remediation completes protected PR closure and a fresh rerun.
 
 Feature completeness is not an acceptance state. The remaining work is smaller
 in feature count but high in operational risk, external review dependency and
@@ -27,7 +28,7 @@ elapsed test time.
 | Frontend workbench | 100% current product scope | business, identity and three-language surfaces merged |
 | Local demonstrable product | accepted release candidate | clean-volume registration-to-release chain passes from merged main |
 | Dataset and C3 accuracy boundary | mainline accepted | 72 owner-reviewed records pass at 100% with zero unsafe false negatives from protected-main replay |
-| Production operations | Gate C ready | load testing may begin only after the Gate B replay archive PR is merged; soak, DR and deployment remain serially locked |
+| Production operations | Gate C failed; remediation locally verified | fresh Gate C rerun is locked until the remediation PR merges and new main passes 8/8; soak, DR and deployment remain serially locked |
 
 ## 2. Completed And Frozen Assets
 
@@ -117,18 +118,21 @@ elapsed test time.
   volume, classified 72/72 correctly, produced zero unsafe false negatives,
   verified 86 artifacts, left `cybercontrol_release_postgres` untouched and
   removed temporary replay resources.
-- The latest recorded Python quality observation is 559 passed, four skipped and
-  90.94% line coverage; this passes the 90% hard gate but remains below the
-  historical 91.19% observation target.
+- The scoped Gate C remediation local quality gate reports 630 collected tests,
+  628 passed, two explicit skips and 91.74% line coverage. This passes the 90%
+  hard gate and exceeds both the prior 91.58% current record and the historical
+  91.19% observation target.
 - PR #36 archived the current-state replay evidence through protected main. Its
   push Run 29888597039, pull-request Run 29888658077 and post-merge main Run
   29888873754 each completed all eight jobs successfully.
 
 ## 3. Current Boundary
 
-The current protected main is 63d62f071176185da33c195dbdf682186b3e8c9e. It contains the Gate C authenticated
-SSE load harness from PR #38 and has passed post-merge Release Quality Gates at
-8/8. The formal Gate C execution reached 2,000 active authenticated streams on a
+The current protected main is `865735015f6600f88d79b34ddbe7ba06e635f72e`.
+It contains the Gate C authenticated SSE load harness from PR #38 and the
+immutable failed evidence archive from PR #39. PR #39 push Run 30098903881,
+pull-request Run 30098946720 and post-merge main Run 30099327555 each passed 8/8.
+The formal Gate C execution reached 2,000 active authenticated streams on a
 single host, but failed frozen reliability thresholds; the project remains
 RELEASE_CANDIDATE, and Gate D-G remain locked.
 
@@ -146,23 +150,30 @@ fresh Gate C rerun from a new protected-main baseline.
 
 ## 4. Remaining Work
 
-### 4.1 Gate C Evidence Archive - In Progress
+### 4.1 Gate C Evidence Archive - Complete
 
 1. PR #38 merged the Gate C load harness into protected main at 63d62f071176185da33c195dbdf682186b3e8c9e.
 2. PR #38 pull-request Run 30090497603 and post-merge main Run 30091054880 were
    both 8/8.
-3. The formal Gate C run failed; this evidence archive must merge through
-   protected main before remediation starts.
+3. The formal Gate C run failed; PR #39 archived that result through protected
+   main at `865735015f6600f88d79b34ddbe7ba06e635f72e` after push, pull-request and
+   post-merge main quality gates each passed 8/8.
 
 ### 4.2 P0 Gate C Remediation And Rerun
 
-1. Fix SSE async-generator cancellation/context cleanup and connection
-   termination behavior observed at shutdown.
-2. Investigate and remediate committed event loss, incomplete replay
-   suppression, reconnect/replay shortfall, publisher timeout and Outbox lag.
-3. Preserve all frozen Gate C thresholds; do not lower acceptance criteria.
-4. Rerun Smoke, 200, 500, 1,000 and 2,000-stream stages from a fresh PostgreSQL
-   volume after remediation merges.
+1. Implementation commit `0389961` hardens SSE async-generator cancellation,
+   ContextVar release, database-session cleanup, replay fanout and Outbox claim
+   recovery.
+2. Test commit `2fcfb57` adds unit and real PostgreSQL regression coverage for
+   replay/live cancellation, connection return, cursor isolation, publisher
+   timeout and Outbox retry behavior.
+3. The complete local quality gate passed with 91.74% Python coverage, frozen
+   contract drift checks, frontend/Go gates, SBOM/license policy, Trivy and
+   Gitleaks. No migration or frozen threshold changed. The result is bound by
+   `docs/system-acceptance/evidence/phase7-gate-c-remediation-local.json`.
+4. The branch still requires protected push and pull-request 8/8, Squash Merge,
+   post-merge main 8/8 and a fresh-volume Gate C rerun. Local verification is not
+   Gate C acceptance.
 
 ### 4.3 P1 Gate D Soak Acceptance
 
@@ -206,7 +217,7 @@ fresh Gate C rerun from a new protected-main baseline.
 The product feature chain is complete for the current commercial scope, and Gate
 A/B remain accepted. Gate C is the active blocker: the platform can demonstrate
 the full trusted education workflow, but it has not yet satisfied the frozen
-2,000 authenticated SSE reliability gate. The next work must remediate the
-observed streaming cancellation/replay/Outbox-lag defects and rerun Gate C from a
-fresh mainline baseline before any soak, disaster-recovery or production
+2,000 authenticated SSE reliability gate. The scoped remediation is locally
+implemented and fully gated, but it must still merge through protected main and
+pass a fresh Gate C rerun before any soak, disaster-recovery or production
 operations gate can begin.

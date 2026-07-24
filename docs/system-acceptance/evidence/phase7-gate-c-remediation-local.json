@@ -1,0 +1,96 @@
+{
+  "schema_version": "cybercontrol.phase7-gate-c-remediation-local.v1",
+  "generated_at_utc": "2026-07-24T20:34:59Z",
+  "state": "LOCAL_QUALITY_GREEN_REMOTE_PR_PENDING",
+  "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "base_main": {
+    "commit": "865735015f6600f88d79b34ddbe7ba06e635f72e",
+    "tree": "22c115699143af2f8838f205b3828f1141f8f3a7",
+    "post_merge_ci_run": 30099327555,
+    "post_merge_ci_jobs_successful": 8
+  },
+  "remediation_source": {
+    "branch": "codex/phase7-gate-c-sse-remediation",
+    "implementation_commit": "0389961f9f2395420e7a042d71ccebd0c77cd9b6",
+    "test_commit": "2fcfb5707057b43ff42a5d680291b40296aa4cec",
+    "test_commit_tree": "19927b296c9acc559325b8c9a2d97c356b9c09cf"
+  },
+  "frozen_boundaries": {
+    "migration_changes": 0,
+    "contract_changes": 0,
+    "gate_c_threshold_changes": 0,
+    "threshold_file": "tests/load/gate-c-thresholds.v1.json",
+    "threshold_file_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855"
+  },
+  "verification": {
+    "targeted_tests_passed": 61,
+    "topic3_topic4_stream_tests_passed": 46,
+    "database_restart_enabled_regression": {
+      "passed": 627,
+      "skipped": 1,
+      "coverage_percent": 91.65
+    },
+    "complete_local_quality_gate": {
+      "tests_total": 630,
+      "tests_passed": 628,
+      "tests_skipped": 2,
+      "tests_failed": 0,
+      "coverage_percent": 91.74,
+      "coverage_hard_threshold_percent": 90.0,
+      "deterministic_tests_passed": 556,
+      "deterministic_tests_skipped": 1,
+      "deterministic_tests_deselected": 73,
+      "ruff": "passed",
+      "frozen_contract_drift": "passed",
+      "go_fmt_vet_race_test_build": "passed",
+      "frontend_type_test_build_audit_sbom": "passed",
+      "python_dependency_audit_sbom_license": "passed",
+      "container_non_root_minimal_runtime": "passed",
+      "trivy_fixable_high_critical": 0,
+      "gitleaks_history_and_worktree": "passed"
+    }
+  },
+  "local_integration_environment": {
+    "postgres_container": "cybercontrol-gate-c-remediation-it-postgres",
+    "postgres_volume": "cybercontrol_gate_c_remediation_it_postgres",
+    "postgres_port": 55433,
+    "keycloak_container": "cybercontrol-gate-c-remediation-it-keycloak",
+    "keycloak_version": "26.7.0",
+    "real_postgresql": true,
+    "real_keycloak_tokens": true,
+    "formal_gate_c_volume": false
+  },
+  "artifacts": [
+    {
+      "path": "artifacts/quality-gates/windows-quality-gates.log",
+      "bytes": 3224,
+      "sha256": "e3a0e082a272bd13b535fe47172220a2b3fbe29e843a613fdb4eb623b7cef562"
+    },
+    {
+      "path": "artifacts/coverage/python-coverage.xml",
+      "bytes": 899004,
+      "sha256": "b4be1b0fade110299e55df782100480b2d2301f462c25228e75982549f9439bd"
+    },
+    {
+      "path": "artifacts/test-results/python-junit.xml",
+      "bytes": 96579,
+      "sha256": "38705439e7abe5c86588d6a5965103e3ed9e0536a9b60d0d287152ba63128a4c"
+    },
+    {
+      "path": "artifacts/coverage/python-coverage-remediation.xml",
+      "bytes": 899005,
+      "sha256": "ff6256a1b19ea66a3d5268168b78c4c07b1f8fc5c73c0443ce38d5bb427e4b89"
+    },
+    {
+      "path": "artifacts/test-results/python-junit-remediation.xml",
+      "bytes": 95991,
+      "sha256": "4c436c7344bf9ad702d2b13973fb0748bd4d9a43b71a127434c473105b1f21e5"
+    }
+  ],
+  "limitations": [
+    "This is local remediation evidence, not protected-main or Gate C acceptance.",
+    "Push, pull-request and post-merge main 8/8 CI are still required.",
+    "The frozen Gate C load stages have not been rerun from the remediation source.",
+    "Gate D-G remain locked and no production capacity claim is permitted."
+  ]
+}

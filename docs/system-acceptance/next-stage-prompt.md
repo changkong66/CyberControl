@@ -7,7 +7,11 @@ do not start Gate D.
 ## Fixed Baseline
 
 - Workspace: C:/Users/wch06/Documents/CyberControl
-- Current main: 63d62f071176185da33c195dbdf682186b3e8c9e
+- Current main: 865735015f6600f88d79b34ddbe7ba06e635f72e
+- Current remediation branch: codex/phase7-gate-c-sse-remediation
+- Local implementation commit: 0389961
+- Local test commit: 2fcfb57
+- Local quality result: 630 collected, 628 passed, 2 skipped, 91.74% coverage
 - Current state: RELEASE_CANDIDATE
 - Formal state: PHASE7_GATE_C_FAILED_GATE_D_LOCKED
 - Gate C failed run: D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260724T120822Z-63d62f071176
@@ -25,11 +29,14 @@ do not start Gate D.
 4. Use real Keycloak Tokens, real PostgreSQL and fresh isolated Gate C volumes.
 5. Keep failed evidence immutable; create new evidence for every rerun.
 
-## Required PR-1: Scoped Remediation
+## Required PR-1: Close Scoped Remediation
 
-Create codex/phase7-gate-c-sse-remediation from latest main.
+The scoped remediation is implemented and locally verified. Review the existing
+commits, push `codex/phase7-gate-c-sse-remediation`, create the protected PR and
+require both push and pull-request Release Quality Gates to pass 8/8. Squash Merge
+only after all checks pass, then require the resulting protected main to pass 8/8.
 
-Investigate and fix:
+The completed implementation covers:
 
 - SSE async-generator cancellation and ContextVar reset from different context.
 - SQLAlchemy cancellation during SSE connection termination.
@@ -40,10 +47,9 @@ Investigate and fix:
 - Publisher timeout and Outbox lag p95/p99 threshold failures.
 - Post-ramp memory recovery ratio failure.
 
-Add targeted tests for cancellation, disconnect cleanup, replay idempotence,
-duplicate suppression, publisher timeout handling and pool/session cleanup. Run
-the full local quality gates and push PR only after tests pass. Squash Merge only
-after 8/8 CI.
+Targeted unit and real PostgreSQL tests cover cancellation, disconnect cleanup,
+replay idempotence, duplicate suppression, publisher timeout handling and
+pool/session cleanup. Do not reinterpret local success as Gate C acceptance.
 
 ## Required PR-2: Fresh Gate C Rerun Evidence
 
