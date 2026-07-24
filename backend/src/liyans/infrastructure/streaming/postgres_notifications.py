@@ -11,6 +11,7 @@ from typing import Any
 import asyncpg
 from sqlalchemy.engine import make_url
 
+from liyans.core.async_cleanup import complete_cleanup
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.infrastructure.streaming.sse import SSEBroker, SSEMetricsObserver
 
@@ -109,10 +110,21 @@ class PostgresSSENotificationBridge:
         task = self._task
         if task is None:
             return
-        task.cancel()
-        await asyncio.gather(task, return_exceptions=True)
-        self._task = None
-        self._connected.clear()
+        try:
+            await complete_cleanup(self._stop_task(task))
+        finally:
+            self._task = None
+            self._connected.clear()
+
+    async def _stop_task(self, task: asyncio.Task[None]) -> None:
+        try:
+            await asyncio.wait_for(
+                asyncio.shield(task),
+                timeout=max(5.0, self._startup_timeout),
+            )
+        except TimeoutError:
+            task.cancel()
+            await complete_cleanup(asyncio.gather(task, return_exceptions=True))
 
     async def synchronize_active_tenants(self) -> int:
         delivered = 0
@@ -147,13 +159,7 @@ class PostgresSSENotificationBridge:
             finally:
                 self._connected.clear()
                 if connection is not None and not connection.is_closed():
-                    try:
-                        await connection.remove_listener(
-                            SSE_NOTIFICATION_CHANNEL,
-                            self._on_notification,
-                        )
-                    finally:
-                        await connection.close(timeout=2)
+                    await complete_cleanup(self._close_connection(connection))
             if not self._stopping.is_set():
                 await asyncio.sleep(delay)
                 delay = min(self._reconnect_max, delay * 2)
@@ -177,6 +183,15 @@ class PostgresSSENotificationBridge:
                 through_sequence=notification.sequence,
             )
             self._observe("notification", "processed")
+
+    async def _close_connection(self, connection: asyncpg.Connection) -> None:
+        try:
+            await connection.remove_listener(
+                SSE_NOTIFICATION_CHANNEL,
+                self._on_notification,
+            )
+        finally:
+            await connection.close(timeout=2)
 
     def _on_notification(
         self,

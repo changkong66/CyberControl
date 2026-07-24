@@ -38,8 +38,9 @@ from liyans_contracts.verification import (
 from pydantic import BaseModel, ConfigDict, Field
 
 from liyans.api.auth import require_scopes
+from liyans.api.streaming import close_subscription, next_tenant_scoped_event
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
-from liyans.core.tenant import current_tenant, tenant_scope
+from liyans.core.tenant import current_tenant
 from liyans.domains.release.engine import PublicationRequest, ReleasePolicy
 from liyans.domains.verification.records import build_topic4_record
 from liyans.domains.verification.runtime import Topic4Runtime, map_topic4_error
@@ -826,11 +827,16 @@ async def stream_public_events(
         )
 
     async def events() -> AsyncIterator[bytes]:
-        with tenant_scope(context):
-            async for event in request.app.state.sse_broker.subscribe(
-                context.tenant_id,
-                after_sequence=after_sequence,
-            ):
+        subscription = request.app.state.sse_broker.subscribe(
+            context.tenant_id,
+            after_sequence=after_sequence,
+        )
+        try:
+            while True:
+                try:
+                    event = await next_tenant_scoped_event(subscription, context)
+                except StopAsyncIteration:
+                    return
                 if await request.is_disconnected():
                     return
                 if event is None:
@@ -843,6 +849,8 @@ async def stream_public_events(
                     event.sequence,
                 )
                 yield encode_sse_frame(event, cursor)
+        finally:
+            await close_subscription(subscription)
 
     return StreamingResponse(
         events(),

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import httpx
@@ -9,12 +11,14 @@ from liyans_contracts.enums import ResourceType
 from liyans_contracts.topic3 import GenerationSessionState
 from topic3_support import NOW, generation_command, graph_snapshot, personalization_context
 
+from liyans.api.routes.topic3 import stream_sse
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
-from liyans.core.tenant import TenantContext
+from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.domains.topic3.blueprint import ImmutableBlueprintPlanner
 from liyans.domains.topic3.entities import BlueprintRecord
 from liyans.domains.topic3.service import Topic3Service
 from liyans.infrastructure.security import AuthenticatedPrincipal
+from liyans.infrastructure.streaming.sse import ReplayCursorCodec, SSEEvent
 from liyans.infrastructure.tasks.queue import TaskPriority, TaskRequest
 from liyans.main import create_app
 
@@ -171,6 +175,90 @@ def headers(*, idempotency_key: str = "topic3-api-idempotency-0001") -> dict[str
         "x-trace-id": "a" * 32,
         "Idempotency-Key": idempotency_key,
     }
+
+
+class _StreamBroker:
+    def __init__(self, events: list[SSEEvent | None]) -> None:
+        self.events = events
+        self.after_sequence: int | None = None
+        self.closed = False
+
+    async def subscribe(self, _tenant_id: str, *, after_sequence: int | None = None):
+        self.after_sequence = after_sequence
+        try:
+            for event in self.events:
+                yield event
+        finally:
+            self.closed = True
+
+
+class _StreamRequest:
+    def __init__(self, broker: _StreamBroker, *, disconnected: bool = False) -> None:
+        self.app = SimpleNamespace(
+            state=SimpleNamespace(
+                sse_broker=broker,
+                sse_cursor_codec=ReplayCursorCodec(b"topic3-api-test-cursor-secret-32-bytes"),
+            )
+        )
+        self._disconnected = disconnected
+
+    async def is_disconnected(self) -> bool:
+        return self._disconnected
+
+
+@pytest.mark.asyncio
+async def test_topic3_sse_stream_restores_cursor_and_closes_subscription() -> None:
+    event = SSEEvent("tenant-a", 6, "topic3.progress", {"value": 1}, datetime.now(UTC))
+    broker = _StreamBroker([None, event])
+    request = _StreamRequest(broker)
+    context = TenantContext(
+        tenant_id="tenant-a",
+        subject_ref="subject:student",
+        roles=frozenset({"student"}),
+        scopes=frozenset({"topic3:sse:read"}),
+        trace_id="a" * 32,
+    )
+    cursor = request.app.state.sse_cursor_codec.encode(context.tenant_id, 5)
+
+    with tenant_scope(context):
+        response = await stream_sse(request, cursor)  # type: ignore[arg-type]
+
+    body = b"".join([chunk async for chunk in response.body_iterator])
+
+    assert broker.after_sequence == 5
+    assert b": heartbeat\n\n" in body
+    assert b"event: topic3.progress" in body
+    assert b'"value":1' in body
+    assert response.headers["x-accel-buffering"] == "no"
+    assert broker.closed is True
+
+
+@pytest.mark.asyncio
+async def test_topic3_sse_stream_closes_cleanly_from_another_task_context() -> None:
+    broker = _StreamBroker(
+        [
+            None,
+            SSEEvent("tenant-a", 0, "topic3.progress", {"value": 1}, datetime.now(UTC)),
+        ]
+    )
+    request = _StreamRequest(broker)
+    context = TenantContext(
+        tenant_id="tenant-a",
+        subject_ref="subject:student",
+        roles=frozenset({"student"}),
+        scopes=frozenset({"topic3:sse:read"}),
+        trace_id="a" * 32,
+    )
+
+    with tenant_scope(context):
+        response = await stream_sse(request, None)  # type: ignore[arg-type]
+
+    first = await asyncio.create_task(anext(response.body_iterator))
+    assert first == b": heartbeat\n\n"
+
+    await asyncio.create_task(response.body_iterator.aclose())
+
+    assert broker.closed is True
 
 
 @pytest.mark.asyncio

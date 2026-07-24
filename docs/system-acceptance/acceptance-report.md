@@ -2,11 +2,12 @@
 
 ## Decision
 
-Protected-main Gate C harness baseline 63d62f071176185da33c195dbdf682186b3e8c9e remains a
-**release candidate**, but Gate C is **not accepted**. PR #38 merged the
-authenticated SSE load harness and observability through normal protected-main
-flow; its pull-request CI Run 30090497603 and post-merge main CI Run 30091054880
-each completed all eight Release Quality Gate jobs successfully.
+Protected-main failed-evidence archive baseline
+`865735015f6600f88d79b34ddbe7ba06e635f72e` remains a **release candidate**, but
+Gate C is **not accepted**. PR #39 merged the immutable failed Gate C evidence
+through normal protected-main flow; its push CI Run 30098903881, pull-request CI
+Run 30098946720 and post-merge main CI Run 30099327555 each completed all eight
+Release Quality Gate jobs successfully.
 
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
@@ -40,6 +41,13 @@ single-host production capacity claim is permitted.
 - PR #36 push CI: [Run 29888597039](https://github.com/changkong66/CyberControl/actions/runs/29888597039), 8/8
 - PR #36 pull-request CI: [Run 29888658077](https://github.com/changkong66/CyberControl/actions/runs/29888658077), 8/8
 - Post-merge protected-main CI: [Run 29888873754](https://github.com/changkong66/CyberControl/actions/runs/29888873754), 8/8
+- Gate C harness PR: [#38](https://github.com/changkong66/CyberControl/pull/38),
+  Squash Merge `63d62f071176185da33c195dbdf682186b3e8c9e`
+- Gate C failed-evidence PR: [#39](https://github.com/changkong66/CyberControl/pull/39),
+  Squash Merge `865735015f6600f88d79b34ddbe7ba06e635f72e`
+- PR #39 push CI: [Run 30098903881](https://github.com/changkong66/CyberControl/actions/runs/30098903881), 8/8
+- PR #39 pull-request CI: [Run 30098946720](https://github.com/changkong66/CyberControl/actions/runs/30098946720), 8/8
+- PR #39 post-merge main CI: [Run 30099327555](https://github.com/changkong66/CyberControl/actions/runs/30099327555), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -203,10 +211,10 @@ record no JWT-like secrets and no remaining secrets directory.
 | Gate | Current result |
 | --- | --- |
 | Ruff and frozen contract drift | passed |
-| Python deterministic suite | 453 passed, 1 skipped, 70 deselected |
-| Standard PostgreSQL suite | 559 passed, 4 skipped |
-| Python coverage | 90.94%; hard threshold 90% |
-| Historical Python observation | 91.19%; not met by the standard-gate run |
+| Python deterministic suite | 556 passed, 1 skipped, 73 deselected |
+| Standard PostgreSQL suite | 628 passed, 2 skipped |
+| Python coverage | 91.74%; hard threshold 90% |
+| Python observation targets | prior current record 91.58% and historical 91.19%; both met locally |
 | Vitest | 72 passed |
 | Frontend coverage | 89.12% statements, 81.79% branches, 83.79% functions, 92.38% lines |
 | Playwright Chromium | 8 passed |
@@ -217,9 +225,11 @@ record no JWT-like secrets and no remaining secrets directory.
 | Runtime Trivy | 0 findings at all severities for all three release images |
 | SBOM and license policy | passed |
 
-The four standard-suite skips are explicitly reported and are not represented
-as passed tests. The latest PostgreSQL integration result and coverage value are
-the PR #35 clean-commit observation recorded in that protected PR.
+The two standard-suite skips are explicitly reported and are not represented as
+passes. They cover the Docker database-restart probe, which requires explicit
+operator enablement, and one Windows symbolic-link capability limitation. A
+separate complete regression with the database-restart probe enabled passed 627
+tests with one platform skip at 91.65% coverage before the final local gate.
 
 ## Phase 7.4 Progress
 
@@ -270,31 +280,31 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, Gate B evidence archive and the Gate C harness are complete
-on protected main through PR #38. The formal Gate C execution failed and is now
-archived as current evidence. Gate D-G and unrelated feature development remain
-locked.
+mainline acceptance, the Gate C harness and immutable failed Gate C evidence are
+complete on protected main through PR #39. The formal Gate C execution failed.
+Gate D-G and unrelated feature development remain locked.
 
-The next branch must be a scoped remediation branch for SSE cancellation/context
-cleanup, replay recovery and Outbox-lag behavior. It must not change frozen Gate
-C thresholds, migrations, identity authority, TenantContext, RLS, SERIALIZABLE
-transactions, Outbox semantics, SSE tenant isolation or C12 publication
-semantics. After remediation merges through protected main, Gate C must be rerun
-from a fresh isolated PostgreSQL volume.
+The scoped remediation branch now contains implementation commit `0389961` and
+test commit `2fcfb57`. Its complete local quality gate passed with frozen
+contracts unchanged, 91.74% Python coverage, clean Trivy and Gitleaks results and
+no migration or threshold changes. This is local branch evidence only; Gate C
+cannot be rerun until the remediation PR passes 8/8 and is Squash Merged through
+protected main. The rerun must use a fresh isolated PostgreSQL volume.
+The local evidence manifest is
+[phase7-gate-c-remediation-local.json](evidence/phase7-gate-c-remediation-local.json),
+SHA256 `4674140c4fa0edc752a20de7bc8dd3b23ab38d86b781619a900b44d4c63d89f1`.
 
 ## Remaining Release Blockers
 
-1. Archive this failed Gate C evidence through protected PR flow and post-merge
-   main CI.
-2. Fix the observed SSE async-generator cancellation/context cleanup and
-   connection termination defects in a separate scoped PR.
-3. Rerun Gate C from a new protected-main baseline and fresh isolated
+1. Push the scoped remediation branch, complete 8/8 push and pull-request CI,
+   Squash Merge it and confirm the new protected main passes 8/8.
+2. Rerun Gate C from that new protected-main baseline and a fresh isolated
    PostgreSQL volume without lowering thresholds.
-4. Only after Gate C is accepted, complete a minimum eight-hour soak across
+3. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-5. Only after Gate D is accepted, restore a PostgreSQL backup into an
+4. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+5. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 

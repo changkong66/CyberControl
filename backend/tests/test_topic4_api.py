@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from uuid import UUID, uuid4
@@ -13,6 +14,7 @@ from test_topic4_c12_release import _authorization, _report
 from test_topic4_control_plane import TENANT_ID, TRACE_ID, _candidate
 
 from liyans.api.routes.topic4 import RevisionCommand, create_revision, stream_public_events
+from liyans.api.streaming import close_subscription
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.domains.release.engine import ReleaseError
@@ -47,15 +49,24 @@ def test_topic4_internal_outbox_events_have_a_durable_runtime_sink() -> None:
     assert "topic4.publication.committed" not in TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES
 
 
+@pytest.mark.asyncio
+async def test_close_subscription_accepts_non_closable_iterators() -> None:
+    await close_subscription(object())
+
+
 class _StreamBroker:
     def __init__(self, events: list[SSEEvent | None]) -> None:
         self.events = events
         self.after_sequence: int | None = None
+        self.closed = False
 
     async def subscribe(self, _tenant_id: str, *, after_sequence: int | None = None):
         self.after_sequence = after_sequence
-        for event in self.events:
-            yield event
+        try:
+            for event in self.events:
+                yield event
+        finally:
+            self.closed = True
 
 
 class _StreamRequest:
@@ -127,6 +138,34 @@ async def test_topic4_sse_stream_stops_when_client_disconnects() -> None:
 
     assert body == b""
     assert broker.after_sequence is None
+
+
+@pytest.mark.asyncio
+async def test_topic4_sse_stream_closes_cleanly_from_another_task_context() -> None:
+    broker = _StreamBroker(
+        [
+            None,
+            SSEEvent(TENANT_ID, 0, "topic4.test", {"ok": True}, datetime.now(UTC)),
+        ]
+    )
+    request = _StreamRequest(broker)
+    context = TenantContext(
+        tenant_id=TENANT_ID,
+        subject_ref="subject:topic4-api",
+        roles=frozenset(),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id=TRACE_ID,
+    )
+
+    with tenant_scope(context):
+        response = await stream_public_events(request, None)  # type: ignore[arg-type]
+
+    first = await asyncio.create_task(anext(response.body_iterator))
+    assert first == b": heartbeat\n\n"
+
+    await asyncio.create_task(response.body_iterator.aclose())
+
+    assert broker.closed is True
 
 
 class _Document:

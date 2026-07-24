@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     outbox_publisher_enabled: bool = False
     outbox_publisher_batch_size: int = 32
     outbox_publisher_poll_seconds: float = 0.5
+    outbox_publisher_delivery_timeout_seconds: float = 25
     outbox_publisher_retry_base_seconds: float = 0.25
     outbox_publisher_retry_max_seconds: float = 30
     sse_event_retention_seconds: float = 86_400
@@ -190,6 +191,7 @@ class Settings(BaseSettings):
         if (
             min(
                 self.outbox_publisher_poll_seconds,
+                self.outbox_publisher_delivery_timeout_seconds,
                 self.outbox_publisher_retry_base_seconds,
                 self.outbox_publisher_retry_max_seconds,
             )

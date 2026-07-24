@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from unittest.mock import AsyncMock
@@ -153,6 +154,45 @@ async def test_pool_acquisition_timeout_is_observed_without_changing_exception()
             pass
 
     assert metrics.timeouts == ["api"]
+    assert session.rollbacks == 1
+    assert session.closed is True
+
+
+@pytest.mark.asyncio
+async def test_session_cancellation_waits_for_rollback_and_close() -> None:
+    rollback_started = asyncio.Event()
+    allow_rollback = asyncio.Event()
+
+    class BlockingCleanupSession(FakeSession):
+        async def rollback(self) -> None:
+            rollback_started.set()
+            await allow_rollback.wait()
+            await super().rollback()
+
+    session = BlockingCleanupSession()
+    manager = DatabaseSessionManager.__new__(DatabaseSessionManager)
+    manager.engine = FakeEngine(session)
+    manager.session_factory = FakeFactory(session)
+    entered = asyncio.Event()
+
+    async def hold_session() -> None:
+        async with manager.session():
+            session.active = True
+            entered.set()
+            await asyncio.Event().wait()
+
+    task = asyncio.create_task(hold_session())
+    await entered.wait()
+    task.cancel()
+    await rollback_started.wait()
+
+    assert task.done() is False
+    assert session.closed is False
+
+    allow_rollback.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
     assert session.rollbacks == 1
     assert session.closed is True
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -61,6 +62,20 @@ def _message(make_envelope, *, max_attempts: int = 3) -> OutboxMessage:
     )
 
 
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"worker_id": ""}, "worker_id"),
+        ({"batch_size": 0}, "batch_size"),
+        ({"delivery_timeout_seconds": 0}, "timing"),
+    ],
+)
+def test_outbox_publisher_rejects_invalid_configuration(overrides, message) -> None:
+    values = {"worker_id": "unit-worker", **overrides}
+    with pytest.raises(ValueError, match=message):
+        OutboxPublisher(FakeDispatchRepository(), AsyncMock(), **values)
+
+
 @pytest.mark.asyncio
 async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope) -> None:
     message = _message(make_envelope)
@@ -104,6 +119,52 @@ async def test_outbox_publisher_releases_failure_with_bounded_retry(make_envelop
     assert repository.published == []
     assert repository.released[0][0] == message.outbox_id
     assert repository.released[0][3] == "RuntimeError"
+
+
+@pytest.mark.asyncio
+async def test_outbox_publisher_cancellation_releases_claim_immediately(make_envelope) -> None:
+    message = _message(make_envelope)
+    repository = FakeDispatchRepository([message])
+    sink_started = asyncio.Event()
+
+    async def sink(_item: OutboxMessage) -> None:
+        sink_started.set()
+        await asyncio.Event().wait()
+
+    publisher = OutboxPublisher(repository, sink, worker_id="unit-worker")
+    task = asyncio.create_task(publisher.run_once())
+    await sink_started.wait()
+
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert repository.published == []
+    assert repository.released[0][0] == message.outbox_id
+    assert repository.released[0][3] == "CancelledError"
+
+
+@pytest.mark.asyncio
+async def test_outbox_publisher_timeout_releases_claim_for_retry(make_envelope) -> None:
+    message = _message(make_envelope)
+    repository = FakeDispatchRepository([message])
+
+    async def sink(_item: OutboxMessage) -> None:
+        await asyncio.Event().wait()
+
+    publisher = OutboxPublisher(
+        repository,
+        sink,
+        worker_id="unit-worker",
+        delivery_timeout_seconds=0.01,
+        retry_base_seconds=0.01,
+        retry_max_seconds=0.01,
+    )
+
+    assert await publisher.run_once() == 1
+    assert repository.published == []
+    assert repository.released[0][0] == message.outbox_id
+    assert repository.released[0][3] == "TimeoutError"
 
 
 @pytest.mark.asyncio
@@ -197,3 +258,68 @@ async def test_outbox_background_worker_becomes_healthy_and_closes() -> None:
     assert publisher.running is False
     assert publisher.healthy is False
     assert repository.claim_calls >= 1
+
+
+@pytest.mark.asyncio
+async def test_outbox_background_worker_processes_then_polls_and_start_is_idempotent(
+    make_envelope,
+) -> None:
+    message = _message(make_envelope)
+    repository = FakeDispatchRepository([message])
+
+    async def sink(_item: OutboxMessage) -> None:
+        return None
+
+    publisher = OutboxPublisher(
+        repository,
+        sink,
+        worker_id="background-worker",
+        poll_interval_seconds=0.005,
+    )
+    await publisher.close()
+    await publisher.start()
+    await publisher.start()
+    for _attempt in range(100):
+        if repository.published:
+            break
+        await asyncio.sleep(0.001)
+    else:
+        pytest.fail("publisher did not publish the queued message")
+    await asyncio.sleep(0.02)
+    await publisher.close()
+
+    assert repository.published[0][0] == message.outbox_id
+    assert repository.claim_calls >= 2
+
+
+@pytest.mark.asyncio
+async def test_outbox_wake_during_empty_claim_is_not_lost() -> None:
+    second_claim = asyncio.Event()
+    publisher: OutboxPublisher
+
+    class WakeDuringClaimRepository(FakeDispatchRepository):
+        async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]:
+            result = await super().claim_batch(worker_id, limit)
+            if self.claim_calls == 1:
+                publisher.wake()
+            elif self.claim_calls == 2:
+                second_claim.set()
+            return result
+
+    repository = WakeDuringClaimRepository()
+
+    async def sink(_item: OutboxMessage) -> None:
+        return None
+
+    publisher = OutboxPublisher(
+        repository,
+        sink,
+        worker_id="background-worker",
+        poll_interval_seconds=10,
+    )
+    await publisher.start()
+
+    await asyncio.wait_for(second_claim.wait(), timeout=0.2)
+    await publisher.close()
+
+    assert repository.claim_calls >= 2

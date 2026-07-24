@@ -16,8 +16,9 @@ from liyans_contracts.envelope import (
 from liyans_contracts.topic3 import Topic3GenerationCommandV1
 
 from liyans.api.auth import require_scopes
+from liyans.api.streaming import close_subscription, next_tenant_scoped_event
 from liyans.core.errors import ContractError, ErrorCategory, ErrorCode, LiyanError
-from liyans.core.tenant import assert_tenant, current_tenant, tenant_scope
+from liyans.core.tenant import assert_tenant, current_tenant
 from liyans.domains.generation.compatibility import CompatibilityError, Topic3EnvelopeAdapter
 from liyans.domains.topic3.orchestrator import Topic3Orchestrator
 from liyans.domains.topic3.service import Topic3Service
@@ -290,11 +291,16 @@ async def stream_sse(
         )
 
     async def events() -> AsyncIterator[bytes]:
-        with tenant_scope(context):
-            async for event in request.app.state.sse_broker.subscribe(
-                context.tenant_id,
-                after_sequence=after_sequence,
-            ):
+        subscription = request.app.state.sse_broker.subscribe(
+            context.tenant_id,
+            after_sequence=after_sequence,
+        )
+        try:
+            while True:
+                try:
+                    event = await next_tenant_scoped_event(subscription, context)
+                except StopAsyncIteration:
+                    return
                 if await request.is_disconnected():
                     return
                 if event is None:
@@ -305,6 +311,8 @@ async def stream_sse(
                     event.sequence,
                 )
                 yield encode_sse_frame(event, cursor)
+        finally:
+            await close_subscription(subscription)
 
     return StreamingResponse(
         events(),
