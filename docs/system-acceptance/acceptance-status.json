@@ -1,13 +1,13 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-22T03:45:46.2235946Z",
+  "generated_at_utc": "2026-07-24T13:41:07Z",
   "state": "RELEASE_CANDIDATE",
-  "formal_release_state": "PHASE7_GATE_B_MAINLINE_ACCEPTED_GATE_C_READY",
+  "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
   "baseline": {
-    "protected_main_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
-    "protected_main_tree_sha": "7cfd4171840d9d0b274f16c5d7ba70a8cc9402dc",
-    "product_source_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
-    "product_source_tree_sha": "7cfd4171840d9d0b274f16c5d7ba70a8cc9402dc",
+    "protected_main_sha": "63d62f071176185da33c195dbdf682186b3e8c9e",
+    "protected_main_tree_sha": "c544c4a4ffb81eff0b79a3d38c2b06d7df1feb7a",
+    "product_source_sha": "63d62f071176185da33c195dbdf682186b3e8c9e",
+    "product_source_tree_sha": "c544c4a4ffb81eff0b79a3d38c2b06d7df1feb7a",
     "frontend_identity_i18n_pr": 30,
     "frontend_identity_i18n_pr_url": "https://github.com/changkong66/CyberControl/pull/30",
     "frontend_source_sha": "db5228960be95ec769cd6ec69f19daa4e6f990bb",
@@ -45,7 +45,12 @@
     "phase7_gate_b_replay_archive_merge_sha": "a6024716ebbe2311daf73b9409fd84e9ed512f59",
     "phase7_gate_b_replay_archive_push_ci_run": 29888597039,
     "phase7_gate_b_replay_archive_pr_ci_run": 29888658077,
-    "phase7_gate_b_replay_archive_main_ci_run": 29888873754
+    "phase7_gate_b_replay_archive_main_ci_run": 29888873754,
+    "phase7_gate_c_harness_pr": 38,
+    "phase7_gate_c_harness_pr_url": "https://github.com/changkong66/CyberControl/pull/38",
+    "phase7_gate_c_harness_merge_sha": "63d62f071176185da33c195dbdf682186b3e8c9e",
+    "phase7_gate_c_harness_pr_ci_run": 30090497603,
+    "phase7_gate_c_harness_main_ci_run": 30091054880
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -173,7 +178,82 @@
       "postgres_test_instance_isolated_from_release_volume": true,
       "full_release_quality_gates_passed": true
     },
-    "gates_c_through_g": "GATE_C_UNLOCKED_GATES_D_THROUGH_G_LOCKED"
+    "gates_c_through_g": "GATE_C_FAILED_GATES_D_THROUGH_G_LOCKED",
+    "gate_c": {
+      "state": "FAILED_GATE_D_LOCKED",
+      "source_commit": "63d62f071176185da33c195dbdf682186b3e8c9e",
+      "source_tree": "c544c4a4ffb81eff0b79a3d38c2b06d7df1feb7a",
+      "formal_run_directory": "D:\\CyberControlAcceptance\\phase7\\gate-c\\gate-c-20260724T120822Z-63d62f071176",
+      "single_host_capacity_claim_permitted": false,
+      "summary_path": "docs/system-acceptance/evidence/phase7-gate-c-summary.json",
+      "summary_sha256": "ba3e06a1da631a6c22af4d002732bdc193d5de7baaa11511be275fc8e6fa1def",
+      "report_path": "docs/system-acceptance/evidence/phase7-gate-c-report.md",
+      "report_sha256": "754232e9b1507fabef31b774d4542b39741b7601b960a4ba9fbeeb0eb2f8a541",
+      "failure_analysis_path": "docs/system-acceptance/evidence/phase7-gate-c-failure-analysis.md",
+      "failure_analysis_sha256": "89a35b895f5338912de49764c5484a9b70cf27df4bbe17bc3945b4fb2862693e",
+      "manifest_path": "docs/system-acceptance/evidence/phase7-gate-c-evidence-manifest.json",
+      "manifest_sha256": "42f883fccd2833f9ee69e0045deb98992eec96f180909a6e288e6ecca86568e5",
+      "database_evidence_path": "docs/system-acceptance/evidence/phase7-gate-c-database-evidence.json",
+      "database_evidence_sha256": "6670cad09727c534d7c1351d816c81fc160225e014594a67366a2ae27a5507a6",
+      "package_metadata_path": "docs/system-acceptance/evidence/phase7-gate-c-package.json",
+      "package_metadata_sha256": "281f240cee2fe9a392d9d710a7d48ac0b29365980dfc654b9883bc88af9485cd",
+      "external_package": "gate-c-20260724T120822Z-63d62f071176-failed-evidence-v1.zip",
+      "external_package_sha256": "ed3e3357f2a54368513cc0364416202d9fb2a086db95f5346184f72bb7b5d48c",
+      "external_package_bytes": 1913634,
+      "jwt_scan": "passed",
+      "secrets_directory_present": false,
+      "passed_stages": [
+        "smoke-20",
+        "ramp-200",
+        "ramp-500",
+        "ramp-1000"
+      ],
+      "failed_stage": "gate-2000",
+      "failed_global_checks": [
+        "all_stages",
+        "memory_recovery",
+        "outbox_p95",
+        "outbox_p99"
+      ],
+      "failed_stage_checks": [
+        "gate-2000.connection_success",
+        "gate-2000.duplicate_replay_suppression",
+        "gate-2000.event_loss",
+        "gate-2000.publisher",
+        "gate-2000.reconnect"
+      ],
+      "peak_active_streams": 2000,
+      "sustained_seconds": 1804,
+      "connection_success_rate": 0.9925558312655087,
+      "reconnect_replay_success_rate": 0.9852216748768473,
+      "committed_event_loss": 590,
+      "duplicate_replay_attempts": 100,
+      "duplicate_replay_suppressions": 88,
+      "publisher_failures": 1,
+      "delivery_latency_p95_ms": 965,
+      "delivery_latency_p99_ms": 1490,
+      "outbox_lag_p95_ms": 10522.787,
+      "outbox_lag_p99_ms": 11662.747,
+      "post_ramp_memory_ratio": 1.933333,
+      "cross_tenant_leakage": 0,
+      "invalid_cursor_acceptance": 0,
+      "outbox_dead": 0,
+      "database_pool_acquisition_timeouts": 0.0,
+      "unplanned_restart_or_oom": 0,
+      "retained_evidence_volumes": [
+        "cybercontrol_gate_c_postgres",
+        "cybercontrol-gate-c_liyans-runtime"
+      ],
+      "suspected_runtime_defect": "SSE async-generator cancellation/context cleanup and connection termination handling",
+      "github_release_id": 359334944,
+      "github_release_url": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-failed-20260724-63d62f0",
+      "github_release_tag": "phase7-gate-c-failed-20260724-63d62f0",
+      "github_asset_id": 488453532,
+      "github_asset_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-failed-20260724-63d62f0/gate-c-20260724T120822Z-63d62f071176-failed-evidence-v1.zip",
+      "github_asset_bytes": 1913634,
+      "github_asset_digest": "sha256:ed3e3357f2a54368513cc0364416202d9fb2a086db95f5346184f72bb7b5d48c",
+      "github_release_immutable": false
+    }
   },
   "identity_backend": {
     "state": "MAINLINE_ACCEPTED",
@@ -251,10 +331,10 @@
     "python_tests_total": 563,
     "python_tests_passed": 559,
     "python_tests_skipped": 4,
-    "python_coverage_percent": 90.94,
+    "python_coverage_percent": 91.58,
     "python_coverage_hard_threshold_percent": 90.0,
     "python_coverage_historical_observation_percent": 91.19,
-    "python_historical_observation_met_by_standard_gate": false,
+    "python_historical_observation_met_by_standard_gate": true,
     "python_deterministic_tests_passed": 453,
     "python_deterministic_tests_skipped": 1,
     "python_deterministic_tests_deselected": 70,
@@ -283,24 +363,25 @@
     "backend_runtime_user": "10001:10001"
   },
   "next_stage": {
-    "name": "PHASE7_GATE_C_AUTHENTICATED_SSE_LOAD_ACCEPTANCE",
+    "name": "PHASE7_GATE_C_REMEDIATION_AND_RERUN",
     "allowed_scope": [
-      "define resource-aware pass and fail thresholds for 2,000 authenticated SSE connections",
-      "execute reconnect, Last-Event-ID recovery, duplicate suppression, slow-consumer and tenant-isolation load acceptance",
-      "archive Gate C metrics without starting Gate D until Gate C is protected-main accepted"
+      "archive PR-2 failed Gate C evidence through protected main",
+      "open a separate scoped remediation PR for SSE async-generator cancellation, replay recovery and Outbox-lag behavior",
+      "rerun Gate C from a fresh protected-main baseline and fresh PostgreSQL volume without changing frozen thresholds"
     ],
     "gate_c_unlocked": true,
-    "gates_c_through_g_locked": false,
+    "gate_c_accepted": false,
     "gates_d_through_g_locked": true,
     "backend_feature_changes_allowed": false,
+    "backend_defect_remediation_allowed": true,
     "frontend_product_feature_changes_allowed": false,
     "topic1_topic4_contract_changes_allowed": false
   },
   "blocking_items": [
-    "Raise or formally disposition the standard-gate Python coverage observation of 90.94% versus the historical 91.19% target without lowering the 90% hard gate.",
-    "Complete 2,000 authenticated SSE load acceptance.",
-    "Complete a minimum eight-hour soak test.",
-    "Complete independent backup/restore and disaster-recovery evidence with measured RPO/RTO.",
-    "Complete sealed Provider, production deployment, cross-browser/WCAG and PII lifecycle acceptance."
+    "Gate C failed frozen 2,000 authenticated SSE thresholds; Gate D remains locked.",
+    "Remediate SSE cancellation/context cleanup, replay recovery and Outbox-lag behavior in a separate scoped PR.",
+    "Rerun Gate C from a new protected-main baseline and fresh isolated PostgreSQL volume without lowering thresholds.",
+    "Only after Gate C acceptance, complete a minimum eight-hour soak test.",
+    "Only after Gate D acceptance, complete backup/restore, DR fail-closed drills, sealed Provider, production deployment, cross-browser/WCAG and PII lifecycle acceptance."
   ]
 }

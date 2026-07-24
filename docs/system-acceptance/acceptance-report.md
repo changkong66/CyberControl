@@ -2,26 +2,20 @@
 
 ## Decision
 
-Protected-main Gate B archive baseline `a6024716ebbe2311daf73b9409fd84e9ed512f59`
-is accepted as a **release candidate**. PR #34 archived the hash-bound academic
-Gate B evidence and PR #35 added the ADR-0013 C3 semantic verifier v2 while
-preserving v1 behavior. Both changes passed their push and pull-request Release
-Quality Gates at 8/8 before protected Squash Merge. The resulting main revision
-then passed Release Quality Gates Run 29887219266 at 8/8. PR #36 subsequently
-archived the merged-main Gate B replay evidence; its push, pull-request and
-post-merge main runs each completed all eight jobs successfully.
+Protected-main Gate C harness baseline 63d62f071176185da33c195dbdf682186b3e8c9e remains a
+**release candidate**, but Gate C is **not accepted**. PR #38 merged the
+authenticated SSE load harness and observability through normal protected-main
+flow; its pull-request CI Run 30090497603 and post-merge main CI Run 30091054880
+each completed all eight Release Quality Gate jobs successfully.
 
 Formal state:
-`PHASE7_GATE_B_MAINLINE_ACCEPTED_GATE_C_READY`.
+PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
-The project is not `SYSTEM_ACCEPTED`. Gate A and Gate B are accepted. The final
-Gate B replay was executed from the merged protected-main source and tree, using
-a fresh isolated PostgreSQL 16 volume, restricted roles and clean source. It
-classified all 72 records correctly, produced zero unsafe
-`CONTRADICTED -> SUPPORTED` decisions, passed all RLS/replay controls, verified
-86 content-addressed artifacts, left `cybercontrol_release_postgres` untouched,
-and removed its temporary container and volume. Gate C is the only newly
-unlocked execution gate; Gates D-G remain serially locked.
+The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted, but the
+first formal Gate C execution from protected main failed frozen 2,000
+authenticated SSE reliability thresholds. The failed result is archived as
+evidence; Gate D, Gate E, Gate F and Gate G remain serially locked. No
+single-host production capacity claim is permitted.
 
 ## Evaluated Baseline
 
@@ -139,6 +133,45 @@ Immutable identifiers for this replay:
 - Publication batch: `9b4c4763-0581-5b70-af40-1f67a75dac44`
 - Public event: `e7b97911-36ee-53d1-a9ef-21095f098dac`
 
+
+## Gate C Failed Evidence
+
+The formal Gate C run was executed from clean protected-main source 63d62f071176185da33c195dbdf682186b3e8c9e
+with a fresh Gate C PostgreSQL volume and real Keycloak-issued Tokens. It reached
+2,000 active authenticated streams for 1,804 seconds on a single host, but failed
+the frozen acceptance checks below.
+
+| Check | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Connection success rate | 0.992556 | >= 0.995 | FAIL |
+| Reconnect/replay success | 0.985222 | >= 0.999 | FAIL |
+| Committed event loss | 590 | 0 | FAIL |
+| Duplicate replay suppression | 88/100 | all | FAIL |
+| Publisher failures | 1 | 0 | FAIL |
+| Outbox lag p95/p99 ms | 10522.787 / 11662.747 | <= 2000 / <= 5000 | FAIL |
+| Post-ramp memory ratio | 1.933333 | <= 1.10 | FAIL |
+
+Controls that passed in the same 2,000-stream stage include zero HTTP 5xx, zero
+cross-tenant leakage, zero duplicate final render, zero Outbox DEAD, zero pool
+acquisition timeout, no OOM or unplanned restart, and delivery latency p95/p99
+of 965 ms / 1490 ms.
+
+Evidence files:
+
+- Summary: [phase7-gate-c-summary.json](evidence/phase7-gate-c-summary.json)
+- Report: [phase7-gate-c-report.md](evidence/phase7-gate-c-report.md)
+- Failure analysis: [phase7-gate-c-failure-analysis.md](evidence/phase7-gate-c-failure-analysis.md)
+- Manifest: [phase7-gate-c-evidence-manifest.json](evidence/phase7-gate-c-evidence-manifest.json)
+- Database evidence: [phase7-gate-c-database-evidence.json](evidence/phase7-gate-c-database-evidence.json)
+- Evidence package metadata: [phase7-gate-c-package.json](evidence/phase7-gate-c-package.json)
+
+The raw evidence package is retained as a GitHub prerelease asset at
+https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-failed-20260724-63d62f0/gate-c-20260724T120822Z-63d62f071176-failed-evidence-v1.zip and outside Git as
+gate-c-20260724T120822Z-63d62f071176-failed-evidence-v1.zip with SHA256 ed3e3357f2a54368513cc0364416202d9fb2a086db95f5346184f72bb7b5d48c and
+1913634 bytes. The generated manifest and finalization scan
+record no JWT-like secrets and no remaining secrets directory.
+
+
 ## Source And Runtime Fingerprints
 
 - Compose config SHA256: `753f194f5d0863270e88db16c7120845bd3ccfa741075edfca2a99fba582657f`
@@ -237,27 +270,33 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance and the Gate B evidence archive are complete on protected
-main through PR #36. Gate C may now execute the 2,000 authenticated SSE load plan.
-Gates D-G and unrelated feature development remain locked.
+mainline acceptance, Gate B evidence archive and the Gate C harness are complete
+on protected main through PR #38. The formal Gate C execution failed and is now
+archived as current evidence. Gate D-G and unrelated feature development remain
+locked.
+
+The next branch must be a scoped remediation branch for SSE cancellation/context
+cleanup, replay recovery and Outbox-lag behavior. It must not change frozen Gate
+C thresholds, migrations, identity authority, TenantContext, RLS, SERIALIZABLE
+transactions, Outbox semantics, SSE tenant isolation or C12 publication
+semantics. After remediation merges through protected main, Gate C must be rerun
+from a fresh isolated PostgreSQL volume.
 
 ## Remaining Release Blockers
 
-1. Raise the current 90.94% Python coverage toward the 91.19% historical
-   observation or record a reviewed disposition; the 90% hard gate must not be
-   lowered.
-2. Execute 2,000 authenticated SSE connections with
-   reconnect, cursor recovery,
-   duplicate suppression, slow-consumer and tenant-isolation evidence.
-3. After Gate C is accepted, complete a minimum eight-hour soak across
-   generation, verification, review,
-   release and SSE.
-4. After Gate D is accepted, restore a PostgreSQL backup into an independent
-   instance and measure RPO/RTO.
-5. After Gate E is accepted, complete database/index/OIDC/Provider failure
-   drills and verify fail-closed behavior.
-6. Complete sealed Provider, production deployment, TLS/secrets/monitoring,
-   cross-browser/WCAG and PII retention/export/correction/deletion acceptance.
+1. Archive this failed Gate C evidence through protected PR flow and post-merge
+   main CI.
+2. Fix the observed SSE async-generator cancellation/context cleanup and
+   connection termination defects in a separate scoped PR.
+3. Rerun Gate C from a new protected-main baseline and fresh isolated
+   PostgreSQL volume without lowering thresholds.
+4. Only after Gate C is accepted, complete a minimum eight-hour soak across
+   generation, verification, review, release and SSE.
+5. Only after Gate D is accepted, restore a PostgreSQL backup into an
+   independent instance and measure RPO/RTO.
+6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+   acceptance, production deployment, cross-browser/WCAG and PII lifecycle
+   acceptance.
 
 Only after every blocker has reproducible evidence may the state advance to
-`SYSTEM_ACCEPTED`.
+SYSTEM_ACCEPTED.

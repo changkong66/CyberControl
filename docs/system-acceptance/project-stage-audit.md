@@ -126,53 +126,61 @@ elapsed test time.
 
 ## 3. Current Boundary
 
-The current protected main contains the Gate B replay evidence and status
-documentation for the already merged PR #34/#35 work. Any future acceptance
-branch must not modify historical Topic acceptance snapshots, migrations,
-identity authority, TenantContext, RLS, SERIALIZABLE transactions, Outbox, SSE or
-C12 semantics.
+The current protected main is 63d62f071176185da33c195dbdf682186b3e8c9e. It contains the Gate C authenticated
+SSE load harness from PR #38 and has passed post-merge Release Quality Gates at
+8/8. The formal Gate C execution reached 2,000 active authenticated streams on a
+single host, but failed frozen reliability thresholds; the project remains
+RELEASE_CANDIDATE, and Gate D-G remain locked.
 
-The only allowed immediate next activity is Gate C acceptance planning and
-execution from current protected main. Any later product defect must use another
-isolated PR and ADR, then be replayed from a new main baseline.
+Current failed evidence is archived in
+docs/system-acceptance/evidence/phase7-gate-c-summary.json,
+docs/system-acceptance/evidence/phase7-gate-c-failure-analysis.md and related
+manifest files. The retained external evidence package is SHA256-bound in
+docs/system-acceptance/evidence/phase7-gate-c-package.json.
+
+Any future acceptance branch must not modify historical Topic acceptance
+snapshots, migrations, identity authority, TenantContext, RLS, SERIALIZABLE
+transactions, Outbox, SSE tenant isolation or C12 semantics. The only allowed
+immediate engineering activity is a scoped Gate C remediation PR, followed by a
+fresh Gate C rerun from a new protected-main baseline.
 
 ## 4. Remaining Work
 
-### 4.1 Gate B Evidence Archive - Completed
+### 4.1 Gate C Evidence Archive - In Progress
 
-1. PR #36 merged the current-state replay evidence into protected main at
-   `a6024716ebbe2311daf73b9409fd84e9ed512f59`.
-2. Its push, pull-request and post-merge main runs were all 8/8.
-3. Keep the formal project state at `RELEASE_CANDIDATE` until every final gate
-   passes.
+1. PR #38 merged the Gate C load harness into protected main at 63d62f071176185da33c195dbdf682186b3e8c9e.
+2. PR #38 pull-request Run 30090497603 and post-merge main Run 30091054880 were
+   both 8/8.
+3. The formal Gate C run failed; this evidence archive must merge through
+   protected main before remediation starts.
 
-### 4.2 P0 Gate C Authenticated SSE Acceptance
+### 4.2 P0 Gate C Remediation And Rerun
 
-1. Define resource-aware pass/fail thresholds before generating load.
-2. Test 2,000 authenticated SSE connections, including reconnect,
-   `Last-Event-ID`, duplicate suppression, slow consumers and tenant isolation.
-3. Archive raw metrics and evidence through protected PR flow; any failed
-   threshold keeps Gate D locked.
-4. Address the standard-gate Python coverage observation: 90.94% passes the 90%
-   hard gate but is below the historical 91.19% observation target.
+1. Fix SSE async-generator cancellation/context cleanup and connection
+   termination behavior observed at shutdown.
+2. Investigate and remediate committed event loss, incomplete replay
+   suppression, reconnect/replay shortfall, publisher timeout and Outbox lag.
+3. Preserve all frozen Gate C thresholds; do not lower acceptance criteria.
+4. Rerun Smoke, 200, 500, 1,000 and 2,000-stream stages from a fresh PostgreSQL
+   volume after remediation merges.
 
 ### 4.3 P1 Gate D Soak Acceptance
 
 1. Only after Gate C acceptance, run at least eight hours of continuous
-   generation, verification, review,
-   release and SSE while recording memory, CPU, connection pools, queue depth,
-   Outbox lag and error rates.
+   generation, verification, review, release and SSE while recording memory,
+   CPU, connection pools, queue depth, Outbox lag and error rates.
 2. Define soak-specific pass/fail thresholds before execution and archive the
    complete time series and failure evidence.
 
 ### 4.4 P1 Disaster Recovery
 
-1. Take a versioned PostgreSQL backup and restore it into an independent instance.
+1. Take a versioned PostgreSQL backup and restore it into an independent
+   instance.
 2. Measure and report RPO/RTO; do not infer them from configuration.
 3. Verify audit chain, Artifact Store references, Outbox ordering, identity
    projections and publication records after restore.
-4. Test database restart, Faiss/BM25 corruption, OIDC outage and Provider circuit
-   behavior as explicit fail-closed scenarios.
+4. Test database restart, Faiss/BM25 corruption, OIDC outage and Provider
+   circuit behavior as explicit fail-closed scenarios.
 
 ### 4.5 P1 Production Operations
 
@@ -180,7 +188,8 @@ isolated PR and ADR, then be replayed from a new main baseline.
 - Configure domain, TLS, secret manager, monitoring, alerts and SLOs.
 - Define managed PostgreSQL backup/PITR, capacity and rollback policy.
 - Verify signed images/provenance and a rollback rehearsal.
-- Run approved real Providers only in a sealed environment with external secrets.
+- Run approved real Providers only in a sealed environment with external
+  secrets.
 - Complete cross-browser and WCAG accessibility audits.
 - Complete PII retention, export, correction and deletion workflows.
 - Define incident response, tenant offboarding and artifact retention.
@@ -189,13 +198,15 @@ isolated PR and ADR, then be replayed from a new main baseline.
 
 - Process major dependency upgrades in isolated PRs after release closure.
 - Archive stale branches only after merge and evidence are confirmed.
-- Keep historical acceptance reports immutable and update current-state indexes only.
+- Keep historical acceptance reports immutable and update current-state indexes
+  only.
 
 ## 5. Final Audit Judgment
 
-The product feature chain is complete for the current commercial scope. The
-remaining blockers are operational proof, resilience and compliance lifecycle,
-not missing application pages or backend domain capabilities. CyberControl can
-be demonstrated end to end today, but it cannot be called production accepted
-until load, soak, DR, deployment, accessibility and privacy gates have current,
-reproducible evidence.
+The product feature chain is complete for the current commercial scope, and Gate
+A/B remain accepted. Gate C is the active blocker: the platform can demonstrate
+the full trusted education workflow, but it has not yet satisfied the frozen
+2,000 authenticated SSE reliability gate. The next work must remediate the
+observed streaming cancellation/replay/Outbox-lag defects and rerun Gate C from a
+fresh mainline baseline before any soak, disaster-recovery or production
+operations gate can begin.
