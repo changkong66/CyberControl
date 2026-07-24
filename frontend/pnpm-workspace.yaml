@@ -3,3 +3,5 @@ allowBuilds:
   msw: true
 overrides:
   fast-uri: 3.1.4
+  # GHSA-mh99-v99m-4gvg: Node 22 supports minimatch 10 and its patched brace-expansion.
+  minimatch: 10.2.5
