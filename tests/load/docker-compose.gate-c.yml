@@ -1,0 +1,78 @@
+services:
+  postgres:
+    volumes:
+      - gate-c-postgres:/var/lib/postgresql/data
+
+  postgres-role-bootstrap:
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        for attempt in $$(seq 1 30); do
+          if psql --host=postgres --username=liyans_bootstrap --dbname=liyans \
+            --set=ON_ERROR_STOP=1 --file=/scripts/001-runtime-role.sql; then
+            exit 0
+          fi
+          sleep 2
+        done
+        exit 1
+
+  api:
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=8)",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 120s
+
+  mock-provider:
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health/ready', timeout=8)",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  gate-c-load:
+    profiles: ["gate-c-load"]
+    build:
+      context: ..
+      dockerfile: tests/load/Dockerfile
+    environment:
+      GATE_C_API_BASE_URL: http://api:8000
+      GATE_C_KEYCLOAK_BASE_URL: http://keycloak:8080
+      GATE_C_KEYCLOAK_ISSUER: http://localhost:8080/realms/cybercontrol
+      GATE_C_DATABASE_URL: postgresql://liyans_bootstrap:liyans-bootstrap-local-only@postgres:5432/liyans
+      GATE_C_CREDENTIALS_PATH: /results/secrets/credentials.json
+      GATE_C_RESULTS_DIR: /results
+      GATE_C_THRESHOLDS_PATH: /app/tests/load/gate-c-thresholds.v1.json
+      GATE_C_WORKLOAD_PATH: /app/tests/load/gate-c-workload.v1.json
+      GATE_C_KEYCLOAK_ADMIN_USERNAME: local-admin
+      GATE_C_KEYCLOAK_ADMIN_PASSWORD: local-admin-only
+    volumes:
+      - ${GATE_C_RESULTS_DIR:?GATE_C_RESULTS_DIR is required}:/results
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+volumes:
+  gate-c-postgres:
+    external: true
+    name: ${GATE_C_POSTGRES_VOLUME:-cybercontrol_gate_c_postgres}

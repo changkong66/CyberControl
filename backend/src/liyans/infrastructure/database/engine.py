@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 
+from sqlalchemy import event
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.settings import Settings
+from liyans.infrastructure.observability.metrics import PlatformMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,8 @@ def create_database_engine(
     *,
     database_url: str | None = None,
     application_name: str = "liyans-api",
+    metrics: PlatformMetrics | None = None,
+    pool_name: str | None = None,
 ) -> AsyncEngine:
     """Create the process-wide async engine; it does not open a connection."""
 
@@ -54,4 +58,18 @@ def create_database_engine(
         url.host,
         url.database,
     )
+    if metrics is not None and pool_name is not None:
+        metrics.set_database_pool_capacity(
+            pool_name,
+            settings.database_pool_size + settings.database_max_overflow,
+        )
+
+        @event.listens_for(engine.sync_engine, "checkout")
+        def _pool_checkout(_connection, _record, _proxy) -> None:
+            metrics.observe_database_pool_checkout(pool_name, 1)
+
+        @event.listens_for(engine.sync_engine, "checkin")
+        def _pool_checkin(_connection, _record) -> None:
+            metrics.observe_database_pool_checkout(pool_name, -1)
+
     return engine

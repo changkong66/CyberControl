@@ -6,7 +6,9 @@
 artifacts
 docs
 node_modules
-tests
+tests/*
+!tests/load
+!tests/load/**
 tmp
 var
 **/__pycache__

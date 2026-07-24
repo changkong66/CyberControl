@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import TimeoutError as SQLAlchemyPoolTimeoutError
 
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.core.settings import Settings
@@ -97,6 +98,14 @@ def database_error(sqlstate: str) -> DBAPIError:
     return DBAPIError("statement", {}, SqlStateError(sqlstate), False)
 
 
+@dataclass
+class PoolMetrics:
+    timeouts: list[str]
+
+    def observe_database_pool_acquisition_timeout(self, pool_name: str) -> None:
+        self.timeouts.append(pool_name)
+
+
 @pytest.mark.asyncio
 async def test_transaction_commits_and_closes_session() -> None:
     session = FakeSession()
@@ -124,6 +133,26 @@ async def test_transaction_rolls_back_on_exception() -> None:
         async with manager.transaction():
             raise RuntimeError("injected")
 
+    assert session.rollbacks == 1
+    assert session.closed is True
+
+
+@pytest.mark.asyncio
+async def test_pool_acquisition_timeout_is_observed_without_changing_exception() -> None:
+    session = FakeSession()
+    session.execute.side_effect = SQLAlchemyPoolTimeoutError("pool exhausted")
+    metrics = PoolMetrics([])
+    manager = DatabaseSessionManager.__new__(DatabaseSessionManager)
+    manager.engine = FakeEngine(session)
+    manager.session_factory = FakeFactory(session)
+    manager._metrics = metrics
+    manager._pool_name = "api"
+
+    with pytest.raises(SQLAlchemyPoolTimeoutError, match="pool exhausted"):
+        async with manager.transaction():
+            pass
+
+    assert metrics.timeouts == ["api"]
     assert session.rollbacks == 1
     assert session.closed is True
 

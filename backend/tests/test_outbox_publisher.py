@@ -107,6 +107,71 @@ async def test_outbox_publisher_releases_failure_with_bounded_retry(make_envelop
 
 
 @pytest.mark.asyncio
+async def test_outbox_publisher_marks_dead_attempts_and_metrics(make_envelope) -> None:
+    message = _message(make_envelope, max_attempts=1)
+    repository = FakeDispatchRepository([message])
+    metrics = PlatformMetrics()
+
+    async def sink(_item: OutboxMessage) -> None:
+        raise RuntimeError("terminal")
+
+    publisher = OutboxPublisher(
+        repository,
+        sink,
+        worker_id="unit-worker",
+        retry_base_seconds=0.01,
+        retry_max_seconds=0.01,
+        metrics=metrics,
+    )
+
+    assert await publisher.run_once() == 1
+    rendered = metrics.render()
+    assert repository.released[0][3] == "RuntimeError"
+    assert b'operation="delivery",outcome="dead"' in rendered
+
+
+@pytest.mark.asyncio
+async def test_outbox_publisher_captures_loop_failures_and_recovers() -> None:
+    class FailingRepository(FakeDispatchRepository):
+        def __init__(self) -> None:
+            super().__init__()
+            self.fail_next = True
+
+        async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]:
+            if self.fail_next:
+                self.fail_next = False
+                raise RuntimeError("claim failed")
+            return await super().claim_batch(worker_id, limit)
+
+    repository = FailingRepository()
+
+    async def sink(_item: OutboxMessage) -> None:
+        return None
+
+    publisher = OutboxPublisher(
+        repository,
+        sink,
+        worker_id="background-worker",
+        poll_interval_seconds=0.01,
+    )
+    await publisher.start()
+    for _attempt in range(100):
+        if publisher.last_error == "RuntimeError":
+            break
+        await asyncio.sleep(0.001)
+    else:
+        pytest.fail("publisher did not record the claim failure")
+    publisher.wake()
+    for _attempt in range(100):
+        if publisher.healthy:
+            break
+        await asyncio.sleep(0.001)
+    else:
+        pytest.fail("publisher did not recover")
+    await publisher.close()
+
+
+@pytest.mark.asyncio
 async def test_outbox_background_worker_becomes_healthy_and_closes() -> None:
     repository = FakeDispatchRepository()
 

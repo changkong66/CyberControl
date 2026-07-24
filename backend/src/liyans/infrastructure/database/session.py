@@ -11,6 +11,7 @@ from typing import TypeVar
 
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import TimeoutError as SQLAlchemyPoolTimeoutError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -117,15 +118,32 @@ async def apply_session_context(
 
 
 class DatabaseSessionManager:
-    def __init__(self, engine: AsyncEngine) -> None:
+    def __init__(
+        self,
+        engine: AsyncEngine,
+        *,
+        metrics: object | None = None,
+        pool_name: str = "other",
+    ) -> None:
         self.engine = engine
         self.session_factory = create_session_factory(engine)
+        self._metrics = metrics
+        self._pool_name = pool_name
+
+    def _observe_pool_timeout(self) -> None:
+        metrics = getattr(self, "_metrics", None)
+        observer = getattr(metrics, "observe_database_pool_acquisition_timeout", None)
+        if observer is not None:
+            observer(getattr(self, "_pool_name", "other"))
 
     @asynccontextmanager
     async def session(self) -> AsyncIterator[AsyncSession]:
         session = self.session_factory()
         try:
             yield session
+        except SQLAlchemyPoolTimeoutError:
+            self._observe_pool_timeout()
+            raise
         finally:
             if session.in_transaction():
                 await session.rollback()

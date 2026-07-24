@@ -117,7 +117,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     metrics: PlatformMetrics = app.state.metrics
     async with AsyncExitStack() as resources:
-        database = DatabaseSessionManager(create_database_engine(settings))
+        database = DatabaseSessionManager(
+            create_database_engine(settings, metrics=metrics, pool_name="api"),
+            metrics=metrics,
+            pool_name="api",
+        )
         resources.push_async_callback(database.close)
         app.state.database = database
         app.state.database_health = DatabaseHealthProbe(
@@ -195,7 +199,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                     settings,
                     database_url=settings.identity_reconciler_database_url,
                     application_name="liyans-identity-reconciler",
-                )
+                    metrics=metrics,
+                    pool_name="identity-reconciler",
+                ),
+                metrics=metrics,
+                pool_name="identity-reconciler",
             )
             resources.push_async_callback(identity_reconciliation_catalog.close)
         app.state.identity_reconciliation_catalog = identity_reconciliation_catalog
@@ -258,7 +266,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                     settings,
                     database_url=settings.outbox_dispatcher_database_url,
                     application_name="liyans-outbox-dispatcher",
-                )
+                    metrics=metrics,
+                    pool_name="outbox-dispatcher",
+                ),
+                metrics=metrics,
+                pool_name="outbox-dispatcher",
             )
             resources.push_async_callback(dispatcher_database.close)
             dispatcher_repository = PostgresOutboxDispatcherRepository(
