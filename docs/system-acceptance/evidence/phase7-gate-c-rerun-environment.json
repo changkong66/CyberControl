@@ -1,0 +1,39 @@
+﻿{
+    "schema_version":  "cybercontrol.gate-c-environment.v1",
+    "mode":  "Full",
+    "run_id":  "gate-c-20260724T211823Z",
+    "source_commit":  "efa5ff159fad49ac3e16f4f11f90499a3e7ab61c",
+    "source_tree":  "6378f7c2ba11e20dce1c3c728d868e2aed489e60",
+    "branch":  "main",
+    "clean_source":  true,
+    "single_host_execution":  true,
+    "production_capacity_claim_permitted":  false,
+    "compose_config_sha256":  "74ad9c889a06899d5cbfcf3aeab590dd3acd9c9c8f84048bd0bd9abe333730bf",
+    "thresholds_sha256":  "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256":  "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+    "docker_server_version":  "29.6.1",
+    "docker_cpu_limit":  16,
+    "docker_memory_limit_bytes":  7958880256,
+    "volume":  {
+                   "CreatedAt":  "2026-07-24T21:18:25Z",
+                   "Driver":  "local",
+                   "Labels":  {
+                                  "com.cybercontrol.data-class":  "isolated-clean-postgres",
+                                  "com.cybercontrol.purpose":  "phase7-gate-c"
+                              },
+                   "Mountpoint":  "/var/lib/docker/volumes/cybercontrol_gate_c_rerun_efa5ff1_20260725/_data",
+                   "Name":  "cybercontrol_gate_c_rerun_efa5ff1_20260725",
+                   "Options":  null,
+                   "Scope":  "local"
+               },
+    "runtime_images":  {
+                           "api":  "sha256:6e44b074355093058d35e352c3ac1bc0d18472a560624124b177d350e8c7b5cc",
+                           "postgres":  "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                           "keycloak":  "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0"
+                       },
+    "tools":  {
+                  "locust":  "locust 2.46.1 from C:\\Users\\wch06\\Documents\\CyberControl\\.venv\\Lib\\site-packages\\locust (Python 3.11.15)",
+                  "python":  "Python 3.11.15",
+                  "uv":  "uv 0.11.28 (ebf0f43d7 2026-07-07 x86_64-pc-windows-msvc)"
+              }
+}

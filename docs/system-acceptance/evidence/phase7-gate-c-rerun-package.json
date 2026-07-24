@@ -1,0 +1,16 @@
+{
+  "asset_bytes": 1888203,
+  "asset_digest": "sha256:21a0bf5e7c8ef30869bcf277582408d179b451e658f48a9c6b18f6a87bd27cb8",
+  "asset_id": 488895971,
+  "asset_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-rerun-failed-20260725-efa5ff1/gate-c-20260724T211823Z-efa5ff159fad-rerun-failed-evidence-v1.zip",
+  "finalization_jwt_scan": "passed",
+  "finalized_by": "tests/load/gate_c/finalize.py",
+  "finalized_evidence_secrets_directory_present": false,
+  "package": "gate-c-20260724T211823Z-efa5ff159fad-rerun-failed-evidence-v1.zip",
+  "release_id": 359581575,
+  "release_immutable": false,
+  "release_tag": "phase7-gate-c-rerun-failed-20260725-efa5ff1",
+  "release_url": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-rerun-failed-20260725-efa5ff1",
+  "schema_version": "cybercontrol.gate-c-rerun-package.v1",
+  "sha256": "21a0bf5e7c8ef30869bcf277582408d179b451e658f48a9c6b18f6a87bd27cb8"
+}
