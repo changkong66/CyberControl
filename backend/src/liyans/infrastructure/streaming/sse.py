@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import json
 import re
-from collections import defaultdict, deque
+from collections import OrderedDict, defaultdict, deque
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 
 from liyans_contracts.topic3 import SSEChunkV1, StreamFragmentType
 
+from liyans.core.async_cleanup import complete_cleanup
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError, MessageConflictError
 from liyans.core.hashing import sha256_hex
 
@@ -373,11 +374,24 @@ class InMemorySSEReplayLog:
         return next_sequence - 1 if next_sequence else None
 
 
+class _SubscriberClosed:
+    """Private queue marker used to wake a blocked SSE subscription."""
+
+
+_SUBSCRIBER_CLOSED = _SubscriberClosed()
+
+
 @dataclass(eq=False, slots=True)
 class _Subscriber:
-    queue: asyncio.Queue[SSEEvent]
+    queue: asyncio.Queue[SSEEvent | _SubscriberClosed]
     last_sequence: int
     closed: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class _ReplayCacheEntry:
+    events: tuple[SSEEvent, ...]
+    expires_at: float
 
 
 class SSEBroker:
@@ -386,15 +400,22 @@ class SSEBroker:
         replay_log: SSEReplayLog,
         *,
         subscriber_queue_size: int = 128,
+        replay_cache_seconds: float = 0.25,
         metrics: SSEMetricsObserver | None = None,
     ) -> None:
         if subscriber_queue_size < 1:
             raise ValueError("subscriber_queue_size must be positive")
+        if replay_cache_seconds <= 0:
+            raise ValueError("replay_cache_seconds must be positive")
         self._replay_log = replay_log
         self._subscriber_queue_size = subscriber_queue_size
+        self._replay_cache_seconds = replay_cache_seconds
         self._metrics = metrics
         self._subscribers: dict[str, set[_Subscriber]] = defaultdict(set)
         self._tenant_locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self._replay_cache: dict[str, OrderedDict[int | None, _ReplayCacheEntry]] = defaultdict(
+            OrderedDict
+        )
 
     async def publish(self, tenant_id: str, event_type: str, data: dict[str, Any]) -> SSEEvent:
         event = await self._replay_log.append(tenant_id, event_type, data)
@@ -409,6 +430,7 @@ class SSEBroker:
             raise ValueError("SSE events require a nonnegative sequence and aware timestamp")
         tenant_id = event.tenant_id
         async with self._tenant_locks[tenant_id]:
+            self._replay_cache.pop(tenant_id, None)
             subscribers = self._active_subscribers(tenant_id)
             if not subscribers:
                 return 0
@@ -428,6 +450,7 @@ class SSEBroker:
         if through_sequence is not None and through_sequence < 0:
             raise ValueError("through_sequence cannot be negative")
         async with self._tenant_locks[tenant_id]:
+            self._replay_cache.pop(tenant_id, None)
             subscribers = self._active_subscribers(tenant_id)
             if not subscribers:
                 return 0
@@ -460,7 +483,7 @@ class SSEBroker:
         if after_sequence is not None and after_sequence < 0:
             raise ValueError("after_sequence cannot be negative")
         async with self._tenant_locks[tenant_id]:
-            replay = await self._replay_log.replay(tenant_id, after_sequence)
+            replay = await self._subscription_replay_locked(tenant_id, after_sequence)
             self._validate_replay(tenant_id, replay, after_sequence=after_sequence)
             last_sequence = after_sequence if after_sequence is not None else -1
             if replay:
@@ -474,12 +497,14 @@ class SSEBroker:
                 last_sequence=last_sequence,
             )
             self._subscribers[tenant_id].add(subscriber)
-        self._observe("subscribe", "opened")
-        self._observe("replay", "subscriber_replay", len(replay))
-        for event in replay:
-            yield event
         try:
-            while not subscriber.closed:
+            self._observe("subscribe", "opened")
+            self._observe("replay", "subscriber_replay", len(replay))
+            for event in replay:
+                yield event
+            while True:
+                if subscriber.closed:
+                    return
                 try:
                     event = await asyncio.wait_for(
                         subscriber.queue.get(),
@@ -488,25 +513,68 @@ class SSEBroker:
                 except TimeoutError:
                     yield None
                     continue
+                if event is _SUBSCRIBER_CLOSED:
+                    return
                 yield event
         finally:
-            async with self._tenant_locks[tenant_id]:
-                self._subscribers[tenant_id].discard(subscriber)
-                if not self._subscribers[tenant_id]:
-                    self._subscribers.pop(tenant_id, None)
+            await self._remove_subscriber_cancellation_safe(tenant_id, subscriber)
             self._observe("subscribe", "closed")
 
     def _active_subscribers(self, tenant_id: str) -> list[_Subscriber]:
         return [subscriber for subscriber in self._subscribers[tenant_id] if not subscriber.closed]
 
+    async def _subscription_replay_locked(
+        self,
+        tenant_id: str,
+        after_sequence: int | None,
+    ) -> list[SSEEvent]:
+        now = asyncio.get_running_loop().time()
+        cache = self._replay_cache[tenant_id]
+        cached = cache.get(after_sequence)
+        if cached is not None and cached.expires_at > now:
+            cache.move_to_end(after_sequence)
+            self._observe("replay", "subscription_cache_hit")
+            return list(cached.events)
+        cache.pop(after_sequence, None)
+        replay = await self._replay_log.replay(tenant_id, after_sequence)
+        cache[after_sequence] = _ReplayCacheEntry(
+            events=tuple(replay),
+            expires_at=asyncio.get_running_loop().time() + self._replay_cache_seconds,
+        )
+        while len(cache) > 8:
+            cache.popitem(last=False)
+        return replay
+
     def _close_subscribers_locked(self, tenant_id: str, outcome: str) -> None:
         dropped = 0
         for subscriber in list(self._subscribers[tenant_id]):
             if not subscriber.closed:
-                subscriber.closed = True
+                self._close_subscriber_locked(tenant_id, subscriber)
                 dropped += 1
-            self._subscribers[tenant_id].discard(subscriber)
         self._observe("fanout", outcome, dropped)
+
+    async def _remove_subscriber_cancellation_safe(
+        self,
+        tenant_id: str,
+        subscriber: _Subscriber,
+    ) -> None:
+        await complete_cleanup(self._remove_subscriber(tenant_id, subscriber))
+
+    async def _remove_subscriber(self, tenant_id: str, subscriber: _Subscriber) -> None:
+        async with self._tenant_locks[tenant_id]:
+            self._subscribers[tenant_id].discard(subscriber)
+            if not self._subscribers[tenant_id]:
+                self._subscribers.pop(tenant_id, None)
+
+    def _close_subscriber_locked(self, tenant_id: str, subscriber: _Subscriber) -> None:
+        subscriber.closed = True
+        while True:
+            try:
+                subscriber.queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+        subscriber.queue.put_nowait(_SUBSCRIBER_CLOSED)
+        self._subscribers[tenant_id].discard(subscriber)
 
     async def _replay_pages_locked(
         self,
@@ -569,15 +637,13 @@ class SSEBroker:
                 if event.sequence <= subscriber.last_sequence:
                     continue
                 if event.sequence != subscriber.last_sequence + 1:
-                    subscriber.closed = True
-                    self._subscribers[tenant_id].discard(subscriber)
+                    self._close_subscriber_locked(tenant_id, subscriber)
                     self._observe("fanout", "sequence_gap_drop")
                     break
                 try:
                     subscriber.queue.put_nowait(event)
                 except asyncio.QueueFull:
-                    subscriber.closed = True
-                    self._subscribers[tenant_id].discard(subscriber)
+                    self._close_subscriber_locked(tenant_id, subscriber)
                     self._observe("fanout", "backpressure_drop")
                     break
                 subscriber.last_sequence = event.sequence

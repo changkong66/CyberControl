@@ -283,6 +283,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 worker_id=settings.service_instance_id,
                 batch_size=settings.outbox_publisher_batch_size,
                 poll_interval_seconds=settings.outbox_publisher_poll_seconds,
+                delivery_timeout_seconds=(settings.outbox_publisher_delivery_timeout_seconds),
                 retry_base_seconds=settings.outbox_publisher_retry_base_seconds,
                 retry_max_seconds=settings.outbox_publisher_retry_max_seconds,
                 metrics=metrics,

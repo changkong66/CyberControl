@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
+from liyans.core.async_cleanup import complete_cleanup
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.infrastructure.messaging.bus import AsyncMessageBus, DispatchStatus
@@ -81,6 +82,7 @@ class OutboxPublisher:
         worker_id: str,
         batch_size: int = 32,
         poll_interval_seconds: float = 0.5,
+        delivery_timeout_seconds: float = 25.0,
         retry_base_seconds: float = 0.25,
         retry_max_seconds: float = 30.0,
         metrics: OutboxMetricsObserver | None = None,
@@ -89,13 +91,22 @@ class OutboxPublisher:
             raise ValueError("worker_id must contain between one and 128 characters")
         if not 1 <= batch_size <= 1000:
             raise ValueError("batch_size must be between one and 1000")
-        if min(poll_interval_seconds, retry_base_seconds, retry_max_seconds) <= 0:
+        if (
+            min(
+                poll_interval_seconds,
+                delivery_timeout_seconds,
+                retry_base_seconds,
+                retry_max_seconds,
+            )
+            <= 0
+        ):
             raise ValueError("publisher timing settings must be positive")
         self._repository = repository
         self._sink = sink
         self._worker_id = worker_id
         self._batch_size = batch_size
         self._poll_interval = poll_interval_seconds
+        self._delivery_timeout = delivery_timeout_seconds
         self._retry_base = retry_base_seconds
         self._retry_max = retry_max_seconds
         self._metrics = metrics
@@ -154,6 +165,7 @@ class OutboxPublisher:
 
     async def _run(self) -> None:
         while not self._stopping.is_set():
+            self._wake.clear()
             try:
                 processed = await self.run_once()
                 self._last_error = None
@@ -164,7 +176,6 @@ class OutboxPublisher:
                 processed = 0
             if processed:
                 continue
-            self._wake.clear()
             try:
                 await asyncio.wait_for(self._wake.wait(), timeout=self._poll_interval)
             except TimeoutError:
@@ -172,13 +183,27 @@ class OutboxPublisher:
 
     async def _process(self, message: OutboxMessage) -> None:
         try:
-            await self._sink(message)
+            await asyncio.wait_for(
+                self._sink(message),
+                timeout=self._delivery_timeout,
+            )
             await self._repository.mark_published(
                 message.outbox_id,
                 self._worker_id,
                 datetime.now(UTC),
             )
             self._observe("delivery", "published")
+        except asyncio.CancelledError:
+            await complete_cleanup(
+                self._repository.release_claim(
+                    message.outbox_id,
+                    self._worker_id,
+                    datetime.now(UTC),
+                    error_code="CancelledError",
+                )
+            )
+            self._observe("delivery", "cancelled")
+            raise
         except Exception as exc:
             error_code = exc.code.value if isinstance(exc, LiyanError) else type(exc).__name__
             delay = min(

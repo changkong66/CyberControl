@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
+from liyans.core.async_cleanup import complete_cleanup
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,14 @@ class TransactionRetryPolicy:
 
 SessionFactory = async_sessionmaker[AsyncSession]
 TransactionalOperation = Callable[[AsyncSession], Awaitable[T]]
+
+
+async def _close_session(session: AsyncSession) -> None:
+    try:
+        if session.in_transaction():
+            await session.rollback()
+    finally:
+        await session.close()
 
 
 def create_session_factory(engine: AsyncEngine) -> SessionFactory:
@@ -145,9 +154,7 @@ class DatabaseSessionManager:
             self._observe_pool_timeout()
             raise
         finally:
-            if session.in_transaction():
-                await session.rollback()
-            await session.close()
+            await complete_cleanup(_close_session(session))
 
     @asynccontextmanager
     async def transaction(
