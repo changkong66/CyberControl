@@ -203,7 +203,10 @@ def test_gate_c_runner_preserves_volume_and_identity_boundaries() -> None:
     assert '"--no-deps"' in runner
     assert "down -v" not in runner
     assert "X-Tenant-ID" not in runner
-    assert "cybercontrol_gate_c_postgres" in runner
+    assert "[string]$PostgresVolumeName" in runner
+    assert "Full Gate C acceptance requires an explicit fresh -PostgresVolumeName" in runner
+    assert "$env:GATE_C_POSTGRES_VOLUME = $volumeName" in runner
+    assert '"cybercontrol_gate_c_postgres"' not in runner
 
 
 def test_gate_c_worker_credentials_are_disjoint_and_complete() -> None:
