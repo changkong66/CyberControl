@@ -362,6 +362,13 @@ jobs:
           --output-format JSON
           --output-file artifacts/sbom/python.cdx.json
           --validate
+      - name: Complete and verify non-SPDX Python license evidence
+        run: >-
+          uv run --frozen python tools/complete_python_sbom_license_evidence.py
+          --sbom artifacts/sbom/python.cdx.json
+          --lock uv.lock
+          --evidence tools/supply-chain/python-license-evidence.v1.json
+          --output artifacts/sbom/python.cdx.json
       - name: Enforce Python dependency license policy
         run: >-
           uv run --frozen python tools/validate_sbom_policy.py

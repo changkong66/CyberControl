@@ -238,6 +238,13 @@ try {
         "--output-file", "artifacts/sbom/python.cdx.json", "--validate"
     ) -Description "Python CycloneDX generation"
     Invoke-Native -Executable $Uv -Arguments @(
+        "run", "--frozen", "python", "tools/complete_python_sbom_license_evidence.py",
+        "--sbom", "artifacts/sbom/python.cdx.json",
+        "--lock", "uv.lock",
+        "--evidence", "tools/supply-chain/python-license-evidence.v1.json",
+        "--output", "artifacts/sbom/python.cdx.json"
+    ) -Description "Python license evidence completion and verification"
+    Invoke-Native -Executable $Uv -Arguments @(
         "run", "--frozen", "python", "tools/validate_sbom_policy.py",
         "artifacts/sbom/python.cdx.json", "--output",
         "artifacts/sbom/python-license-policy.json"
