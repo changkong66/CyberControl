@@ -205,7 +205,7 @@ jobs:
             --cov-fail-under=90
       - name: Upload test and coverage evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-postgres-test-evidence
           path: |
@@ -251,7 +251,7 @@ jobs:
           go build ./...
           go list -m -json all > ../../artifacts/go/modules.json
       - name: Upload Go evidence
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: go-contract-evidence
           path: artifacts/go
@@ -303,7 +303,7 @@ jobs:
             artifacts/sbom/frontend.cdx.json \
             --output artifacts/sbom/frontend-license-policy.json
       - name: Upload frontend SBOM
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-sbom
           path: |
@@ -313,7 +313,7 @@ jobs:
           retention-days: 90
       - name: Upload frontend test evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-test-evidence
           path: frontend/coverage/coverage-final.json
@@ -375,7 +375,7 @@ jobs:
           artifacts/sbom/python.cdx.json
           --output artifacts/sbom/python-license-policy.json
       - name: Upload Python supply-chain evidence
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-supply-chain
           path: artifacts/sbom
@@ -577,7 +577,7 @@ jobs:
           format: table
       - name: Upload container security evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: container-security-evidence
           path: |
@@ -629,7 +629,7 @@ jobs:
             --report-path artifacts/security/gitleaks-working-tree.json
       - name: Upload secret-scan evidence
         if: ${{ always() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: secret-scan-evidence
           path: artifacts/security/gitleaks*.json
