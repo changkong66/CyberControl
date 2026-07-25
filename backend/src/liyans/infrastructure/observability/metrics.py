@@ -39,10 +39,24 @@ class PlatformMetrics:
             ("operation", "outcome"),
             registry=self.registry,
         )
+        self._outbox_latency = Histogram(
+            "liyans_outbox_latency_seconds",
+            "Outbox lifecycle latency by measured stage.",
+            ("stage",),
+            buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60),
+            registry=self.registry,
+        )
         self._sse_operations = Counter(
             "liyans_sse_operations_total",
             "SSE persistence, replay, notification, and fan-out operations.",
             ("operation", "outcome"),
+            registry=self.registry,
+        )
+        self._sse_latency = Histogram(
+            "liyans_sse_latency_seconds",
+            "SSE lifecycle latency by measured stage.",
+            ("stage",),
+            buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
             registry=self.registry,
         )
         self._sse_gauges = Gauge(
@@ -122,9 +136,15 @@ class PlatformMetrics:
         if count > 0:
             self._outbox_operations.labels(operation, outcome).inc(count)
 
+    def observe_outbox_latency(self, stage: str, duration_seconds: float) -> None:
+        self._outbox_latency.labels(stage[:64]).observe(max(0.0, duration_seconds))
+
     def observe_sse(self, operation: str, outcome: str, count: int = 1) -> None:
         if count > 0:
             self._sse_operations.labels(operation, outcome).inc(count)
+
+    def observe_sse_latency(self, stage: str, duration_seconds: float) -> None:
+        self._sse_latency.labels(stage[:64]).observe(max(0.0, duration_seconds))
 
     def set_sse_gauge(self, metric: str, value: int) -> None:
         self._sse_gauges.labels(metric[:64]).set(max(0, value))
