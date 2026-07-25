@@ -38,7 +38,13 @@ class PostgresOutboxRepository:
                 category=ErrorCategory.DATABASE,
                 status_code=500,
             )
-        if message.published_at is not None or message.attempts != 0:
+        if (
+            message.published_at is not None
+            or message.attempts != 0
+            or message.claimed_at is not None
+            or message.claim_expires_at is not None
+            or message.published_cursor is not None
+        ):
             raise ValueError("new outbox messages cannot be pre-published or pre-attempted")
         if message.max_attempts != message.envelope.delivery.max_attempts:
             raise ValueError("outbox max_attempts must match the Envelope delivery contract")
@@ -264,7 +270,9 @@ class PostgresOutboxRepository:
             published_at=row.published_at,
             attempts=row.attempts,
             max_attempts=row.max_attempts,
+            claimed_at=row.claimed_at,
             claim_expires_at=row.claim_expires_at,
+            published_cursor=row.sequence if row.claimed_at is not None else None,
         )
 
     @staticmethod

@@ -19,7 +19,9 @@ class OutboxMessage:
     published_at: datetime | None
     attempts: int = 0
     max_attempts: int = 3
+    claimed_at: datetime | None = None
     claim_expires_at: datetime | None = None
+    published_cursor: int | None = None
 
 
 class OutboxRepository(Protocol):

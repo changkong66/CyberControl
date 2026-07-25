@@ -246,6 +246,8 @@ async def test_dispatcher_claims_contiguous_partition_window_in_one_batch(
     target = [message for message in claimed if message.outbox_id in target_ids]
 
     assert [message.envelope.sequence for message in target] == [0, 1, 2, 3]
+    assert [message.published_cursor for message in target] == [0, 1, 2, 3]
+    assert all(message.claimed_at is not None for message in target)
     for message in target:
         await repository.mark_published(
             message.outbox_id,

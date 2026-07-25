@@ -16,6 +16,14 @@ pytestmark = pytest.mark.integration
 RUNTIME_URL = os.getenv("LIYAN_TEST_DATABASE_URL")
 
 
+async def _next_non_heartbeat(stream, *, deadline_seconds: float = 2):
+    async with asyncio.timeout(deadline_seconds):
+        while True:
+            event = await anext(stream)
+            if event is not None:
+                return event
+
+
 @pytest.mark.asyncio
 async def test_postgres_replay_subscription_close_removes_replay_subscriber(
     postgres_runtime,
@@ -65,8 +73,8 @@ async def test_two_instances_receive_once_and_recover_disconnect_gap(
     stream_a = broker_a.subscribe(context.tenant_id, heartbeat_seconds=1)
     stream_b = broker_b.subscribe(context.tenant_id, heartbeat_seconds=1)
     with tenant_scope(context):
-        first_from_a = asyncio.create_task(anext(stream_a))
-        first_from_b = asyncio.create_task(anext(stream_b))
+        first_from_a = asyncio.create_task(_next_non_heartbeat(stream_a))
+        first_from_b = asyncio.create_task(_next_non_heartbeat(stream_b))
     for _attempt in range(100):
         if (
             context.tenant_id in broker_a.active_tenants()
@@ -111,9 +119,8 @@ async def test_two_instances_receive_once_and_recover_disconnect_gap(
 
         await bridge_b.start()
         with tenant_scope(context):
-            recovered_one = await asyncio.wait_for(anext(stream_b), timeout=2)
-            recovered_two = await asyncio.wait_for(anext(stream_b), timeout=2)
-        assert recovered_one is not None and recovered_two is not None
+            recovered_one = await _next_non_heartbeat(stream_b)
+            recovered_two = await _next_non_heartbeat(stream_b)
         assert [recovered_one.sequence, recovered_two.sequence] == [
             missed_one.sequence,
             missed_two.sequence,

@@ -23,6 +23,8 @@ OutboxSink = Callable[[OutboxMessage], Awaitable[None]]
 class OutboxMetricsObserver(Protocol):
     def observe_outbox(self, operation: str, outcome: str, count: int = 1) -> None: ...
 
+    def observe_outbox_latency(self, stage: str, duration_seconds: float) -> None: ...
+
     def set_outbox_gauge(self, metric: str, value: int) -> None: ...
 
 
@@ -48,10 +50,12 @@ class MessageBusOutboxSink:
             session_id=envelope.session_id,
         )
         with tenant_scope(context):
-            cursor = await self._repository.published_cursor(
-                message.tenant_id,
-                envelope.partition_key,
-            )
+            cursor = message.published_cursor
+            if cursor is None:
+                cursor = await self._repository.published_cursor(
+                    message.tenant_id,
+                    envelope.partition_key,
+                )
             if envelope.sequence != cursor:
                 raise LiyanError(
                     ErrorCode.MESSAGE_SEQUENCE_GAP,
@@ -164,6 +168,13 @@ class OutboxPublisher:
             self._observe("claim", "empty")
             return 0
         self._observe("claim", "claimed", len(messages))
+        for message in messages:
+            if message.claimed_at is not None:
+                self._observe_latency(
+                    "created_to_claimed",
+                    message.created_at,
+                    message.claimed_at,
+                )
         partitions: dict[tuple[str, str], list[OutboxMessage]] = defaultdict(list)
         for message in messages:
             partitions[(message.tenant_id, message.envelope.partition_key)].append(message)
@@ -289,10 +300,22 @@ class OutboxPublisher:
                 self._sink(message),
                 timeout=self._delivery_timeout,
             )
+            published_at = datetime.now(UTC)
             await self._repository.mark_published(
                 message.outbox_id,
                 self._worker_id,
-                datetime.now(UTC),
+                published_at,
+            )
+            if message.claimed_at is not None:
+                self._observe_latency(
+                    "claimed_to_published",
+                    message.claimed_at,
+                    published_at,
+                )
+            self._observe_latency(
+                "created_to_published",
+                message.created_at,
+                published_at,
             )
             self._observe("delivery", "published")
             return True
@@ -355,6 +378,18 @@ class OutboxPublisher:
     def _observe(self, operation: str, outcome: str, count: int = 1) -> None:
         if self._metrics is not None and count > 0:
             self._metrics.observe_outbox(operation, outcome, count)
+
+    def _observe_latency(
+        self,
+        stage: str,
+        started_at: datetime,
+        completed_at: datetime,
+    ) -> None:
+        if self._metrics is None:
+            return
+        observer = getattr(self._metrics, "observe_outbox_latency", None)
+        if observer is not None:
+            observer(stage, max(0.0, (completed_at - started_at).total_seconds()))
 
     def _update_gauges(self) -> None:
         if self._metrics is None:

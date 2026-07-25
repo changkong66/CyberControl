@@ -82,6 +82,7 @@ class PostgresOutboxDispatcherRepository:
                     grouped[key] = (int(cursor), [])
                 grouped[key][1].append(row)
             partitions: list[list[OutboxMessageModel]] = []
+            published_cursors: dict[UUID, int] = {}
             for cursor, candidates in grouped.values():
                 contiguous: list[OutboxMessageModel] = []
                 expected = cursor
@@ -93,6 +94,9 @@ class PostgresOutboxDispatcherRepository:
                     contiguous.append(row)
                     expected += 1
                 if contiguous:
+                    published_cursors.update(
+                        {row.outbox_id: cursor + index for index, row in enumerate(contiguous)}
+                    )
                     partitions.append(contiguous)
             partitions.sort(
                 key=lambda items: (
@@ -117,7 +121,13 @@ class PostgresOutboxDispatcherRepository:
                 row.claim_expires_at = now + self._claim_lease
                 row.attempts += 1
                 row.updated_at = now
-            return [self._to_message(row) for row in rows]
+            return [
+                self._to_message(
+                    row,
+                    published_cursor=published_cursors.get(row.outbox_id),
+                )
+                for row in rows
+            ]
 
     async def mark_published(
         self,
@@ -271,7 +281,11 @@ class PostgresOutboxDispatcherRepository:
             raise ValueError("outbox claim limit must be between one and 1000")
 
     @staticmethod
-    def _to_message(row: OutboxMessageModel) -> OutboxMessage:
+    def _to_message(
+        row: OutboxMessageModel,
+        *,
+        published_cursor: int | None = None,
+    ) -> OutboxMessage:
         return OutboxMessage(
             outbox_id=row.outbox_id,
             tenant_id=row.tenant_id,
@@ -281,7 +295,9 @@ class PostgresOutboxDispatcherRepository:
             published_at=row.published_at,
             attempts=row.attempts,
             max_attempts=row.max_attempts,
+            claimed_at=row.claimed_at,
             claim_expires_at=row.claim_expires_at,
+            published_cursor=published_cursor,
         )
 
     @staticmethod
