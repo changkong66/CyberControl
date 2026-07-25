@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
+import hmac
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
 
-from liyans.core.errors import ErrorCode, LiyanError
+import liyans.infrastructure.streaming.sse as sse_module
+from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.infrastructure.streaming.sse import (
     InMemorySSEReplayLog,
     ReplayCursorCodec,
@@ -18,6 +23,30 @@ from liyans.infrastructure.streaming.sse import (
     make_text_chunks,
     split_utf8_safely,
 )
+
+
+async def _wait_for_live_subscription(broker: SSEBroker, tenant_id: str = "tenant-a") -> None:
+    for _attempt in range(100):
+        subscribers = broker._subscribers.get(tenant_id, set())
+        if any(not subscriber.closed and subscriber.state == "LIVE" for subscriber in subscribers):
+            return
+        await asyncio.sleep(0)
+    pytest.fail("SSE subscriber did not become live")
+
+
+def _event(
+    sequence: int,
+    *,
+    tenant_id: str = "tenant-a",
+    value: int | str | None = None,
+) -> SSEEvent:
+    return SSEEvent(
+        tenant_id=tenant_id,
+        sequence=sequence,
+        event_type="progress",
+        data={"value": sequence if value is None else value},
+        emitted_at=datetime.now(UTC),
+    )
 
 
 def test_utf8_chunks_reassemble_after_out_of_order_delivery() -> None:
@@ -114,10 +143,15 @@ async def test_broker_coalesces_identical_subscription_replay_queries() -> None:
         def __init__(self) -> None:
             super().__init__()
             self.replay_calls = 0
+            self.latest_calls = 0
 
         async def replay(self, tenant_id, after_sequence):
             self.replay_calls += 1
             return await super().replay(tenant_id, after_sequence)
+
+        async def latest_sequence(self, tenant_id):
+            self.latest_calls += 1
+            return await super().latest_sequence(tenant_id)
 
     log = CountingReplayLog()
     event = await log.append("tenant-a", "progress", {"value": 1})
@@ -128,6 +162,7 @@ async def test_broker_coalesces_identical_subscription_replay_queries() -> None:
     assert await anext(first) == event
     assert await anext(second) == event
     assert log.replay_calls == 1
+    assert log.latest_calls == 1
 
     await first.aclose()
     await second.aclose()
@@ -135,7 +170,54 @@ async def test_broker_coalesces_identical_subscription_replay_queries() -> None:
     third = broker.subscribe("tenant-a", heartbeat_seconds=60)
     assert await anext(third) == event
     assert log.replay_calls == 2
+    assert log.latest_calls == 2
     await third.aclose()
+
+
+@pytest.mark.asyncio
+async def test_broker_does_not_share_replay_across_different_durable_watermarks() -> None:
+    class SnapshotReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.replay_calls = 0
+            self.first_replay_captured = asyncio.Event()
+            self.release_first_replay = asyncio.Event()
+
+        async def replay(self, tenant_id, after_sequence):
+            replay = await super().replay(tenant_id, after_sequence)
+            self.replay_calls += 1
+            if self.replay_calls == 1:
+                self.first_replay_captured.set()
+                await self.release_first_replay.wait()
+            return replay
+
+    log = SnapshotReplayLog()
+    baseline = await log.append("tenant-a", "progress", {"value": 0})
+    broker = SSEBroker(log, replay_cache_seconds=60)
+    first = broker.subscribe(
+        "tenant-a",
+        after_sequence=baseline.sequence,
+        heartbeat_seconds=1,
+    )
+    first_waiting = asyncio.create_task(anext(first))
+    await log.first_replay_captured.wait()
+
+    committed = await log.append("tenant-a", "progress", {"value": 1})
+    assert await broker.deliver(committed) == 0
+    second = broker.subscribe(
+        "tenant-a",
+        after_sequence=baseline.sequence,
+        heartbeat_seconds=1,
+    )
+    assert await anext(second) == committed
+
+    log.release_first_replay.set()
+    assert await first_waiting == committed
+    assert log.replay_calls == 2
+    assert broker._replay_cache["tenant-a"][baseline.sequence].events == (committed,)
+
+    await first.aclose()
+    await second.aclose()
 
 
 @pytest.mark.asyncio
@@ -220,12 +302,7 @@ async def test_broker_retention_drop_wakes_live_waiter_immediately() -> None:
     broker = SSEBroker(log)
     stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
     waiting = asyncio.create_task(anext(stream))
-    for _attempt in range(100):
-        if broker.active_tenants():
-            break
-        await asyncio.sleep(0)
-    else:
-        pytest.fail("SSE subscriber did not become active")
+    await _wait_for_live_subscription(broker)
 
     await log.append("tenant-a", "progress", {"value": 1})
     newest = await log.append("tenant-a", "progress", {"value": 2})
@@ -242,7 +319,7 @@ async def test_broker_replays_missing_sequence_before_notified_event() -> None:
     broker = SSEBroker(log, subscriber_queue_size=4)
     stream = broker.subscribe("tenant-a", heartbeat_seconds=1)
     waiting = asyncio.create_task(anext(stream))
-    await asyncio.sleep(0)
+    await _wait_for_live_subscription(broker)
 
     first = await log.append("tenant-a", "progress", {"value": 1})
     second = await log.append("tenant-a", "progress", {"value": 2})
@@ -252,6 +329,126 @@ async def test_broker_replays_missing_sequence_before_notified_event() -> None:
     assert await waiting == first
     assert await anext(stream) == second
     await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_broker_buffers_live_events_during_subscription_replay_without_loss() -> None:
+    class DelayedReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.replay_started = asyncio.Event()
+            self.release_replay = asyncio.Event()
+
+        async def replay(self, tenant_id, after_sequence):
+            self.replay_started.set()
+            await self.release_replay.wait()
+            return await super().replay(tenant_id, after_sequence)
+
+    log = DelayedReplayLog()
+    broker = SSEBroker(log, subscriber_queue_size=4)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=1)
+    waiting = asyncio.create_task(anext(stream))
+
+    await log.replay_started.wait()
+    first = await log.append("tenant-a", "progress", {"value": 1})
+    second = await log.append("tenant-a", "progress", {"value": 2})
+    assert await broker.deliver(second) == 0
+    log.release_replay.set()
+
+    assert await waiting == first
+    assert await anext(stream) == second
+    assert await anext(stream) is None
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_broker_merges_no_cursor_history_and_live_replay_without_gap() -> None:
+    class DelayedReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.replay_started = asyncio.Event()
+            self.release_replay = asyncio.Event()
+
+        async def replay(self, tenant_id, after_sequence):
+            self.replay_started.set()
+            await self.release_replay.wait()
+            return await super().replay(tenant_id, after_sequence)
+
+    log = DelayedReplayLog()
+    first = await log.append("tenant-a", "progress", {"value": 1})
+    second = await log.append("tenant-a", "progress", {"value": 2})
+    broker = SSEBroker(log, subscriber_queue_size=8)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=0.01)
+    waiting = asyncio.create_task(anext(stream))
+
+    await log.replay_started.wait()
+    third = await log.append("tenant-a", "progress", {"value": 3})
+    fourth = await log.append("tenant-a", "progress", {"value": 4})
+    assert await broker.deliver(fourth) == 0
+    log.release_replay.set()
+
+    assert [
+        await waiting,
+        await anext(stream),
+        await anext(stream),
+        await anext(stream),
+    ] == [first, second, third, fourth]
+    assert await anext(stream) is None
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_broker_close_while_live_wait_is_pending_is_idempotent() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+
+    await stream.aclose()
+
+    with pytest.raises(StopAsyncIteration):
+        await asyncio.wait_for(waiting, timeout=0.1)
+    await stream.aclose()
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
+async def test_broker_close_finishes_shared_replay_cleanup_when_caller_is_cancelled() -> None:
+    class CancellationAwareReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.replay_started = asyncio.Event()
+            self.replay_cancelled = asyncio.Event()
+            self.release_cleanup = asyncio.Event()
+
+        async def replay(self, tenant_id, after_sequence):
+            del tenant_id, after_sequence
+            self.replay_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                self.replay_cancelled.set()
+                await self.release_cleanup.wait()
+                raise
+
+    log = CancellationAwareReplayLog()
+    broker = SSEBroker(log)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    waiting = asyncio.create_task(anext(stream))
+    await log.replay_started.wait()
+
+    closing = asyncio.create_task(stream.aclose())
+    await asyncio.wait_for(log.replay_cancelled.wait(), timeout=0.1)
+    closing.cancel()
+    log.release_cleanup.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await closing
+    with pytest.raises(StopAsyncIteration):
+        await asyncio.wait_for(waiting, timeout=0.1)
+    assert broker.active_tenants() == ()
+    assert broker._replay_tasks == {}
+    assert broker._latest_tasks == {}
 
 
 @pytest.mark.asyncio
@@ -274,7 +471,7 @@ async def test_broker_rejects_cross_tenant_replay_data() -> None:
     broker = SSEBroker(InvalidReplayLog())
     stream = broker.subscribe("tenant-a")
     waiting = asyncio.create_task(anext(stream))
-    await asyncio.sleep(0)
+    await _wait_for_live_subscription(broker)
     with pytest.raises(ValueError, match="another tenant"):
         await broker.deliver(
             SSEEvent(
@@ -445,7 +642,7 @@ async def test_broker_reports_active_tenants_and_backpressure_drop() -> None:
     broker = SSEBroker(InMemorySSEReplayLog(), subscriber_queue_size=1)
     stream = broker.subscribe("tenant-a", heartbeat_seconds=1)
     waiting = asyncio.create_task(anext(stream))
-    await asyncio.sleep(0)
+    await _wait_for_live_subscription(broker)
     assert broker.active_tenants() == ("tenant-a",)
 
     first = await broker.publish("tenant-a", "progress", {"value": 1})
@@ -465,7 +662,7 @@ async def test_broker_retention_gap_closes_subscribers() -> None:
     broker = SSEBroker(log)
     stream = broker.subscribe("tenant-a", heartbeat_seconds=1)
     waiting = asyncio.create_task(anext(stream))
-    await asyncio.sleep(0)
+    await _wait_for_live_subscription(broker)
     await log.append("tenant-a", "progress", {"value": 1})
     event = await log.append("tenant-a", "progress", {"value": 2})
 
@@ -486,7 +683,7 @@ async def test_broker_missing_durable_sequence_is_retriable() -> None:
     broker = SSEBroker(MissingReplayLog())
     stream = broker.subscribe("tenant-a", heartbeat_seconds=1)
     waiting = asyncio.create_task(anext(stream))
-    await asyncio.sleep(0)
+    await _wait_for_live_subscription(broker)
 
     with pytest.raises(LiyanError) as error:
         await broker.deliver(
@@ -502,3 +699,558 @@ async def test_broker_missing_durable_sequence_is_retriable() -> None:
     waiting.cancel()
     await asyncio.gather(waiting, return_exceptions=True)
     await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_subscription_context_manager_closes_and_rejects_further_iteration() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+
+    async with stream as managed:
+        assert managed is stream
+        assert await anext(managed) is None
+        assert broker.active_tenants() == ("tenant-a",)
+
+    assert broker.active_tenants() == ()
+    with pytest.raises(StopAsyncIteration):
+        await anext(stream)
+
+
+@pytest.mark.asyncio
+async def test_subscription_close_failure_restores_retryable_state(monkeypatch) -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    assert await anext(stream) is None
+
+    async def fail_remove(_tenant_id, _subscriber) -> None:
+        raise RuntimeError("injected close failure")
+
+    monkeypatch.setattr(broker, "_remove_subscriber_cancellation_safe", fail_remove)
+
+    with pytest.raises(RuntimeError, match="close failure"):
+        await stream.aclose()
+
+    assert stream._closing is False
+    assert stream._cleanup_complete is False
+    monkeypatch.undo()
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_subscription_replay_fails_closed_when_durable_target_is_missing() -> None:
+    class MissingTargetReplayLog(InMemorySSEReplayLog):
+        async def replay(self, tenant_id, after_sequence):
+            del tenant_id, after_sequence
+            return []
+
+        async def latest_sequence(self, tenant_id):
+            assert tenant_id == "tenant-a"
+            return 3
+
+    broker = SSEBroker(MissingTargetReplayLog())
+    stream = broker.subscribe("tenant-a", after_sequence=0)
+
+    with pytest.raises(LiyanError) as error:
+        await anext(stream)
+
+    assert error.value.code == ErrorCode.MESSAGE_SEQUENCE_GAP
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
+async def test_replay_buffer_conflict_and_bounds_close_subscriber() -> None:
+    class BlockingReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = asyncio.Event()
+            self.release = asyncio.Event()
+
+        async def replay(self, tenant_id, after_sequence):
+            del tenant_id, after_sequence
+            self.started.set()
+            await self.release.wait()
+            return []
+
+    conflict_log = BlockingReplayLog()
+    conflict_broker = SSEBroker(conflict_log)
+    conflict_stream = conflict_broker.subscribe("tenant-a")
+    conflict_wait = asyncio.create_task(anext(conflict_stream))
+    await conflict_log.started.wait()
+    conflict_subscriber = next(iter(conflict_broker._subscribers["tenant-a"]))
+
+    first = _event(0, value="first")
+    conflicting = _event(0, value="conflicting")
+    async with conflict_broker._tenant_locks["tenant-a"]:
+        conflict_broker._buffer_replay_event_locked(
+            "tenant-a",
+            conflict_subscriber,
+            first,
+        )
+        conflict_broker._buffer_replay_event_locked(
+            "tenant-a",
+            conflict_subscriber,
+            conflicting,
+        )
+    assert conflict_subscriber.closed is True
+    conflict_log.release.set()
+    await asyncio.gather(conflict_wait, return_exceptions=True)
+    await conflict_stream.aclose()
+
+    bounded_log = BlockingReplayLog()
+    bounded_broker = SSEBroker(
+        bounded_log,
+        replay_buffer_max_events=1,
+        replay_buffer_max_bytes=1024,
+    )
+    bounded_stream = bounded_broker.subscribe("tenant-a")
+    bounded_wait = asyncio.create_task(anext(bounded_stream))
+    await bounded_log.started.wait()
+    bounded_subscriber = next(iter(bounded_broker._subscribers["tenant-a"]))
+
+    async with bounded_broker._tenant_locks["tenant-a"]:
+        bounded_broker._buffer_replay_event_locked(
+            "tenant-a",
+            bounded_subscriber,
+            _event(0),
+        )
+        bounded_broker._buffer_replay_event_locked(
+            "tenant-a",
+            bounded_subscriber,
+            _event(1),
+        )
+    assert bounded_subscriber.closed is True
+    bounded_log.release.set()
+    await asyncio.gather(bounded_wait, return_exceptions=True)
+    await bounded_stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_replay_cache_enforces_size_tenant_and_expiry_bounds() -> None:
+    oversized = SSEBroker(
+        InMemorySSEReplayLog(),
+        replay_cache_max_events=1,
+        replay_cache_max_bytes=1024,
+    )
+    oversized._store_replay_cache("tenant-a", None, (_event(0), _event(1)))
+    assert oversized._replay_cache == {}
+
+    broker = SSEBroker(
+        InMemorySSEReplayLog(),
+        replay_cache_seconds=0.001,
+        replay_cache_max_events=8,
+        replay_cache_max_bytes=45,
+        replay_cache_max_tenants=1,
+    )
+    broker._store_replay_cache("tenant-a", None, (_event(0, value="a"),))
+    broker._store_replay_cache("tenant-a", None, (_event(1, value="b"),))
+    assert broker._replay_cache_events == 1
+    assert broker._replay_cache_bytes > 0
+
+    broker._store_replay_cache("tenant-b", None, (_event(0, tenant_id="tenant-b"),))
+    assert tuple(broker._replay_cache) == ("tenant-b",)
+
+    for sequence in range(4):
+        broker._store_replay_cache(
+            "tenant-b",
+            sequence,
+            (_event(sequence + 1, tenant_id="tenant-b", value="x" * 10),),
+        )
+    assert broker._replay_cache_bytes <= broker._replay_cache_max_bytes
+
+    event_bounded = SSEBroker(
+        InMemorySSEReplayLog(),
+        replay_cache_max_events=3,
+        replay_cache_max_bytes=4096,
+    )
+    event_bounded._store_replay_cache("tenant-a", None, (_event(0), _event(1)))
+    event_bounded._store_replay_cache("tenant-a", 2, (_event(3), _event(4)))
+    assert event_bounded._replay_cache_events == 2
+    assert tuple(event_bounded._replay_cache["tenant-a"]) == (2,)
+
+    tenant_cache = broker._replay_cache["tenant-b"]
+    for cursor, entry in list(tenant_cache.items()):
+        tenant_cache[cursor] = replace(entry, expires_at=0)
+    assert broker._cached_replay("tenant-b", None, None) is None
+    assert "tenant-b" not in broker._replay_cache
+    assert broker._replay_cache_events == 0
+    assert broker._replay_cache_bytes == 0
+
+
+@pytest.mark.asyncio
+async def test_latest_cache_is_monotonic_bounded_and_expires() -> None:
+    broker = SSEBroker(
+        InMemorySSEReplayLog(),
+        replay_cache_seconds=0.001,
+        replay_cache_max_tenants=1,
+    )
+
+    assert broker._store_latest_sequence("tenant-a", 5) == 5
+    assert broker._store_latest_sequence("tenant-a", 3) == 5
+    assert broker._store_latest_sequence("tenant-b", 1) == 1
+    assert tuple(broker._latest_cache) == ("tenant-b",)
+
+    broker._latest_cache["tenant-b"] = replace(
+        broker._latest_cache["tenant-b"],
+        expires_at=0,
+    )
+    assert broker._cached_latest_sequence("tenant-b") == (False, None)
+
+
+def test_chunk_assembler_fails_closed_on_identity_and_sequence_conflicts() -> None:
+    stream_id = uuid4()
+    candidate_id = uuid4()
+    chunks = make_text_chunks(
+        "abcdefghijkl",
+        stream_id=stream_id,
+        candidate_id=candidate_id,
+        candidate_version=1,
+        block_id="block-conflict",
+        max_bytes=4,
+    )
+
+    fragment_conflict = SSEChunkAssembler()
+    fragment_conflict.add(chunks[0])
+    with pytest.raises(LiyanError) as reused_fragment:
+        fragment_conflict.add(
+            chunks[0].model_copy(
+                update={
+                    "data": "zzzz",
+                    "data_sha256": "f" * 64,
+                }
+            )
+        )
+    assert reused_fragment.value.code == ErrorCode.SSE_FRAGMENT_CONFLICT
+    assert fragment_conflict.add(chunks[0]) is False
+
+    duplicate_index = SSEChunkAssembler()
+    duplicate_index.add(chunks[0])
+    assert duplicate_index.add(chunks[0].model_copy(update={"fragment_id": uuid4()})) is False
+
+    older_index = SSEChunkAssembler()
+    older_index.add(chunks[0])
+    state = next(iter(older_index._states.values()))
+    state.index_digests.pop(0)
+    state.fragment_digests.clear()
+    with pytest.raises(LiyanError) as stale:
+        older_index.add(chunks[0].model_copy(update={"fragment_id": uuid4()}))
+    assert stale.value.code == ErrorCode.SSE_FRAGMENT_CONFLICT
+
+    beyond_final = SSEChunkAssembler()
+    beyond_final.add(chunks[2])
+    with pytest.raises(LiyanError) as trailing:
+        beyond_final.add(chunks[0].model_copy(update={"is_final": True}))
+    assert trailing.value.code == ErrorCode.SSE_FRAGMENT_CONFLICT
+
+    invalid_first = SSEChunkAssembler()
+    with pytest.raises(LiyanError) as first_type:
+        invalid_first.add(
+            chunks[1].model_copy(
+                update={
+                    "chunk_index": 0,
+                    "fragment_id": uuid4(),
+                }
+            )
+        )
+    assert first_type.value.code == ErrorCode.SSE_FRAGMENT_CONFLICT
+
+    repeated_start = SSEChunkAssembler()
+    repeated_start.add(chunks[0])
+    with pytest.raises(LiyanError) as start_after_zero:
+        repeated_start.add(
+            chunks[0].model_copy(
+                update={
+                    "chunk_index": 1,
+                    "fragment_id": uuid4(),
+                }
+            )
+        )
+    assert start_after_zero.value.code == ErrorCode.SSE_FRAGMENT_CONFLICT
+
+
+def test_cursor_codec_rejects_structure_signature_and_negative_sequence() -> None:
+    secret = b"x" * 32
+    codec = ReplayCursorCodec(secret)
+
+    malformed = base64.urlsafe_b64encode(b"tenant-a:1.invalid").decode().rstrip("=")
+    with pytest.raises(LiyanError):
+        codec.decode(malformed, "tenant-a")
+
+    payload = b"tenant-a:1"
+    invalid_signature = base64.urlsafe_b64encode(payload + b"." + b"0" * 32).decode().rstrip("=")
+    with pytest.raises(LiyanError):
+        codec.decode(invalid_signature, "tenant-a")
+
+    negative_payload = b"tenant-a:-1"
+    signature = hmac.new(secret, negative_payload, hashlib.sha256).digest()
+    negative = base64.urlsafe_b64encode(negative_payload + b"." + signature).decode().rstrip("=")
+    with pytest.raises(LiyanError):
+        codec.decode(negative, "tenant-a")
+
+
+@pytest.mark.asyncio
+async def test_closed_marker_and_closing_state_stop_subscription_immediately() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+    subscriber = next(iter(broker._subscribers["tenant-a"]))
+
+    async with broker._tenant_locks["tenant-a"]:
+        broker._close_subscriber_locked("tenant-a", subscriber)
+
+    with pytest.raises(StopAsyncIteration):
+        await asyncio.wait_for(waiting, timeout=0.1)
+    assert broker.active_tenants() == ()
+
+    closing = broker.subscribe("tenant-a")
+    closing._closing = True
+    with pytest.raises(StopAsyncIteration):
+        await closing._ensure_initialized()
+
+
+@pytest.mark.asyncio
+async def test_subscription_handoff_closes_on_retention_gap() -> None:
+    class RetentionGapReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.first_replay_started = asyncio.Event()
+            self.release_first_replay = asyncio.Event()
+            self.replay_calls = 0
+
+        async def latest_sequence(self, tenant_id):
+            assert tenant_id == "tenant-a"
+            return 1
+
+        async def replay(self, tenant_id, after_sequence):
+            assert tenant_id == "tenant-a"
+            self.replay_calls += 1
+            if self.replay_calls == 1:
+                self.first_replay_started.set()
+                await self.release_first_replay.wait()
+                return [_event(1)]
+            raise LiyanError(
+                ErrorCode.SSE_REPLAY_CURSOR_INVALID,
+                "retention gap",
+                category=ErrorCategory.MESSAGING,
+            )
+
+    log = RetentionGapReplayLog()
+    broker = SSEBroker(log)
+    stream = broker.subscribe("tenant-a", after_sequence=0)
+    waiting = asyncio.create_task(anext(stream))
+    await log.first_replay_started.wait()
+
+    assert await broker.deliver(_event(3)) == 0
+    log.release_first_replay.set()
+
+    with pytest.raises(StopAsyncIteration):
+        await waiting
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
+async def test_no_cursor_handoff_uses_durable_watermark_for_buffered_live_event() -> None:
+    class EmptyDelayedReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = asyncio.Event()
+            self.release = asyncio.Event()
+
+        async def latest_sequence(self, tenant_id):
+            assert tenant_id == "tenant-a"
+            return 1
+
+        async def replay(self, tenant_id, after_sequence):
+            del tenant_id, after_sequence
+            self.started.set()
+            await self.release.wait()
+            return []
+
+    log = EmptyDelayedReplayLog()
+    broker = SSEBroker(log)
+    stream = broker.subscribe("tenant-a")
+    waiting = asyncio.create_task(anext(stream))
+    await log.started.wait()
+
+    live = _event(2)
+    assert await broker.deliver(live) == 0
+    log.release.set()
+
+    assert await waiting == live
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_internal_fanout_and_cache_miss_paths_fail_closed() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog(), subscriber_queue_size=2)
+    closed_stream = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    assert await anext(closed_stream) is None
+    closed = closed_stream._subscriber
+    assert closed is not None
+    await closed_stream.aclose()
+
+    replaying_stream = broker.subscribe("tenant-a")
+    replaying = replaying_stream._subscriber
+    assert replaying is None
+    await broker._initialize_subscription(replaying_stream)
+    replaying = replaying_stream._subscriber
+    assert replaying is not None
+    replaying.state = "REPLAYING"
+
+    gap_stream = broker.subscribe("tenant-a", after_sequence=0)
+    await broker._initialize_subscription(gap_stream)
+    gap = gap_stream._subscriber
+    assert gap is not None
+    gap.state = "LIVE"
+    gap.last_sequence = 0
+
+    broker._subscribers["tenant-a"].add(closed)
+    event = _event(2)
+    delivered = broker._fan_out_locked("tenant-a", [event])
+
+    assert delivered == 0
+    assert replaying.replay_buffer[2] == event
+    assert gap.closed is True
+    assert closed not in broker._subscribers["tenant-a"]
+    broker._buffer_replay_event_locked("tenant-a", replaying, _event(1, tenant_id="tenant-b"))
+
+    broker._store_replay_cache("tenant-a", 0, (_event(1),))
+    assert broker._cached_replay("tenant-a", 99, None) is None
+    assert broker._cached_replay("tenant-a", 0, 2) is None
+
+    byte_bounded = SSEBroker(
+        InMemorySSEReplayLog(),
+        replay_cache_max_tenants=2,
+        replay_cache_max_bytes=30,
+    )
+    byte_bounded._store_replay_cache("tenant-a", None, (_event(0, value="a"),))
+    byte_bounded._store_replay_cache(
+        "tenant-b",
+        None,
+        (_event(0, tenant_id="tenant-b", value="b"),),
+    )
+    assert tuple(byte_bounded._replay_cache) == ("tenant-b",)
+
+    await replaying_stream.aclose()
+    await gap_stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_subscription_marker_and_post_receive_close_paths_release_cleanly(
+    monkeypatch,
+) -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    marked = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    assert await anext(marked) is None
+    marked_subscriber = marked._subscriber
+    assert marked_subscriber is not None
+    marked_subscriber.queue.put_nowait(sse_module._SUBSCRIBER_CLOSED)
+
+    with pytest.raises(StopAsyncIteration):
+        await anext(marked)
+
+    closing = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    assert await anext(closing) is None
+    closing_subscriber = closing._subscriber
+    assert closing_subscriber is not None
+    closing_subscriber.queue.put_nowait(_event(0))
+
+    async def already_initialized() -> None:
+        return None
+
+    monkeypatch.setattr(closing, "_ensure_initialized", already_initialized)
+    closing._closing = True
+    with pytest.raises(StopAsyncIteration):
+        await anext(closing)
+    closing._closing = False
+    await closing.aclose()
+
+
+@pytest.mark.asyncio
+async def test_broker_background_detach_sync_and_error_paths_are_bounded() -> None:
+    class FailingReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.fail = False
+
+        async def replay(self, tenant_id, after_sequence):
+            if self.fail:
+                raise LiyanError(
+                    ErrorCode.INTERNAL,
+                    "injected replay failure",
+                    category=ErrorCategory.MESSAGING,
+                )
+            return await super().replay(tenant_id, after_sequence)
+
+    log = FailingReplayLog()
+    broker = SSEBroker(log)
+    uninitialized = broker.subscribe("tenant-a")
+    await broker._activate_subscription(uninitialized, [])
+    assert await broker.synchronize("tenant-a") == 0
+
+    latest = asyncio.create_task(asyncio.Event().wait())
+    replay = asyncio.create_task(asyncio.Event().wait())
+    other_tenant = asyncio.create_task(asyncio.Event().wait())
+    broker._latest_tasks["tenant-a"] = latest
+    broker._replay_tasks[("tenant-a", None, None)] = replay
+    broker._replay_tasks[("tenant-b", None, None)] = other_tenant
+
+    detached = broker._detach_tenant_background_tasks("tenant-a")
+    assert set(detached) == {latest, replay}
+    assert broker._replay_tasks == {("tenant-b", None, None): other_tenant}
+    for task in [*detached, other_tenant]:
+        task.cancel()
+    await asyncio.gather(*detached, other_tenant, return_exceptions=True)
+
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    assert await anext(stream) is None
+    log.fail = True
+    with pytest.raises(LiyanError) as replay_error:
+        await broker.synchronize("tenant-a")
+    assert replay_error.value.code == ErrorCode.INTERNAL
+    await stream.aclose()
+
+    with pytest.raises(ValueError, match="another tenant"):
+        broker._fan_out_locked("tenant-a", [_event(0, tenant_id="tenant-b")])
+
+    class ObserveOnlyMetrics:
+        def observe_sse(self, _operation, _outcome, _count=1) -> None:
+            return None
+
+    metrics_broker = SSEBroker(InMemorySSEReplayLog(), metrics=ObserveOnlyMetrics())
+    metrics_broker._update_sse_gauges()
+
+
+@pytest.mark.asyncio
+async def test_streaming_validates_cursor_events_replay_and_cache_configuration() -> None:
+    with pytest.raises(ValueError, match="gap_buffer"):
+        SSEChunkAssembler(max_gap_buffer=0)
+    with pytest.raises(ValueError, match="cache bounds"):
+        SSEBroker(InMemorySSEReplayLog(), replay_cache_max_events=0)
+    with pytest.raises(ValueError, match="buffer bounds"):
+        SSEBroker(InMemorySSEReplayLog(), replay_buffer_max_events=0)
+
+    with pytest.raises(ValueError, match="at least 32"):
+        ReplayCursorCodec(b"short")
+
+    valid_codec = ReplayCursorCodec(b"x" * 32)
+    with pytest.raises(ValueError, match="nonnegative"):
+        valid_codec.encode("tenant-a", -1)
+    with pytest.raises(LiyanError) as malformed:
+        valid_codec.decode("not-base64!", "tenant-a")
+    assert malformed.value.code == ErrorCode.SSE_REPLAY_CURSOR_INVALID
+
+    broker = SSEBroker(InMemorySSEReplayLog())
+    with pytest.raises(ValueError, match="nonnegative"):
+        await broker.deliver(_event(-1))
+    with pytest.raises(ValueError, match="another tenant"):
+        broker._merge_replay_events("tenant-a", [_event(0, tenant_id="tenant-b")])
+    with pytest.raises(ValueError, match="conflicting"):
+        broker._merge_replay_events(
+            "tenant-a",
+            [_event(0, value="first")],
+            [_event(0, value="second")],
+        )
+    assert broker._first_sequence_gap([_event(0), _event(2)], after_sequence=None) == 0
+    with pytest.raises(ValueError, match="noncontiguous"):
+        broker._validate_replay("tenant-a", [_event(2)], after_sequence=0)

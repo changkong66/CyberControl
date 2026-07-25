@@ -44,6 +44,22 @@ def test_database_pool_capacity_must_be_positive() -> None:
         PlatformMetrics().set_database_pool_capacity("api", 0)
 
 
+def test_metrics_normalize_unknown_method_and_ignore_zero_pool_delta() -> None:
+    metrics = PlatformMetrics()
+
+    metrics.observe_http(
+        method="UNTRUSTED",
+        route="/bounded",
+        status_code=200,
+        duration_seconds=0,
+    )
+    metrics.observe_database_pool_checkout("api", 0)
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'method="OTHER"' in rendered
+    assert 'liyans_database_pool_checked_out{pool="api"}' not in rendered
+
+
 @pytest.mark.asyncio
 async def test_http_metrics_normalize_unmatched_routes_and_status_classes() -> None:
     metrics = PlatformMetrics()
@@ -75,3 +91,24 @@ async def test_metrics_route_renders_platform_registry() -> None:
 
     assert response.media_type == platform_metrics.content_type
     assert b"liyans_sse_operations_total" in response.body
+
+
+@pytest.mark.asyncio
+async def test_http_metrics_middleware_passes_non_http_scopes_through() -> None:
+    received_scopes: list[dict] = []
+
+    async def app(scope, _receive, _send) -> None:
+        received_scopes.append(scope)
+
+    async def receive() -> dict:
+        return {"type": "websocket.disconnect"}
+
+    async def send(_message: dict) -> None:
+        return None
+
+    middleware = HTTPMetricsMiddleware(app, metrics=PlatformMetrics())
+    scope = {"type": "websocket"}
+
+    await middleware(scope, receive, send)
+
+    assert received_scopes == [scope]
