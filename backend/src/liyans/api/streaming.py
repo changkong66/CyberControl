@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
 from liyans.core.async_cleanup import complete_cleanup
@@ -26,3 +27,19 @@ async def close_subscription(subscription: Any) -> None:
     if close is None:
         return
     await complete_cleanup(close())
+
+
+@asynccontextmanager
+async def managed_subscription(subscription: Any) -> AsyncIterator[AsyncIterator[Any]]:
+    """Use an explicit subscription owner while retaining iterator compatibility in tests."""
+
+    enter = getattr(subscription, "__aenter__", None)
+    exit_context = getattr(subscription, "__aexit__", None)
+    if enter is not None and exit_context is not None:
+        async with subscription as managed:
+            yield managed
+        return
+    try:
+        yield subscription
+    finally:
+        await close_subscription(subscription)

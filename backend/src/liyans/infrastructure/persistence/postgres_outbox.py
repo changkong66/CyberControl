@@ -181,6 +181,7 @@ class PostgresOutboxRepository:
         available_at: datetime,
         *,
         error_code: str | None = None,
+        restore_attempt: bool = False,
     ) -> None:
         if available_at.tzinfo is None:
             raise ValueError("available_at must be timezone-aware")
@@ -199,6 +200,8 @@ class PostgresOutboxRepository:
             row = result.scalar_one_or_none()
             if row is None:
                 raise self._claim_conflict()
+            if restore_attempt:
+                row.attempts = max(0, row.attempts - 1)
             row.state = (
                 OutboxStatus.DEAD.value
                 if row.attempts >= row.max_attempts
@@ -261,6 +264,7 @@ class PostgresOutboxRepository:
             published_at=row.published_at,
             attempts=row.attempts,
             max_attempts=row.max_attempts,
+            claim_expires_at=row.claim_expires_at,
         )
 
     @staticmethod

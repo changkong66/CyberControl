@@ -14,7 +14,7 @@ from test_topic4_c12_release import _authorization, _report
 from test_topic4_control_plane import TENANT_ID, TRACE_ID, _candidate
 
 from liyans.api.routes.topic4 import RevisionCommand, create_revision, stream_public_events
-from liyans.api.streaming import close_subscription
+from liyans.api.streaming import close_subscription, managed_subscription
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.domains.release.engine import ReleaseError
@@ -52,6 +52,36 @@ def test_topic4_internal_outbox_events_have_a_durable_runtime_sink() -> None:
 @pytest.mark.asyncio
 async def test_close_subscription_accepts_non_closable_iterators() -> None:
     await close_subscription(object())
+
+
+@pytest.mark.asyncio
+async def test_managed_subscription_prefers_explicit_async_context_owner() -> None:
+    class ContextOwnedSubscription:
+        def __init__(self) -> None:
+            self.entered = False
+            self.exited = False
+
+        async def __aenter__(self):
+            self.entered = True
+            return self
+
+        async def __aexit__(self, *_exc_info) -> None:
+            self.exited = True
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise StopAsyncIteration
+
+    subscription = ContextOwnedSubscription()
+
+    async with managed_subscription(subscription) as managed:
+        assert managed is subscription
+        assert subscription.entered is True
+        assert subscription.exited is False
+
+    assert subscription.exited is True
 
 
 class _StreamBroker:

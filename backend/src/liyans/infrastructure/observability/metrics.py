@@ -45,6 +45,18 @@ class PlatformMetrics:
             ("operation", "outcome"),
             registry=self.registry,
         )
+        self._sse_gauges = Gauge(
+            "liyans_sse_runtime_gauge",
+            "Low-cardinality SSE runtime lifecycle gauges.",
+            ("metric",),
+            registry=self.registry,
+        )
+        self._outbox_gauges = Gauge(
+            "liyans_outbox_runtime_gauge",
+            "Low-cardinality Outbox runtime lifecycle gauges.",
+            ("metric",),
+            registry=self.registry,
+        )
         self._database_health_duration = Histogram(
             "liyans_database_health_duration_seconds",
             "Database readiness probe latency.",
@@ -113,6 +125,12 @@ class PlatformMetrics:
     def observe_sse(self, operation: str, outcome: str, count: int = 1) -> None:
         if count > 0:
             self._sse_operations.labels(operation, outcome).inc(count)
+
+    def set_sse_gauge(self, metric: str, value: int) -> None:
+        self._sse_gauges.labels(metric[:64]).set(max(0, value))
+
+    def set_outbox_gauge(self, metric: str, value: int) -> None:
+        self._outbox_gauges.labels(metric[:64]).set(max(0, value))
 
     def observe_database_health(self, *, healthy: bool, latency_ms: float) -> None:
         outcome = "healthy" if healthy else "unhealthy"

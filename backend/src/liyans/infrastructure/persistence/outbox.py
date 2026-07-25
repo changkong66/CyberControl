@@ -19,6 +19,7 @@ class OutboxMessage:
     published_at: datetime | None
     attempts: int = 0
     max_attempts: int = 3
+    claim_expires_at: datetime | None = None
 
 
 class OutboxRepository(Protocol):
@@ -42,6 +43,7 @@ class OutboxRepository(Protocol):
         available_at: datetime,
         *,
         error_code: str | None = None,
+        restore_attempt: bool = False,
     ) -> None: ...
 
     async def published_cursor(self, tenant_id: str, partition_key: str) -> int: ...
@@ -64,6 +66,13 @@ class OutboxDispatchRepository(Protocol):
         available_at: datetime,
         *,
         error_code: str | None = None,
+        restore_attempt: bool = False,
     ) -> None: ...
+
+    async def renew_claims(
+        self,
+        outbox_ids: tuple[UUID, ...],
+        worker_id: str,
+    ) -> datetime: ...
 
     async def published_cursor(self, tenant_id: str, partition_key: str) -> int: ...

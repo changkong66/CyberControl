@@ -229,6 +229,83 @@ async def test_postgres_outbox_competing_workers_never_share_a_claim(
 
 
 @pytest.mark.asyncio
+async def test_postgres_outbox_release_restores_attempt_and_advances_published_cursor(
+    postgres_runtime,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    now = datetime.now(UTC)
+    partition = f"{context.tenant_id}:release-recovery:{uuid4().hex}"
+    envelope = make_envelope(context.tenant_id, now).model_copy(
+        update={
+            "partition_key": partition,
+            "delivery": make_envelope(context.tenant_id, now).delivery.model_copy(
+                update={"idempotency_key": f"release:{context.tenant_id}:{uuid4().hex[:16]}"}
+            ),
+        }
+    )
+    message = OutboxMessage(
+        outbox_id=uuid4(),
+        tenant_id=context.tenant_id,
+        envelope=envelope,
+        created_at=now,
+        available_at=now,
+        published_at=None,
+        max_attempts=envelope.delivery.max_attempts,
+    )
+    outbox = PostgresOutboxRepository(database, claim_lease_seconds=30)
+
+    with tenant_scope(context):
+        async with database.transaction(context=session_context_from_tenant(context)) as session:
+            await outbox.append(session, message)
+
+        assert await outbox.published_cursor(context.tenant_id, partition) == 0
+        claimed = await outbox.claim_batch("release-worker", 10)
+        assert [item.outbox_id for item in claimed] == [message.outbox_id]
+
+        await outbox.release_claim(
+            message.outbox_id,
+            "release-worker",
+            datetime.now(UTC),
+            error_code="CancelledError",
+            restore_attempt=True,
+        )
+        async with database.transaction(context=session_context_from_tenant(context)) as session:
+            state, attempts, claimed_by, error_code = (
+                await session.execute(
+                    select(
+                        OutboxMessageModel.state,
+                        OutboxMessageModel.attempts,
+                        OutboxMessageModel.claimed_by,
+                        OutboxMessageModel.last_error_code,
+                    ).where(OutboxMessageModel.outbox_id == message.outbox_id)
+                )
+            ).one()
+        assert (state, attempts, claimed_by, error_code) == (
+            OutboxStatus.PENDING.value,
+            0,
+            None,
+            "CancelledError",
+        )
+
+        reclaimed = await outbox.claim_batch("release-worker", 10)
+        assert [item.outbox_id for item in reclaimed] == [message.outbox_id]
+        with pytest.raises(LiyanError) as conflict:
+            await outbox.release_claim(
+                message.outbox_id,
+                "other-worker",
+                datetime.now(UTC),
+            )
+        assert conflict.value.code == ErrorCode.DATABASE_TRANSACTION_STATE
+
+        await outbox.mark_published(
+            message.outbox_id,
+            "release-worker",
+            datetime.now(UTC),
+        )
+        assert await outbox.published_cursor(context.tenant_id, partition) == 1
+
+
+@pytest.mark.asyncio
 async def test_postgres_audit_chain_survives_store_recreation(postgres_runtime) -> None:
     database, _migrator, context = postgres_runtime
     with tenant_scope(context):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -21,6 +22,8 @@ OutboxSink = Callable[[OutboxMessage], Awaitable[None]]
 
 class OutboxMetricsObserver(Protocol):
     def observe_outbox(self, operation: str, outcome: str, count: int = 1) -> None: ...
+
+    def set_outbox_gauge(self, metric: str, value: int) -> None: ...
 
 
 class MessageBusOutboxSink:
@@ -115,6 +118,7 @@ class OutboxPublisher:
         self._ready = asyncio.Event()
         self._task: asyncio.Task[None] | None = None
         self._last_error: str | None = None
+        self._in_flight = 0
 
     @property
     def running(self) -> bool:
@@ -160,8 +164,104 @@ class OutboxPublisher:
             self._observe("claim", "empty")
             return 0
         self._observe("claim", "claimed", len(messages))
-        await asyncio.gather(*(self._process(message) for message in messages))
+        partitions: dict[tuple[str, str], list[OutboxMessage]] = defaultdict(list)
+        for message in messages:
+            partitions[(message.tenant_id, message.envelope.partition_key)].append(message)
+        results = await asyncio.gather(
+            *(self._process_partition(items) for items in partitions.values()),
+            return_exceptions=True,
+        )
+        failure = next(
+            (result for result in results if isinstance(result, BaseException)),
+            None,
+        )
+        if failure is not None:
+            raise failure
         return len(messages)
+
+    async def _process_partition(self, messages: list[OutboxMessage]) -> None:
+        ordered = sorted(messages, key=lambda message: message.envelope.sequence)
+        lease_expires_at = min(
+            (
+                message.claim_expires_at
+                for message in ordered
+                if message.claim_expires_at is not None
+            ),
+            default=None,
+        )
+        for index, message in enumerate(ordered):
+            remaining = ordered[index:]
+            if self._claim_renewal_required(lease_expires_at):
+                try:
+                    lease_expires_at = await self._repository.renew_claims(
+                        tuple(item.outbox_id for item in remaining),
+                        self._worker_id,
+                    )
+                    self._observe("claim", "lease_renewed", len(remaining))
+                except Exception:
+                    await self._release_partition_tail(
+                        remaining,
+                        error_code="LeaseRenewalFailed",
+                    )
+                    raise
+            try:
+                published = await self._process(message)
+            except asyncio.CancelledError:
+                await complete_cleanup(
+                    self._release_partition_tail(
+                        ordered[index + 1 :],
+                        error_code="CancelledError",
+                    )
+                )
+                raise
+            if not published:
+                await self._release_partition_tail(
+                    ordered[index + 1 :],
+                    error_code="PartitionBlocked",
+                )
+                return
+
+    async def _release_partition_tail(
+        self,
+        messages: list[OutboxMessage],
+        *,
+        error_code: str,
+    ) -> None:
+        if not messages:
+            return
+        available_at = datetime.now(UTC)
+        results = await asyncio.gather(
+            *(
+                self._repository.release_claim(
+                    message.outbox_id,
+                    self._worker_id,
+                    available_at,
+                    error_code=error_code,
+                    restore_attempt=True,
+                )
+                for message in messages
+            ),
+            return_exceptions=True,
+        )
+        released = sum(not isinstance(result, BaseException) for result in results)
+        failures = len(results) - released
+        self._observe("delivery", "partition_tail_released", released)
+        self._observe("delivery", "claim_release_failed", failures)
+        if failures:
+            logger.warning(
+                "Outbox partition tail release was incomplete worker=%s failures=%s",
+                self._worker_id,
+                failures,
+            )
+
+    def _claim_renewal_required(self, claim_expires_at: datetime | None) -> bool:
+        if claim_expires_at is None:
+            return False
+        safety_seconds = min(1.0, max(0.1, self._delivery_timeout * 0.1))
+        required_until = datetime.now(UTC) + timedelta(
+            seconds=self._delivery_timeout + safety_seconds
+        )
+        return claim_expires_at <= required_until
 
     async def _run(self) -> None:
         while not self._stopping.is_set():
@@ -181,7 +281,9 @@ class OutboxPublisher:
             except TimeoutError:
                 continue
 
-    async def _process(self, message: OutboxMessage) -> None:
+    async def _process(self, message: OutboxMessage) -> bool:
+        self._in_flight += 1
+        self._update_gauges()
         try:
             await asyncio.wait_for(
                 self._sink(message),
@@ -193,12 +295,12 @@ class OutboxPublisher:
                 datetime.now(UTC),
             )
             self._observe("delivery", "published")
+            return True
         except asyncio.CancelledError:
             await complete_cleanup(
-                self._repository.release_claim(
-                    message.outbox_id,
-                    self._worker_id,
-                    datetime.now(UTC),
+                self._release_claim_safely(
+                    message,
+                    available_at=datetime.now(UTC),
                     error_code="CancelledError",
                 )
             )
@@ -210,10 +312,9 @@ class OutboxPublisher:
                 self._retry_max,
                 self._retry_base * (2 ** max(0, message.attempts - 1)),
             )
-            await self._repository.release_claim(
-                message.outbox_id,
-                self._worker_id,
-                datetime.now(UTC) + timedelta(seconds=delay),
+            await self._release_claim_safely(
+                message,
+                available_at=datetime.now(UTC) + timedelta(seconds=delay),
                 error_code=error_code[:128],
             )
             outcome = "dead" if message.attempts >= message.max_attempts else "retry"
@@ -224,7 +325,40 @@ class OutboxPublisher:
                 message.attempts,
                 error_code,
             )
+            return False
+        finally:
+            self._in_flight = max(0, self._in_flight - 1)
+            self._update_gauges()
+
+    async def _release_claim_safely(
+        self,
+        message: OutboxMessage,
+        *,
+        available_at: datetime,
+        error_code: str,
+    ) -> None:
+        try:
+            await self._repository.release_claim(
+                message.outbox_id,
+                self._worker_id,
+                available_at,
+                error_code=error_code,
+            )
+        except Exception as exc:
+            self._observe("delivery", "claim_release_failed")
+            logger.warning(
+                "Outbox claim release failed outbox_id=%s error=%s",
+                message.outbox_id,
+                type(exc).__name__,
+            )
 
     def _observe(self, operation: str, outcome: str, count: int = 1) -> None:
         if self._metrics is not None and count > 0:
             self._metrics.observe_outbox(operation, outcome, count)
+
+    def _update_gauges(self) -> None:
+        if self._metrics is None:
+            return
+        setter = getattr(self._metrics, "set_outbox_gauge", None)
+        if setter is not None:
+            setter("publisher_in_flight", self._in_flight)

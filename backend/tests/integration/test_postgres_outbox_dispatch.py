@@ -9,6 +9,7 @@ from liyans_contracts.envelope import MessagePriority, Topic3EnvelopeV1
 from sqlalchemy import select, text
 from sqlalchemy.exc import DBAPIError
 
+from liyans.core.errors import ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.infrastructure.database import SessionExecutionContext, session_context_from_tenant
 from liyans.infrastructure.database.models import OutboxMessageModel, OutboxStatus
@@ -173,7 +174,7 @@ async def test_dispatcher_role_has_only_required_outbox_permissions(
 
 
 @pytest.mark.asyncio
-async def test_dispatchers_claim_cross_tenant_partition_heads_without_overlap(
+async def test_dispatchers_claim_cross_tenant_partition_windows_without_overlap(
     postgres_runtime,
     postgres_dispatcher,
 ) -> None:
@@ -201,7 +202,7 @@ async def test_dispatchers_claim_cross_tenant_partition_heads_without_overlap(
     claimed_target_ids = (first_ids | second_ids) & target_ids
 
     assert first_ids.isdisjoint(second_ids)
-    assert claimed_target_ids == {messages[0].outbox_id, messages[2].outbox_id}
+    assert claimed_target_ids == target_ids
 
     owners = {
         message.outbox_id: "dispatcher-a"
@@ -215,7 +216,7 @@ async def test_dispatchers_claim_cross_tenant_partition_heads_without_overlap(
             if message.outbox_id in target_ids
         }
     )
-    for message in (messages[0], messages[2]):
+    for message in messages:
         await repository.mark_published(
             message.outbox_id,
             owners[message.outbox_id],
@@ -224,7 +225,65 @@ async def test_dispatchers_claim_cross_tenant_partition_heads_without_overlap(
 
     next_claim = await repository.claim_batch("dispatcher-next", 1000)
     next_ids = {message.outbox_id for message in next_claim}
-    assert {messages[1].outbox_id, messages[3].outbox_id} <= next_ids
+    assert target_ids.isdisjoint(next_ids)
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_claims_contiguous_partition_window_in_one_batch(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    partition = f"{context.tenant_id}:contiguous-window"
+    messages = [
+        await _append(database, context, partition=partition, sequence=sequence)
+        for sequence in range(4)
+    ]
+
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
+    claimed = await repository.claim_batch("window-worker", 1000)
+    target_ids = {item.outbox_id for item in messages}
+    target = [message for message in claimed if message.outbox_id in target_ids]
+
+    assert [message.envelope.sequence for message in target] == [0, 1, 2, 3]
+    for message in target:
+        await repository.mark_published(
+            message.outbox_id,
+            "window-worker",
+            datetime.now(UTC),
+        )
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_does_not_claim_follower_while_partition_head_is_claimed(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    partition = f"{context.tenant_id}:claimed-head"
+    head = await _append(database, context, partition=partition, sequence=0)
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
+    first_claim = await repository.claim_batch("head-worker", 1000)
+    assert head.outbox_id in {message.outbox_id for message in first_claim}
+
+    followers = [
+        await _append(database, context, partition=partition, sequence=sequence)
+        for sequence in (1, 2)
+    ]
+    blocked_claim = await repository.claim_batch("blocked-worker", 1000)
+    follower_ids = {message.outbox_id for message in followers}
+    assert follower_ids.isdisjoint(message.outbox_id for message in blocked_claim)
+
+    await repository.mark_published(head.outbox_id, "head-worker", datetime.now(UTC))
+    follower_claim = await repository.claim_batch("follower-worker", 1000)
+    target = [message for message in follower_claim if message.outbox_id in follower_ids]
+    assert [message.envelope.sequence for message in target] == [1, 2]
+    for message in target:
+        await repository.mark_published(
+            message.outbox_id,
+            "follower-worker",
+            datetime.now(UTC),
+        )
 
 
 @pytest.mark.asyncio
@@ -247,6 +306,49 @@ async def test_dispatcher_never_claims_a_partition_with_missing_sequence_zero(
 
 
 @pytest.mark.asyncio
+async def test_dispatcher_claim_mutations_require_the_current_worker_lease(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    message = await _append(
+        database,
+        context,
+        partition=f"{context.tenant_id}:claim-owner",
+        sequence=0,
+    )
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
+    claimed = await repository.claim_batch("owner-worker", 1000)
+    assert message.outbox_id in {item.outbox_id for item in claimed}
+
+    with pytest.raises(LiyanError) as publish_conflict:
+        await repository.mark_published(
+            message.outbox_id,
+            "other-worker",
+            datetime.now(UTC),
+        )
+    assert publish_conflict.value.code == ErrorCode.DATABASE_TRANSACTION_STATE
+
+    with pytest.raises(LiyanError) as release_conflict:
+        await repository.release_claim(
+            message.outbox_id,
+            "other-worker",
+            datetime.now(UTC),
+        )
+    assert release_conflict.value.code == ErrorCode.DATABASE_TRANSACTION_STATE
+
+    with pytest.raises(LiyanError) as renewal_conflict:
+        await repository.renew_claims((message.outbox_id,), "other-worker")
+    assert renewal_conflict.value.code == ErrorCode.DATABASE_TRANSACTION_STATE
+
+    await repository.mark_published(
+        message.outbox_id,
+        "owner-worker",
+        datetime.now(UTC),
+    )
+
+
+@pytest.mark.asyncio
 async def test_outbox_failure_retries_then_enters_dead_state(
     postgres_runtime,
     postgres_dispatcher,
@@ -263,8 +365,9 @@ async def test_outbox_failure_retries_then_enters_dead_state(
     async def failing_sink(_message: OutboxMessage) -> None:
         raise RuntimeError("injected delivery failure")
 
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
     publisher = OutboxPublisher(
-        PostgresOutboxDispatcherRepository(postgres_dispatcher),
+        repository,
         failing_sink,
         worker_id="failure-injection",
         batch_size=1000,
@@ -295,20 +398,20 @@ async def test_cancelled_outbox_delivery_returns_claim_to_pending_immediately(
     postgres_dispatcher,
 ) -> None:
     database, _migrator, context = postgres_runtime
-    message = await _append(
-        database,
-        context,
-        partition=f"{context.tenant_id}:cancelled-delivery",
-        sequence=0,
-    )
+    partition = f"{context.tenant_id}:cancelled-delivery"
+    messages = [
+        await _append(database, context, partition=partition, sequence=sequence)
+        for sequence in range(3)
+    ]
     sink_started = asyncio.Event()
 
     async def blocking_sink(_message: OutboxMessage) -> None:
         sink_started.set()
         await asyncio.Event().wait()
 
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
     publisher = OutboxPublisher(
-        PostgresOutboxDispatcherRepository(postgres_dispatcher),
+        repository,
         blocking_sink,
         worker_id="cancelled-delivery-worker",
         batch_size=1000,
@@ -321,18 +424,58 @@ async def test_cancelled_outbox_delivery_returns_claim_to_pending_immediately(
 
     with tenant_scope(context):
         async with database.transaction(context=session_context_from_tenant(context)) as session:
-            state = (
+            states = (
                 await session.execute(
                     select(
+                        OutboxMessageModel.outbox_id,
                         OutboxMessageModel.state,
+                        OutboxMessageModel.attempts,
                         OutboxMessageModel.claimed_by,
                         OutboxMessageModel.claimed_at,
                         OutboxMessageModel.claim_expires_at,
                         OutboxMessageModel.last_error_code,
-                    ).where(OutboxMessageModel.outbox_id == message.outbox_id)
+                    )
+                    .where(
+                        OutboxMessageModel.outbox_id.in_(
+                            [message.outbox_id for message in messages]
+                        )
+                    )
+                    .order_by(OutboxMessageModel.sequence)
                 )
-            ).one()
-    assert state == (OutboxStatus.PENDING.value, None, None, None, "CancelledError")
+            ).all()
+    assert states == [
+        (
+            messages[0].outbox_id,
+            OutboxStatus.PENDING.value,
+            1,
+            None,
+            None,
+            None,
+            "CancelledError",
+        ),
+        *[
+            (
+                message.outbox_id,
+                OutboxStatus.PENDING.value,
+                0,
+                None,
+                None,
+                None,
+                "CancelledError",
+            )
+            for message in messages[1:]
+        ],
+    ]
+
+    cleanup_claim = await repository.claim_batch("cancel-cleanup-worker", 1000)
+    target_ids = {message.outbox_id for message in messages}
+    for message in cleanup_claim:
+        if message.outbox_id in target_ids:
+            await repository.mark_published(
+                message.outbox_id,
+                "cancel-cleanup-worker",
+                datetime.now(UTC),
+            )
 
 
 @pytest.mark.asyncio
