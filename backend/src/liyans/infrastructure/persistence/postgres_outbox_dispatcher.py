@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from liyans_contracts.envelope import Topic3EnvelopeV1
-from sqlalchemy import case, exists, func, select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -33,7 +33,6 @@ class PostgresOutboxDispatcherRepository:
         now = datetime.now(UTC)
         async with self._database.transaction() as session:
             await self._recover_expired_claims(session, now)
-            earlier = aliased(OutboxMessageModel)
             published = aliased(OutboxMessageModel)
             published_cursor = (
                 select(func.coalesce(func.max(published.sequence) + 1, 0))
@@ -51,31 +50,66 @@ class PostgresOutboxDispatcherRepository:
                 (OutboxMessageModel.priority == "NORMAL", 2),
                 else_=3,
             )
+            candidate_limit = min(10_000, max(limit, limit * 8))
             result = await session.execute(
-                select(OutboxMessageModel)
+                select(
+                    OutboxMessageModel,
+                    published_cursor.label("published_cursor"),
+                )
                 .where(
                     OutboxMessageModel.state == OutboxStatus.PENDING.value,
                     OutboxMessageModel.available_at <= now,
                     OutboxMessageModel.attempts < OutboxMessageModel.max_attempts,
-                    OutboxMessageModel.sequence == published_cursor,
-                    ~exists(
-                        select(1).where(
-                            earlier.tenant_id == OutboxMessageModel.tenant_id,
-                            earlier.partition_key == OutboxMessageModel.partition_key,
-                            earlier.sequence < OutboxMessageModel.sequence,
-                            earlier.state != OutboxStatus.PUBLISHED.value,
-                        )
-                    ),
                 )
                 .order_by(
                     priority_order,
                     OutboxMessageModel.available_at,
                     OutboxMessageModel.created_at,
+                    OutboxMessageModel.tenant_id,
+                    OutboxMessageModel.partition_key,
+                    OutboxMessageModel.sequence,
                 )
-                .limit(limit)
+                .limit(candidate_limit)
                 .with_for_update(skip_locked=True)
             )
-            rows = list(result.scalars())
+            grouped: dict[
+                tuple[str, str],
+                tuple[int, list[OutboxMessageModel]],
+            ] = {}
+            for row, cursor in result.all():
+                key = (row.tenant_id, row.partition_key)
+                if key not in grouped:
+                    grouped[key] = (int(cursor), [])
+                grouped[key][1].append(row)
+            partitions: list[list[OutboxMessageModel]] = []
+            for cursor, candidates in grouped.values():
+                contiguous: list[OutboxMessageModel] = []
+                expected = cursor
+                for row in sorted(candidates, key=lambda item: item.sequence):
+                    if row.sequence < expected:
+                        continue
+                    if row.sequence != expected:
+                        break
+                    contiguous.append(row)
+                    expected += 1
+                if contiguous:
+                    partitions.append(contiguous)
+            partitions.sort(
+                key=lambda items: (
+                    {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2}.get(items[0].priority, 3),
+                    items[0].available_at,
+                    items[0].created_at,
+                )
+            )
+            rows: list[OutboxMessageModel] = []
+            while len(rows) < limit:
+                progressed = False
+                for partition in partitions:
+                    if partition and len(rows) < limit:
+                        rows.append(partition.pop(0))
+                        progressed = True
+                if not progressed:
+                    break
             for row in rows:
                 row.state = OutboxStatus.CLAIMED.value
                 row.claimed_by = worker_id
@@ -121,6 +155,7 @@ class PostgresOutboxDispatcherRepository:
         available_at: datetime,
         *,
         error_code: str | None = None,
+        restore_attempt: bool = False,
     ) -> None:
         if available_at.tzinfo is None:
             raise ValueError("available_at must be timezone-aware")
@@ -137,6 +172,8 @@ class PostgresOutboxDispatcherRepository:
             row = result.scalar_one_or_none()
             if row is None:
                 raise self._claim_conflict()
+            if restore_attempt:
+                row.attempts = max(0, row.attempts - 1)
             row.state = (
                 OutboxStatus.DEAD.value
                 if row.attempts >= row.max_attempts
@@ -148,6 +185,37 @@ class PostgresOutboxDispatcherRepository:
             row.claim_expires_at = None
             row.last_error_code = error_code
             row.updated_at = datetime.now(UTC)
+
+    async def renew_claims(
+        self,
+        outbox_ids: tuple[UUID, ...],
+        worker_id: str,
+    ) -> datetime:
+        unique_ids = tuple(dict.fromkeys(outbox_ids))
+        if not unique_ids or len(unique_ids) > 1000:
+            raise ValueError("outbox_ids must contain between one and 1000 unique values")
+        if len(unique_ids) != len(outbox_ids):
+            raise ValueError("outbox_ids cannot contain duplicates")
+        if not worker_id or len(worker_id) > 128:
+            raise ValueError("worker_id must contain between one and 128 characters")
+        now = datetime.now(UTC)
+        claim_expires_at = now + self._claim_lease
+        async with self._database.transaction() as session:
+            result = await session.execute(
+                update(OutboxMessageModel)
+                .where(
+                    OutboxMessageModel.outbox_id.in_(unique_ids),
+                    OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
+                    OutboxMessageModel.claimed_by == worker_id,
+                )
+                .values(
+                    claim_expires_at=claim_expires_at,
+                    updated_at=now,
+                )
+            )
+        if result.rowcount != len(unique_ids):
+            raise self._claim_conflict()
+        return claim_expires_at
 
     async def published_cursor(self, tenant_id: str, partition_key: str) -> int:
         if not tenant_id or not partition_key:
@@ -213,6 +281,7 @@ class PostgresOutboxDispatcherRepository:
             published_at=row.published_at,
             attempts=row.attempts,
             max_attempts=row.max_attempts,
+            claim_expires_at=row.claim_expires_at,
         )
 
     @staticmethod
