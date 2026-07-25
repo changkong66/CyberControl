@@ -11,12 +11,11 @@ baseline is
 
 The project is in **Phase 7 release closure**, at the boundary between product
 completion and final non-functional/production acceptance. Gate A and Gate B are
-accepted. The second scoped Gate C remediation is merged through protected main,
-and PR #48 has archived its failed fresh-volume rerun through main
-`a2834c4c541a7b752e8f38c5cb5449af1f08d504` with protected-main CI attempt 2 at
-8/8. The rerun failed the frozen 2,000-stream thresholds. It remains a
-`RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G are locked while a third
-scoped remediation is prepared.
+accepted. The third scoped Gate C remediation is merged through protected main
+`01595ae2634cb8114dfb9c591114048cba3864fd` with protected-main CI Run
+30171222537 at 8/8. Its fresh-volume rerun still failed the frozen 2,000-stream
+thresholds. It remains a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G
+are locked while a fourth scoped remediation is prepared.
 
 Feature completeness is not an acceptance state. The remaining work is smaller
 in feature count but high in operational risk, external review dependency and
@@ -30,7 +29,7 @@ elapsed test time.
 | Frontend workbench | 100% current product scope | business, identity and three-language surfaces merged |
 | Local demonstrable product | accepted release candidate | clean-volume registration-to-release chain passes from merged main |
 | Dataset and C3 accuracy boundary | mainline accepted | 72 owner-reviewed records pass at 100% with zero unsafe false negatives from protected-main replay |
-| Production operations | Gate C failed after second remediation rerun | third remediation and fresh-volume rerun required; soak, DR and deployment remain serially locked |
+| Production operations | Gate C failed after third remediation rerun | fourth remediation and fresh-volume rerun required; soak, DR and deployment remain serially locked |
 
 ## 2. Completed And Frozen Assets
 
@@ -120,10 +119,9 @@ elapsed test time.
   volume, classified 72/72 correctly, produced zero unsafe false negatives,
   verified 86 artifacts, left `cybercontrol_release_postgres` untouched and
   removed temporary replay resources.
-- The scoped Gate C remediation local quality gate reports 630 collected tests,
-  628 passed, two explicit skips and 91.74% line coverage. This passes the 90%
-  hard gate and exceeds both the prior 91.58% current record and the historical
-  91.19% observation target.
+- The third Gate C remediation local quality gate reports 680 passed, one
+  explicit skip and 92.14% line coverage. This passes the 90% hard gate and the
+  historical 91.19% observation target.
 - PR #36 archived the current-state replay evidence through protected main. Its
   push Run 29888597039, pull-request Run 29888658077 and post-merge main Run
   29888873754 each completed all eight jobs successfully.
@@ -131,27 +129,32 @@ elapsed test time.
   `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`. Push Run 30157996109,
   pull-request Run 30158060313 and protected-main Run 30158839398 each passed
   8/8.
+- PR #50 merged the third Gate C remediation at
+  `01595ae2634cb8114dfb9c591114048cba3864fd`. Push Run 30171031219,
+  pull-request Run 30171054312 and protected-main Run 30171222537 each passed
+  8/8. The local quality result was 680 passed, one skipped, with 92.14%
+  Python coverage.
 
 ## 3. Current Boundary
 
-The current protected main is `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`.
-It contains the Gate C harness, both remediation implementations and the
-protected-main CI closure for PR #47. The second-remediation formal run reached
-2,000 active authenticated streams on a single host, but failed frozen
-connection, replay/event-loss, Outbox-lag and memory-recovery thresholds. The
-project remains `RELEASE_CANDIDATE`, and Gate D-G remain locked.
+The evaluated protected main is `01595ae2634cb8114dfb9c591114048cba3864fd`.
+It contains the Gate C harness and three remediation implementations. The third
+formal run reached 2,000 active authenticated streams on a single host, but
+failed frozen connection, replay/event-loss, delivery latency, Outbox-lag and
+memory-recovery thresholds. The project remains `RELEASE_CANDIDATE`, and Gate
+D-G remain locked.
 
 Current failed evidence is archived in
-docs/system-acceptance/evidence/phase7-gate-c-second-remediation-summary.json,
-docs/system-acceptance/evidence/phase7-gate-c-second-remediation-failure-analysis.md
+`docs/system-acceptance/evidence/phase7-gate-c-third-remediation-summary.json`,
+`docs/system-acceptance/evidence/phase7-gate-c-third-remediation-failure-analysis.md`
 and related manifest files. The retained external evidence package is
 SHA256-bound in
-docs/system-acceptance/evidence/phase7-gate-c-second-remediation-package.json.
+`docs/system-acceptance/evidence/phase7-gate-c-third-remediation-package.json`.
 
 Any future acceptance branch must not modify historical Topic acceptance
 snapshots, migrations, identity authority, TenantContext, RLS, SERIALIZABLE
 transactions, Outbox, SSE tenant isolation or C12 semantics. The only allowed
-immediate engineering activity is a third scoped Gate C remediation PR, followed
+immediate engineering activity is a fourth scoped Gate C remediation PR, followed
 by a fresh Gate C rerun from a new protected-main baseline.
 
 ## 4. Remaining Work
@@ -187,15 +190,15 @@ by a fresh Gate C rerun from a new protected-main baseline.
    the unchanged rerun passed. Local or CI success does not equal Gate C
    acceptance.
 
-### 4.3 P0 Third Gate C Remediation And Rerun
+### 4.3 P0 Fourth Gate C Remediation And Rerun
 
-1. Eliminate the remaining concurrent `aclose()` ownership error with a single
-   close owner, explicit task join and cancellation-state instrumentation.
-2. Diagnose and fix 2,000-stream connection admission, reconnect/replay
-   completion and the 1,700-event loss using timing, sequence and subscriber
-   lifecycle evidence; do not add retries that hide loss.
-3. Reduce Outbox p95/p99 lag and retained API memory without changing atomicity,
-   ordering, thresholds or workload.
+1. Preserve the now-clean async-generator close ownership and isolate why the
+   100 duplicate-replay clients finish behind the committed ordinal.
+2. Diagnose and fix the 40 failed reconnect/admission attempts and the resulting
+   1,350-event loss without adding retries that hide loss.
+3. Reduce failing delivery p95/p99, Outbox p95/p99 and retained subscriber,
+   queue and replay-cache memory without changing atomicity, ordering,
+   thresholds or workload.
 4. Add focused unit and real PostgreSQL regressions, then pass protected push,
    pull-request and post-merge 8/8 CI.
 5. Rerun the unchanged Gate C workload on a new main and a new PostgreSQL volume.
