@@ -1,0 +1,17 @@
+{
+  "schema_version": "cybercontrol.gate-c-third-remediation-package.v1",
+  "package": "gate-c-20260725T192105Z-01595ae2634c-third-remediation-failed-evidence-v1.zip",
+  "asset_bytes": 3502256,
+  "sha256": "027e4c47e2ef10b381a7e48b0b342eebd54f40f8b4fca259f35216917f4a3403",
+  "asset_digest": "sha256:027e4c47e2ef10b381a7e48b0b342eebd54f40f8b4fca259f35216917f4a3403",
+  "release_id": 359854270,
+  "release_tag": "phase7-gate-c-third-remediation-failed-20260725-01595ae",
+  "release_url": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-third-remediation-failed-20260725-01595ae",
+  "release_immutable": false,
+  "asset_id": 489741393,
+  "asset_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-third-remediation-failed-20260725-01595ae/gate-c-20260725T192105Z-01595ae2634c-third-remediation-failed-evidence-v1.zip",
+  "finalized_by": "tests/load/gate_c/finalize.py",
+  "finalization_exit_state": "FAILED",
+  "finalization_jwt_scan": "passed",
+  "finalized_evidence_secrets_directory_present": false
+}
