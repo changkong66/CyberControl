@@ -11,10 +11,10 @@ baseline is
 
 The project is in **Phase 7 release closure**, at the boundary between product
 completion and final non-functional/production acceptance. Gate A and Gate B are
-accepted. The first formal Gate C run failed its frozen reliability thresholds,
-and PR #39 has archived that failure through protected main. It remains a
-`RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G are locked while the scoped
-Gate C remediation completes protected PR closure and a fresh rerun.
+accepted. The second scoped Gate C remediation is merged through protected main,
+but its fresh-volume rerun failed the frozen 2,000-stream thresholds. It remains
+a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G are locked while a third
+scoped remediation is prepared.
 
 Feature completeness is not an acceptance state. The remaining work is smaller
 in feature count but high in operational risk, external review dependency and
@@ -28,7 +28,7 @@ elapsed test time.
 | Frontend workbench | 100% current product scope | business, identity and three-language surfaces merged |
 | Local demonstrable product | accepted release candidate | clean-volume registration-to-release chain passes from merged main |
 | Dataset and C3 accuracy boundary | mainline accepted | 72 owner-reviewed records pass at 100% with zero unsafe false negatives from protected-main replay |
-| Production operations | Gate C failed; remediation locally verified | fresh Gate C rerun is locked until the remediation PR merges and new main passes 8/8; soak, DR and deployment remain serially locked |
+| Production operations | Gate C failed after second remediation rerun | third remediation and fresh-volume rerun required; soak, DR and deployment remain serially locked |
 
 ## 2. Completed And Frozen Assets
 
@@ -125,28 +125,32 @@ elapsed test time.
 - PR #36 archived the current-state replay evidence through protected main. Its
   push Run 29888597039, pull-request Run 29888658077 and post-merge main Run
   29888873754 each completed all eight jobs successfully.
+- PR #47 merged the second Gate C remediation at
+  `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`. Push Run 30157996109,
+  pull-request Run 30158060313 and protected-main Run 30158839398 each passed
+  8/8.
 
 ## 3. Current Boundary
 
-The current protected main is `865735015f6600f88d79b34ddbe7ba06e635f72e`.
-It contains the Gate C authenticated SSE load harness from PR #38 and the
-immutable failed evidence archive from PR #39. PR #39 push Run 30098903881,
-pull-request Run 30098946720 and post-merge main Run 30099327555 each passed 8/8.
-The formal Gate C execution reached 2,000 active authenticated streams on a
-single host, but failed frozen reliability thresholds; the project remains
-RELEASE_CANDIDATE, and Gate D-G remain locked.
+The current protected main is `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`.
+It contains the Gate C harness, both remediation implementations and the
+protected-main CI closure for PR #47. The second-remediation formal run reached
+2,000 active authenticated streams on a single host, but failed frozen
+connection, replay/event-loss, Outbox-lag and memory-recovery thresholds. The
+project remains `RELEASE_CANDIDATE`, and Gate D-G remain locked.
 
 Current failed evidence is archived in
-docs/system-acceptance/evidence/phase7-gate-c-summary.json,
-docs/system-acceptance/evidence/phase7-gate-c-failure-analysis.md and related
-manifest files. The retained external evidence package is SHA256-bound in
-docs/system-acceptance/evidence/phase7-gate-c-package.json.
+docs/system-acceptance/evidence/phase7-gate-c-second-remediation-summary.json,
+docs/system-acceptance/evidence/phase7-gate-c-second-remediation-failure-analysis.md
+and related manifest files. The retained external evidence package is
+SHA256-bound in
+docs/system-acceptance/evidence/phase7-gate-c-second-remediation-package.json.
 
 Any future acceptance branch must not modify historical Topic acceptance
 snapshots, migrations, identity authority, TenantContext, RLS, SERIALIZABLE
 transactions, Outbox, SSE tenant isolation or C12 semantics. The only allowed
-immediate engineering activity is a scoped Gate C remediation PR, followed by a
-fresh Gate C rerun from a new protected-main baseline.
+immediate engineering activity is a third scoped Gate C remediation PR, followed
+by a fresh Gate C rerun from a new protected-main baseline.
 
 ## 4. Remaining Work
 
@@ -171,11 +175,26 @@ fresh Gate C rerun from a new protected-main baseline.
    contract drift checks, frontend/Go gates, SBOM/license policy, Trivy and
    Gitleaks. No migration or frozen threshold changed. The result is bound by
    `docs/system-acceptance/evidence/phase7-gate-c-remediation-local.json`.
-4. The branch still requires protected push and pull-request 8/8, Squash Merge,
-   post-merge main 8/8 and a fresh-volume Gate C rerun. Local verification is not
-   Gate C acceptance.
+4. PR #47 merged the second remediation through protected main with push,
+   pull-request and post-merge 8/8 CI. Its fresh-volume Gate C rerun failed;
+   the failure evidence is recorded in the second-remediation evidence files.
+   Local or CI success does not equal Gate C acceptance.
 
-### 4.3 P1 Gate D Soak Acceptance
+### 4.3 P0 Third Gate C Remediation And Rerun
+
+1. Eliminate the remaining concurrent `aclose()` ownership error with a single
+   close owner, explicit task join and cancellation-state instrumentation.
+2. Diagnose and fix 2,000-stream connection admission, reconnect/replay
+   completion and the 1,700-event loss using timing, sequence and subscriber
+   lifecycle evidence; do not add retries that hide loss.
+3. Reduce Outbox p95/p99 lag and retained API memory without changing atomicity,
+   ordering, thresholds or workload.
+4. Add focused unit and real PostgreSQL regressions, then pass protected push,
+   pull-request and post-merge 8/8 CI.
+5. Rerun the unchanged Gate C workload on a new main and a new PostgreSQL volume.
+   Any failed threshold keeps Gate D locked and requires a new failure archive.
+
+### 4.4 P1 Gate D Soak Acceptance
 
 1. Only after Gate C acceptance, run at least eight hours of continuous
    generation, verification, review, release and SSE while recording memory,
@@ -183,7 +202,7 @@ fresh Gate C rerun from a new protected-main baseline.
 2. Define soak-specific pass/fail thresholds before execution and archive the
    complete time series and failure evidence.
 
-### 4.4 P1 Disaster Recovery
+### 4.5 P1 Disaster Recovery
 
 1. Take a versioned PostgreSQL backup and restore it into an independent
    instance.
@@ -193,7 +212,7 @@ fresh Gate C rerun from a new protected-main baseline.
 4. Test database restart, Faiss/BM25 corruption, OIDC outage and Provider
    circuit behavior as explicit fail-closed scenarios.
 
-### 4.5 P1 Production Operations
+### 4.6 P1 Production Operations
 
 - Select and rehearse the target deployment platform.
 - Configure domain, TLS, secret manager, monitoring, alerts and SLOs.
@@ -205,7 +224,7 @@ fresh Gate C rerun from a new protected-main baseline.
 - Complete PII retention, export, correction and deletion workflows.
 - Define incident response, tenant offboarding and artifact retention.
 
-### 4.6 P2 Maintenance
+### 4.7 P2 Maintenance
 
 - Process major dependency upgrades in isolated PRs after release closure.
 - Archive stale branches only after merge and evidence are confirmed.
@@ -216,8 +235,7 @@ fresh Gate C rerun from a new protected-main baseline.
 
 The product feature chain is complete for the current commercial scope, and Gate
 A/B remain accepted. Gate C is the active blocker: the platform can demonstrate
-the full trusted education workflow, but it has not yet satisfied the frozen
-2,000 authenticated SSE reliability gate. The scoped remediation is locally
-implemented and fully gated, but it must still merge through protected main and
-pass a fresh Gate C rerun before any soak, disaster-recovery or production
-operations gate can begin.
+the full trusted education workflow, but the second-remediation mainline still
+does not satisfy the frozen 2,000 authenticated SSE reliability gate. No soak,
+disaster-recovery or production operations gate can begin until a third
+remediation and a fully passing protected-main Gate C rerun are evidenced.
