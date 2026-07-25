@@ -12,8 +12,10 @@ baseline is
 The project is in **Phase 7 release closure**, at the boundary between product
 completion and final non-functional/production acceptance. Gate A and Gate B are
 accepted. The second scoped Gate C remediation is merged through protected main,
-but its fresh-volume rerun failed the frozen 2,000-stream thresholds. It remains
-a `RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G are locked while a third
+and PR #48 has archived its failed fresh-volume rerun through main
+`a2834c4c541a7b752e8f38c5cb5449af1f08d504` with protected-main CI attempt 2 at
+8/8. The rerun failed the frozen 2,000-stream thresholds. It remains a
+`RELEASE_CANDIDATE`, not `SYSTEM_ACCEPTED`; Gate D-G are locked while a third
 scoped remediation is prepared.
 
 Feature completeness is not an acceptance state. The remaining work is smaller
@@ -178,7 +180,12 @@ by a fresh Gate C rerun from a new protected-main baseline.
 4. PR #47 merged the second remediation through protected main with push,
    pull-request and post-merge 8/8 CI. Its fresh-volume Gate C rerun failed;
    the failure evidence is recorded in the second-remediation evidence files.
-   Local or CI success does not equal Gate C acceptance.
+   PR #48 archived that evidence on main after push Run 30163755928,
+   pull-request Run 30163777964 and protected-main Run 30163981110 attempt 2
+   all completed 8/8. The first protected-main attempt failed on transient
+   BuildKit pull infrastructure and a heartbeat-sensitive PostgreSQL SSE test;
+   the unchanged rerun passed. Local or CI success does not equal Gate C
+   acceptance.
 
 ### 4.3 P0 Third Gate C Remediation And Rerun
 

@@ -400,9 +400,9 @@ Frontend identity, account administration, three-language workbench, Gate B
 mainline acceptance, the Gate C harness, both remediation implementations and
 the two earlier failed archives are complete on protected main. The current
 evidence snapshot is parent-bound to protected main
-`7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`; Run 30158839398 completed all
-eight jobs successfully. The second-remediation Gate C rerun still failed.
-Gate D-G and unrelated feature development remain locked.
+`a2834c4c541a7b752e8f38c5cb5449af1f08d504`; protected-main Run 30163981110
+attempt 2 completed all eight jobs successfully. The second-remediation Gate C
+rerun still failed. Gate D-G and unrelated feature development remain locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
 chain and passed push Run 30134676485, pull-request Run 30134728232 and main
@@ -416,6 +416,14 @@ Run 30136252893 and protected-main Run 30136427166, again with 8/8 successful.
 PR #47 delivered the second remediation at
 `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8` after push Run 30157996109,
 pull-request Run 30158060313 and protected-main Run 30158839398 each passed 8/8.
+PR #48 then archived the immutable second-remediation failure evidence at
+`a2834c4c541a7b752e8f38c5cb5449af1f08d504` after push Run 30163755928 and
+pull-request Run 30163777964 passed 8/8. Its first protected-main attempt
+encountered a Docker BuildKit image-pull timeout and one timing-sensitive
+PostgreSQL SSE notification assertion; rerunning the unchanged commit as
+attempt 2 completed protected-main Run 30163981110 with 8/8 jobs. This rerun
+does not alter the Gate C failure result; the notification test's heartbeat
+race remains a required third-remediation test-stability item.
 The next allowed work is a third scoped remediation addressing the remaining
 concurrent generator close, 2,000-stream connection/replay loss, Outbox latency
 and post-ramp memory recovery. No Gate D work is authorized.
