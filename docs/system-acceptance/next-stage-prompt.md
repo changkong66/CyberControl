@@ -67,6 +67,12 @@ The evidence narrows, but does not by itself prove, the next root-cause work:
    zero cross-tenant visibility, zero Outbox `DEAD`, zero pool acquisition
    timeouts, zero OOM/restarts and no HTTP 5xx. Preserve every one of these
    controls.
+6. The docs-only failure-evidence PR exposed a timing-sensitive CI signal on its
+   first pull-request run: `test_two_instances_receive_once_and_recover_disconnect_gap`
+   timed out waiting for one non-heartbeat notification at the two-second
+   boundary, while the same commit's push run passed all eight jobs. Treat this
+   as a notification readiness/race regression. Do not dismiss it as evidence
+   of Gate C acceptance and do not fix it only by increasing the timeout.
 
 ## Non-Negotiable Constraints
 
@@ -152,6 +158,10 @@ proposed change to a measured failed control and names the disproof metric.
   handoff, cursor tamper/cross-tenant rejection, cancellation/double-close,
   ContextVar restoration, pool return, queue/cache eviction, Outbox claim
   release, partition ordering and multi-tenant isolation.
+- Make the two-instance PostgreSQL notification regression deterministic with an
+  explicit bridge/subscriber readiness barrier and a bounded event wait that
+  distinguishes heartbeat, notification delivery and true replay gaps. Preserve
+  a separate test that fails when a real notification/replay gap exists.
 - Include a regression where terminal events are committed during duplicate
   replay and prove every reconnecting subscriber reaches the terminal ordinal
   exactly once.
