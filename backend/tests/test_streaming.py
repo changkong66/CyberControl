@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 import liyans.infrastructure.streaming.sse as sse_module
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
+from liyans.infrastructure.observability.metrics import PlatformMetrics
 from liyans.infrastructure.streaming.sse import (
     InMemorySSEReplayLog,
     ReplayCursorCodec,
@@ -39,11 +40,12 @@ def _event(
     *,
     tenant_id: str = "tenant-a",
     value: int | str | None = None,
+    event_type: str = "progress",
 ) -> SSEEvent:
     return SSEEvent(
         tenant_id=tenant_id,
         sequence=sequence,
-        event_type="progress",
+        event_type=event_type,
         data={"value": sequence if value is None else value},
         emitted_at=datetime.now(UTC),
     )
@@ -175,6 +177,56 @@ async def test_broker_coalesces_identical_subscription_replay_queries() -> None:
 
 
 @pytest.mark.asyncio
+async def test_broker_coalesces_two_thousand_same_tenant_admissions() -> None:
+    class CoordinatedReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.latest_calls = 0
+            self.replay_calls = 0
+            self.latest_started = asyncio.Event()
+            self.replay_started = asyncio.Event()
+            self.release_latest = asyncio.Event()
+            self.release_replay = asyncio.Event()
+
+        async def latest_sequence(self, tenant_id):
+            self.latest_calls += 1
+            self.latest_started.set()
+            await self.release_latest.wait()
+            return await super().latest_sequence(tenant_id)
+
+        async def replay(self, tenant_id, after_sequence):
+            self.replay_calls += 1
+            self.replay_started.set()
+            await self.release_replay.wait()
+            return await super().replay(tenant_id, after_sequence)
+
+    log = CoordinatedReplayLog()
+    event = await log.append("tenant-a", "progress", {"value": 1})
+    broker = SSEBroker(log)
+    streams = [broker.subscribe("tenant-a", heartbeat_seconds=60) for _ in range(2_000)]
+    admissions = [asyncio.create_task(anext(stream)) for stream in streams]
+
+    await asyncio.wait_for(log.latest_started.wait(), timeout=1)
+    for _attempt in range(200):
+        if len(broker._subscribers["tenant-a"]) == 2_000:
+            break
+        await asyncio.sleep(0)
+    else:
+        pytest.fail("2,000 SSE subscriptions did not reach coordinated admission")
+
+    log.release_latest.set()
+    await asyncio.wait_for(log.replay_started.wait(), timeout=1)
+    log.release_replay.set()
+
+    assert await asyncio.gather(*admissions) == [event] * 2_000
+    assert log.latest_calls == 1
+    assert log.replay_calls == 1
+
+    await asyncio.gather(*(stream.aclose() for stream in streams))
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
 async def test_broker_does_not_share_replay_across_different_durable_watermarks() -> None:
     class SnapshotReplayLog(InMemorySSEReplayLog):
         def __init__(self) -> None:
@@ -293,6 +345,60 @@ async def test_broker_live_wait_cancellation_removes_subscriber() -> None:
     with pytest.raises(asyncio.CancelledError):
         await waiting
 
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
+async def test_filtered_subscription_does_not_queue_unrelated_events() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog(), subscriber_queue_size=2)
+    stream = broker.subscribe(
+        "tenant-a",
+        heartbeat_seconds=60,
+        event_type_prefixes=("topic4.",),
+    )
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+
+    unrelated = _event(0, event_type="topic3.internal")
+    relevant = _event(1, event_type="topic4.publication.committed")
+    assert await broker.deliver(unrelated) == 0
+    assert not waiting.done()
+    assert await broker.deliver(relevant) == 1
+    assert await waiting == relevant
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_subscription_close_has_one_owner_when_cancel_and_close_race() -> None:
+    metrics = PlatformMetrics()
+    broker = SSEBroker(InMemorySSEReplayLog(), metrics=metrics)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+
+    close_task = asyncio.create_task(stream.aclose())
+    waiting.cancel()
+    await asyncio.gather(close_task, waiting, return_exceptions=True)
+
+    assert broker.active_tenants() == ()
+    assert stream._cleanup_complete is True
+    rendered = metrics.render()
+    assert b'metric="closing_subscriptions"' in rendered
+    assert b'metric="closing_subscriptions"} 0.0' in rendered
+
+
+@pytest.mark.asyncio
+async def test_subscription_rejects_concurrent_advancement() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+
+    with pytest.raises(RuntimeError, match="advanced concurrently"):
+        await anext(stream)
+
+    waiting.cancel()
+    await asyncio.gather(waiting, return_exceptions=True)
     assert broker.active_tenants() == ()
 
 
@@ -634,6 +740,23 @@ async def test_broker_rejects_invalid_subscription_inputs() -> None:
     stream = broker.subscribe("tenant-a", heartbeat_seconds=0)
     with pytest.raises(ValueError, match="heartbeat"):
         await anext(stream)
+    await stream.aclose()
+
+    with pytest.raises(ValueError, match="prefixes"):
+        broker.subscribe("tenant-a", event_type_prefixes=("",))
+
+
+@pytest.mark.asyncio
+async def test_sse_delivery_observes_published_to_client_latency() -> None:
+    metrics = PlatformMetrics()
+    broker = SSEBroker(InMemorySSEReplayLog(), metrics=metrics)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=1)
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+    event = await broker.publish("tenant-a", "topic4.test", {"value": 1})
+
+    assert await waiting == event
+    assert b'stage="published_to_client"' in metrics.render()
     await stream.aclose()
 
 

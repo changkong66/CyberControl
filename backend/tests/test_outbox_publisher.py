@@ -22,6 +22,7 @@ class FakeDispatchRepository:
         self.released: list = []
         self.renewed: list = []
         self.claim_calls = 0
+        self.cursor_calls = 0
 
     async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]:
         del worker_id
@@ -46,6 +47,7 @@ class FakeDispatchRepository:
 
     async def published_cursor(self, tenant_id: str, partition_key: str) -> int:
         del tenant_id, partition_key
+        self.cursor_calls += 1
         return 0
 
     async def renew_claims(self, outbox_ids, worker_id):
@@ -99,7 +101,8 @@ def test_outbox_publisher_rejects_invalid_configuration(overrides, message) -> N
 
 @pytest.mark.asyncio
 async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope) -> None:
-    message = _message(make_envelope)
+    original = _message(make_envelope)
+    message = replace(original, claimed_at=original.created_at)
     repository = FakeDispatchRepository([message])
     delivered: list[OutboxMessage] = []
     metrics = PlatformMetrics()
@@ -117,7 +120,10 @@ async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope)
     assert await publisher.run_once() == 1
     assert delivered == [message]
     assert repository.published[0][0] == message.outbox_id
-    assert b'operation="delivery",outcome="published"' in metrics.render()
+    rendered = metrics.render()
+    assert b'operation="delivery",outcome="published"' in rendered
+    assert b'stage="created_to_claimed"' in rendered
+    assert b'stage="claimed_to_published"' in rendered
 
 
 @pytest.mark.asyncio
@@ -477,6 +483,23 @@ async def test_message_bus_outbox_sink_fails_closed_on_identity_cursor_and_dispa
         await buffered_sink(message)
     assert buffered.value.code == ErrorCode.MESSAGE_SEQUENCE_GAP
     assert buffered_bus.restored == [(message.tenant_id, message.envelope.partition_key, 0)]
+
+
+@pytest.mark.asyncio
+async def test_message_bus_outbox_sink_uses_dispatcher_claim_cursor(make_envelope) -> None:
+    class FakeBus:
+        def restore_partition_cursor(self, _tenant_id, _partition_key, _cursor) -> None:
+            return None
+
+        async def publish(self, _envelope):
+            return SimpleNamespace(status=DispatchStatus.PROCESSED)
+
+    repository = FakeDispatchRepository()
+    message = replace(_message(make_envelope), published_cursor=0)
+
+    await MessageBusOutboxSink(FakeBus(), repository)(message)
+
+    assert repository.cursor_calls == 0
 
 
 @pytest.mark.asyncio

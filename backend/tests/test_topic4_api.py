@@ -14,7 +14,7 @@ from test_topic4_c12_release import _authorization, _report
 from test_topic4_control_plane import TENANT_ID, TRACE_ID, _candidate
 
 from liyans.api.routes.topic4 import RevisionCommand, create_revision, stream_public_events
-from liyans.api.streaming import close_subscription, managed_subscription
+from liyans.api.streaming import TenantScopedSSEStream, close_subscription, managed_subscription
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.domains.release.engine import ReleaseError
@@ -90,10 +90,24 @@ class _StreamBroker:
         self.after_sequence: int | None = None
         self.closed = False
 
-    async def subscribe(self, _tenant_id: str, *, after_sequence: int | None = None):
+    async def subscribe(
+        self,
+        _tenant_id: str,
+        *,
+        after_sequence: int | None = None,
+        event_type_prefixes: tuple[str, ...] = (),
+    ):
         self.after_sequence = after_sequence
         try:
             for event in self.events:
+                if (
+                    event is not None
+                    and event_type_prefixes
+                    and not any(
+                        event.event_type.startswith(prefix) for prefix in event_type_prefixes
+                    )
+                ):
+                    continue
                 yield event
         finally:
             self.closed = True
@@ -196,6 +210,115 @@ async def test_topic4_sse_stream_closes_cleanly_from_another_task_context() -> N
     await asyncio.create_task(response.body_iterator.aclose())
 
     assert broker.closed is True
+
+
+@pytest.mark.asyncio
+async def test_topic4_sse_external_close_wakes_pending_response_iteration() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog())
+    request = _StreamRequest(broker)  # type: ignore[arg-type]
+    context = TenantContext(
+        tenant_id=TENANT_ID,
+        subject_ref="subject:topic4-api",
+        roles=frozenset(),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id=TRACE_ID,
+    )
+
+    with tenant_scope(context):
+        response = await stream_public_events(request, None)  # type: ignore[arg-type]
+    waiting = asyncio.create_task(anext(response.body_iterator))
+    for _attempt in range(100):
+        if broker.active_tenants() == (TENANT_ID,):
+            break
+        await asyncio.sleep(0)
+    else:
+        pytest.fail("SSE response subscription did not become active")
+
+    await asyncio.wait_for(response.body_iterator.aclose(), timeout=1)
+    with pytest.raises(StopAsyncIteration):
+        await asyncio.wait_for(waiting, timeout=1)
+    assert broker.active_tenants() == ()
+
+
+@pytest.mark.asyncio
+async def test_explicit_sse_response_iterator_handles_post_read_disconnect_and_double_close() -> (
+    None
+):
+    class DisconnectAfterRead(_StreamRequest):
+        def __init__(self, broker) -> None:
+            super().__init__(broker)
+            self.checks = 0
+
+        async def is_disconnected(self) -> bool:
+            self.checks += 1
+            return self.checks >= 2
+
+    broker = _StreamBroker([SSEEvent(TENANT_ID, 0, "topic4.test", {"ok": True}, datetime.now(UTC))])
+    request = DisconnectAfterRead(broker)
+    subscription = broker.subscribe(TENANT_ID)
+    context = TenantContext(
+        tenant_id=TENANT_ID,
+        subject_ref="subject:topic4-api",
+        roles=frozenset(),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id=TRACE_ID,
+    )
+    stream = TenantScopedSSEStream(
+        request,
+        subscription,
+        context,
+        request.app.state.sse_cursor_codec,
+    )
+
+    with pytest.raises(StopAsyncIteration):
+        await stream.__anext__()
+    await stream.aclose()
+    await stream.aclose()
+    assert broker.closed is True
+
+
+@pytest.mark.asyncio
+async def test_explicit_sse_response_iterator_cleans_up_when_cancelled() -> None:
+    class BlockingSubscription:
+        def __init__(self) -> None:
+            self.started = asyncio.Event()
+            self.closed = False
+            self.release = asyncio.Event()
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            self.started.set()
+            await self.release.wait()
+            raise StopAsyncIteration
+
+        async def aclose(self) -> None:
+            self.closed = True
+            self.release.set()
+
+    subscription = BlockingSubscription()
+    request = _StreamRequest(_StreamBroker([]))
+    context = TenantContext(
+        tenant_id=TENANT_ID,
+        subject_ref="subject:topic4-api",
+        roles=frozenset(),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id=TRACE_ID,
+    )
+    stream = TenantScopedSSEStream(
+        request,
+        subscription,
+        context,
+        request.app.state.sse_cursor_codec,
+    )
+    task = asyncio.create_task(anext(stream))
+    await subscription.started.wait()
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert subscription.closed is True
 
 
 class _Document:
