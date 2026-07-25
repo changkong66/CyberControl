@@ -1,11 +1,11 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-24T22:45:21Z",
+  "generated_at_utc": "2026-07-25T00:23:11Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
   "baseline": {
-    "protected_main_sha": "efa5ff159fad49ac3e16f4f11f90499a3e7ab61c",
-    "protected_main_tree_sha": "6378f7c2ba11e20dce1c3c728d868e2aed489e60",
+    "protected_main_sha": "7a64f414dae4b4d12de98782df0981c766f94df8",
+    "protected_main_tree_sha": "afeeb1378d8bc7e4a7dc8d3e7b8bd44c036fd52b",
     "product_source_sha": "8c204342d46cdd8bf134b3978968f41b81e239e9",
     "product_source_tree_sha": "298eed6395c10ab0777f7dc67737fa25f27dac2c",
     "frontend_identity_i18n_pr": 30,
@@ -14,7 +14,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 30126848516,
+    "protected_main_ci_run": 30135914377,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
     "protected_main_ci_jobs_successful": 8,
@@ -71,7 +71,21 @@
     "phase7_gate_c_isolated_runner_merge_sha": "efa5ff159fad49ac3e16f4f11f90499a3e7ab61c",
     "phase7_gate_c_isolated_runner_push_ci_run": 30126517607,
     "phase7_gate_c_isolated_runner_pr_ci_run": 30126539422,
-    "phase7_gate_c_isolated_runner_main_ci_run": 30126848516
+    "phase7_gate_c_isolated_runner_main_ci_run": 30126848516,
+    "phase7_gate_c_supply_chain_pr": 42,
+    "phase7_gate_c_supply_chain_pr_url": "https://github.com/changkong66/CyberControl/pull/42",
+    "phase7_gate_c_supply_chain_head_sha": "201a14b1e3dd5362a91804afc9c7cbeaa0d26f40",
+    "phase7_gate_c_supply_chain_merge_sha": "ac8c097d10a0f1b54d5962b043efc578e0554858",
+    "phase7_gate_c_supply_chain_push_ci_run": 30134676485,
+    "phase7_gate_c_supply_chain_pr_ci_run": 30134728232,
+    "phase7_gate_c_supply_chain_main_ci_run": 30134940349,
+    "phase7_gate_c_rerun_archive_pr": 44,
+    "phase7_gate_c_rerun_archive_pr_url": "https://github.com/changkong66/CyberControl/pull/44",
+    "phase7_gate_c_rerun_archive_head_sha": "f3253786497a8e8e9a1a647f0eec340862b713b6",
+    "phase7_gate_c_rerun_archive_merge_sha": "7a64f414dae4b4d12de98782df0981c766f94df8",
+    "phase7_gate_c_rerun_archive_push_ci_run": 30135705832,
+    "phase7_gate_c_rerun_archive_pr_ci_run": 30135721929,
+    "phase7_gate_c_rerun_archive_main_ci_run": 30135914377
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -383,7 +397,16 @@
           "SQLAlchemy connection termination observed CancelledError",
           "API memory did not return to the frozen post-ramp ratio"
         ],
-        "archive_pr_pending": true
+        "archive_state": "MAINLINE_ARCHIVED",
+        "archive_pr_pending": false,
+        "archive_pr": 44,
+        "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/44",
+        "archive_head_sha": "f3253786497a8e8e9a1a647f0eec340862b713b6",
+        "archive_merge_sha": "7a64f414dae4b4d12de98782df0981c766f94df8",
+        "archive_push_ci_run": 30135705832,
+        "archive_pull_request_ci_run": 30135721929,
+        "archive_protected_main_ci_run": 30135914377,
+        "archive_all_ci_jobs_successful": true
       }
     }
   },

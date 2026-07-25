@@ -340,10 +340,20 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness, the first failed Gate C archive and the
-first remediation are complete on protected main through PR #41. The formal
+mainline acceptance, the Gate C harness, the first failed Gate C archive, the
+first remediation, the isolated-volume runner, the supply-chain audit fix and
+the failed rerun archive are complete on protected main through PR #44. The
+current protected main is `7a64f414dae4b4d12de98782df0981c766f94df8`;
+Run 30135914377 completed all eight jobs successfully. The formal
 post-remediation Gate C rerun still failed. Gate D-G and unrelated feature
 development remain locked.
+
+PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
+chain and passed push Run 30134676485, pull-request Run 30134728232 and main
+Run 30134940349. PR #44 then archived the immutable failed-rerun evidence and
+passed push Run 30135705832, pull-request Run 30135721929 and protected-main
+Run 30135914377. Each run completed 8/8 jobs successfully; this documentation
+closure does not reinterpret the failed Gate C thresholds as accepted.
 
 The first remediation's full local quality gate remains valid evidence: 630
 Python tests collected, 628 passed, two explicit skips, 91.74% coverage, frozen
