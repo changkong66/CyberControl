@@ -2,22 +2,23 @@
 
 ## Decision
 
-Protected-main Gate C remediation baseline
-`efa5ff159fad49ac3e16f4f11f90499a3e7ab61c` remains a **release candidate**, but
-Gate C is **not accepted**. PR #40 merged the first SSE and Outbox remediation,
-and PR #41 enforced a fresh, explicitly named PostgreSQL volume for formal Gate
-C execution. Their protected-main CI runs completed all eight Release Quality
-Gate jobs successfully. The unchanged Gate C workload was then rerun from this
-clean main baseline and a fresh isolated volume; the 2,000-stream stage still
-failed frozen reliability, latency and recovery thresholds.
+Protected-main Gate C second-remediation baseline
+`7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8` remains a **release candidate**, but
+Gate C is **not accepted**. PR #47 merged the second SSE lifecycle, replay and
+Outbox remediation after push, pull-request and protected-main workflows each
+completed all eight Release Quality Gate jobs successfully. The unchanged Gate
+C workload was then rerun from this clean main baseline and a new isolated
+PostgreSQL volume; the 2,000-stream stage still failed frozen connection,
+replay/event-loss, Outbox-lag and memory-recovery thresholds.
 
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
-The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. Both the
-initial Gate C failure and the post-remediation rerun are preserved as evidence;
-Gate D, Gate E, Gate F and Gate G remain serially locked. No single-host
-production capacity claim is permitted.
+The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
+initial Gate C failure, the first-remediation rerun and this second-remediation
+rerun are preserved as distinct evidence snapshots. Gate D, Gate E, Gate F and
+Gate G remain serially locked. No single-host production capacity claim is
+permitted.
 
 ## Evaluated Baseline
 
@@ -60,6 +61,12 @@ production capacity claim is permitted.
 - PR #41 push CI: [Run 30126517607](https://github.com/changkong66/CyberControl/actions/runs/30126517607), 8/8
 - PR #41 pull-request CI: [Run 30126539422](https://github.com/changkong66/CyberControl/actions/runs/30126539422), 8/8
 - PR #41 post-merge main CI: [Run 30126848516](https://github.com/changkong66/CyberControl/actions/runs/30126848516), 8/8
+- Gate C second remediation PR:
+  [#47](https://github.com/changkong66/CyberControl/pull/47), Squash Merge
+  `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`
+- PR #47 push CI: [Run 30157996109](https://github.com/changkong66/CyberControl/actions/runs/30157996109), 8/8
+- PR #47 pull-request CI: [Run 30158060313](https://github.com/changkong66/CyberControl/actions/runs/30158060313), 8/8
+- PR #47 post-merge main CI: [Run 30158839398](https://github.com/changkong66/CyberControl/actions/runs/30158839398), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -239,6 +246,56 @@ asset with SHA256
 `21a0bf5e7c8ef30869bcf277582408d179b451e658f48a9c6b18f6a87bd27cb8`:
 https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-rerun-failed-20260725-efa5ff1/gate-c-20260724T211823Z-efa5ff159fad-rerun-failed-evidence-v1.zip.
 
+## Gate C Second Remediation Rerun Evidence
+
+The unchanged Gate C workload was rerun from clean protected-main source
+`7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`, tree
+`c33f8ccdb077c923d8310c869e0bf9f1096cfd5b`, with real Keycloak-issued Tokens
+and fresh volume `cybercontrol_gate_c_second_7ff03ce_20260725`. The
+`smoke-20`, `ramp-200`, `ramp-500` and `ramp-1000` stages passed. The final
+stage reached 2,000 active streams for 1,805 seconds but failed the frozen
+checks below.
+
+| Check | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Connection success rate | 0.984010 | >= 0.995 | FAIL |
+| Reconnect/replay success | 0.968523 | >= 0.999 | FAIL |
+| Committed event loss | 1,700 | 0 | FAIL |
+| Duplicate replay suppression | 100/100 | all | PASS |
+| Publisher failures | 0 | 0 | PASS |
+| Delivery latency p95/p99 ms | 995 / 1721 | <= 1000 / <= 3000 | PASS |
+| Outbox lag p95/p99 ms | 10277.417 / 11538.743 | <= 2000 / <= 5000 | FAIL |
+| Post-ramp memory ratio | 1.480965 | <= 1.10 | FAIL |
+
+Controls that remained successful include zero HTTP 5xx, zero unexpected
+disconnects, zero duplicate final render, zero cross-tenant leakage, zero
+invalid cursor acceptance, zero Outbox `DEAD`, zero pool acquisition timeout,
+zero OOM or unplanned restart, host CPU p95/max of 27.6%/46.0%, and 74/74
+tenant tables with FORCE RLS.
+
+The second remediation improved Outbox latency and memory recovery relative to
+the first rerun, but did not satisfy Gate C. The final-stage API log still
+contains 14 `aclose(): asynchronous generator is already running` errors. The
+failure remains concentrated in 2,000-stream connection admission,
+reconnect/replay completion, event delivery, Outbox latency and retained API
+memory; the evidence does not show a tenant-isolation, C12 or Outbox-atomicity
+violation.
+
+Current second-remediation evidence files:
+
+- Summary: [phase7-gate-c-second-remediation-summary.json](evidence/phase7-gate-c-second-remediation-summary.json)
+- Report: [phase7-gate-c-second-remediation-report.md](evidence/phase7-gate-c-second-remediation-report.md)
+- Failure analysis: [phase7-gate-c-second-remediation-failure-analysis.md](evidence/phase7-gate-c-second-remediation-failure-analysis.md)
+- Manifest: [phase7-gate-c-second-remediation-evidence-manifest.json](evidence/phase7-gate-c-second-remediation-evidence-manifest.json)
+- Database evidence: [phase7-gate-c-second-remediation-database-evidence.json](evidence/phase7-gate-c-second-remediation-database-evidence.json)
+- Environment: [phase7-gate-c-second-remediation-environment.json](evidence/phase7-gate-c-second-remediation-environment.json)
+- Package metadata: [phase7-gate-c-second-remediation-package.json](evidence/phase7-gate-c-second-remediation-package.json)
+
+The complete 1,964,853-byte raw package is retained as a GitHub prerelease
+asset with SHA256
+`ce0e03ced13c27ce875574f8154cc217b7ab889ead59a5f1ea743b66bbad73d6`:
+https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-second-remediation-failed-20260725-7ff03ce/gate-c-20260725T134112Z-7ff03ce0c4af-second-remediation-failed-evidence-v1.zip.
+
 
 ## Source And Runtime Fingerprints
 
@@ -340,16 +397,12 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness, the first failed Gate C archive, the
-first remediation, the isolated-volume runner, the supply-chain audit fix and
-the failed rerun archive are complete on protected main through PR #44. The
-current-state snapshot is parent-bound because a Git commit cannot contain its
-own final SHA. Its verified parent main is
-`5aff4377d2be2468ca62200358b46fbade4834d2`; Run 30136427166 completed all
-eight jobs successfully. The live protected-branch head is authoritative for
-the status-only commit containing this paragraph. The formal post-remediation
-Gate C rerun still failed. Gate D-G and unrelated feature development remain
-locked.
+mainline acceptance, the Gate C harness, both remediation implementations and
+the two earlier failed archives are complete on protected main. The current
+evidence snapshot is parent-bound to protected main
+`7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`; Run 30158839398 completed all
+eight jobs successfully. The second-remediation Gate C rerun still failed.
+Gate D-G and unrelated feature development remain locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
 chain and passed push Run 30134676485, pull-request Run 30134728232 and main
@@ -360,18 +413,18 @@ closure does not reinterpret the failed Gate C thresholds as accepted. PR #45
 synchronized that archive state and passed push Run 30136239290, pull-request
 Run 30136252893 and protected-main Run 30136427166, again with 8/8 successful.
 
-The first remediation's full local quality gate remains valid evidence: 630
-Python tests collected, 628 passed, two explicit skips, 91.74% coverage, frozen
-contracts unchanged, clean Trivy and Gitleaks results, and no migration or Gate
-C threshold changes. It is no longer described as PR-pending. The next allowed
-work is a second scoped remediation addressing coordinated generator close,
-reconnect/replay completion, Outbox latency and post-ramp memory recovery.
+PR #47 delivered the second remediation at
+`7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8` after push Run 30157996109,
+pull-request Run 30158060313 and protected-main Run 30158839398 each passed 8/8.
+The next allowed work is a third scoped remediation addressing the remaining
+concurrent generator close, 2,000-stream connection/replay loss, Outbox latency
+and post-ramp memory recovery. No Gate D work is authorized.
 
 ## Remaining Release Blockers
 
-1. Complete a second scoped remediation PR for coordinated async-generator
-   close ownership, reconnect/replay completion, Outbox latency and retained
-   API memory; do not change the workload or frozen thresholds.
+1. Complete a third scoped remediation PR for the remaining async-generator
+   close ownership, 2,000-stream connection/replay loss, Outbox latency and
+   retained API memory; do not change the workload or frozen thresholds.
 2. After 8/8 push, pull-request and protected-main CI, rerun Gate C from that
    new main baseline and another fresh isolated PostgreSQL volume.
 3. Only after Gate C is accepted, complete a minimum eight-hour soak across
