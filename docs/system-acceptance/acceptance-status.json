@@ -1,11 +1,13 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-07-25T00:23:11Z",
+  "generated_at_utc": "2026-07-25T00:35:03Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "snapshot_semantics": "VERIFIED_PARENT_MAIN_BEFORE_STATUS_ONLY_COMMIT",
+  "snapshot_note": "Git commits cannot contain their own final SHA. The protected_main fields bind the verified parent main; the live branch head is authoritative for the status-only commit containing this snapshot.",
   "baseline": {
-    "protected_main_sha": "7a64f414dae4b4d12de98782df0981c766f94df8",
-    "protected_main_tree_sha": "afeeb1378d8bc7e4a7dc8d3e7b8bd44c036fd52b",
+    "protected_main_sha": "5aff4377d2be2468ca62200358b46fbade4834d2",
+    "protected_main_tree_sha": "83fff8bc0c3efe1f79f3b30ce00fd27e5138f4e2",
     "product_source_sha": "8c204342d46cdd8bf134b3978968f41b81e239e9",
     "product_source_tree_sha": "298eed6395c10ab0777f7dc67737fa25f27dac2c",
     "frontend_identity_i18n_pr": 30,
@@ -14,7 +16,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 30135914377,
+    "protected_main_ci_run": 30136427166,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
     "protected_main_ci_jobs_successful": 8,
@@ -85,7 +87,14 @@
     "phase7_gate_c_rerun_archive_merge_sha": "7a64f414dae4b4d12de98782df0981c766f94df8",
     "phase7_gate_c_rerun_archive_push_ci_run": 30135705832,
     "phase7_gate_c_rerun_archive_pr_ci_run": 30135721929,
-    "phase7_gate_c_rerun_archive_main_ci_run": 30135914377
+    "phase7_gate_c_rerun_archive_main_ci_run": 30135914377,
+    "phase7_gate_c_status_closure_pr": 45,
+    "phase7_gate_c_status_closure_pr_url": "https://github.com/changkong66/CyberControl/pull/45",
+    "phase7_gate_c_status_closure_head_sha": "6a1c349ccb1043d51c4f5dbb6a4398757f76dace",
+    "phase7_gate_c_status_closure_merge_sha": "5aff4377d2be2468ca62200358b46fbade4834d2",
+    "phase7_gate_c_status_closure_push_ci_run": 30136239290,
+    "phase7_gate_c_status_closure_pr_ci_run": 30136252893,
+    "phase7_gate_c_status_closure_main_ci_run": 30136427166
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
