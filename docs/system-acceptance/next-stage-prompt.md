@@ -7,10 +7,14 @@ accepted and do not start Gate D.
 ## Fixed Baseline
 
 - Workspace: `C:/Users/wch06/Documents/CyberControl`
-- Current protected main: `7ff03ce0c4af46aa33ce64ac3bc01af027cbbee8`
-- Current protected-main CI:
-  [Run 30158839398](https://github.com/changkong66/CyberControl/actions/runs/30158839398),
-  8/8 successful
+- Verified protected-main parent before this status closure:
+  `a2834c4c541a7b752e8f38c5cb5449af1f08d504`
+- Protected-main CI for the archived failure closure:
+  [Run 30163981110](https://github.com/changkong66/CyberControl/actions/runs/30163981110),
+  attempt 2, 8/8 successful
+- Before creating the third-remediation branch, fetch `origin/main` and require
+  that its current tip is a descendant of the verified parent above with a
+  successful 8/8 protected-main run. Do not branch from the older `7ff03ce` tip.
 - Current state: `RELEASE_CANDIDATE`
 - Formal state: `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Frozen thresholds SHA256:
@@ -36,6 +40,14 @@ seconds but failed these frozen controls:
 - Post-ramp API memory ratio: `1.480965`, required `<= 1.10`
 - Coordinated shutdown log errors:
   `14 x aclose(): asynchronous generator is already running`
+
+The merged-main CI closure also exposed a timing-sensitive regression assertion
+in `backend/tests/integration/test_postgres_sse_notifications.py`: one
+subscriber returned the one-second heartbeat sentinel before the notification
+event arrived, while an unchanged rerun passed. The third remediation must
+replace this single-read assertion with a bounded non-heartbeat event wait and
+retain a separate regression for a true notification/replay gap; this is a test
+stability and readiness signal, not permission to lower any Gate C threshold.
 
 The run retained zero cross-tenant leakage, zero duplicate final renders, zero
 HTTP 5xx, zero Outbox `DEAD`, zero pool-acquisition timeouts and zero OOM or
