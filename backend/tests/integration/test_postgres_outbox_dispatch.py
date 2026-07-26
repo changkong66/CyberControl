@@ -78,10 +78,12 @@ def _dispatch_envelope(
     *,
     partition: str,
     sequence: int,
+    event_type: str = "topic3.integration.created",
     max_attempts: int = 3,
 ) -> Topic3EnvelopeV1:
     envelope = make_envelope(tenant_id, now, sequence=sequence)
     document = envelope.model_dump(mode="python")
+    document["event_type"] = event_type
     document["partition_key"] = partition
     document["delivery"]["idempotency_key"] = (
         f"dispatch:{tenant_id}:{partition.rsplit(':', 1)[-1]}:{sequence:016d}"
@@ -97,6 +99,7 @@ async def _append(
     *,
     partition: str,
     sequence: int,
+    event_type: str = "topic3.integration.created",
     max_attempts: int = 3,
 ) -> OutboxMessage:
     now = datetime.now(UTC)
@@ -105,6 +108,7 @@ async def _append(
         now,
         partition=partition,
         sequence=sequence,
+        event_type=event_type,
         max_attempts=max_attempts,
     )
     message = OutboxMessage(
@@ -171,6 +175,44 @@ async def test_dispatcher_role_has_only_required_outbox_permissions(
             await session.execute(
                 text("UPDATE outbox_messages SET tenant_id = tenant_id WHERE false")
             )
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_catalog_discovers_topic3_tenants_without_bypassing_rls(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    other_context = await _provision_tenant(
+        _migrator,
+        f"it-{uuid4().hex[:24]}",
+    )
+    first = await _append(
+        database,
+        context,
+        partition=f"{context.tenant_id}:workflow-catalog",
+        sequence=0,
+        event_type="topic3.workflow.created",
+    )
+    second = await _append(
+        database,
+        other_context,
+        partition=f"{other_context.tenant_id}:workflow-catalog",
+        sequence=0,
+        event_type="topic3.workflow.created",
+    )
+
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
+    tenant_ids = await repository.list_tenant_ids(
+        event_type="topic3.workflow.created",
+        after_tenant_id=None,
+        limit=1000,
+    )
+
+    assert context.tenant_id in tenant_ids
+    assert other_context.tenant_id in tenant_ids
+    assert first.tenant_id != second.tenant_id
+    assert tenant_ids == sorted(set(tenant_ids))
 
 
 @pytest.mark.asyncio

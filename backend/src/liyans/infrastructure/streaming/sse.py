@@ -438,6 +438,7 @@ class SSESubscription(AsyncIterator[SSEEvent | None]):
         self._initial_last_sequence: int | None = None
         self._advance_task: asyncio.Task[object] | None = None
         self._advance_done = asyncio.Event()
+        self._ready = asyncio.Event()
 
     async def __aenter__(self) -> SSESubscription:
         return self
@@ -447,6 +448,13 @@ class SSESubscription(AsyncIterator[SSEEvent | None]):
 
     def __aiter__(self) -> SSESubscription:
         return self
+
+    @property
+    def ready(self) -> bool:
+        return self._ready.is_set()
+
+    async def wait_ready(self) -> None:
+        await self._ready.wait()
 
     async def __anext__(self) -> SSEEvent | None:
         if self._cleanup_complete:
@@ -459,18 +467,24 @@ class SSESubscription(AsyncIterator[SSEEvent | None]):
         try:
             await self._ensure_initialized()
             if self._initial_events:
-                return self._initial_events.popleft()
+                initial_event = self._initial_events.popleft()
+                if not self._initial_events:
+                    await self._broker._drain_subscription_tail(self)
+                return initial_event
             subscriber = self._subscriber
             if subscriber is None or subscriber.closed:
                 await self.aclose()
                 raise StopAsyncIteration
             receive = asyncio.create_task(
                 subscriber.queue.get(),
-                name=f"sse-receive:{self._tenant_id}",
+                name="sse-subscriber-receive",
             )
             self._pending_receive = receive
             try:
-                event = await asyncio.wait_for(receive, timeout=self._heartbeat_seconds)
+                queued_event = await asyncio.wait_for(
+                    receive,
+                    timeout=self._heartbeat_seconds,
+                )
             except TimeoutError:
                 if self._closing or self._cleanup_complete:
                     raise StopAsyncIteration from None
@@ -478,13 +492,13 @@ class SSESubscription(AsyncIterator[SSEEvent | None]):
             finally:
                 if self._pending_receive is receive:
                     self._pending_receive = None
-            if event is _SUBSCRIBER_CLOSED:
+            if queued_event is _SUBSCRIBER_CLOSED:
                 await self.aclose()
                 raise StopAsyncIteration
-            self._broker._event_dequeued(event)
+            self._broker._event_dequeued(queued_event)
             if self._closing or self._cleanup_complete:
                 raise StopAsyncIteration
-            return event
+            return queued_event
         except asyncio.CancelledError:
             if self._closing or self._cleanup_complete:
                 raise StopAsyncIteration from None
@@ -557,13 +571,13 @@ class SSESubscription(AsyncIterator[SSEEvent | None]):
     async def _ensure_initialized(self) -> None:
         if self._closing or self._cleanup_complete:
             raise StopAsyncIteration
-        if self._subscriber is not None and self._subscriber.state == "LIVE":
+        if self._subscriber is not None and self._subscriber.state in {"DRAINING", "LIVE"}:
             return
         task = self._initialization_task
         if task is None:
             task = asyncio.create_task(
                 self._broker._initialize_subscription(self),
-                name=f"sse-subscribe:{self._tenant_id}",
+                name="sse-subscription-initialize",
             )
             self._initialization_task = task
         try:
@@ -612,6 +626,7 @@ class SSEBroker:
         )
         self._replay_cache_events = 0
         self._replay_cache_bytes = 0
+        self._replay_cache_expiry_handle: asyncio.TimerHandle | None = None
         self._closing_subscriptions = 0
         self._replay_tasks: dict[
             tuple[str, int | None, int | None], asyncio.Task[tuple[SSEEvent, ...]]
@@ -619,8 +634,11 @@ class SSEBroker:
         self._latest_tasks: dict[str, asyncio.Task[int | None]] = {}
         self._latest_cache: OrderedDict[str, _LatestCacheEntry] = OrderedDict()
         self._queued_events = 0
+        self._queued_bytes = 0
         self._replay_buffer_events = 0
         self._replay_buffer_bytes = 0
+        self._gauge_update_interval_seconds = 0.1
+        self._next_gauge_update_at = 0.0
 
     async def publish(self, tenant_id: str, event_type: str, data: dict[str, Any]) -> SSEEvent:
         event = await self._replay_log.append(tenant_id, event_type, data)
@@ -640,7 +658,9 @@ class SSEBroker:
             if not subscribers:
                 return 0
             replaying = [
-                subscriber for subscriber in subscribers if subscriber.state == "REPLAYING"
+                subscriber
+                for subscriber in subscribers
+                if subscriber.state in {"REPLAYING", "DRAINING"}
             ]
             for subscriber in replaying:
                 self._buffer_replay_event_locked(tenant_id, subscriber, event)
@@ -713,21 +733,38 @@ class SSEBroker:
             async with self._tenant_locks[tenant_id]:
                 self._subscribers[tenant_id].add(subscriber)
                 self._observe("subscribe", "opened")
-                self._update_sse_gauges()
+                self._update_sse_gauges(force=True)
+        admission_started = asyncio.get_running_loop().time()
+        self._observe("admission", "started")
         try:
+            stage_started = asyncio.get_running_loop().time()
             latest_sequence = await self._latest_sequence(tenant_id)
+            self._observe_latency("admission_latest", stage_started)
             subscription._initial_last_sequence = (
                 latest_sequence if after_sequence is None else after_sequence
             )
+            stage_started = asyncio.get_running_loop().time()
             replay = await self._subscription_replay(
                 tenant_id,
                 after_sequence,
                 through_sequence=latest_sequence,
             )
+            self._observe_latency("admission_replay", stage_started)
             self._validate_replay(tenant_id, replay, after_sequence=after_sequence)
+            stage_started = asyncio.get_running_loop().time()
             await self._activate_subscription(subscription, replay)
+            subscription._ready.set()
+            self._observe_latency("admission_handoff", stage_started)
             self._observe("replay", "subscriber_replay", len(subscription._initial_events))
-        except BaseException:
+            self._observe("admission", "accepted")
+            self._observe_latency("admission_total", admission_started)
+        except BaseException as exc:
+            if isinstance(exc, asyncio.CancelledError):
+                self._observe("admission", "cancelled")
+            elif isinstance(exc, LiyanError):
+                self._observe("admission", self._admission_failure_outcome(exc))
+            else:
+                self._observe("admission", "failed")
             await self._remove_subscriber_cancellation_safe(tenant_id, subscriber)
             raise
 
@@ -799,7 +836,7 @@ class SSEBroker:
                     after_sequence,
                     through_sequence=through_sequence,
                 ),
-                name=f"sse-replay:{tenant_id}",
+                name="sse-replay-query",
             )
             self._replay_tasks[key] = task
             self._update_sse_gauges()
@@ -831,7 +868,7 @@ class SSEBroker:
         if task is None:
             task = asyncio.create_task(
                 self._run_latest_sequence(tenant_id),
-                name=f"sse-latest:{tenant_id}",
+                name="sse-latest-sequence",
             )
             self._latest_tasks[tenant_id] = task
             self._update_sse_gauges()
@@ -885,8 +922,8 @@ class SSEBroker:
                         else -1
                     )
                     self._clear_replay_buffer_locked(subscriber)
-                    subscriber.state = "LIVE"
-                    self._update_sse_gauges()
+                    subscriber.state = "DRAINING" if subscription._initial_events else "LIVE"
+                    self._update_sse_gauges(force=True)
                     return
                 target = max(event.sequence for event in buffered)
             try:
@@ -906,6 +943,65 @@ class SSEBroker:
         raise LiyanError(
             ErrorCode.MESSAGE_BUFFER_FULL,
             "The SSE replay/live handoff could not reach a contiguous sequence.",
+            category=ErrorCategory.MESSAGING,
+            retriable=True,
+            status_code=503,
+        )
+
+    async def _drain_subscription_tail(self, subscription: SSESubscription) -> None:
+        tenant_id = subscription._tenant_id
+        subscriber = subscription._subscriber
+        if subscriber is None:
+            return
+        merged: list[SSEEvent] = []
+        for _attempt in range(1024):
+            async with self._tenant_locks[tenant_id]:
+                if subscriber.closed or subscriber.state != "DRAINING":
+                    return
+                buffered = list(subscriber.replay_buffer.values())
+                combined = self._merge_replay_events(tenant_id, merged, buffered)
+                gap_after = self._first_sequence_gap(
+                    combined,
+                    after_sequence=subscriber.last_sequence,
+                )
+                if gap_after is None:
+                    matched = [
+                        event for event in combined if self._matches_subscriber(subscriber, event)
+                    ]
+                    if combined:
+                        subscriber.last_sequence = combined[-1].sequence
+                    self._clear_replay_buffer_locked(subscriber)
+                    if matched:
+                        subscription._initial_events.extend(matched)
+                        self._observe("replay", "terminal_tail_buffered", len(matched))
+                        self._update_sse_gauges()
+                        return
+                    subscriber.state = "LIVE"
+                    self._observe("replay", "terminal_tail_complete")
+                    self._update_sse_gauges(force=True)
+                    return
+                if not buffered:
+                    self._close_subscriber_locked(tenant_id, subscriber)
+                    self._observe("replay", "terminal_tail_gap_drop")
+                    return
+                target = max(event.sequence for event in buffered)
+            try:
+                missing = await self._subscription_replay(
+                    tenant_id,
+                    gap_after,
+                    through_sequence=target,
+                )
+            except LiyanError as exc:
+                if exc.code != ErrorCode.SSE_REPLAY_CURSOR_INVALID:
+                    raise
+                async with self._tenant_locks[tenant_id]:
+                    self._close_subscriber_locked(tenant_id, subscriber)
+                self._observe("replay", "terminal_tail_retention_drop")
+                return
+            merged = self._merge_replay_events(tenant_id, merged, missing)
+        raise LiyanError(
+            ErrorCode.MESSAGE_BUFFER_FULL,
+            "The SSE terminal replay tail could not reach a contiguous sequence.",
             category=ErrorCategory.MESSAGING,
             retriable=True,
             status_code=503,
@@ -937,7 +1033,7 @@ class SSEBroker:
                 background_tasks = self._detach_tenant_background_tasks(tenant_id)
                 for task in background_tasks:
                     task.cancel()
-            self._update_sse_gauges()
+            self._update_sse_gauges(force=True)
         self._observe("subscribe", "closed")
         if background_tasks:
             await complete_cleanup(asyncio.gather(*background_tasks, return_exceptions=True))
@@ -970,8 +1066,12 @@ class SSEBroker:
         while True:
             try:
                 queued = subscriber.queue.get_nowait()
-                if queued is not _SUBSCRIBER_CLOSED:
+                if isinstance(queued, SSEEvent):
                     self._queued_events = max(0, self._queued_events - 1)
+                    self._queued_bytes = max(
+                        0,
+                        self._queued_bytes - self._event_size(queued),
+                    )
             except asyncio.QueueEmpty:
                 break
         subscriber.queue.put_nowait(_SUBSCRIBER_CLOSED)
@@ -1053,7 +1153,7 @@ class SSEBroker:
             if subscriber.closed:
                 self._subscribers[tenant_id].discard(subscriber)
                 continue
-            if subscriber.state == "REPLAYING":
+            if subscriber.state in {"REPLAYING", "DRAINING"}:
                 for event in ordered_events:
                     self._buffer_replay_event_locked(tenant_id, subscriber, event)
                 continue
@@ -1076,6 +1176,7 @@ class SSEBroker:
                     break
                 subscriber.last_sequence = event.sequence
                 self._queued_events += 1
+                self._queued_bytes += self._event_size(event)
                 delivered += 1
         self._observe("fanout", "delivered", delivered)
         self._update_sse_gauges()
@@ -1236,6 +1337,7 @@ class SSEBroker:
             self._account_replay_cache_removal(evicted)
             if not oldest_cache:
                 self._replay_cache.pop(oldest_tenant, None)
+        self._schedule_replay_cache_expiry()
         self._update_sse_gauges()
 
     def _purge_expired_replay_cache(self) -> None:
@@ -1247,12 +1349,41 @@ class SSEBroker:
                     self._account_replay_cache_removal(entry)
             if not tenant_cache:
                 self._replay_cache.pop(tenant_id, None)
+        if not self._replay_cache and self._replay_cache_expiry_handle is not None:
+            self._replay_cache_expiry_handle.cancel()
+            self._replay_cache_expiry_handle = None
 
     def _drop_tenant_replay_cache(self, tenant_id: str) -> None:
         cache = self._replay_cache.pop(tenant_id, None)
         if cache is not None:
             for entry in cache.values():
                 self._account_replay_cache_removal(entry)
+        self._schedule_replay_cache_expiry()
+
+    def _schedule_replay_cache_expiry(self) -> None:
+        handle = self._replay_cache_expiry_handle
+        if handle is not None:
+            handle.cancel()
+            self._replay_cache_expiry_handle = None
+        expirations = [
+            entry.expires_at
+            for tenant_cache in self._replay_cache.values()
+            for entry in tenant_cache.values()
+        ]
+        if not expirations:
+            return
+        loop = asyncio.get_running_loop()
+        delay = max(0.0, min(expirations) - loop.time())
+        self._replay_cache_expiry_handle = loop.call_later(
+            delay,
+            self._expire_replay_cache,
+        )
+
+    def _expire_replay_cache(self) -> None:
+        self._replay_cache_expiry_handle = None
+        self._purge_expired_replay_cache()
+        self._schedule_replay_cache_expiry()
+        self._update_sse_gauges(force=True)
 
     def _account_replay_cache_removal(self, entry: _ReplayCacheEntry) -> None:
         self._replay_cache_events = max(
@@ -1309,6 +1440,8 @@ class SSEBroker:
 
     def _event_dequeued(self, event: SSEEvent | _SubscriberClosed) -> None:
         self._queued_events = max(0, self._queued_events - 1)
+        if isinstance(event, SSEEvent):
+            self._queued_bytes = max(0, self._queued_bytes - self._event_size(event))
         if isinstance(event, SSEEvent) and self._metrics is not None:
             observer = getattr(self._metrics, "observe_sse_latency", None)
             if observer is not None:
@@ -1320,22 +1453,43 @@ class SSEBroker:
 
     def _subscription_close_started(self) -> None:
         self._closing_subscriptions += 1
-        self._update_sse_gauges()
+        self._update_sse_gauges(force=True)
 
     def _subscription_close_finished(self) -> None:
         self._closing_subscriptions = max(0, self._closing_subscriptions - 1)
-        self._update_sse_gauges()
+        self._update_sse_gauges(force=True)
 
-    def _update_sse_gauges(self) -> None:
+    def _update_sse_gauges(self, *, force: bool = False) -> None:
         if self._metrics is None:
             return
+        now = asyncio.get_running_loop().time()
+        if not force and now < self._next_gauge_update_at:
+            return
+        self._next_gauge_update_at = now + self._gauge_update_interval_seconds
         setter = getattr(self._metrics, "set_sse_gauge", None)
         if setter is None:
             return
-        setter("subscribers", sum(len(items) for items in self._subscribers.values()))
+        subscribers = [
+            subscriber
+            for items in self._subscribers.values()
+            for subscriber in items
+            if not subscriber.closed
+        ]
+        setter("subscribers", len(subscribers))
+        setter("subscribers_live", sum(item.state == "LIVE" for item in subscribers))
+        setter(
+            "subscribers_replaying",
+            sum(item.state == "REPLAYING" for item in subscribers),
+        )
+        setter(
+            "subscribers_draining",
+            sum(item.state == "DRAINING" for item in subscribers),
+        )
         setter("queued_events", self._queued_events)
+        setter("queued_bytes", self._queued_bytes)
         setter("replay_buffer_events", self._replay_buffer_events)
         setter("replay_buffer_bytes", self._replay_buffer_bytes)
+        setter("replay_cache_tenants", len(self._replay_cache))
         setter("replay_cache_events", self._replay_cache_events)
         setter("replay_cache_bytes", self._replay_cache_bytes)
         setter("replay_tasks", len(self._replay_tasks) + len(self._latest_tasks))
@@ -1359,6 +1513,23 @@ class SSEBroker:
     def _observe(self, operation: str, outcome: str, count: int = 1) -> None:
         if self._metrics is not None and count > 0:
             self._metrics.observe_sse(operation, outcome, count)
+
+    def _observe_latency(self, stage: str, started_at: float) -> None:
+        if self._metrics is None:
+            return
+        observer = getattr(self._metrics, "observe_sse_latency", None)
+        if observer is not None:
+            observer(stage, max(0.0, asyncio.get_running_loop().time() - started_at))
+
+    @staticmethod
+    def _admission_failure_outcome(exc: LiyanError) -> str:
+        if exc.code == ErrorCode.SSE_REPLAY_CURSOR_INVALID:
+            return "cursor_rejected"
+        if exc.code == ErrorCode.MESSAGE_SEQUENCE_GAP:
+            return "replay_gap"
+        if exc.code == ErrorCode.MESSAGE_BUFFER_FULL:
+            return "capacity_rejected"
+        return "retriable_failure" if exc.retriable else "rejected"
 
 
 def encode_sse_frame(event: SSEEvent, cursor: str) -> bytes:

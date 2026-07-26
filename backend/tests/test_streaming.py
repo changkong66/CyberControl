@@ -12,7 +12,9 @@ import pytest
 from pydantic import ValidationError
 
 import liyans.infrastructure.streaming.sse as sse_module
+from liyans.api.streaming import TenantScopedSSEStream
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
+from liyans.core.tenant import TenantContext
 from liyans.infrastructure.observability.metrics import PlatformMetrics
 from liyans.infrastructure.streaming.sse import (
     InMemorySSEReplayLog,
@@ -501,6 +503,88 @@ async def test_broker_merges_no_cursor_history_and_live_replay_without_gap() -> 
     ] == [first, second, third, fourth]
     assert await anext(stream) is None
     await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_duplicate_replay_drains_terminal_events_committed_during_history_delivery() -> None:
+    log = InMemorySSEReplayLog(capacity_per_tenant=64)
+    baseline = await log.append("tenant-a", "topic4.marker", {"ordinal": 0})
+    history = [
+        await log.append("tenant-a", "topic4.probe", {"ordinal": ordinal})
+        for ordinal in range(1, 21)
+    ]
+    broker = SSEBroker(log, subscriber_queue_size=2)
+    stream = broker.subscribe(
+        "tenant-a",
+        after_sequence=baseline.sequence,
+        heartbeat_seconds=0.01,
+        event_type_prefixes=("topic4.",),
+    )
+
+    assert await anext(stream) == history[0]
+    terminal = [
+        await log.append("tenant-a", "topic4.probe", {"ordinal": ordinal})
+        for ordinal in range(21, 25)
+    ]
+    for event in terminal:
+        assert await broker.deliver(event) == 0
+
+    received = [history[0]]
+    for _ in range(len(history) + len(terminal) - 1):
+        received.append(await anext(stream))
+
+    assert [event.sequence for event in received] == list(range(1, 25))
+    assert len({event.sequence for event in received}) == 24
+    assert stream.ready is True
+    subscriber = next(iter(broker._subscribers["tenant-a"]))
+    assert subscriber.state == "LIVE"
+    assert subscriber.replay_buffer == {}
+    assert subscriber.queue.empty()
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_request_disconnect_during_replay_closes_subscription_owner() -> None:
+    class BlockingReplayLog(InMemorySSEReplayLog):
+        def __init__(self) -> None:
+            super().__init__()
+            self.started = asyncio.Event()
+
+        async def replay(self, tenant_id, after_sequence):
+            del tenant_id, after_sequence
+            self.started.set()
+            await asyncio.Event().wait()
+
+    class DisconnectingRequest:
+        def __init__(self) -> None:
+            self.disconnected = False
+
+        async def is_disconnected(self) -> bool:
+            return self.disconnected
+
+    log = BlockingReplayLog()
+    broker = SSEBroker(log)
+    subscription = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    context = TenantContext(
+        tenant_id="tenant-a",
+        subject_ref="subject-a",
+        roles=frozenset({"learner"}),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id="0" * 32,
+    )
+    request = DisconnectingRequest()
+    stream = TenantScopedSSEStream(request, subscription, context, object())
+    stream._disconnect_poll_seconds = 0.001
+    waiting = asyncio.create_task(anext(stream))
+
+    await log.started.wait()
+    request.disconnected = True
+
+    with pytest.raises(StopAsyncIteration):
+        await asyncio.wait_for(waiting, timeout=0.2)
+    assert broker.active_tenants() == ()
+    assert broker._replay_tasks == {}
+    assert subscription._cleanup_complete is True
 
 
 @pytest.mark.asyncio
@@ -997,6 +1081,64 @@ async def test_replay_cache_enforces_size_tenant_and_expiry_bounds() -> None:
     assert "tenant-b" not in broker._replay_cache
     assert broker._replay_cache_events == 0
     assert broker._replay_cache_bytes == 0
+
+
+@pytest.mark.asyncio
+async def test_replay_cache_expires_without_a_followup_cache_access() -> None:
+    metrics = PlatformMetrics()
+    broker = SSEBroker(
+        InMemorySSEReplayLog(),
+        replay_cache_seconds=0.005,
+        metrics=metrics,
+    )
+    broker._store_replay_cache("tenant-a", None, (_event(0),))
+    assert broker._replay_cache_events == 1
+
+    await asyncio.sleep(0.02)
+
+    assert broker._replay_cache == {}
+    assert broker._replay_cache_events == 0
+    assert broker._replay_cache_bytes == 0
+    rendered = metrics.render()
+    assert b'metric="replay_cache_events"} 0.0' in rendered
+    assert b'metric="replay_cache_bytes"} 0.0' in rendered
+
+
+@pytest.mark.asyncio
+async def test_sse_hot_path_throttles_gauge_writes_and_forces_cleanup_state() -> None:
+    class CountingMetrics:
+        def __init__(self) -> None:
+            self.gauges: dict[str, int] = {}
+            self.calls: dict[str, int] = {}
+
+        def observe_sse(self, *_args, **_kwargs) -> None:
+            return None
+
+        def observe_sse_latency(self, *_args, **_kwargs) -> None:
+            return None
+
+        def set_sse_gauge(self, metric: str, value: int) -> None:
+            self.gauges[metric] = value
+            self.calls[metric] = self.calls.get(metric, 0) + 1
+
+    metrics = CountingMetrics()
+    log = InMemorySSEReplayLog(capacity_per_tenant=256)
+    broker = SSEBroker(log, subscriber_queue_size=128, metrics=metrics)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    assert await anext(stream) is None
+
+    for ordinal in range(100):
+        event = await log.append("tenant-a", "topic4.probe", {"ordinal": ordinal})
+        assert await broker.deliver(event) == 1
+
+    assert broker._queued_events == 100
+    assert metrics.calls["queued_events"] < 10
+
+    await stream.aclose()
+
+    assert metrics.gauges["subscribers"] == 0
+    assert metrics.gauges["queued_events"] == 0
+    assert metrics.gauges["queued_bytes"] == 0
 
 
 @pytest.mark.asyncio

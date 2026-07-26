@@ -129,6 +129,30 @@ class PostgresOutboxDispatcherRepository:
                 for row in rows
             ]
 
+    async def list_tenant_ids(
+        self,
+        *,
+        event_type: str,
+        after_tenant_id: str | None,
+        limit: int,
+    ) -> list[str]:
+        """Discover recovery tenants from the dispatcher role's existing Outbox grant."""
+
+        if not event_type or len(event_type) > 128:
+            raise ValueError("event_type must contain between one and 128 characters")
+        if not 1 <= limit <= 1000:
+            raise ValueError("tenant catalog limit must be between one and 1000")
+        statement = select(OutboxMessageModel.tenant_id).where(
+            OutboxMessageModel.event_type == event_type
+        )
+        if after_tenant_id is not None:
+            statement = statement.where(OutboxMessageModel.tenant_id > after_tenant_id)
+        async with self._database.transaction() as session:
+            result = await session.execute(
+                statement.distinct().order_by(OutboxMessageModel.tenant_id).limit(limit)
+            )
+            return list(result.scalars())
+
     async def mark_published(
         self,
         outbox_id: UUID,

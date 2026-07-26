@@ -73,6 +73,7 @@ class PostgresSSENotificationBridge:
         self._metrics = metrics
         self._stopping = asyncio.Event()
         self._connected = asyncio.Event()
+        self._ready = asyncio.Event()
         self._overflowed = False
         self._task: asyncio.Task[None] | None = None
         self._last_error: str | None = None
@@ -86,6 +87,10 @@ class PostgresSSENotificationBridge:
         return self._connected.is_set()
 
     @property
+    def ready(self) -> bool:
+        return self._ready.is_set()
+
+    @property
     def last_error(self) -> str | None:
         return self._last_error
 
@@ -93,10 +98,11 @@ class PostgresSSENotificationBridge:
         if self.running:
             return
         self._stopping.clear()
+        self._ready.clear()
         self._task = asyncio.create_task(self._run(), name="sse-postgres-listener")
         try:
             await asyncio.wait_for(
-                self._connected.wait(),
+                self._ready.wait(),
                 timeout=self._startup_timeout,
             )
         except TimeoutError:
@@ -115,6 +121,7 @@ class PostgresSSENotificationBridge:
         finally:
             self._task = None
             self._connected.clear()
+            self._ready.clear()
 
     async def _stop_task(self, task: asyncio.Task[None]) -> None:
         try:
@@ -146,6 +153,8 @@ class PostgresSSENotificationBridge:
                 self._last_error = None
                 self._observe("notification", "connected")
                 await self.synchronize_active_tenants()
+                self._ready.set()
+                self._observe("notification", "ready")
                 delay = self._reconnect_base
                 await self._consume(connection)
                 if not self._stopping.is_set():
@@ -158,6 +167,7 @@ class PostgresSSENotificationBridge:
                 logger.exception("PostgreSQL SSE notification bridge failed; reconnecting")
             finally:
                 self._connected.clear()
+                self._ready.clear()
                 if connection is not None and not connection.is_closed():
                     await complete_cleanup(self._close_connection(connection))
             if not self._stopping.is_set():
