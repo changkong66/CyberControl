@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -31,15 +32,20 @@ from liyans.domains.topic3.models import (
     Topic3GenerationSessionModel,
     Topic3StreamChunkModel,
 )
-from liyans.domains.topic3.orchestrator import Topic3Orchestrator
+from liyans.domains.topic3.orchestrator import TOPIC3_WORKFLOW_TASK, Topic3Orchestrator
+from liyans.domains.topic3.outbox import Topic3WorkflowRecoveryCoordinator
 from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
 from liyans.domains.topic3.service import Topic3Service
 from liyans.domains.topic3.streaming import Topic3StreamCoordinator
 from liyans.infrastructure.database import session_context_from_tenant
 from liyans.infrastructure.observability.audit import verify_audit_chain
 from liyans.infrastructure.observability.postgres_audit import PostgresAuditStore
-from liyans.infrastructure.persistence import PostgresOutboxRepository
+from liyans.infrastructure.persistence import (
+    PostgresOutboxDispatcherRepository,
+    PostgresOutboxRepository,
+)
 from liyans.infrastructure.streaming.sse import InMemorySSEReplayLog, SSEBroker
+from liyans.infrastructure.tasks.queue import AsyncTaskQueue
 from liyans.providers.topic3 import Topic3ProviderRegistry
 
 pytestmark = pytest.mark.integration
@@ -252,3 +258,136 @@ async def test_topic3_postgres_workflow_is_replayable_isolated_and_append_only(
                 ),
                 {"session_id": command.generation_session_id},
             )
+
+
+@pytest.mark.asyncio
+async def test_topic3_recovery_requeues_running_workflow_from_postgres_authority(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, base_context = postgres_runtime
+    context = replace(
+        base_context,
+        scopes=frozenset(
+            {
+                "topic2:learner:any",
+                "topic3:learner:any",
+                "topic3:admin",
+            }
+        ),
+    )
+    topic1 = topic1_service(database)
+    topic2 = topic2_runtime(database)
+    repository = PostgresTopic3Repository()
+    service = Topic3Service(
+        database,
+        repository,
+        PostgresOutboxRepository(database),
+        instance_id="topic3-recovery-integration",
+    )
+    provider_registry = Topic3ProviderRegistry(
+        ProviderPolicyRegistry.load(ROOT / "config" / "providers.toml"),
+        {},
+    )
+    orchestrator = Topic3Orchestrator(
+        database,
+        PostgresTopic1Repository(),
+        topic2,
+        service,
+        ImmutableBlueprintPlanner(),
+        Topic3AgentRegistry(provider_registry),
+        Topic3StreamCoordinator(SSEBroker(InMemorySSEReplayLog(capacity_per_tenant=1000))),
+    )
+    now = datetime.now(UTC)
+    command = generation_command(resources=[ResourceType.MIND_MAP]).model_copy(
+        update={
+            "operation_id": uuid4(),
+            "generation_session_id": uuid4(),
+            "learner_ref": context.subject_ref,
+            "target_kp_ids": [KP_ID],
+            "learning_goal": "Recover a durably accepted workflow.",
+            "requested_at": now,
+        }
+    )
+    with tenant_scope(context):
+        await seed_topic1(topic1)
+        await topic2.initialize_learner(
+            learner_ref=context.subject_ref,
+            course_id=COURSE_ID,
+            operation_id=uuid4(),
+            requested_at=now,
+            idempotency_key="topic3-recovery-init-000000001",
+        )
+        await topic2.generate_path(
+            learner_ref=context.subject_ref,
+            course_id=COURSE_ID,
+            operation_id=uuid4(),
+            requested_at=now,
+            target_goal="Recover a durably accepted workflow.",
+            target_kp_ids=[KP_ID],
+            idempotency_key="topic3-recovery-path-000000001",
+        )
+        await orchestrator.prepare(
+            command,
+            idempotency_key="topic3-recovery-workflow-0001",
+        )
+        running = await service.start_workflow(command.generation_session_id)
+    assert running.state == GenerationSessionState.RUNNING
+
+    dispatcher = PostgresOutboxDispatcherRepository(postgres_dispatcher)
+
+    class ScopedCatalog:
+        async def list_tenant_ids(
+            self,
+            *,
+            event_type: str,
+            after_tenant_id: str | None,
+            limit: int,
+        ) -> list[str]:
+            del limit
+            if after_tenant_id is not None:
+                return []
+            tenant_ids = await dispatcher.list_tenant_ids(
+                event_type=event_type,
+                after_tenant_id=None,
+                limit=1000,
+            )
+            return [tenant_id for tenant_id in tenant_ids if tenant_id == context.tenant_id]
+
+    queue = AsyncTaskQueue(worker_count=1)
+    queue.register(TOPIC3_WORKFLOW_TASK, orchestrator.handle_queue_task)
+    await queue.start()
+    coordinator = Topic3WorkflowRecoveryCoordinator(
+        database,
+        repository,
+        service,
+        orchestrator,
+        queue,
+        ScopedCatalog(),
+        reconciliation_interval_seconds=0.01,
+    )
+    try:
+        assert await coordinator.reconcile_once() == 1
+        for _attempt in range(500):
+            with tenant_scope(context):
+                runtime = await service.load_runtime(command.generation_session_id)
+            if runtime[0].state == GenerationSessionState.COMPLETED:
+                break
+            await asyncio.sleep(0.01)
+        else:
+            pytest.fail("the durable Topic 3 workflow was not recovered")
+
+        with tenant_scope(context):
+            async with database.transaction(
+                context=session_context_from_tenant(context)
+            ) as session:
+                recoverable = await repository.list_recoverable_generation_sessions(
+                    session,
+                    context.tenant_id,
+                    limit=10,
+                )
+        assert recoverable == []
+        assert runtime[0].state == GenerationSessionState.COMPLETED
+    finally:
+        await coordinator.close()
+        await queue.close()

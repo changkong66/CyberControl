@@ -45,7 +45,7 @@ async def test_postgres_replay_subscription_close_removes_replay_subscriber(
 
 
 @pytest.mark.asyncio
-async def test_two_instances_receive_once_and_recover_disconnect_gap(
+async def test_two_instances_receive_once_after_explicit_readiness_barrier(
     postgres_runtime,
 ) -> None:
     if not RUNTIME_URL:
@@ -75,15 +75,14 @@ async def test_two_instances_receive_once_and_recover_disconnect_gap(
     with tenant_scope(context):
         first_from_a = asyncio.create_task(_next_non_heartbeat(stream_a))
         first_from_b = asyncio.create_task(_next_non_heartbeat(stream_b))
-    for _attempt in range(100):
-        if (
-            context.tenant_id in broker_a.active_tenants()
-            and context.tenant_id in broker_b.active_tenants()
-        ):
-            break
-        await asyncio.sleep(0.01)
-    else:
-        pytest.fail("SSE subscribers did not become active")
+    await asyncio.wait_for(
+        asyncio.gather(stream_a.wait_ready(), stream_b.wait_ready()),
+        timeout=2,
+    )
+    assert bridge_a.connected is True
+    assert bridge_b.connected is True
+    assert bridge_a.ready is True
+    assert bridge_b.ready is True
 
     try:
         with tenant_scope(context):
@@ -104,6 +103,39 @@ async def test_two_instances_receive_once_and_recover_disconnect_gap(
             no_duplicate = await asyncio.wait_for(anext(stream_a), timeout=2)
         assert no_duplicate is None
 
+    finally:
+        first_from_a.cancel()
+        first_from_b.cancel()
+        await asyncio.gather(first_from_a, first_from_b, return_exceptions=True)
+        await stream_a.aclose()
+        await stream_b.aclose()
+        await bridge_a.close()
+        await bridge_b.close()
+
+
+@pytest.mark.asyncio
+async def test_notification_bridge_recovers_a_true_durable_disconnect_gap(
+    postgres_runtime,
+) -> None:
+    if not RUNTIME_URL:
+        pytest.skip("PostgreSQL runtime integration URL is not configured")
+    database, _migrator, context = postgres_runtime
+    broker_a = SSEBroker(PostgresSSEReplayLog(database), subscriber_queue_size=16)
+    broker_b = SSEBroker(PostgresSSEReplayLog(database), subscriber_queue_size=16)
+    bridge_b = PostgresSSENotificationBridge(
+        RUNTIME_URL,
+        broker_b,
+        reconnect_base_seconds=0.01,
+        reconnect_max_seconds=0.05,
+        startup_timeout_seconds=2,
+    )
+    await bridge_b.start()
+    stream_b = broker_b.subscribe(context.tenant_id, heartbeat_seconds=60)
+    with tenant_scope(context):
+        first_recovered = asyncio.create_task(_next_non_heartbeat(stream_b))
+    await asyncio.wait_for(stream_b.wait_ready(), timeout=2)
+
+    try:
         await bridge_b.close()
         with tenant_scope(context):
             missed_one = await broker_a.publish(
@@ -118,18 +150,16 @@ async def test_two_instances_receive_once_and_recover_disconnect_gap(
             )
 
         await bridge_b.start()
+        assert bridge_b.ready is True
+        recovered_one = await asyncio.wait_for(first_recovered, timeout=2)
         with tenant_scope(context):
-            recovered_one = await _next_non_heartbeat(stream_b)
             recovered_two = await _next_non_heartbeat(stream_b)
         assert [recovered_one.sequence, recovered_two.sequence] == [
             missed_one.sequence,
             missed_two.sequence,
         ]
     finally:
-        first_from_a.cancel()
-        first_from_b.cancel()
-        await asyncio.gather(first_from_a, first_from_b, return_exceptions=True)
-        await stream_a.aclose()
+        first_recovered.cancel()
+        await asyncio.gather(first_recovered, return_exceptions=True)
         await stream_b.aclose()
-        await bridge_a.close()
         await bridge_b.close()
