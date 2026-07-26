@@ -28,6 +28,8 @@ class TenantScopedSSEStream(AsyncIterator[bytes]):
         self._cursor_codec = cursor_codec
         self._close_lock = asyncio.Lock()
         self._closed = False
+        self._disconnect_poll_seconds = 0.5
+        self._disconnect_task: asyncio.Task[None] | None = None
 
     def __aiter__(self) -> TenantScopedSSEStream:
         return self
@@ -35,6 +37,7 @@ class TenantScopedSSEStream(AsyncIterator[bytes]):
     async def __anext__(self) -> bytes:
         if self._closed:
             raise StopAsyncIteration
+        self._ensure_disconnect_watcher()
         try:
             while True:
                 if await self._request.is_disconnected():
@@ -56,14 +59,41 @@ class TenantScopedSSEStream(AsyncIterator[bytes]):
                 return encode_sse_frame(event, cursor)
         except StopAsyncIteration:
             self._closed = True
+            await self._stop_disconnect_watcher()
             raise
         except asyncio.CancelledError:
             await complete_cleanup(self._close_from_advance())
             raise
 
+    def _ensure_disconnect_watcher(self) -> None:
+        if self._disconnect_task is None:
+            self._disconnect_task = asyncio.create_task(
+                self._watch_disconnect(),
+                name="sse-disconnect-watcher",
+            )
+
+    async def _watch_disconnect(self) -> None:
+        while not self._closed:
+            if await self._request.is_disconnected():
+                await self.aclose()
+                return
+            await asyncio.sleep(self._disconnect_poll_seconds)
+
+    async def _stop_disconnect_watcher(self) -> None:
+        task = self._disconnect_task
+        self._disconnect_task = None
+        if task is None or task is asyncio.current_task():
+            return
+        task.cancel()
+        await complete_cleanup(asyncio.gather(task, return_exceptions=True))
+
     async def _close_from_advance(self) -> None:
+        if self._closed:
+            await self._stop_disconnect_watcher()
+            return
         self._closed = True
         await close_subscription(self._subscription)
+        await self._stop_disconnect_watcher()
 
     async def aclose(self) -> None:
         async with self._close_lock:
@@ -71,6 +101,7 @@ class TenantScopedSSEStream(AsyncIterator[bytes]):
                 return
             self._closed = True
             await close_subscription(self._subscription)
+            await self._stop_disconnect_watcher()
 
 
 async def next_tenant_scoped_event(

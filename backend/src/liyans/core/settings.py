@@ -122,6 +122,9 @@ class Settings(BaseSettings):
     provider_http_timeout_seconds: float = 90.0
     provider_max_connections: int = 32
     task_worker_count: int = 4
+    topic3_workflow_reconciliation_interval_seconds: float = 5.0
+    topic3_workflow_reconciliation_tenant_page_size: int = 100
+    topic3_workflow_reconciliation_batch_size: int = 128
     sse_replay_capacity: int = 4096
     sse_subscriber_queue_size: int = 128
     sse_cursor_secret: str = Field(default_factory=lambda: secrets.token_hex(32), repr=False)
@@ -188,6 +191,16 @@ class Settings(BaseSettings):
             raise ValueError("identity secrets must contain at least 32 bytes")
         if not 1 <= self.outbox_publisher_batch_size <= 1000:
             raise ValueError("outbox_publisher_batch_size must be between one and 1000")
+        if self.topic3_workflow_reconciliation_interval_seconds <= 0:
+            raise ValueError("Topic 3 workflow reconciliation interval must be positive")
+        if not 1 <= self.topic3_workflow_reconciliation_tenant_page_size <= 1000:
+            raise ValueError(
+                "Topic 3 workflow reconciliation tenant page size must be between one and 1000"
+            )
+        if not 1 <= self.topic3_workflow_reconciliation_batch_size <= 1000:
+            raise ValueError(
+                "Topic 3 workflow reconciliation batch size must be between one and 1000"
+            )
         if (
             min(
                 self.outbox_publisher_poll_seconds,

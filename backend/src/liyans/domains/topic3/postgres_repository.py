@@ -150,6 +150,55 @@ class PostgresTopic3Repository:
         )
         return [self._session(row) for row in result.scalars()]
 
+    async def list_recoverable_generation_sessions(
+        self,
+        session: AsyncSession,
+        tenant_id: str,
+        *,
+        limit: int,
+    ) -> list[GenerationSessionRecord]:
+        """Return latest PLANNED/RUNNING snapshots inside one RLS tenant context."""
+
+        assert_tenant(tenant_id)
+        if not 1 <= limit <= 1000:
+            raise ValueError("limit must be between one and 1000")
+        latest_versions = (
+            select(
+                Topic3GenerationSessionModel.generation_session_id,
+                func.max(Topic3GenerationSessionModel.session_version).label("latest_version"),
+            )
+            .where(Topic3GenerationSessionModel.tenant_id == tenant_id)
+            .group_by(Topic3GenerationSessionModel.generation_session_id)
+            .subquery()
+        )
+        result = await session.execute(
+            select(Topic3GenerationSessionModel)
+            .join(
+                latest_versions,
+                and_(
+                    latest_versions.c.generation_session_id
+                    == Topic3GenerationSessionModel.generation_session_id,
+                    latest_versions.c.latest_version
+                    == Topic3GenerationSessionModel.session_version,
+                ),
+            )
+            .where(
+                Topic3GenerationSessionModel.tenant_id == tenant_id,
+                Topic3GenerationSessionModel.state.in_(
+                    (
+                        GenerationSessionState.PLANNED.value,
+                        GenerationSessionState.RUNNING.value,
+                    )
+                ),
+            )
+            .order_by(
+                Topic3GenerationSessionModel.created_at,
+                Topic3GenerationSessionModel.generation_session_id,
+            )
+            .limit(limit)
+        )
+        return [self._session(row) for row in result.scalars()]
+
     async def append_blueprint(
         self,
         session: AsyncSession,

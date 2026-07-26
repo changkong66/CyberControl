@@ -60,6 +60,7 @@ from liyans.domains.topic3.outbox import (
     DOMAIN_OUTBOX_EVENT_TYPES,
     DurableOutboxSSEBridge,
     Topic3WorkflowOutboxConsumer,
+    Topic3WorkflowRecoveryCoordinator,
 )
 from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
 from liyans.domains.topic3.service import Topic3Service
@@ -260,6 +261,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             outbox=app.state.outbox,
         )
         app.state.outbox_publisher = None
+        dispatcher_repository = None
         if settings.outbox_publisher_enabled:
             dispatcher_database = DatabaseSessionManager(
                 create_database_engine(
@@ -340,6 +342,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             Topic3AgentRegistry(topic3_provider_registry),
             Topic3StreamCoordinator(app.state.sse_broker),
         )
+        app.state.topic3_workflow_recovery = None
+        if dispatcher_repository is not None:
+            app.state.topic3_workflow_recovery = Topic3WorkflowRecoveryCoordinator(
+                database,
+                topic3_repository,
+                app.state.topic3_service,
+                app.state.topic3_orchestrator,
+                task_queue,
+                dispatcher_repository,
+                reconciliation_interval_seconds=(
+                    settings.topic3_workflow_reconciliation_interval_seconds
+                ),
+                tenant_page_size=(settings.topic3_workflow_reconciliation_tenant_page_size),
+                workflow_batch_size=settings.topic3_workflow_reconciliation_batch_size,
+                metrics=metrics,
+            )
 
         verification_repository = PostgresVerificationRepository()
         knowledge_repository = PostgresKnowledgeRepository()
@@ -456,10 +474,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             topic4_runtime.handle_queue_task,
             circuit_failure_threshold=3,
         )
-        message_bus.register(
-            "topic3.workflow.created",
-            Topic3WorkflowOutboxConsumer(app.state.topic3_orchestrator, task_queue),
-        )
+        if app.state.topic3_workflow_recovery is not None:
+            message_bus.register(
+                "topic3.workflow.created",
+                Topic3WorkflowOutboxConsumer(app.state.topic3_workflow_recovery),
+            )
         message_bus.register(
             "topic3.workflow.finalized",
             Topic3CandidateVerificationConsumer(topic4_runtime, app.state.topic3_service),
@@ -476,6 +495,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             message_bus.register(event_type, outbox_sse_bridge)
         await task_queue.start()
         resources.push_async_callback(task_queue.close)
+        if app.state.topic3_workflow_recovery is not None:
+            await app.state.topic3_workflow_recovery.start()
+            resources.push_async_callback(app.state.topic3_workflow_recovery.close)
         if app.state.outbox_publisher is not None:
             await app.state.outbox_publisher.start()
             resources.push_async_callback(app.state.outbox_publisher.close)
