@@ -343,6 +343,60 @@ asset with SHA256
 `027e4c47e2ef10b381a7e48b0b342eebd54f40f8b4fca259f35216917f4a3403`:
 https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-third-remediation-failed-20260725-01595ae/gate-c-20260725T192105Z-01595ae2634c-third-remediation-failed-evidence-v1.zip.
 
+## Gate C Fourth Remediation Rerun Evidence
+
+PR #52 merged the fourth remediation into protected main at
+`97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`, tree
+`bad6b0f9e7008b934a54681f9f304a786ee9afe7`. Push Run 30195808808 and
+pull-request Run 30195810215 passed 8/8. Protected-main Run 30196139462
+attempt 2 also passed 8/8; attempt 1 failed while the runner pulled the
+PostgreSQL service image and did not establish a product-test failure.
+
+After Docker Desktop and the D-drive capacity gate recovered, the unchanged
+formal workload used real Keycloak Tokens, Compose project
+`cybercontrol-gate-c-97bfa5f-20260808t0840z` and fresh PostgreSQL volume
+`cybercontrol_gate_c_97bfa5f_20260808t0840z`. The 20, 200 and 500 connection
+stages passed. The 1,000 connection stage sustained 1,000 active streams for
+603 seconds but failed frozen controls, so the fail-fast harness did not run
+the 2,000 stage or recovery observation.
+
+| Check | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Delivery latency p95/p99 ms | 1631 / 6132 | <= 1000 / <= 3000 | FAIL |
+| Outbox `DEAD` | 2 | 0 | FAIL |
+| Outbox lag p95/p99 ms | 6292.587 / 8712.164 | <= 2000 / <= 5000 | FAIL |
+
+Connection success and reconnect/replay success remained `1.0`; committed
+event loss, duplicate final render, cross-tenant leakage, HTTP 5xx, pool
+acquisition timeout, OOM and unplanned restart remained zero. Terminal
+PostgreSQL evidence reports 74/74 FORCE RLS tables and migration head
+`20260720_0010`. Both DEAD rows are `topic3.workflow.finalized` events that
+exhausted 3/3 attempts with `LIYAN-AUTH-FORBIDDEN`. This proves an authorization
+failure in the durable finalized-event delivery path; it does not yet identify
+which trusted-context boundary is defective.
+
+Fourth-remediation evidence files:
+
+- Summary: [phase7-gate-c-fourth-remediation-summary.json](evidence/phase7-gate-c-fourth-remediation-summary.json)
+- Report: [phase7-gate-c-fourth-remediation-report.md](evidence/phase7-gate-c-fourth-remediation-report.md)
+- Failure analysis: [phase7-gate-c-fourth-remediation-failure-analysis.md](evidence/phase7-gate-c-fourth-remediation-failure-analysis.md)
+- Manifest: [phase7-gate-c-fourth-remediation-evidence-manifest.json](evidence/phase7-gate-c-fourth-remediation-evidence-manifest.json)
+- Database evidence: [phase7-gate-c-fourth-remediation-database-evidence.json](evidence/phase7-gate-c-fourth-remediation-database-evidence.json)
+- Environment: [phase7-gate-c-fourth-remediation-environment.json](evidence/phase7-gate-c-fourth-remediation-environment.json)
+- Package metadata: [phase7-gate-c-fourth-remediation-package.json](evidence/phase7-gate-c-fourth-remediation-package.json)
+
+The complete 1,881,710-byte raw package is retained as a GitHub prerelease
+asset with SHA256
+`9b2c4c116752197bf10dd1bc9d29409e59bdca1eca7be3cd4a0df1d1bef26f8d`:
+https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-fourth-remediation-failed-20260808-97bfa5f/gate-c-20260808T083601Z-97bfa5fef7e1-fourth-remediation-failed-evidence-v1.zip.
+The immutable ZIP's generated Markdown report contains control characters and
+unexpanded PowerShell expressions. Its raw metrics and internal manifest remain
+unchanged; the repository report is a disclosed normalized derivative of the
+immutable summary and PostgreSQL evidence JSON.
+Independent failure-evidence PR
+[#55](https://github.com/changkong66/CyberControl/pull/55) is the current archive
+closure and does not change the failed Gate C decision.
+
 
 ## Source And Runtime Fingerprints
 
@@ -383,6 +437,7 @@ https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-thir
 | Playwright Chromium | 8 passed |
 | Browser runtime inspection | three locales rendered; zero console errors/warnings |
 | Go fmt/vet/race/test/build | passed |
+| Fourth remediation push/PR/main CI | 8/8 / 8/8 / 8/8 |
 | Python and Node dependency audit | no known vulnerabilities |
 | Gitleaks | local and remote history/worktree gates passed |
 | Runtime Trivy | 0 findings at all severities for all three release images |
@@ -441,12 +496,12 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness, three remediation implementations and
-three earlier failed reruns are complete on protected main. The current evidence
-snapshot is parent-bound to protected main
-`01595ae2634cb8114dfb9c591114048cba3864fd`; protected-main Run 30171222537
-completed all eight jobs successfully. The third-remediation Gate C rerun still
-failed. Gate D-G and unrelated feature development remain locked.
+mainline acceptance, the Gate C harness and four remediation implementations
+are complete on protected main. The current evidence snapshot is parent-bound
+to protected main `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`; protected-main
+Run 30196139462 attempt 2 completed all eight jobs successfully. The fourth
+formal Gate C replay failed at `ramp-1000`; `gate-2000` was not executed. Gate
+D-G and unrelated feature development remain locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
 chain and passed push Run 30134676485, pull-request Run 30134728232 and main
@@ -471,22 +526,30 @@ remediation at `01595ae2634cb8114dfb9c591114048cba3864fd` after push Run
 30171031219, pull-request Run 30171054312 and protected-main Run 30171222537
 each passed 8/8. It removed the asynchronous-generator close error but did not
 satisfy the frozen 2,000-stream continuity, delivery, Outbox or memory controls.
-The next allowed work is a fourth scoped remediation for duplicate-replay tail
-loss, reconnect admission, latency and retained recovery-state ownership. No
-Gate D work is authorized.
+PR #52 then merged the fourth remediation after push Run 30195808808 and
+pull-request Run 30195810215 passed 8/8. Protected-main Run 30196139462 attempt
+2 passed 8/8. Its fresh-volume replay passed through 500 streams, then failed
+at 1,000 streams because delivery p95/p99 exceeded the frozen limit and two
+`topic3.workflow.finalized` Outbox events became `DEAD` with
+`LIYAN-AUTH-FORBIDDEN`. No Gate D work is authorized.
 
 ## Remaining Release Blockers
 
-1. Complete a fourth scoped remediation PR for duplicate-replay tail loss,
-   reconnect admission, delivery/Outbox latency and retained recovery state; do
-   not change the workload or frozen thresholds.
-2. After 8/8 push, pull-request and protected-main CI, rerun Gate C from that
-   new main baseline and another fresh isolated PostgreSQL volume.
-3. Only after Gate C is accepted, complete a minimum eight-hour soak across
+1. Complete a fifth scoped remediation PR for the
+   `topic3.workflow.finalized` Outbox authorization failure and the remaining
+   delivery/Outbox latency; do not bypass authorization or change the workload
+   or frozen thresholds.
+2. Add deterministic unit and real PostgreSQL regressions for trusted-context
+   propagation, retry/DEAD behavior, partition ordering and 1,000-stream
+   delivery latency, then require 8/8 push, pull-request and protected-main CI.
+3. Rerun Gate C from that new main baseline and another fresh isolated
+   PostgreSQL volume. The 2,000 stage remains unproven until the lower stages
+   pass in the same formal run.
+4. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-4. Only after Gate D is accepted, restore a PostgreSQL backup into an
+5. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-5. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 

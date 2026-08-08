@@ -1,24 +1,22 @@
-# CyberControl Phase 7 Gate C Fourth Remediation And Rerun - Next Task
+# CyberControl Phase 7 Gate C Fifth Remediation And Rerun - Next Task
 
-You are the enterprise reliability engineer for CyberControl. Work only from
-protected-main evidence. Do not reinterpret any failed Gate C threshold as
-accepted and do not start Gate D.
+You are the enterprise reliability and trusted-context engineer for
+CyberControl. Work only from real protected-main evidence, real PostgreSQL,
+real Keycloak Tokens, real Docker images and real GitHub Actions. Do not
+reinterpret a partial pass as Gate C acceptance and do not start Gate D.
 
 ## Fixed Baseline
 
 - Workspace: `C:/Users/wch06/Documents/CyberControl`
-- Before creating a branch, fetch `origin/main` and require its tip to be a
-  descendant of `01595ae2634cb8114dfb9c591114048cba3864fd`, to contain the
-  third-remediation failure evidence package metadata, and to have a successful
-  8/8 protected-main Release Quality Gates run. Branch only from that exact
-  current main tip.
-- Evaluated third-remediation source:
-  `01595ae2634cb8114dfb9c591114048cba3864fd`
-- Evaluated source tree:
-  `e319baaec6f1ba40e4d4069b6e0f78bf37b27bb0`
-- Third-remediation protected-main CI:
-  [Run 30171222537](https://github.com/changkong66/CyberControl/actions/runs/30171222537),
-  8/8 successful
+- Verified fourth-remediation product source:
+  `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`
+- Verified source tree:
+  `bad6b0f9e7008b934a54681f9f304a786ee9afe7`
+- Fourth remediation PR: [#52](https://github.com/changkong66/CyberControl/pull/52)
+- PR #52 head: `3c75c532bc8860debfe865eb08f63543fbd70eea`
+- Protected-main CI:
+  [Run 30196139462](https://github.com/changkong66/CyberControl/actions/runs/30196139462),
+  attempt 2, 8/8 successful
 - Current state: `RELEASE_CANDIDATE`
 - Formal state: `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Frozen thresholds SHA256:
@@ -26,172 +24,191 @@ accepted and do not start Gate D.
 - Frozen workload SHA256:
   `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`
 - Latest failed run:
-  `D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260725T192105Z-01595ae2634c`
+  `D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260808T083601Z-97bfa5fef7e1`
 - Latest failure analysis:
-  `docs/system-acceptance/evidence/phase7-gate-c-third-remediation-failure-analysis.md`
+  `docs/system-acceptance/evidence/phase7-gate-c-fourth-remediation-failure-analysis.md`
+- Raw evidence package SHA256:
+  `9b2c4c116752197bf10dd1bc9d29409e59bdca1eca7be3cd4a0df1d1bef26f8d`
 - Gate D-G: locked
+
+Before creating a branch, fetch `origin/main`. Require its exact current tip
+to be a descendant of `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`, to contain the
+fourth-remediation failure-evidence metadata, and to have a successful 8/8
+protected-main Release Quality Gates run. Branch only from that verified tip.
 
 ## Evidence-Backed Failure Boundary
 
-The 20, 200, 500 and 1,000 connection stages passed. The fresh-volume
-2,000-connection stage held 2,000 active authenticated streams for 1,804
-seconds, then failed these unchanged controls:
+The formal fresh-volume run passed 20, 200 and 500 authenticated SSE streams.
+The 1,000-stream stage held 1,000 active streams for 603 seconds and then failed
+the unchanged controls:
 
-- Connection success: `4000 / 4040 = 0.9900990099`, required `>= 0.995`.
-- Reconnect/durable replay success: `2000 / 2040 = 0.9803921569`, required
-  `>= 0.999`.
-- Committed event loss: `1,350`, required `0`.
-- Commit-to-client p95/p99: `1830 / 3267 ms`, required `<= 1000 / <= 3000 ms`.
-- Outbox p95/p99: `12149.778 / 14295.416 ms`, required `<= 2000 / <= 5000 ms`.
-- Post-ramp API memory ratio: `1.388368`, required `<= 1.10`.
+- commit-to-client p95/p99: `1631 / 6132 ms`, required
+  `<= 1000 / <= 3000 ms`;
+- Outbox p95/p99: `6292.587 / 8712.164 ms`, required
+  `<= 2000 / <= 5000 ms`;
+- Outbox `DEAD`: `2`, required `0`.
 
-The evidence narrows, but does not by itself prove, the next root-cause work:
+Both DEAD rows are `topic3.workflow.finalized`, sequence `2`, attempts `3/3`,
+with `last_error_code=LIYAN-AUTH-FORBIDDEN`. This proves an authorization
+failure in finalized-event durable delivery. It does not prove whether the
+defect is the event envelope, service-subject policy, publisher tenant-context
+propagation, consumer context construction or another authorization boundary.
 
-1. All 100 duplicate-replay clients were behind the final ordinal. Fifty
-   `gate-c-alpha` clients finished at ordinal 982 and fifty `gate-c-beta`
-   clients at ordinal 981, while both publishers reached ordinal 995. This
-   exactly explains the 1,350 loss. Their duplicate suppression remained
-   correct, so do not trade duplicate safety for tail completion.
-2. The 40 failed stream attempts are in the reconnect population. Initial token
-   acquisition had zero failures; use per-reason admission and replay timing to
-   distinguish request admission, cursor verification, replay acquisition,
-   notification synchronization and client disconnect outcomes.
-3. The end of the fixed ten-minute recovery observation still had 17
-   subscribers, 82 queued events, and 1,085 replay-cache events / 629,343
-   bytes. API RSS moved from 279,445,504 to 387,973,120 bytes. Establish the
-   retaining owner before changing cleanup or cache policy.
-4. The third remediation eliminated all
-   `aclose(): asynchronous generator is already running` errors, with final
-   `closing_subscriptions=0` and `replay_tasks=0`. Preserve that result.
-5. The post-failure PostgreSQL terminal snapshot reports 74/74 FORCE RLS tables,
-   zero cross-tenant visibility, zero Outbox `DEAD`, zero pool acquisition
-   timeouts, zero OOM/restarts and no HTTP 5xx. Preserve every one of these
-   controls.
-6. The docs-only failure-evidence PR exposed a timing-sensitive CI signal on its
-   first pull-request run: `test_two_instances_receive_once_and_recover_disconnect_gap`
-   timed out waiting for one non-heartbeat notification at the two-second
-   boundary, while the same commit's push run passed all eight jobs. Treat this
-   as a notification readiness/race regression. Do not dismiss it as evidence
-   of Gate C acceptance and do not fix it only by increasing the timeout.
+At 1,000 streams, connection and reconnect/replay success were `1.0`, event
+loss, duplicate final rendering, cross-tenant leakage, HTTP 5xx, pool timeouts,
+OOM and unplanned restarts were zero. Final subscribers, queued events and
+replay-cache events were `0/0/0`; FORCE RLS remained `74/74`. Preserve all of
+these results.
+
+Connection-establishment p95/p99 was `19964/23705 ms`; real Keycloak Token
+acquisition had zero failures. This is a readiness signal, not permission to
+increase client timeout. The 2,000-stream and recovery stages were not executed
+and remain completely unproven by this run.
 
 ## Non-Negotiable Constraints
 
-1. Do not modify migrations `0001-0010`, frozen contracts, RLS, identity
-   authority, TenantContext, SERIALIZABLE semantics, Outbox atomicity, C12
-   publication semantics, Gate C thresholds or Gate C workload.
+1. Do not modify migrations `0001-0010`, frozen contracts, RLS, FORCE RLS,
+   identity authority, `TenantContext`, SERIALIZABLE semantics, Outbox
+   atomicity, C12 publication semantics, Gate C thresholds or workload.
 2. Do not send `X-Tenant-ID`, `X-Subject-Ref`, role or scope identity headers.
-3. Use real Keycloak-issued Tokens, real PostgreSQL and a fresh isolated Gate C
-   volume for every formal rerun.
-4. Do not hide the defect by increasing client timeouts, lowering load, reducing
-   events, forcing GC, weakening ordered delivery, excluding coverage or
-   changing metric aggregation.
-5. Keep every failed package immutable. Every rerun needs a new run directory,
-   evidence manifest, PostgreSQL volume and Compose project.
-6. Gate D-G remain locked regardless of unit tests, local quality gates, CI or
-   partial-stage success.
+   Tenant, subject and authorization must remain server-derived.
+3. Do not bypass policy checks, grant broader service roles, acknowledge an
+   event before authorized acceptance, or classify authorization failure as
+   success.
+4. Do not hide latency by increasing client timeout, changing grace periods,
+   reducing events/connections, weakening ordering, forcing GC, excluding
+   coverage or changing metric aggregation.
+5. Every formal rerun must use real Keycloak-issued Tokens, a new evidence
+   directory, new Compose project and fresh isolated PostgreSQL volume.
+6. Preserve all historical failed packages and volumes. Never prune, overwrite
+   or reuse development, release or historical Gate C volumes.
+7. Gate D-G remain locked regardless of local tests, CI or partial-stage pass.
 
-## Required PR-1: Fourth Scoped Remediation
+## Required PR-1: Fifth Scoped Remediation
 
-Create `codex/phase7-gate-c-fourth-remediation` from the verified current main.
-Before behavioral changes, add a compact ADR or design note that maps every
-proposed change to a measured failed control and names the disproof metric.
+Create `codex/phase7-gate-c-fifth-remediation` from the exact verified current
+main. Before behavioral changes, add a concise ADR or design note that maps
+each proposed change to a failed metric and states the measurement that would
+disprove the root-cause hypothesis.
 
-### A. Duplicate-Replay Durable Tail Completion
+### A. Finalized-Event Trusted Authorization Chain
 
-- Trace the duplicate-replay population from signed `Last-Event-ID` validation,
-  through `REPLAYING -> LIVE`, to the final publisher ordinal. Do not expose
-  tenant identifiers, cursors or Tokens in logs or metrics.
-- Record per-reason counters and bounded histograms for cursor validation,
-  admission queueing, replay query/cache acquisition, replay merge completion,
-  LIVE handoff, gap detection, reconnect cancellation and terminal tail catchup.
-- Correct the replay/live handoff so a reconnect cannot report success before
-  its ordered durable cursor has caught up to all events committed before the
-  frozen workload's terminal observation boundary.
-- Retain signed cursor tenant binding, ordered sequences, fail-closed gaps,
-  per-tenant ordering and zero final duplicate rendering.
-- Prove that the 100 duplicate-replay clients finish at the same final ordinal
-  as their tenant publisher without adding a client-only grace period or hiding
-  missing events.
+- Trace `topic3.workflow.finalized` from the transaction that writes the Outbox
+  row through claim, publisher dispatch, consumer authorization, durable
+  acceptance and SSE projection.
+- Inspect the event envelope's tenant, subject, actor, audience, scope and
+  provenance fields without logging raw Tokens, PII or tenant identifiers.
+- Identify which trusted principal is expected to consume this internal event
+  and how its policy is derived. Separate end-user authority from service-
+  process authority; do not fabricate user claims for background work.
+- Prove whether `TenantContext` and database session context are created,
+  restored and cleared correctly for every claimed event, retry, cancellation
+  and partition transition.
+- Preserve fail-closed behavior for missing, malformed, mismatched or cross-
+  tenant claims. A fix must make valid finalized events pass and invalid events
+  fail for the correct reason.
+- Add bounded, non-PII counters for authorization decision reason, event type,
+  lifecycle phase and retry disposition. Do not use tenant, subject, Token,
+  cursor or event ID as metric labels.
 
-### B. Admission And Cancellation Ownership
+### B. Retry, DEAD And Claim Ownership
 
-- Profile the 40 failed reconnect attempts separately from real Keycloak Token
-  acquisition. Bound admission/replay concurrency only where evidence shows a
-  queue or database fanout bottleneck.
-- Preserve a single explicit idempotent close owner. Cancel and await request
-  disconnect, heartbeat, replay and live-queue tasks before subscriber removal,
-  ContextVar restoration and session/connection return.
-- Ensure a subscriber cannot be counted closed while a retained replay cache,
-  queue item or in-flight task still owns it.
-- Add lifecycle gauges for live subscribers, closing owners, pending tasks,
-  queued bytes/events, replay-cache tenants/events/bytes and admission wait
-  reasons. Do not attach PII, cursor values or tenant IDs to labels.
+- Classify deterministic authorization failures separately from transient
+  transport, timeout and dependency failures while retaining bounded retries
+  and full auditability.
+- Verify timeout or cancellation releases or renews claims atomically and does
+  not leave long-lived `CLAIMED` or `PENDING` rows.
+- Preserve `FOR UPDATE SKIP LOCKED`, claim tokens, leases, partition ordering,
+  idempotent consumer behavior and published-cursor semantics.
+- Do not reset attempts, silently republish a DEAD event, skip the failed event
+  or acknowledge it early to satisfy latency.
+- Add reconciliation evidence for an event whose external dispatch succeeds
+  but local completion fails, and for local claim success followed by an
+  authorization rejection.
 
-### C. Outbox And Delivery Latency
+### C. Outbox And Commit-To-Client Latency
 
-- Measure `created -> claimed`, `claimed -> published` and
-  `published -> client` independently under the frozen workload. Retain
-  `FOR UPDATE SKIP LOCKED`, leases, retries, partition ordering and atomic
-  publication.
-- Identify whether the failing p95/p99 is claim polling/wakeup delay, partition
-  head-of-line blocking, dispatcher scheduling, notification fanout or replay
-  catchup. Use the evidence to select a fix; do not acknowledge publication
-  early or skip a consumer confirmation.
-- Verify publisher timeout/cancellation promptly releases or renews claims and
-  cannot leave long-lived `CLAIMED` or `PENDING` work.
+- Measure at least `created -> claimable`, `claimable -> claimed`, `claimed ->
+  dispatch start`, `dispatch start -> authorized acceptance`, `accepted -> SSE
+  enqueue` and `enqueue -> client`.
+- Correlate the two DEAD finalized events with partition head-of-line blocking,
+  retries and the observed p95/p99, without putting identifiers into metric
+  labels or reports.
+- Determine whether the dominant delay is poll/wakeup cadence, claim query,
+  partition serialization, authorization retries, dispatcher scheduling,
+  notification fanout or client delivery.
+- Apply only evidence-backed changes. Preserve atomic publication, ordered
+  delivery, retry durability and tenant isolation.
+- Include deterministic bounded-load regressions showing no finalized-event
+  DEAD row and meeting stage-level latency budgets without claiming that a unit
+  test proves the formal 1,000/2,000-stream gate.
 
-### D. Memory Recovery
+### D. Admission Readiness Diagnostics
 
-- Capture tracemalloc snapshots, object counts, bounded task/subscriber/cache
-  inventories and API RSS samples before ramp, at 2,000 streams, after forced
-  disconnect and after the fixed recovery observation.
-- Fix the actual retaining references for 17 residual subscribers, 82 queued
-  events and replay cache state. `gc.collect()` and a lower cache limit without
-  ownership proof are not acceptable remedies.
-- Keep the asynchronous-generator close fix and add a regression that asserts
-  no `aclose()` race warning under concurrent replay/live cancellation.
+- Separate Keycloak Token issuance, TCP/HTTP admission, authentication,
+  subscriber registration, replay acquisition, `REPLAYING -> LIVE` handoff and
+  first heartbeat/event latency.
+- Explain the 1,000-stage `19964/23705 ms` connection-establishment p95/p99
+  with queue, task, file-descriptor, event-loop and PostgreSQL evidence.
+- Preserve the fourth remediation's single close owner, zero `aclose()` races,
+  zero tail loss, duplicate suppression and terminal `0/0/0` subscriber/queue/
+  replay-cache gauges.
+- Do not increase the load-client timeout or add a client-only grace period.
 
 ### E. Tests And Quality Gates
 
-- Add unit, deterministic concurrency and real PostgreSQL tests for duplicate
-  replay terminal tails, concurrent reconnect admission, ordered gap-free
-  handoff, cursor tamper/cross-tenant rejection, cancellation/double-close,
-  ContextVar restoration, pool return, queue/cache eviction, Outbox claim
-  release, partition ordering and multi-tenant isolation.
-- Make the two-instance PostgreSQL notification regression deterministic with an
-  explicit bridge/subscriber readiness barrier and a bounded event wait that
-  distinguishes heartbeat, notification delivery and true replay gaps. Preserve
-  a separate test that fails when a real notification/replay gap exists.
-- Include a regression where terminal events are committed during duplicate
-  replay and prove every reconnecting subscriber reaches the terminal ordinal
-  exactly once.
-- Keep Python coverage `>= 90%`; target no lower than the current 92.14%
-  evidence. No empty assertions, coverage exclusions or fabricated scale tests.
-- Run full local quality gates: Python and real PostgreSQL integration,
+- Extend unit tests around the Outbox publisher, Topic3 Outbox envelope,
+  authorization policy and tenant-context lifecycle.
+- Add real PostgreSQL tests for valid finalized-event delivery, malformed and
+  cross-tenant envelope rejection, service-principal authorization, retry
+  exhaustion, claim release, partition ordering, duplicate dispatch,
+  reconciliation and concurrent tenant isolation.
+- Add a regression that reproduces the exact `topic3.workflow.finalized`
+  sequence-2 path under concurrency and proves `PUBLISHED`, not `DEAD`, for a
+  valid event while an invalid event remains fail-closed.
+- Assert session/connection return and ContextVar restoration after success,
+  forbidden decisions, timeout and cancellation.
+- Keep Python coverage `>= 90%`; target no lower than the latest accepted local
+  evidence. No empty assertions, fabricated scale tests or coverage excludes.
+- Run complete local quality gates: Python unit and real PostgreSQL integration,
   frontend, Playwright, Go, contract drift, SBOM/license, Trivy and Gitleaks.
-- Push, create a PR, require push and pull-request Release Quality Gates 8/8,
-  Squash Merge only after green, then require protected-main 8/8.
+- Push and open the remediation PR. Require push and pull-request Release
+  Quality Gates 8/8, Squash Merge only after green, then require the resulting
+  protected main to pass 8/8.
 
-## Required PR-2: Fresh Gate C Rerun Evidence
+## Required PR-2: Fresh Gate C Mainline Evidence
 
-Only after PR-1 merges and main is clean:
+Only after PR-1 merges and protected main is clean and 8/8:
 
-1. Build from new main without `-SkipBuild`.
-2. Create a new explicitly named PostgreSQL volume and Compose project. Do not
-   reuse any prior Gate C, release or development volume.
-3. Run the unchanged 20, 200, 500, 1,000 and 2,000 authenticated connection
-   stages plus the ten-minute recovery observation with two tenants and at
-   least ten real Keycloak subjects per tenant.
-4. Bind source commit/tree, image IDs, Compose and lock-file hashes, frozen
-   threshold/workload hashes, monitor series, PostgreSQL terminal evidence and
-   SHA256 manifest to the result. Redact all Tokens, credentials and PII.
-5. If every frozen control passes, archive independent success evidence in a PR,
-   mark `PHASE7_GATE_C_MAINLINE_ACCEPTED_GATE_D_READY`, then stop. Gate D is
-   only eligible for a separately authorized task after that evidence PR merges
-   through 8/8 CI.
-6. If any frozen control fails, archive the real failed evidence in an
-   independent PR, retain `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`, and stop.
+1. Build all images from the new main without `-SkipBuild` and record source
+   commit/tree, image IDs, Compose hash, lock-file hashes, tool versions and
+   host resources.
+2. Create a unique Compose project, uniquely named PostgreSQL volume and new
+   run directory. Do not reuse any prior Gate C, release or development volume.
+3. Use real Keycloak Tokens, at least two tenants and at least ten real subjects
+   per tenant.
+4. Execute the unchanged frozen sequence: 20-stream smoke; 200 for five
+   minutes; 500 for five minutes; 1,000 for ten minutes; 2,000 for thirty
+   minutes; ten-minute recovery observation.
+5. Collect Token issuance, admission, replay/LIVE handoff, reconnect,
+   Last-Event-ID, client loss/duplicates/isolation, segmented Outbox and
+   delivery latency, CPU, RSS, file descriptors, tasks, subscribers, queues,
+   replay caches, PostgreSQL sessions/pool, RLS and Outbox terminal evidence.
+6. Redact all Tokens, passwords, verification codes, secrets and PII. Produce
+   SHA256 manifests and retain large raw evidence as an immutable Release Asset.
+7. If every frozen control passes in the same run, create an independent
+   success-evidence PR and mark
+   `PHASE7_GATE_C_MAINLINE_ACCEPTED_GATE_D_READY`.
+8. If any frozen control fails, stop the workload, preserve the volume, archive
+   a new immutable failure package and PR, retain
+   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`, and stop.
+9. The evidence PR must pass push and pull-request 8/8, Squash Merge, and the
+   merged protected main must pass 8/8.
 
-Do not start Gate D soak, disaster recovery, Provider, production deployment or
-new product features until an independent Gate C success-evidence PR has merged
-through 8/8 CI.
+## Stop Rule
+
+After the Gate C evidence PR is merged and protected-main CI is known, stop.
+Do not begin Gate D soak, disaster recovery, Provider acceptance, production
+deployment, accessibility/privacy closure or new product features. Gate D is
+eligible only after a complete Gate C success-evidence PR has merged and a
+separate user-authorized task begins.

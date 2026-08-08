@@ -1,0 +1,31 @@
+﻿{
+    "schema_version":  "cybercontrol.gate-c-fourth-remediation-package.v1",
+    "package":  "gate-c-20260808T083601Z-97bfa5fef7e1-fourth-remediation-failed-evidence-v1.zip",
+    "asset_bytes":  1881710,
+    "sha256":  "9b2c4c116752197bf10dd1bc9d29409e59bdca1eca7be3cd4a0df1d1bef26f8d",
+    "asset_digest":  "sha256:9b2c4c116752197bf10dd1bc9d29409e59bdca1eca7be3cd4a0df1d1bef26f8d",
+    "release_id":  367163943,
+    "release_tag":  "phase7-gate-c-fourth-remediation-failed-20260808-97bfa5f",
+    "release_url":  "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-fourth-remediation-failed-20260808-97bfa5f",
+    "release_immutable":  false,
+    "asset_id":  506239879,
+    "asset_url":  "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-fourth-remediation-failed-20260808-97bfa5f/gate-c-20260808T083601Z-97bfa5fef7e1-fourth-remediation-failed-evidence-v1.zip",
+    "finalization":  "PARTIAL_FAILURE_FAIL_FAST_ARCHIVE",
+    "finalization_exit_state":  "FAILED_AT_RAMP_1000",
+    "gate_2000_executed":  false,
+    "finalization_jwt_scan":  "passed",
+    "finalized_evidence_secrets_directory_present":  false,
+    "source_commit":  "97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504",
+    "source_tree":  "bad6b0f9e7008b934a54681f9f304a786ee9afe7",
+    "uv_lock_sha256":  "079da6bf96651f961eda7e2a3a634ecdd702d893629819e66f7af6f3c193dab8",
+    "pnpm_lock_sha256":  "b285c5f06fbfdd3471baf9e46620224a6804e521202723cb57145589f2604a50",
+    "original_postgres_volume":  "cybercontrol_gate_c_97bfa5f_20260808t0840z",
+    "forensic_snapshot_volume":  "cybercontrol_gate_c_97bfa5f_20260808t0840z_forensics",
+    "original_volume_mounted_writable_for_forensics":  false,
+    "raw_report_generation_defect_disclosed":  true,
+    "raw_report_generation_defect":  "The immutable ZIP report contains control characters and unexpanded PowerShell expressions; raw metrics and the package manifest remain unchanged.",
+    "repository_report_normalized_from":  [
+        "phase7-gate-c-fourth-remediation-summary.json",
+        "phase7-gate-c-fourth-remediation-database-evidence.json"
+    ]
+}
