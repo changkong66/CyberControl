@@ -5,10 +5,12 @@
 CyberControl is in **Phase 7 release closure**. The product scope, clean-volume
 Gate B business replay, identity and account-management extension, and
 `zh-CN`/`zh-TW`/`en-US` workbench are implemented on protected main. The
-current protected-main product baseline is
-`97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`, tree
-`bad6b0f9e7008b934a54681f9f304a786ee9afe7`. Release Quality Gates Run
-30196139462 attempt 2 completed 8/8 jobs successfully.
+current protected-main archive baseline is
+`40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`, tree
+`071d7804d7c465153b4c17b84d2a1a0a8ecfebd3`. Release Quality Gates Run
+31255915622 completed 8/8 jobs successfully. The fourth Gate C workload was
+evaluated against product source `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`,
+tree `bad6b0f9e7008b934a54681f9f304a786ee9afe7`.
 
 The formal state remains:
 
@@ -105,6 +107,14 @@ risk.
   `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504` after push Run 30195808808 and
   pull-request Run 30195810215 passed 8/8. Protected-main Run 30196139462
   attempt 2 also passed 8/8.
+- PR #56 patched the newly disclosed Python and frontend dependency advisories
+  and Squash Merged as `6f4a58b44ef6e30a850b50aa522b490f525215b1` after
+  push Run 31255259498 and pull-request Run 31255260722 passed 8/8;
+  protected-main Run 31255474059 also passed 8/8.
+- PR #55 archived the fourth-remediation failure evidence and Squash Merged as
+  `40c8a4c076b59d9c9fd3384454df7f4eab9a6f98` after push Run 31255692354 and
+  pull-request Run 31255694689 passed 8/8; protected-main Run 31255915622 also
+  passed 8/8.
 - The fourth formal run used real Keycloak Tokens, two tenants, twenty subjects,
   a newly built image set, unique Compose project and fresh isolated PostgreSQL
   volume.
