@@ -8,6 +8,18 @@ reinterpret a partial pass as Gate C acceptance and do not start Gate D.
 ## Fixed Baseline
 
 - Workspace: `C:/Users/wch06/Documents/CyberControl`
+- Current protected-main archive:
+  `40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`
+- Current protected-main tree:
+  `071d7804d7c465153b4c17b84d2a1a0a8ecfebd3`
+- Current protected-main CI:
+  [Run 31255915622](https://github.com/changkong66/CyberControl/actions/runs/31255915622),
+  8/8 successful
+- Dependency security baseline:
+  `6f4a58b44ef6e30a850b50aa522b490f525215b1`, PR
+  [#56](https://github.com/changkong66/CyberControl/pull/56)
+- Fourth-remediation failure archive PR:
+  [#55](https://github.com/changkong66/CyberControl/pull/55), merged
 - Verified fourth-remediation product source:
   `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`
 - Verified source tree:

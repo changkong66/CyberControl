@@ -497,11 +497,14 @@ before and after, and the temporary replay container and volume were removed.
 
 Frontend identity, account administration, three-language workbench, Gate B
 mainline acceptance, the Gate C harness and four remediation implementations
-are complete on protected main. The current evidence snapshot is parent-bound
-to protected main `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`; protected-main
-Run 30196139462 attempt 2 completed all eight jobs successfully. The fourth
-formal Gate C replay failed at `ramp-1000`; `gate-2000` was not executed. Gate
-D-G and unrelated feature development remain locked.
+are complete on protected main. The current evidence archive is merged at
+`40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`, tree
+`071d7804d7c465153b4c17b84d2a1a0a8ecfebd3`; protected-main Run 31255915622
+completed all eight jobs successfully. The fourth formal Gate C replay remains
+bound to evaluated source `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`, tree
+`bad6b0f9e7008b934a54681f9f304a786ee9afe7`, and failed at `ramp-1000`;
+`gate-2000` was not executed. Gate D-G and unrelated feature development remain
+locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
 chain and passed push Run 30134676485, pull-request Run 30134728232 and main
@@ -532,6 +535,14 @@ pull-request Run 30195810215 passed 8/8. Protected-main Run 30196139462 attempt
 at 1,000 streams because delivery p95/p99 exceeded the frozen limit and two
 `topic3.workflow.finalized` Outbox events became `DEAD` with
 `LIYAN-AUTH-FORBIDDEN`. No Gate D work is authorized.
+
+New advisory data initially blocked PR #55 on `cryptography`, `undici`,
+`fast-uri`, `brace-expansion`, `nanoid` and `postcss`. Independent security PR
+#56 patched those dependencies and passed push Run 31255259498, pull-request
+Run 31255260722 and protected-main Run 31255474059 at 8/8. PR #55 then passed
+push Run 31255692354 and pull-request Run 31255694689 at 8/8, Squash Merged as
+`40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`, and passed protected-main Run
+31255915622 at 8/8. This archive closure does not change the Gate C failure.
 
 ## Remaining Release Blockers
 
