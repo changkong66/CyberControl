@@ -5,6 +5,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
+from time import perf_counter
 from typing import Protocol
 
 from liyans.core.async_cleanup import complete_cleanup
@@ -33,9 +34,12 @@ class MessageBusOutboxSink:
         self,
         message_bus: AsyncMessageBus,
         repository: OutboxDispatchRepository,
+        *,
+        metrics: OutboxMetricsObserver | None = None,
     ) -> None:
         self._message_bus = message_bus
         self._repository = repository
+        self._metrics = metrics
 
     async def __call__(self, message: OutboxMessage) -> None:
         envelope = message.envelope
@@ -50,6 +54,13 @@ class MessageBusOutboxSink:
             session_id=envelope.session_id,
         )
         with tenant_scope(context):
+            dispatch_started = datetime.now(UTC)
+            if message.claimed_at is not None:
+                self._observe_latency(
+                    "claimed_to_dispatch_start",
+                    message.claimed_at,
+                    dispatch_started,
+                )
             cursor = message.published_cursor
             if cursor is None:
                 cursor = await self._repository.published_cursor(
@@ -69,8 +80,15 @@ class MessageBusOutboxSink:
                 envelope.partition_key,
                 cursor,
             )
-            result = await self._message_bus.publish(envelope)
+            started = perf_counter()
+            try:
+                result = await self._message_bus.publish(envelope)
+            except LiyanError as exc:
+                outcome = "forbidden" if exc.code == ErrorCode.AUTH_FORBIDDEN else "rejected"
+                self._observe("authorization", outcome)
+                raise
             if result.status in {DispatchStatus.BUFFERED, DispatchStatus.IN_FLIGHT}:
+                self._observe("authorization", "not_durable")
                 raise LiyanError(
                     ErrorCode.MESSAGE_SEQUENCE_GAP,
                     "The Outbox delivery was not durably completed by the consumer.",
@@ -78,6 +96,27 @@ class MessageBusOutboxSink:
                     retriable=True,
                     status_code=409,
                 )
+            self._observe("authorization", "accepted")
+            self._observe_duration(
+                "dispatch_to_durable_acceptance",
+                perf_counter() - started,
+            )
+
+    def _observe(self, operation: str, outcome: str) -> None:
+        if self._metrics is not None:
+            self._metrics.observe_outbox(operation, outcome)
+
+    def _observe_latency(
+        self,
+        stage: str,
+        started_at: datetime,
+        completed_at: datetime,
+    ) -> None:
+        self._observe_duration(stage, (completed_at - started_at).total_seconds())
+
+    def _observe_duration(self, stage: str, duration_seconds: float) -> None:
+        if self._metrics is not None:
+            self._metrics.observe_outbox_latency(stage, max(0.0, duration_seconds))
 
 
 class OutboxPublisher:
@@ -170,6 +209,16 @@ class OutboxPublisher:
         self._observe("claim", "claimed", len(messages))
         for message in messages:
             if message.claimed_at is not None:
+                self._observe_latency(
+                    "created_to_claimable",
+                    message.created_at,
+                    message.available_at,
+                )
+                self._observe_latency(
+                    "claimable_to_claimed",
+                    message.available_at,
+                    message.claimed_at,
+                )
                 self._observe_latency(
                     "created_to_claimed",
                     message.created_at,
@@ -331,6 +380,14 @@ class OutboxPublisher:
             raise
         except Exception as exc:
             error_code = exc.code.value if isinstance(exc, LiyanError) else type(exc).__name__
+            classification = (
+                "authorization"
+                if isinstance(exc, LiyanError) and exc.code == ErrorCode.AUTH_FORBIDDEN
+                else "transient"
+                if isinstance(exc, LiyanError) and exc.retriable
+                else "deterministic"
+            )
+            self._observe("failure_class", classification)
             delay = min(
                 self._retry_max,
                 self._retry_base * (2 ** max(0, message.attempts - 1)),

@@ -19,7 +19,8 @@ from liyans_contracts.topic4_common import VerificationModule
 from prometheus_client import CollectorRegistry
 from sqlalchemy import func, select
 
-from liyans.core.tenant import tenant_scope
+from liyans.core.errors import ErrorCode, LiyanError
+from liyans.core.tenant import TenantContext, current_tenant, tenant_scope
 from liyans.domains.release.engine import C12ReleaseService
 from liyans.domains.release.postgres_repository import PostgresAtomicReleaseRepository
 from liyans.domains.verification.execution import BoundedModuleExecutor
@@ -37,9 +38,13 @@ from liyans.domains.verification.runtime import (
     Topic4RuntimeMetrics,
 )
 from liyans.infrastructure.database.context import current_session_context
-from liyans.infrastructure.database.models import OutboxMessageModel
+from liyans.infrastructure.database.models import OutboxMessageModel, OutboxStatus
 from liyans.infrastructure.messaging import AsyncMessageBus, DispatchStatus
 from liyans.infrastructure.messaging.postgres_idempotency import PostgresIdempotencyStore
+from liyans.infrastructure.persistence import (
+    MessageBusOutboxSink,
+    PostgresOutboxDispatcherRepository,
+)
 from liyans.infrastructure.streaming.postgres_replay import PostgresSSEReplayLog
 from liyans.infrastructure.streaming.sse import SSEBroker
 from liyans.infrastructure.tasks.queue import AsyncTaskQueue
@@ -356,7 +361,9 @@ async def test_topic3_consumer_and_two_hundred_verifications_are_lossless(
                     .limit(1)
                 )
             ).scalar_one()
-        finalized_envelope = Topic3EnvelopeV1.model_validate(finalized_row.envelope_document)
+        finalized_envelope = Topic3EnvelopeV1.model_validate(
+            finalized_row.envelope_document
+        ).model_copy(update={"subject_ref": "subject:workflow-requester"})
         bus = AsyncMessageBus(
             idempotency_store=PostgresIdempotencyStore(
                 fixture.database,
@@ -367,13 +374,22 @@ async def test_topic3_consumer_and_two_hundred_verifications_are_lossless(
             "topic3.workflow.finalized",
             Topic3CandidateVerificationConsumer(runtime, fixture.topic3_service),
         )
-        bus.restore_partition_cursor(
-            fixture.context.tenant_id,
-            finalized_envelope.partition_key,
-            finalized_envelope.sequence,
+        dispatcher_context = TenantContext(
+            tenant_id=fixture.context.tenant_id,
+            subject_ref=finalized_envelope.subject_ref,
+            roles=frozenset({"system:outbox-dispatcher"}),
+            scopes=frozenset({"topic3:dispatch"}),
+            trace_id=finalized_envelope.trace_id,
+            session_id=finalized_envelope.session_id,
         )
-        first_dispatch = await bus.publish(finalized_envelope)
-        duplicate_dispatch = await bus.publish(finalized_envelope)
+        with tenant_scope(dispatcher_context):
+            bus.restore_partition_cursor(
+                fixture.context.tenant_id,
+                finalized_envelope.partition_key,
+                finalized_envelope.sequence,
+            )
+            first_dispatch = await bus.publish(finalized_envelope)
+            duplicate_dispatch = await bus.publish(finalized_envelope)
         await queue.close()
         await bus.close()
 
@@ -440,3 +456,129 @@ async def test_topic3_consumer_and_two_hundred_verifications_are_lossless(
     assert claim_count is not None and claim_count >= 200
     assert distinct_claim_count == claim_count
     assert report_count == 200
+
+
+@pytest.mark.asyncio
+async def test_real_dispatcher_sink_publishes_finalized_event_with_service_authority(
+    postgres_runtime,
+    postgres_dispatcher,
+    tmp_path: Path,
+) -> None:
+    fixture = await build_topic4_runtime_fixture(
+        postgres_runtime,
+        tmp_path,
+        instance_suffix="runtime-finalized-dispatch",
+    )
+    with tenant_scope(fixture.context):
+        async with fixture.database.transaction(context=current_session_context()) as session:
+            finalized_row = (
+                await session.execute(
+                    select(OutboxMessageModel)
+                    .where(
+                        OutboxMessageModel.tenant_id == fixture.context.tenant_id,
+                        OutboxMessageModel.event_type == "topic3.workflow.finalized",
+                    )
+                    .order_by(OutboxMessageModel.created_at.desc())
+                    .limit(1)
+                )
+            ).scalar_one()
+            envelope_document = dict(finalized_row.envelope_document)
+            envelope_document["subject_ref"] = "subject:workflow-requester"
+            finalized_row.envelope_document = envelope_document
+            await session.flush()
+            finalized_outbox_id = finalized_row.outbox_id
+            finalized_partition = finalized_row.partition_key
+
+    repository = PostgresOutboxDispatcherRepository(postgres_dispatcher)
+    worker_id = "topic3-finalized-integration-worker"
+    bus = AsyncMessageBus(
+        idempotency_store=PostgresIdempotencyStore(
+            fixture.database,
+            instance_id="topic3-finalized-integration-consumer",
+        )
+    )
+
+    async def accept_noop(_envelope: Topic3EnvelopeV1) -> None:
+        return None
+
+    sink = MessageBusOutboxSink(bus, repository)
+    claimed_messages = []
+    completed: set[UUID] = set()
+    registered_event_types: set[str] = set()
+    try:
+        for _window in range(32):
+            claimed = await repository.claim_batch(worker_id, 1000)
+            if not claimed:
+                break
+            claimed_messages.extend(claimed)
+            partition_messages = sorted(
+                (
+                    message
+                    for message in claimed
+                    if message.tenant_id == fixture.context.tenant_id
+                    and message.envelope.partition_key == finalized_partition
+                ),
+                key=lambda message: message.envelope.sequence,
+            )
+            for message in partition_messages:
+                event_type = message.envelope.event_type
+                if event_type not in registered_event_types:
+                    handler = (
+                        Topic3CandidateVerificationConsumer(
+                            fixture.runtime,
+                            fixture.topic3_service,
+                        )
+                        if event_type == "topic3.workflow.finalized"
+                        else accept_noop
+                    )
+                    bus.register(event_type, handler)
+                    registered_event_types.add(event_type)
+                await sink(message)
+                await repository.mark_published(
+                    message.outbox_id,
+                    worker_id,
+                    datetime.now(UTC),
+                )
+                completed.add(message.outbox_id)
+            if finalized_outbox_id in completed:
+                break
+        assert finalized_outbox_id in completed
+    finally:
+        for message in claimed_messages:
+            if message.outbox_id in completed:
+                continue
+            await repository.release_claim(
+                message.outbox_id,
+                worker_id,
+                datetime.now(UTC),
+                error_code="IntegrationCleanup",
+                restore_attempt=True,
+            )
+        await bus.close()
+
+    with pytest.raises(LiyanError) as missing_context:
+        current_tenant()
+
+    with tenant_scope(fixture.context):
+        async with fixture.database.transaction(context=current_session_context()) as session:
+            finalized_state = (
+                await session.execute(
+                    select(
+                        OutboxMessageModel.state,
+                        OutboxMessageModel.attempts,
+                        OutboxMessageModel.last_error_code,
+                    ).where(OutboxMessageModel.outbox_id == finalized_outbox_id)
+                )
+            ).one()
+        automatic_verification_id = uuid5(
+            fixture.candidate.candidate_id,
+            (
+                "topic4-verification:"
+                f"{fixture.candidate.candidate_version}:{fixture.candidate.candidate_sha256}"
+            ),
+        )
+        automatic_snapshot = await fixture.runtime.snapshot(automatic_verification_id)
+
+    assert missing_context.value.code == ErrorCode.TENANT_CONTEXT_MISSING
+    assert finalized_state == (OutboxStatus.PUBLISHED.value, 1, None)
+    assert automatic_snapshot["state"]["current_state"] == "ACCEPTED"
