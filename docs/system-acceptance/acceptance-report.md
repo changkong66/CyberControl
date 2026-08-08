@@ -393,6 +393,9 @@ The immutable ZIP's generated Markdown report contains control characters and
 unexpanded PowerShell expressions. Its raw metrics and internal manifest remain
 unchanged; the repository report is a disclosed normalized derivative of the
 immutable summary and PostgreSQL evidence JSON.
+Independent failure-evidence PR
+[#55](https://github.com/changkong66/CyberControl/pull/55) is the current archive
+closure and does not change the failed Gate C decision.
 
 
 ## Source And Runtime Fingerprints

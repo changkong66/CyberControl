@@ -751,6 +751,9 @@
         "load_rerun_after_failure": false,
         "archive_state": "SOURCE_BOUND_EVIDENCE_PUBLISHED",
         "archive_branch": "codex/phase7-gate-c-fourth-remediation-failure-evidence",
+        "archive_pr": 55,
+        "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/55",
+        "archive_initial_head_sha": "b0b9e2e594a0f156922b393a3aefc39a298e2c69",
         "archive_pr_pending": true
       }
     }
