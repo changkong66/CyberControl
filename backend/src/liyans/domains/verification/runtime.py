@@ -54,7 +54,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
-from liyans.core.tenant import TenantContext, current_tenant, tenant_scope
+from liyans.core.tenant import TenantContext, assert_tenant, current_tenant, tenant_scope
 from liyans.domains.academic.evidence_source import PostgresAcademicEvidenceSource
 from liyans.domains.academic.handler import C3AcademicHandlerV2
 from liyans.domains.code.evidence_source import PostgresCodeEvidenceSource
@@ -87,7 +87,12 @@ from liyans.domains.security.evidence_source import SecurityEvidenceBundle
 from liyans.domains.security.handler import C9SecurityHandler
 from liyans.domains.topic1.postgres_repository import PostgresTopic1Repository
 from liyans.domains.topic3.postgres_repository import PostgresTopic3Repository
-from liyans.domains.topic3.service import Topic3Service
+from liyans.domains.topic3.service import (
+    TOPIC3_WORKFLOW_CONSUMER_ROLE,
+    TOPIC3_WORKFLOW_CONSUMER_SCOPE,
+    TOPIC3_WORKFLOW_CONSUMER_SUBJECT,
+    Topic3Service,
+)
 from liyans.domains.verification.aggregation import AggregationError
 from liyans.domains.verification.execution import (
     BoundedModuleExecutor,
@@ -1511,6 +1516,9 @@ class Topic4Runtime:
 class Topic3CandidateVerificationConsumer:
     """Converts a committed Topic 3 workflow into durable C1 verification tasks."""
 
+    _DISPATCHER_ROLE = "system:outbox-dispatcher"
+    _DISPATCHER_SCOPE = "topic3:dispatch"
+
     def __init__(self, runtime: Topic4Runtime, topic3_service: Topic3Service) -> None:
         self._runtime = runtime
         self._topic3_service = topic3_service
@@ -1518,6 +1526,29 @@ class Topic3CandidateVerificationConsumer:
     async def __call__(self, envelope) -> None:
         if envelope.event_type != "topic3.workflow.finalized":
             raise ValueError("unexpected Topic 3 event for Topic 4 consumer")
+        dispatcher = assert_tenant(envelope.tenant_id)
+        if (
+            self._DISPATCHER_ROLE not in dispatcher.roles
+            or self._DISPATCHER_SCOPE not in dispatcher.scopes
+        ):
+            raise LiyanError(
+                ErrorCode.AUTH_FORBIDDEN,
+                "The finalized workflow requires the trusted Outbox dispatcher.",
+                category=ErrorCategory.AUTH,
+                status_code=403,
+            )
+        consumer_context = TenantContext(
+            tenant_id=envelope.tenant_id,
+            subject_ref=TOPIC3_WORKFLOW_CONSUMER_SUBJECT,
+            roles=frozenset({TOPIC3_WORKFLOW_CONSUMER_ROLE}),
+            scopes=frozenset({TOPIC3_WORKFLOW_CONSUMER_SCOPE, "topic4:verification:write"}),
+            trace_id=envelope.trace_id,
+            session_id=envelope.session_id,
+        )
+        with tenant_scope(consumer_context):
+            await self._consume(envelope, consumer_context)
+
+    async def _consume(self, envelope, context: TenantContext) -> None:
         generation_session_id = UUID(str(envelope.payload["generation_session_id"]))
         (
             _session,
@@ -1526,7 +1557,7 @@ class Topic3CandidateVerificationConsumer:
             _blueprint,
             _tasks,
             candidates,
-        ) = await self._topic3_service.load_runtime(generation_session_id)
+        ) = await self._topic3_service.load_runtime_for_workflow_consumer(generation_session_id)
         if command.locale != "zh-CN":
             raise LiyanError(
                 ErrorCode.CONTRACT_INVALID,
@@ -1534,7 +1565,6 @@ class Topic3CandidateVerificationConsumer:
                 category=ErrorCategory.CONTRACT,
                 status_code=422,
             )
-        context = current_tenant()
         for record in candidates:
             candidate = record.candidate
             if candidate.status != CandidateStatus.COMPLETE:

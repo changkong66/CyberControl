@@ -65,6 +65,9 @@ from .postgres_repository import PostgresTopic3Repository
 
 IDEMPOTENCY_RETENTION = timedelta(days=1)
 OUTBOX_RETENTION = timedelta(days=1)
+TOPIC3_WORKFLOW_CONSUMER_SUBJECT = "system:topic4-finalized-consumer"
+TOPIC3_WORKFLOW_CONSUMER_ROLE = "topic4-worker"
+TOPIC3_WORKFLOW_CONSUMER_SCOPE = "topic3:workflow:consume"
 
 MutationCallback = Callable[[AsyncSession, TenantContext], Awaitable[dict[str, Any]]]
 
@@ -737,6 +740,52 @@ class Topic3Service:
         list[AgentTaskRecord],
         list[CandidateRecord],
     ]:
+        return await self._load_runtime(
+            generation_session_id,
+            enforce_learner_access=True,
+        )
+
+    async def load_runtime_for_workflow_consumer(
+        self,
+        generation_session_id: UUID,
+    ) -> tuple[
+        GenerationSessionRecord,
+        Topic3GenerationCommandV1,
+        Topic2AgentContextV1,
+        BlueprintRecord,
+        list[AgentTaskRecord],
+        list[CandidateRecord],
+    ]:
+        context = current_tenant()
+        if (
+            context.subject_ref != TOPIC3_WORKFLOW_CONSUMER_SUBJECT
+            or TOPIC3_WORKFLOW_CONSUMER_ROLE not in context.roles
+            or TOPIC3_WORKFLOW_CONSUMER_SCOPE not in context.scopes
+        ):
+            raise LiyanError(
+                ErrorCode.AUTH_FORBIDDEN,
+                "The service identity cannot consume finalized Topic 3 workflows.",
+                category=ErrorCategory.AUTH,
+                status_code=403,
+            )
+        return await self._load_runtime(
+            generation_session_id,
+            enforce_learner_access=False,
+        )
+
+    async def _load_runtime(
+        self,
+        generation_session_id: UUID,
+        *,
+        enforce_learner_access: bool,
+    ) -> tuple[
+        GenerationSessionRecord,
+        Topic3GenerationCommandV1,
+        Topic2AgentContextV1,
+        BlueprintRecord,
+        list[AgentTaskRecord],
+        list[CandidateRecord],
+    ]:
         tenant = current_tenant()
         async with self._database.transaction(context=current_session_context()) as session:
             current = await self._repository.latest_generation_session(
@@ -746,7 +795,8 @@ class Topic3Service:
             )
             if current is None:
                 raise self._not_found("generation session")
-            self._assert_learner_access(tenant, current.learner_ref)
+            if enforce_learner_access:
+                self._assert_learner_access(tenant, current.learner_ref)
             initial = await self._repository.get_generation_session(
                 session,
                 tenant.tenant_id,

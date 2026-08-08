@@ -20,7 +20,12 @@ from liyans.domains.topic3.entities import (
     GenerationSessionRecord,
     StreamChunkRecord,
 )
-from liyans.domains.topic3.service import Topic3Service
+from liyans.domains.topic3.service import (
+    TOPIC3_WORKFLOW_CONSUMER_ROLE,
+    TOPIC3_WORKFLOW_CONSUMER_SCOPE,
+    TOPIC3_WORKFLOW_CONSUMER_SUBJECT,
+    Topic3Service,
+)
 from liyans.domains.topic3.streaming import Topic3StreamCoordinator
 from liyans.infrastructure.streaming.sse import InMemorySSEReplayLog, SSEBroker
 
@@ -249,6 +254,30 @@ async def test_service_persists_complete_immutable_workflow_lifecycle() -> None:
             limit=100,
         )
 
+    consumer_context = TenantContext(
+        tenant_id=service._context().tenant_id,
+        subject_ref=TOPIC3_WORKFLOW_CONSUMER_SUBJECT,
+        roles=frozenset({TOPIC3_WORKFLOW_CONSUMER_ROLE}),
+        scopes=frozenset({TOPIC3_WORKFLOW_CONSUMER_SCOPE}),
+        trace_id="b" * 32,
+    )
+    with tenant_scope(consumer_context):
+        with pytest.raises(LiyanError) as public_access:
+            await service.load_runtime(command.generation_session_id)
+        internal_runtime = await service.load_runtime_for_workflow_consumer(
+            command.generation_session_id
+        )
+
+    unauthorized_consumer = TenantContext(
+        tenant_id=service._context().tenant_id,
+        subject_ref=TOPIC3_WORKFLOW_CONSUMER_SUBJECT,
+        roles=frozenset({TOPIC3_WORKFLOW_CONSUMER_ROLE}),
+        scopes=frozenset(),
+        trace_id="c" * 32,
+    )
+    with tenant_scope(unauthorized_consumer), pytest.raises(LiyanError) as denied:
+        await service.load_runtime_for_workflow_consumer(command.generation_session_id)
+
     assert created["session_version"] == 1
     assert result.state == GenerationSessionState.COMPLETED
     assert result.tasks[0].state == AgentTaskState.SUCCEEDED
@@ -263,6 +292,9 @@ async def test_service_persists_complete_immutable_workflow_lifecycle() -> None:
         == repository.sessions[1].session_snapshot_id
     )
     assert runtime[0].state == GenerationSessionState.COMPLETED
+    assert public_access.value.code == ErrorCode.AUTH_FORBIDDEN
+    assert internal_runtime[0].state == GenerationSessionState.COMPLETED
+    assert denied.value.code == ErrorCode.AUTH_FORBIDDEN
     assert history[0].session_version == 3
     assert persisted_chunks == chunks
     assert {event_type for event_type, _ in service.events} >= {

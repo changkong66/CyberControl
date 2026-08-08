@@ -281,7 +281,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             )
             publisher = OutboxPublisher(
                 dispatcher_repository,
-                MessageBusOutboxSink(message_bus, dispatcher_repository),
+                MessageBusOutboxSink(
+                    message_bus,
+                    dispatcher_repository,
+                    metrics=metrics,
+                ),
                 worker_id=settings.service_instance_id,
                 batch_size=settings.outbox_publisher_batch_size,
                 poll_interval_seconds=settings.outbox_publisher_poll_seconds,
