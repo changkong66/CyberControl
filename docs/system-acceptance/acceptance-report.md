@@ -89,6 +89,8 @@ locked. No single-host production capacity claim is permitted.
 - PR #61 push CI: [Run 31537797593](https://github.com/changkong66/CyberControl/actions/runs/31537797593), 8/8
 - PR #61 pull-request CI: [Run 31538456518](https://github.com/changkong66/CyberControl/actions/runs/31538456518), 8/8
 - PR #61 protected-main CI: [Run 31538917814](https://github.com/changkong66/CyberControl/actions/runs/31538917814), 8/8
+- Sixth-remediation failure-evidence PR:
+  [#62](https://github.com/changkong66/CyberControl/pull/62), pending closure
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`

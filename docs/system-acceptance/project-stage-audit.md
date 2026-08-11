@@ -134,6 +134,8 @@ risk.
 - Raw sixth-run evidence is retained in immutable GitHub Release
   `phase7-gate-c-sixth-remediation-failed-20260811-a6979d7` with SHA256
   `bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a`.
+- PR #62 is the independent sixth-remediation failure-evidence archive and is
+  pending push, pull-request, Squash Merge and protected-main CI closure.
 
 ## 3. Current Gate C Failure Boundary
 

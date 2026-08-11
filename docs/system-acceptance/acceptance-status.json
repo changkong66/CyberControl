@@ -162,6 +162,8 @@
     "phase7_gate_c_sixth_remediation_failure_archive_run_directory": "D:\\CyberControlAcceptance\\phase7\\gate-c\\gate-c-20260811T214704Z-a6979d760701",
     "phase7_gate_c_sixth_remediation_failure_archive_package_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-sixth-remediation-failed-20260811-a6979d7/gate-c-20260811T214704Z-a6979d760701-sixth-remediation-failed-evidence-v1.zip",
     "phase7_gate_c_sixth_remediation_failure_archive_package_sha256": "bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a",
+    "phase7_gate_c_sixth_remediation_failure_archive_pr": 62,
+    "phase7_gate_c_sixth_remediation_failure_archive_pr_url": "https://github.com/changkong66/CyberControl/pull/62",
     "phase7_gate_c_sixth_remediation_failure_archive_pr_pending": true
   },
   "docker_migration": {
@@ -971,6 +973,8 @@
         "secrets_directory_present": false,
         "archive_state": "SOURCE_BOUND_EVIDENCE_PUBLISHED",
         "archive_branch": "codex/phase7-gate-c-sixth-rerun-failure-evidence",
+        "archive_pr": 62,
+        "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/62",
         "archive_pr_pending": true
       }
     }

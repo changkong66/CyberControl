@@ -30,7 +30,8 @@ acceptance decisions. Gate D, Gate E, Gate F and Gate G remain locked.
 ## Mandatory Phase 0: Close The Sixth Failure Archive
 
 The evidence-only branch is
-`codex/phase7-gate-c-sixth-rerun-failure-evidence`. Before creating a
+`codex/phase7-gate-c-sixth-rerun-failure-evidence`, PR
+[#62](https://github.com/changkong66/CyberControl/pull/62). Before creating a
 remediation branch:
 
 1. Verify branch, HEAD, tree, status, diff, `origin/main`, protected-main CI,
