@@ -6,16 +6,16 @@ CyberControl is in **Phase 7 release closure**. The product scope, clean-volume
 Gate B business replay, identity and account-management extension, and
 `zh-CN`/`zh-TW`/`en-US` workbench are implemented on protected main. The
 current protected-main archive baseline is
-`76cd099a034a395a89b26496c0d40e0673aaa97d`, tree
-`ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`. Release Quality Gates Run
-31264518015 completed 8/8 jobs successfully. The fifth Gate C workload was
+`a6979d760701271d579776b082dabe247ac6138b`, tree
+`52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`. Release Quality Gates Run
+31538917814 completed 8/8 jobs successfully. The sixth Gate C workload was
 evaluated against that protected-main source and tree.
 
 The formal state remains:
 
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
-Gate A and Gate B are accepted. Gate C has not been accepted. The fifth
+Gate A and Gate B are accepted. Gate C has not been accepted. The sixth
 remediation replay passed 20, 200 and 500 authenticated SSE connections, then
 failed frozen controls at 1,000 connections. The fail-fast harness therefore
 did not execute the 2,000-connection stage or the ten-minute recovery
@@ -29,7 +29,7 @@ locked.
 | Identity and account backend | complete for current product scope | Keycloak authority, registration, projection, administration and recovery are integrated |
 | Frontend workbench | complete for current product scope | business, account and three-language surfaces are merged |
 | Gate B business replay | accepted | clean PostgreSQL replay and evidence dataset controls passed from protected main |
-| Gate C authenticated SSE | failed | fifth replay stopped at 1,000 due commit-to-client and Outbox latency failures; 2,000 and recovery remain unexecuted |
+| Gate C authenticated SSE | failed | sixth replay stopped at 1,000 due commit-to-client and Outbox latency failures; 2,000 and recovery remain unexecuted |
 | Production operations | locked | soak, DR, Provider and deployment acceptance cannot start before Gate C success |
 
 Feature completeness is not production acceptance. The remaining work is
@@ -124,15 +124,25 @@ risk.
   volume.
 - Raw fifth-run evidence is retained in a GitHub prerelease asset with SHA256
   `566a65a5ac01d1eb6ec0f06a1bc85529bebcf7f53dc37c382d74dcbfa707630e`.
+- PR #61 merged the sixth remediation as
+  `a6979d760701271d579776b082dabe247ac6138b`, tree
+  `52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`, after push Run 31537797593,
+  pull-request Run 31538456518 and protected-main Run 31538917814 passed 8/8.
+- The sixth formal run used real Keycloak Tokens, two tenants, twenty subjects,
+  newly built images, a unique Compose project and a fresh isolated PostgreSQL
+  volume.
+- Raw sixth-run evidence is retained in immutable GitHub Release
+  `phase7-gate-c-sixth-remediation-failed-20260811-a6979d7` with SHA256
+  `bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a`.
 
 ## 3. Current Gate C Failure Boundary
 
 The current formal run directory is:
 
-`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260808T154326Z-76cd099a034a`
+`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260811T214704Z-a6979d760701`
 
-It used Compose project `cybercontrol-gate-c-fifth-76cd099-20260808t154325z`
-and fresh PostgreSQL volume `cybercontrol_gate_c_fifth_76cd099_20260808t154325z`.
+It used Compose project `cybercontrol-gate-c-sixth-a6979d7-20260811t214703z`
+and fresh PostgreSQL volume `cybercontrol_gate_c_sixth_a6979d7_20260811t214703z`.
 The original failed volume remains preserved. Terminal database inspection used
 a separate forensic copy and did not start the original failed volume.
 
@@ -150,51 +160,51 @@ The same stage failed:
 
 | Frozen control | Observed | Required |
 | --- | ---: | ---: |
-| Commit-to-client p95 | 1,532 ms | <= 1,000 ms |
-| Commit-to-client p99 | 4,985 ms | <= 3,000 ms |
+| Commit-to-client p95 | 1,805 ms | <= 1,000 ms |
+| Commit-to-client p99 | 7,190 ms | <= 3,000 ms |
 | Outbox DEAD | 0 | 0 |
-| Outbox lag p95 | 5,830.700 ms | <= 2,000 ms |
-| Outbox lag p99 | 8,434.789 ms | <= 5,000 ms |
+| Outbox lag p95 | 10,102.261 ms | <= 2,000 ms |
+| Outbox lag p99 | 11,812.566 ms | <= 5,000 ms |
 
-API CPU reached `127.604/131.840` one-core units at p95/max and peak API file
-descriptors reached `1038`. Fail-fast ended with `826` closing owners; because
-the recovery stage was not executed, this is a diagnostic observation rather
-than a failed or passed memory-recovery conclusion.
+API CPU reached `128.502/145.910` one-core units at p95/max and peak API file
+descriptors reached `1038`. Fail-fast ended with subscribers, closing owners,
+queues, replay caches and replay tasks all at zero; because the recovery stage
+was not executed, this is cleanup evidence rather than a memory-recovery
+acceptance conclusion.
 
-The fifth remediation eliminated the previously observed two `DEAD`
+The sixth remediation preserved the fifth remediation's elimination of `DEAD`
 `topic3.workflow.finalized` rows and preserved zero cross-tenant visibility,
 but did not bring the commit-to-client or Outbox latency within the frozen
 thresholds. The 2,000-stream and recovery stages remain unexecuted, so memory
 recovery and full-scale continuity are still unproven.
 
-Connection-establishment p95/p99 was `19,166/22,324 ms` while real Keycloak
+Connection-establishment p95/p99 was `21,888/25,735 ms` while real Keycloak
 token issuance remained successful. This is a readiness signal that
 must be decomposed into token, admission, replay and LIVE-handoff latency.
 
 The authoritative current evidence is under
-`docs/system-acceptance/evidence/phase7-gate-c-fifth-remediation-*`. Historical
+`docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-*`. Historical
 Gate C evidence remains immutable.
 
 ## 4. Remaining Work
 
-### 4.1 Completed Fifth Failure-Evidence Archive Closure
+### 4.1 Sixth Failure-Evidence Archive Closure
 
-1. Commit only the fifth-remediation partial-failure summary, report, database
+1. Commit only the sixth-remediation partial-failure summary, report, database
    and environment evidence, manifest, package metadata and current-state docs.
-2. Bind the archive to source `76cd099a034a395a89b26496c0d40e0673aaa97d`,
-   tree `ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`, frozen hashes, fresh volume,
+2. Bind the archive to source `a6979d760701271d579776b082dabe247ac6138b`,
+   tree `52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`, frozen hashes, fresh volume,
    image digests and the immutable external package.
 3. Preserve every prior Gate C snapshot and retain
    `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
-4. PR #59 passed push Run 31531236238 and pull-request Run 31531270251 at 8/8,
-   Squash Merged as `ab44180176e26665692929c6b306c1f184c747ae`, and protected-
-   main Run 31531732396 passed 8/8.
+4. Require the sixth failure-evidence branch to pass push and pull-request 8/8,
+   Squash Merge, and protected-main 8/8 before creating another remediation.
 
-### 4.2 P0 Sixth Gate C Remediation
+### 4.2 P0 Seventh Gate C Remediation
 
-Only after archive closure, trace and remediate SSE fan-out lock contention,
-event-loop scheduling, slow-consumer backpressure, notification/publisher wakeup
-and Outbox-to-client latency. Preserve the fifth remediation's valid finalized-
+Only after archive closure, trace and remediate the measured Outbox
+created-to-published delay, event-loop scheduling, slow-consumer backpressure,
+notification/publisher wakeup and Outbox-to-client latency. Preserve valid finalized-
 event authorization, zero Outbox `DEAD`, fail-closed invalid/cross-tenant events,
 ordered delivery, leases, retries, atomic publication and tenant context. Add
 deterministic unit, concurrency and real PostgreSQL regressions, with each
@@ -202,7 +212,7 @@ behavior change mapped to a failed metric and disproof metric.
 
 ### 4.3 P0 Protected-Main Rerun
 
-1. Merge the sixth remediation only after push and pull-request Release Quality
+1. Merge the seventh remediation only after push and pull-request Release Quality
    Gates pass 8/8, then require protected-main 8/8.
 2. Rebuild all images from the new main without `-SkipBuild`.
 3. Use a unique Compose project, evidence directory and fresh PostgreSQL volume;
@@ -231,10 +241,10 @@ behavior change mapped to a failed metric and disproof metric.
 
 CyberControl's current commercial product feature chain is implemented and Gate
 A/B evidence is accepted. The project is not production accepted because Gate
-C remains the active release blocker. The fifth remediation removed the prior
+C remains the active release blocker. The sixth remediation preserved the prior
 finalized-event `DEAD` condition and preserved zero loss, duplicate render and
 tenant leakage, but the protected-main replay still breached commit-to-client
-and Outbox latency at 1,000 streams. The fifth failure-evidence archive is now
-closed. The next authorized action is the sixth scoped Gate C remediation and
-fresh replay. Gate D-G remain locked until an
+and Outbox latency at 1,000 streams. The next authorized action is to close the
+sixth failure-evidence archive, then perform a seventh scoped Gate C remediation
+and fresh replay. Gate D-G remain locked until an
 independent Gate C success-evidence PR passes CI and merges.

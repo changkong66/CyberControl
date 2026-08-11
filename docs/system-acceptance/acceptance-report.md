@@ -2,9 +2,9 @@
 
 ## Decision
 
-Protected-main Gate C fifth-remediation baseline
-`76cd099a034a395a89b26496c0d40e0673aaa97d` remains a **release candidate**, but
-Gate C is **not accepted**. The fifth-remediation workload passed 20, 200 and
+Protected-main Gate C sixth-remediation baseline
+`a6979d760701271d579776b082dabe247ac6138b` remains a **release candidate**, but
+Gate C is **not accepted**. The sixth-remediation workload passed 20, 200 and
 500 authenticated streams, then failed frozen delivery and Outbox-latency
 controls at 1,000 streams. The fail-fast harness did not execute the 2,000
 stream or ten-minute recovery stages.
@@ -13,7 +13,7 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
-initial Gate C failure and all five remediation reruns are preserved as
+initial Gate C failure and all six remediation reruns are preserved as
 distinct evidence snapshots. Gate D, Gate E, Gate F and Gate G remain serially
 locked. No single-host production capacity claim is permitted.
 
@@ -83,6 +83,12 @@ locked. No single-host production capacity claim is permitted.
 - PR #58 protected-main CI: [Run 31264518015](https://github.com/changkong66/CyberControl/actions/runs/31264518015), 8/8
 - Fifth-remediation failure-evidence branch:
   `codex/phase7-gate-c-fifth-rerun-failure-evidence`
+- Gate C sixth remediation PR:
+  [#61](https://github.com/changkong66/CyberControl/pull/61), Squash Merge
+  `a6979d760701271d579776b082dabe247ac6138b`
+- PR #61 push CI: [Run 31537797593](https://github.com/changkong66/CyberControl/actions/runs/31537797593), 8/8
+- PR #61 pull-request CI: [Run 31538456518](https://github.com/changkong66/CyberControl/actions/runs/31538456518), 8/8
+- PR #61 protected-main CI: [Run 31538917814](https://github.com/changkong66/CyberControl/actions/runs/31538917814), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -548,11 +554,11 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness and five remediation implementations
+mainline acceptance, the Gate C harness and six remediation implementations
 are complete on protected main. The current protected-main baseline is
-`76cd099a034a395a89b26496c0d40e0673aaa97d`, tree
-`ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`; Run 31264518015 completed 8/8.
-The fifth formal Gate C replay failed at `ramp-1000`; `gate-2000` and recovery
+`a6979d760701271d579776b082dabe247ac6138b`, tree
+`52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`; Run 31538917814 completed 8/8.
+The sixth formal Gate C replay failed at `ramp-1000`; `gate-2000` and recovery
 were not executed. Gate D-G and unrelated feature development remain
 locked.
 
@@ -603,12 +609,13 @@ failure.
 
 ## Remaining Release Blockers
 
-1. Create the sixth scoped remediation PR for
-   SSE fan-out contention, event-loop scheduling, slow-consumer backpressure and
-   Outbox-to-SSE latency; preserve trusted authorization and all frozen semantics.
-2. Add deterministic unit and real PostgreSQL regressions, then require 8/8
-   push, pull-request and protected-main CI for the sixth remediation.
-3. Rerun Gate C from the resulting main baseline and another fresh isolated
+1. Merge the independent sixth-remediation failure-evidence PR through push,
+   pull-request and protected-main Release Quality Gates 8/8.
+2. Create a seventh scoped remediation for the measured Outbox
+   created-to-published, event-loop scheduling, fan-out and admission latency;
+   preserve trusted authorization and all frozen semantics.
+3. Add deterministic unit and real PostgreSQL regressions, then rerun Gate C
+   from the resulting main baseline and another fresh isolated
    PostgreSQL volume. The 2,000 stage remains unproven until all stages pass in
    the same formal run.
 4. Only after Gate C is accepted, complete a minimum eight-hour soak across
