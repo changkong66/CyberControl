@@ -9,8 +9,14 @@ decisions. Gate D, Gate E, Gate F and Gate G remain locked.
 
 ## Fixed Baseline
 
-- Protected main: `76cd099a034a395a89b26496c0d40e0673aaa97d`
-- Main tree: `ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`
+- Protected main: `ab44180176e26665692929c6b306c1f184c747ae`
+- Main tree: `f985181e9d6f208799b7ab129f1d2d393944d68d`
+- Fifth failure archive PR: #59
+- Fifth archive head: `1499548ee54fba4a07d87df320697f389221a2fe`
+- Fifth archive merge: `ab44180176e26665692929c6b306c1f184c747ae`
+- Fifth archive push CI: Run 31531236238, 8/8
+- Fifth archive PR CI: Run 31531270251, 8/8
+- Post-merge protected-main CI: Run 31531732396, 8/8
 - Fifth remediation PR: #58
 - Fifth remediation head: `739b46bee615d39231156a2bf7b3d8b66f3eb85d`
 - Fifth remediation merge: `76cd099a034a395a89b26496c0d40e0673aaa97d`
@@ -29,10 +35,11 @@ decisions. Gate D, Gate E, Gate F and Gate G remain locked.
 - Fifth package SHA256:
   `566a65a5ac01d1eb6ec0f06a1bc85529bebcf7f53dc37c382d74dcbfa707630e`
 
-## Mandatory Phase 0: Close The Fifth Failure Archive
+## Mandatory Phase 0: Verify The Closed Fifth Failure Archive
 
-The current branch is evidence-only:
-`codex/phase7-gate-c-fifth-rerun-failure-evidence`.
+The fifth failure archive is already merged. Before creating the sixth
+remediation branch, re-verify the protected-main SHA, archive PR metadata and
+all evidence bindings. Do not recreate or amend PR #59.
 
 Before creating any remediation branch:
 
@@ -52,10 +59,9 @@ Before creating any remediation branch:
    failed at 1,000, and did not execute 2,000 or recovery.
 5. Verify JSON syntax, every file hash, source/tree binding, threshold/workload
    hashes, package URL, package size and JWT/credential scan.
-6. Create a docs/evidence-only PR from this branch. Require push CI 8/8,
-   pull-request CI 8/8, Squash Merge and protected-main CI 8/8.
-7. Only after the archive PR and post-merge protected-main 8/8 are verified may
-   the sixth-remediation branch be created.
+6. Confirm PR #59 is Squash Merged and its push, pull-request and protected-main
+   Release Quality Gates are all 8/8.
+7. Only after these checks pass may the sixth-remediation branch be created.
 
 ## Evidence Boundary That Must Remain True
 

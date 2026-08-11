@@ -177,7 +177,7 @@ Gate C evidence remains immutable.
 
 ## 4. Remaining Work
 
-### 4.1 P0 Fifth Failure-Evidence Archive Closure
+### 4.1 Completed Fifth Failure-Evidence Archive Closure
 
 1. Commit only the fifth-remediation partial-failure summary, report, database
    and environment evidence, manifest, package metadata and current-state docs.
@@ -186,8 +186,9 @@ Gate C evidence remains immutable.
    image digests and the immutable external package.
 3. Preserve every prior Gate C snapshot and retain
    `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
-4. Require push, pull-request and protected-main Release Quality Gates 8/8 and
-   Squash Merge only after green.
+4. PR #59 passed push Run 31531236238 and pull-request Run 31531270251 at 8/8,
+   Squash Merged as `ab44180176e26665692929c6b306c1f184c747ae`, and protected-
+   main Run 31531732396 passed 8/8.
 
 ### 4.2 P0 Sixth Gate C Remediation
 
@@ -233,7 +234,7 @@ A/B evidence is accepted. The project is not production accepted because Gate
 C remains the active release blocker. The fifth remediation removed the prior
 finalized-event `DEAD` condition and preserved zero loss, duplicate render and
 tenant leakage, but the protected-main replay still breached commit-to-client
-and Outbox latency at 1,000 streams. The next authorized action is the fifth
-failure-evidence archive closure; only after it merges may the sixth scoped Gate
-C remediation and fresh replay begin. Gate D-G remain locked until an
+and Outbox latency at 1,000 streams. The fifth failure-evidence archive is now
+closed. The next authorized action is the sixth scoped Gate C remediation and
+fresh replay. Gate D-G remain locked until an
 independent Gate C success-evidence PR passes CI and merges.
