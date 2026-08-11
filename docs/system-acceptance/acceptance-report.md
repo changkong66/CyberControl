@@ -592,8 +592,10 @@ New advisory data initially blocked PR #55 on `cryptography`, `undici`,
 Run 31255260722 and protected-main Run 31255474059 at 8/8. PR #55 then passed
 push Run 31255692354 and pull-request Run 31255694689 at 8/8, Squash Merged as
 `40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`, and passed protected-main Run
-31255915622 at 8/8. The fifth-remediation failure package is published
-outside the repository and awaits its independent archive PR. PR #58 merged
+31255915622 at 8/8. The fifth-remediation failure package was archived by PR
+#59 after push Run 31531236238 and pull-request Run 31531270251 passed 8/8;
+it Squash Merged as `ab44180176e26665692929c6b306c1f184c747ae` and protected-
+main Run 31531732396 passed 8/8. PR #58 merged
 the fifth remediation as `76cd099a034a395a89b26496c0d40e0673aaa97d` after
 push Run 31264197240, pull-request Run 31264254111 and protected-main Run
 31264518015 all completed 8/8. None of these closures changes the Gate C
@@ -601,22 +603,19 @@ failure.
 
 ## Remaining Release Blockers
 
-1. Complete the fifth-remediation failure-evidence archive PR as a docs/evidence-
-   only change, preserve all historical snapshots, and require push, pull-request
-   and protected-main Release Quality Gates at 8/8.
-2. Only after that archive closes, create the sixth scoped remediation PR for
+1. Create the sixth scoped remediation PR for
    SSE fan-out contention, event-loop scheduling, slow-consumer backpressure and
    Outbox-to-SSE latency; preserve trusted authorization and all frozen semantics.
-3. Add deterministic unit and real PostgreSQL regressions, then require 8/8
+2. Add deterministic unit and real PostgreSQL regressions, then require 8/8
    push, pull-request and protected-main CI for the sixth remediation.
-4. Rerun Gate C from the resulting main baseline and another fresh isolated
+3. Rerun Gate C from the resulting main baseline and another fresh isolated
    PostgreSQL volume. The 2,000 stage remains unproven until all stages pass in
    the same formal run.
-5. Only after Gate C is accepted, complete a minimum eight-hour soak across
+4. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-6. Only after Gate D is accepted, restore a PostgreSQL backup into an
+5. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-7. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 
