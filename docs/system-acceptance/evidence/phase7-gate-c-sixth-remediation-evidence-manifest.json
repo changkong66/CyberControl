@@ -1,0 +1,46 @@
+﻿{
+    "schema_version":  "cybercontrol.gate-c-repository-evidence-manifest.v1",
+    "generated_at_utc":  "2026-08-11T22:44:57.3095529Z",
+    "source_commit":  "a6979d760701271d579776b082dabe247ac6138b",
+    "source_tree":  "52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f",
+    "files":  [
+                  {
+                      "path":  "docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-summary.json",
+                      "bytes":  37666,
+                      "sha256":  "e2fed79032e1596240c75446c8b3e093c8bb4968c8663a5d2c7cd2f3a5fb73f7"
+                  },
+                  {
+                      "path":  "docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-environment.json",
+                      "bytes":  5201,
+                      "sha256":  "8da5abe018670118fbf92c221b327a0edf5e924c7169e481ae6bf997d915c338"
+                  },
+                  {
+                      "path":  "docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-database-evidence.json",
+                      "bytes":  2580,
+                      "sha256":  "51937749345df28d74cf8924e0c93f4ded9b9483b3d9152913f342a511d901e8"
+                  },
+                  {
+                      "path":  "docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-report.md",
+                      "bytes":  3505,
+                      "sha256":  "8a6abf195c96d0eac05f694af44d8241f11cb653eecdf11397c67fa04889a4c5"
+                  },
+                  {
+                      "path":  "docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-failure-analysis.md",
+                      "bytes":  3125,
+                      "sha256":  "cd72eb52af61ef7140efe007a07ae44f1d9d922b5e79f9d339213d0e674fc463"
+                  },
+                  {
+                      "path":  "docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-package.json",
+                      "bytes":  1887,
+                      "sha256":  "cf8b10be553a93c1df92230d399321ed033eca4bce42868fe36e130bd2218f7b"
+                  }
+              ],
+    "external_package":  {
+                             "url":  "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-sixth-remediation-failed-20260811-a6979d7/gate-c-20260811T214704Z-a6979d760701-sixth-remediation-failed-evidence-v1.zip",
+                             "bytes":  2170353,
+                             "sha256":  "bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a",
+                             "digest":  "sha256:bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a",
+                             "release_id":  368892844,
+                             "release_immutable":  true
+                         }
+}
