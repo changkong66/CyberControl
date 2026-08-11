@@ -2,20 +2,18 @@
 
 ## Decision
 
-Protected-main Gate C third-remediation baseline
-`01595ae2634cb8114dfb9c591114048cba3864fd` remains a **release candidate**, but
-Gate C is **not accepted**. PR #50 merged the third SSE lifecycle, replay and
-Outbox remediation after push, pull-request and protected-main workflows each
-completed all eight Release Quality Gate jobs successfully. The unchanged Gate
-C workload was then rerun from this clean main baseline and a new isolated
-PostgreSQL volume; the 2,000-stream stage still failed frozen connection,
-replay/event-loss, delivery-latency, Outbox-lag and memory-recovery thresholds.
+Protected-main Gate C fifth-remediation baseline
+`76cd099a034a395a89b26496c0d40e0673aaa97d` remains a **release candidate**, but
+Gate C is **not accepted**. The fifth-remediation workload passed 20, 200 and
+500 authenticated streams, then failed frozen delivery and Outbox-latency
+controls at 1,000 streams. The fail-fast harness did not execute the 2,000
+stream or ten-minute recovery stages.
 
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
-initial Gate C failure and all three remediation reruns are preserved as
+initial Gate C failure and all five remediation reruns are preserved as
 distinct evidence snapshots. Gate D, Gate E, Gate F and Gate G remain serially
 locked. No single-host production capacity claim is permitted.
 
@@ -72,6 +70,19 @@ locked. No single-host production capacity claim is permitted.
 - PR #50 push CI: [Run 30171031219](https://github.com/changkong66/CyberControl/actions/runs/30171031219), 8/8
 - PR #50 pull-request CI: [Run 30171054312](https://github.com/changkong66/CyberControl/actions/runs/30171054312), 8/8
 - PR #50 post-merge main CI: [Run 30171222537](https://github.com/changkong66/CyberControl/actions/runs/30171222537), 8/8
+- Security dependency PR: [#56](https://github.com/changkong66/CyberControl/pull/56),
+  Squash Merge `6f4a58b44ef6e30a850b50aa522b490f525215b1`
+- PR #56 push CI: [Run 31255259498](https://github.com/changkong66/CyberControl/actions/runs/31255259498), 8/8
+- PR #56 pull-request CI: [Run 31255260722](https://github.com/changkong66/CyberControl/actions/runs/31255260722), 8/8
+- PR #56 protected-main CI: [Run 31255474059](https://github.com/changkong66/CyberControl/actions/runs/31255474059), 8/8
+- Gate C fifth remediation PR:
+  [#58](https://github.com/changkong66/CyberControl/pull/58), Squash Merge
+  `76cd099a034a395a89b26496c0d40e0673aaa97d`
+- PR #58 push CI: [Run 31264197240](https://github.com/changkong66/CyberControl/actions/runs/31264197240), 8/8
+- PR #58 pull-request CI: [Run 31264254111](https://github.com/changkong66/CyberControl/actions/runs/31264254111), 8/8
+- PR #58 protected-main CI: [Run 31264518015](https://github.com/changkong66/CyberControl/actions/runs/31264518015), 8/8
+- Fifth-remediation failure-evidence branch:
+  `codex/phase7-gate-c-fifth-rerun-failure-evidence`
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -397,6 +408,47 @@ Independent failure-evidence PR
 [#55](https://github.com/changkong66/CyberControl/pull/55) is the current archive
 closure and does not change the failed Gate C decision.
 
+## Gate C Fifth Remediation Rerun Evidence
+
+The fifth-remediation rerun was bound to protected main
+`76cd099a034a395a89b26496c0d40e0673aaa97d`, tree
+`ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`, with real Keycloak-issued Tokens,
+two tenants, twenty real subjects, a fresh PostgreSQL volume and a unique
+Compose project. It passed the 20, 200 and 500 stages, then failed at 1,000
+streams after 603 seconds. The 2,000-stream and recovery stages were not run.
+
+| Check | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Delivery latency p95/p99 ms | 1532 / 4985 | <= 1000 / <= 3000 | FAIL |
+| Outbox lag p95/p99 ms | 5830.700 / 8434.789 | <= 2000 / <= 5000 | FAIL |
+| Connection success | 1.0 | >= 0.995 | PASS |
+| Reconnect/replay success | 1.0 | >= 0.999 | PASS |
+| Committed event loss | 0 | 0 | PASS |
+| Outbox `DEAD` | 0 | 0 | PASS |
+| Cross-tenant leakage | 0 | 0 | PASS |
+
+The measured runtime boundary was API CPU `127.604/131.840` one-core units
+(p95/max), peak API file descriptors `1038`, and fail-fast closing owners `826`.
+Because recovery was not executed, the closing-owner count is not a memory-leak
+acceptance result. PostgreSQL evidence reports migration head `20260720_0010`,
+`74/74` FORCE RLS tables, `57` append-only triggers, `103` published Outbox
+rows, zero `DEAD` rows and zero foreign-tenant visibility.
+
+Fifth-remediation evidence files:
+
+- Summary: [phase7-gate-c-fifth-remediation-summary.json](evidence/phase7-gate-c-fifth-remediation-summary.json)
+- Report: [phase7-gate-c-fifth-remediation-report.md](evidence/phase7-gate-c-fifth-remediation-report.md)
+- Failure analysis: [phase7-gate-c-fifth-remediation-failure-analysis.md](evidence/phase7-gate-c-fifth-remediation-failure-analysis.md)
+- Database evidence: [phase7-gate-c-fifth-remediation-database-evidence.json](evidence/phase7-gate-c-fifth-remediation-database-evidence.json)
+- Environment: [phase7-gate-c-fifth-remediation-environment.json](evidence/phase7-gate-c-fifth-remediation-environment.json)
+- Manifest: [phase7-gate-c-fifth-remediation-evidence-manifest.json](evidence/phase7-gate-c-fifth-remediation-evidence-manifest.json)
+- Package metadata: [phase7-gate-c-fifth-remediation-package.json](evidence/phase7-gate-c-fifth-remediation-package.json)
+
+The immutable external package is `2,047,902` bytes with SHA256
+`566a65a5ac01d1eb6ec0f06a1bc85529bebcf7f53dc37c382d74dcbfa707630e`:
+[download evidence package](https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-fifth-remediation-failed-20260808-76cd099/gate-c-20260808T154326Z-76cd099a034a-fifth-remediation-failed-evidence-v1.zip).
+The package JWT/credential scan passed with zero hits.
+
 
 ## Source And Runtime Fingerprints
 
@@ -496,14 +548,12 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness and four remediation implementations
-are complete on protected main. The current evidence archive is merged at
-`40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`, tree
-`071d7804d7c465153b4c17b84d2a1a0a8ecfebd3`; protected-main Run 31255915622
-completed all eight jobs successfully. The fourth formal Gate C replay remains
-bound to evaluated source `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504`, tree
-`bad6b0f9e7008b934a54681f9f304a786ee9afe7`, and failed at `ramp-1000`;
-`gate-2000` was not executed. Gate D-G and unrelated feature development remain
+mainline acceptance, the Gate C harness and five remediation implementations
+are complete on protected main. The current protected-main baseline is
+`76cd099a034a395a89b26496c0d40e0673aaa97d`, tree
+`ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`; Run 31264518015 completed 8/8.
+The fifth formal Gate C replay failed at `ramp-1000`; `gate-2000` and recovery
+were not executed. Gate D-G and unrelated feature development remain
 locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
@@ -542,25 +592,31 @@ New advisory data initially blocked PR #55 on `cryptography`, `undici`,
 Run 31255260722 and protected-main Run 31255474059 at 8/8. PR #55 then passed
 push Run 31255692354 and pull-request Run 31255694689 at 8/8, Squash Merged as
 `40c8a4c076b59d9c9fd3384454df7f4eab9a6f98`, and passed protected-main Run
-31255915622 at 8/8. This archive closure does not change the Gate C failure.
+31255915622 at 8/8. The fifth-remediation failure package is published
+outside the repository and awaits its independent archive PR. PR #58 merged
+the fifth remediation as `76cd099a034a395a89b26496c0d40e0673aaa97d` after
+push Run 31264197240, pull-request Run 31264254111 and protected-main Run
+31264518015 all completed 8/8. None of these closures changes the Gate C
+failure.
 
 ## Remaining Release Blockers
 
-1. Complete a fifth scoped remediation PR for the
-   `topic3.workflow.finalized` Outbox authorization failure and the remaining
-   delivery/Outbox latency; do not bypass authorization or change the workload
-   or frozen thresholds.
-2. Add deterministic unit and real PostgreSQL regressions for trusted-context
-   propagation, retry/DEAD behavior, partition ordering and 1,000-stream
-   delivery latency, then require 8/8 push, pull-request and protected-main CI.
-3. Rerun Gate C from that new main baseline and another fresh isolated
-   PostgreSQL volume. The 2,000 stage remains unproven until the lower stages
-   pass in the same formal run.
-4. Only after Gate C is accepted, complete a minimum eight-hour soak across
+1. Complete the fifth-remediation failure-evidence archive PR as a docs/evidence-
+   only change, preserve all historical snapshots, and require push, pull-request
+   and protected-main Release Quality Gates at 8/8.
+2. Only after that archive closes, create the sixth scoped remediation PR for
+   SSE fan-out contention, event-loop scheduling, slow-consumer backpressure and
+   Outbox-to-SSE latency; preserve trusted authorization and all frozen semantics.
+3. Add deterministic unit and real PostgreSQL regressions, then require 8/8
+   push, pull-request and protected-main CI for the sixth remediation.
+4. Rerun Gate C from the resulting main baseline and another fresh isolated
+   PostgreSQL volume. The 2,000 stage remains unproven until all stages pass in
+   the same formal run.
+5. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-5. Only after Gate D is accepted, restore a PostgreSQL backup into an
+6. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+7. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 
