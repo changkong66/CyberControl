@@ -122,8 +122,10 @@ async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope)
     assert repository.published[0][0] == message.outbox_id
     rendered = metrics.render()
     assert b'operation="delivery",outcome="published"' in rendered
+    assert b'stage="claim_batch"' in rendered
     assert b'stage="created_to_claimed"' in rendered
     assert b'stage="claimed_to_published"' in rendered
+    assert b'stage="dispatch_to_published"' in rendered
 
 
 @pytest.mark.asyncio

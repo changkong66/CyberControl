@@ -11,7 +11,10 @@ from liyans.infrastructure.streaming import (
     PostgresSSENotificationBridge,
     SSEBroker,
 )
-from liyans.infrastructure.streaming.postgres_notifications import SSE_NOTIFICATION_CHANNEL
+from liyans.infrastructure.streaming.postgres_notifications import (
+    SSE_NOTIFICATION_CHANNEL,
+    SSENotification,
+)
 
 
 class _Connection:
@@ -189,3 +192,36 @@ def test_notification_bridge_rejects_invalid_payloads_and_records_overflow() -> 
     assert bridge._overflowed is True
     assert ("notification", "invalid_payload", 1) in metrics.calls
     assert ("notification", "queue_overflow", 1) in metrics.calls
+
+
+def test_notification_bridge_coalesces_each_tenant_to_the_highest_sequence() -> None:
+    class Metrics:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str, int]] = []
+
+        def observe_sse(self, operation: str, outcome: str, count: int = 1) -> None:
+            self.calls.append((operation, outcome, count))
+
+        def set_sse_gauge(self, _metric: str, _value: int) -> None:
+            return None
+
+    metrics = Metrics()
+    bridge = PostgresSSENotificationBridge(
+        "postgresql+asyncpg://user:password@localhost/database",
+        SSEBroker(InMemorySSEReplayLog()),
+        queue_size=8,
+        metrics=metrics,
+    )
+    bridge._queue.put_nowait(SSENotification("tenant-a", 1, 10.0))
+    bridge._queue.put_nowait(SSENotification("tenant-b", 4, 11.0))
+    bridge._queue.put_nowait(SSENotification("tenant-a", 3, 12.0))
+    bridge._queue.put_nowait(SSENotification("tenant-a", 2, 13.0))
+
+    pending = bridge._coalesce_pending_notifications(bridge._queue.get_nowait())
+
+    assert [(item.tenant_id, item.sequence) for item in pending.values()] == [
+        ("tenant-a", 3),
+        ("tenant-b", 4),
+    ]
+    assert pending["tenant-a"].received_at == 10.0
+    assert ("notification", "coalesced", 1) in metrics.calls
