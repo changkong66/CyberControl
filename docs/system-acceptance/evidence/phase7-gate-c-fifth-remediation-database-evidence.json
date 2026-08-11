@@ -1,0 +1,57 @@
+{
+    "schema_version":  "cybercontrol.gate-c-postgres-evidence.v1",
+    "generated_at_utc":  "2026-08-11T13:55:44.2192521Z",
+    "source_volume":  "cybercontrol_gate_c_fifth_76cd099_20260808t154325z",
+    "forensic_snapshot_volume":  "cybercontrol_gate_c_fifth_76cd099_20260808t154325z_forensics",
+    "original_volume_mounted_writable_for_forensics":  false,
+    "migration_head":  "20260720_0010",
+    "tenant_tables":  74,
+    "force_rls_tables":  74,
+    "append_only_triggers":  57,
+    "outbox_states":  {
+                          "PUBLISHED":  103,
+                          "DEAD":  0
+                      },
+    "outbox_lag":  {
+                       "sample_count":  103,
+                       "p95_ms":  5830.7,
+                       "p99_ms":  8434.789,
+                       "method":  "combined exact published_at-created_at samples from two FORCE-RLS tenant views"
+                   },
+    "gate_c_sse_events":  [
+                              {
+                                  "tenant_id":  "gate-c-alpha",
+                                  "count":  1498,
+                                  "minimum_sequence":  0,
+                                  "maximum_sequence":  1497
+                              },
+                              {
+                                  "tenant_id":  "gate-c-beta",
+                                  "count":  1497,
+                                  "minimum_sequence":  0,
+                                  "maximum_sequence":  1496
+                              }
+                          ],
+    "rls_adversarial_read":  {
+                                 "tenant_id":  "gate-c-alpha",
+                                 "own_tenant_visible":  1498,
+                                 "foreign_tenant_visible":  0
+                             },
+    "roles":  [
+                  {
+                      "rolname":  "liyans_app",
+                      "rolsuper":  false,
+                      "rolbypassrls":  false
+                  },
+                  {
+                      "rolname":  "liyans_dispatcher",
+                      "rolsuper":  false,
+                      "rolbypassrls":  false
+                  },
+                  {
+                      "rolname":  "liyans_migrator",
+                      "rolsuper":  false,
+                      "rolbypassrls":  false
+                  }
+              ]
+}
