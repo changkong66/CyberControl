@@ -11,6 +11,7 @@ from collections import OrderedDict, defaultdict, deque
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from time import perf_counter
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
@@ -258,6 +259,32 @@ class SSEEvent:
     event_type: str
     data: dict[str, Any]
     emitted_at: datetime
+    _data_json: str = field(init=False, repr=False, compare=False)
+    _size_bytes: int = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        # One committed event is shared by every subscriber. Keep its stable
+        # representation on the event so fan-out does not serialize per client.
+        encoded = json.dumps(
+            self.data,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+        )
+        object.__setattr__(self, "_data_json", encoded)
+        object.__setattr__(
+            self,
+            "_size_bytes",
+            len(self.event_type.encode("utf-8")) + len(encoded.encode("utf-8")),
+        )
+
+    @property
+    def data_json(self) -> str:
+        return self._data_json
+
+    @property
+    def size_bytes(self) -> int:
+        return self._size_bytes
 
 
 class SSEReplayLog(Protocol):
@@ -653,7 +680,11 @@ class SSEBroker:
             raise ValueError("SSE events require a nonnegative sequence and aware timestamp")
         tenant_id = event.tenant_id
         self._record_durable_event(event)
-        async with self._tenant_locks[tenant_id]:
+        lock = self._tenant_locks[tenant_id]
+        lock_started = asyncio.get_running_loop().time()
+        await lock.acquire()
+        self._observe_latency("fanout_lock_wait", lock_started)
+        try:
             subscribers = self._active_subscribers(tenant_id)
             if not subscribers:
                 return 0
@@ -671,6 +702,8 @@ class SSEBroker:
             minimum_cursor = min(subscriber.last_sequence for subscriber in live)
             if event.sequence <= minimum_cursor + 1:
                 return self._fan_out_locked(tenant_id, [event], live)
+        finally:
+            lock.release()
         return await self._synchronize_tenant(
             tenant_id,
             through_sequence=event.sequence,
@@ -1140,6 +1173,7 @@ class SSEBroker:
         events: list[SSEEvent],
         subscribers: list[_Subscriber] | None = None,
     ) -> int:
+        started = perf_counter()
         delivered = 0
         ordered_events = sorted(
             {event.sequence: event for event in events}.values(),
@@ -1149,6 +1183,7 @@ class SSEBroker:
             if event.tenant_id != tenant_id:
                 raise ValueError("SSE replay returned an event for another tenant")
         targets = list(self._subscribers.get(tenant_id, ())) if subscribers is None else subscribers
+        event_sizes = {event.sequence: event.size_bytes for event in ordered_events}
         for subscriber in targets:
             if subscriber.closed:
                 self._subscribers[tenant_id].discard(subscriber)
@@ -1176,9 +1211,13 @@ class SSEBroker:
                     break
                 subscriber.last_sequence = event.sequence
                 self._queued_events += 1
-                self._queued_bytes += self._event_size(event)
+                self._queued_bytes += event_sizes[event.sequence]
                 delivered += 1
         self._observe("fanout", "delivered", delivered)
+        if self._metrics is not None:
+            observer = getattr(self._metrics, "observe_sse_latency", None)
+            if observer is not None:
+                observer("fanout_locked", max(0.0, perf_counter() - started))
         self._update_sse_gauges()
         return delivered
 
@@ -1429,14 +1468,7 @@ class SSEBroker:
 
     @staticmethod
     def _event_size(event: SSEEvent) -> int:
-        return len(event.event_type.encode("utf-8")) + len(
-            json.dumps(
-                event.data,
-                ensure_ascii=False,
-                allow_nan=False,
-                separators=(",", ":"),
-            ).encode("utf-8")
-        )
+        return event.size_bytes
 
     def _event_dequeued(self, event: SSEEvent | _SubscriberClosed) -> None:
         self._queued_events = max(0, self._queued_events - 1)
@@ -1533,7 +1565,7 @@ class SSEBroker:
 
 
 def encode_sse_frame(event: SSEEvent, cursor: str) -> bytes:
-    data = json.dumps(event.data, ensure_ascii=False, separators=(",", ":"))
+    data = event.data_json
     lines = [f"id: {cursor}", f"event: {event.event_type}"]
     lines.extend(f"data: {line}" for line in data.splitlines() or [""])
     return ("\n".join(lines) + "\n\n").encode("utf-8")

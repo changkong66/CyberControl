@@ -6,6 +6,7 @@ import logging
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Any
 
 import asyncpg
@@ -26,6 +27,7 @@ ConnectFactory = Callable[[str], Awaitable[asyncpg.Connection]]
 class SSENotification:
     tenant_id: str
     sequence: int
+    received_at: float
 
 
 async def _connect(dsn: str) -> asyncpg.Connection:
@@ -65,7 +67,7 @@ class PostgresSSENotificationBridge:
             raise ValueError("SSE notifications require a postgresql+asyncpg URL")
         self._dsn = url.set(drivername="postgresql").render_as_string(hide_password=False)
         self._broker = broker
-        self._queue: asyncio.Queue[str] = asyncio.Queue(maxsize=queue_size)
+        self._queue: asyncio.Queue[SSENotification] = asyncio.Queue(maxsize=queue_size)
         self._reconnect_base = reconnect_base_seconds
         self._reconnect_max = reconnect_max_seconds
         self._startup_timeout = startup_timeout_seconds
@@ -181,18 +183,39 @@ class PostgresSSENotificationBridge:
                 await self.synchronize_active_tenants()
                 self._observe("notification", "overflow_recovered")
             try:
-                payload = await asyncio.wait_for(self._queue.get(), timeout=0.5)
+                notification = await asyncio.wait_for(self._queue.get(), timeout=0.5)
             except TimeoutError:
                 continue
-            notification = self._parse_notification(payload)
-            if notification is None:
-                self._observe("notification", "invalid_payload")
+            pending = self._coalesce_pending_notifications(notification)
+            self._set_queue_depth()
+            for item in pending.values():
+                self._observe_latency("notification_queue_wait", item.received_at)
+                await self._synchronize(
+                    item.tenant_id,
+                    through_sequence=item.sequence,
+                )
+                self._observe("notification", "processed")
+
+    def _coalesce_pending_notifications(
+        self,
+        first: SSENotification,
+    ) -> dict[str, SSENotification]:
+        pending = {first.tenant_id: first}
+        while True:
+            try:
+                queued = self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                return pending
+            current = pending.get(queued.tenant_id)
+            if current is None:
+                pending[queued.tenant_id] = queued
                 continue
-            await self._synchronize(
-                notification.tenant_id,
-                through_sequence=notification.sequence,
+            pending[queued.tenant_id] = SSENotification(
+                tenant_id=queued.tenant_id,
+                sequence=max(current.sequence, queued.sequence),
+                received_at=min(current.received_at, queued.received_at),
             )
-            self._observe("notification", "processed")
+            self._observe("notification", "coalesced")
 
     async def _close_connection(self, connection: asyncpg.Connection) -> None:
         try:
@@ -213,8 +236,13 @@ class PostgresSSENotificationBridge:
         if channel != SSE_NOTIFICATION_CHANNEL or len(payload.encode("utf-8")) > 1024:
             self._observe("notification", "invalid_payload")
             return
+        notification = self._parse_notification(payload)
+        if notification is None:
+            self._observe("notification", "invalid_payload")
+            return
         try:
-            self._queue.put_nowait(payload)
+            self._queue.put_nowait(notification)
+            self._set_queue_depth()
         except asyncio.QueueFull:
             self._overflowed = True
             self._observe("notification", "queue_overflow")
@@ -256,8 +284,26 @@ class PostgresSSENotificationBridge:
             or sequence < 0
         ):
             return None
-        return SSENotification(tenant_id=tenant_id, sequence=sequence)
+        return SSENotification(
+            tenant_id=tenant_id,
+            sequence=sequence,
+            received_at=perf_counter(),
+        )
 
     def _observe(self, operation: str, outcome: str, count: int = 1) -> None:
         if self._metrics is not None and count > 0:
             self._metrics.observe_sse(operation, outcome, count)
+
+    def _observe_latency(self, stage: str, started_at: float) -> None:
+        if self._metrics is None:
+            return
+        observer = getattr(self._metrics, "observe_sse_latency", None)
+        if observer is not None:
+            observer(stage, max(0.0, perf_counter() - started_at))
+
+    def _set_queue_depth(self) -> None:
+        if self._metrics is None:
+            return
+        setter = getattr(self._metrics, "set_sse_gauge", None)
+        if setter is not None:
+            setter("notification_queue_depth", self._queue.qsize())

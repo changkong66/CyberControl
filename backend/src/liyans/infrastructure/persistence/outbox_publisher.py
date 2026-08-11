@@ -201,7 +201,9 @@ class OutboxPublisher:
         self._wake.set()
 
     async def run_once(self) -> int:
+        claim_started = perf_counter()
         messages = await self._repository.claim_batch(self._worker_id, self._batch_size)
+        self._observe_duration("claim_batch", perf_counter() - claim_started)
         self._ready.set()
         if not messages:
             self._observe("claim", "empty")
@@ -344,6 +346,7 @@ class OutboxPublisher:
     async def _process(self, message: OutboxMessage) -> bool:
         self._in_flight += 1
         self._update_gauges()
+        dispatch_started = perf_counter()
         try:
             await asyncio.wait_for(
                 self._sink(message),
@@ -365,6 +368,10 @@ class OutboxPublisher:
                 "created_to_published",
                 message.created_at,
                 published_at,
+            )
+            self._observe_duration(
+                "dispatch_to_published",
+                perf_counter() - dispatch_started,
             )
             self._observe("delivery", "published")
             return True
@@ -447,6 +454,13 @@ class OutboxPublisher:
         observer = getattr(self._metrics, "observe_outbox_latency", None)
         if observer is not None:
             observer(stage, max(0.0, (completed_at - started_at).total_seconds()))
+
+    def _observe_duration(self, stage: str, duration_seconds: float) -> None:
+        if self._metrics is None:
+            return
+        observer = getattr(self._metrics, "observe_outbox_latency", None)
+        if observer is not None:
+            observer(stage, max(0.0, duration_seconds))
 
     def _update_gauges(self) -> None:
         if self._metrics is None:

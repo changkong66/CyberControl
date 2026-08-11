@@ -844,6 +844,28 @@ async def test_sse_delivery_observes_published_to_client_latency() -> None:
     await stream.aclose()
 
 
+def test_sse_event_reuses_serialized_payload_for_fanout_and_frame_encoding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+    original_dumps = sse_module.json.dumps
+
+    def counted_dumps(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_dumps(*args, **kwargs)
+
+    monkeypatch.setattr(sse_module.json, "dumps", counted_dumps)
+    event = _event(7, value={"nested": ["value"]})
+
+    assert event.size_bytes > 0
+    for _ in range(128):
+        assert sse_module.SSEBroker._event_size(event) == event.size_bytes
+        assert b'"nested":["value"]' in sse_module.encode_sse_frame(event, "cursor")
+
+    assert calls == 1
+
+
 @pytest.mark.asyncio
 async def test_broker_reports_active_tenants_and_backpressure_drop() -> None:
     broker = SSEBroker(InMemorySSEReplayLog(), subscriber_queue_size=1)
