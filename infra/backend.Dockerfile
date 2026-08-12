@@ -26,13 +26,18 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     LIYAN_REPOSITORY_ROOT=/app
 
-RUN python -m pip uninstall --yes setuptools wheel \
+RUN apk add --no-cache "jemalloc=5.3.0-r6" \
+    && python -m pip uninstall --yes setuptools wheel \
     && python -m pip uninstall --yes pip \
     && addgroup -S -g 10001 liyans \
     && adduser -S -D -H -u 10001 -G liyans -h /app -s /sbin/nologin liyans \
     && mkdir -p /app/backend /app/config /app/var/artifacts \
         /var/lib/liyans/artifacts /var/lib/liyans/audit \
     && chown -R liyans:liyans /app /var/lib/liyans
+
+ENV PYTHONMALLOC=malloc \
+    LD_PRELOAD=/usr/lib/libjemalloc.so.2 \
+    MALLOC_CONF=background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000
 
 COPY --from=builder --chown=liyans:liyans /app/.venv /app/.venv
 COPY --chown=liyans:liyans backend/alembic.ini /app/backend/alembic.ini

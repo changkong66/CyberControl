@@ -21,6 +21,7 @@ from liyans.infrastructure.persistence import (
     OutboxPublisher,
     PostgresOutboxDispatcherRepository,
     PostgresOutboxRepository,
+    PostgresOutboxWakeListener,
 )
 
 from .support import make_envelope
@@ -125,6 +126,107 @@ async def _append(
         async with database.transaction(context=session_context_from_tenant(context)) as session:
             await repository.append(session, message)
     return message
+
+
+@pytest.mark.asyncio
+async def test_outbox_commit_wake_is_visible_only_after_business_transaction_commits(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    woke = asyncio.Event()
+    wake_count = 0
+
+    def wake() -> None:
+        nonlocal wake_count
+        wake_count += 1
+        woke.set()
+
+    listener = PostgresOutboxWakeListener(
+        postgres_dispatcher.engine.url.render_as_string(hide_password=False),
+        wake,
+        startup_timeout_seconds=2,
+    )
+    await listener.start()
+    assert wake_count == 1
+    woke.clear()
+
+    now = datetime.now(UTC)
+    message = OutboxMessage(
+        outbox_id=uuid4(),
+        tenant_id=context.tenant_id,
+        envelope=_dispatch_envelope(
+            context.tenant_id,
+            now,
+            partition=f"{context.tenant_id}:commit-wake",
+            sequence=0,
+        ),
+        created_at=now,
+        available_at=now,
+        published_at=None,
+    )
+    repository = PostgresOutboxRepository(database)
+    try:
+        with tenant_scope(context):
+            async with database.transaction(
+                context=session_context_from_tenant(context)
+            ) as session:
+                await repository.append(session, message)
+                await asyncio.sleep(0.05)
+                assert woke.is_set() is False
+
+        await asyncio.wait_for(woke.wait(), timeout=1)
+        assert wake_count == 2
+    finally:
+        await listener.close()
+
+
+@pytest.mark.asyncio
+async def test_outbox_rollback_does_not_emit_wake_hint(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    woke = asyncio.Event()
+
+    listener = PostgresOutboxWakeListener(
+        postgres_dispatcher.engine.url.render_as_string(hide_password=False),
+        woke.set,
+        startup_timeout_seconds=2,
+    )
+    await listener.start()
+    woke.clear()
+    now = datetime.now(UTC)
+    message = OutboxMessage(
+        outbox_id=uuid4(),
+        tenant_id=context.tenant_id,
+        envelope=_dispatch_envelope(
+            context.tenant_id,
+            now,
+            partition=f"{context.tenant_id}:rollback-wake",
+            sequence=0,
+        ),
+        created_at=now,
+        available_at=now,
+        published_at=None,
+    )
+    repository = PostgresOutboxRepository(database)
+
+    class RollBackBusinessTransaction(Exception):
+        pass
+
+    try:
+        with tenant_scope(context), pytest.raises(RollBackBusinessTransaction):
+            async with database.transaction(
+                context=session_context_from_tenant(context)
+            ) as session:
+                await repository.append(session, message)
+                raise RollBackBusinessTransaction
+
+        await asyncio.sleep(0.1)
+        assert woke.is_set() is False
+    finally:
+        await listener.close()
 
 
 @pytest.mark.asyncio

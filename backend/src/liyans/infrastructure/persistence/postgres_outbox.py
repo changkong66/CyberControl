@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from liyans_contracts.envelope import Topic3EnvelopeV1
-from sqlalchemy import case, exists, func, select, update
+from sqlalchemy import case, exists, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -15,6 +15,9 @@ from liyans.infrastructure.database.context import current_session_context
 from liyans.infrastructure.database.models import OutboxMessageModel, OutboxStatus
 from liyans.infrastructure.database.session import DatabaseSessionManager
 from liyans.infrastructure.persistence.outbox import OutboxMessage
+
+OUTBOX_WAKE_CHANNEL = "liyans_outbox_wake_v1"
+OUTBOX_WAKE_PAYLOAD = "ready"
 
 
 class PostgresOutboxRepository:
@@ -73,6 +76,10 @@ class PostgresOutboxRepository:
             )
         )
         await session.flush()
+        await session.execute(
+            text("SELECT pg_notify(:channel, :payload)"),
+            {"channel": OUTBOX_WAKE_CHANNEL, "payload": OUTBOX_WAKE_PAYLOAD},
+        )
 
     async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]:
         if not worker_id or len(worker_id) > 128:

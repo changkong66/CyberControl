@@ -101,6 +101,7 @@ from liyans.infrastructure.persistence import (
     PostgresArtifactRepository,
     PostgresOutboxDispatcherRepository,
     PostgresOutboxRepository,
+    PostgresOutboxWakeListener,
 )
 from liyans.infrastructure.security import PostgresTenantAuthorizer, build_token_verifier
 from liyans.infrastructure.streaming.postgres_notifications import (
@@ -261,6 +262,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             outbox=app.state.outbox,
         )
         app.state.outbox_publisher = None
+        app.state.outbox_wake_listener = None
         dispatcher_repository = None
         if settings.outbox_publisher_enabled:
             dispatcher_database = DatabaseSessionManager(
@@ -295,6 +297,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 metrics=metrics,
             )
             app.state.outbox_publisher = publisher
+            app.state.outbox_wake_listener = PostgresOutboxWakeListener(
+                settings.outbox_dispatcher_database_url,
+                publisher.wake,
+                metrics=metrics,
+            )
         task_queue = AsyncTaskQueue(worker_count=settings.task_worker_count)
         app.state.task_queue = task_queue
         replay_log = PostgresSSEReplayLog(
@@ -505,6 +512,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if app.state.outbox_publisher is not None:
             await app.state.outbox_publisher.start()
             resources.push_async_callback(app.state.outbox_publisher.close)
+        if app.state.outbox_wake_listener is not None:
+            await app.state.outbox_wake_listener.start(wait_for_ready=False)
+            resources.push_async_callback(app.state.outbox_wake_listener.close)
         topic4_runtime.mark_ready()
         topic4_metrics.ready.set(1)
         yield

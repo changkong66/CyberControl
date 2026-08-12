@@ -5,11 +5,58 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
+from starlette.responses import StreamingResponse
+
 from liyans.core.async_cleanup import complete_cleanup
 from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.infrastructure.streaming.sse import SSEEvent, encode_sse_frame
 
 T = TypeVar("T")
+
+
+class OwnedStreamingResponse(StreamingResponse):
+    """Streaming response with explicit task ownership on the ASGI 2.3 path."""
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        spec_version = tuple(
+            int(part) for part in scope.get("asgi", {}).get("spec_version", "2.0").split(".")
+        )
+        if scope["type"] == "websocket" or spec_version >= (2, 4):
+            await super().__call__(scope, receive, send)
+            return
+
+        stream_task = asyncio.create_task(
+            self.stream_response(send),
+            name="sse-response-send",
+        )
+        disconnect_task = asyncio.create_task(
+            self.listen_for_disconnect(receive),
+            name="sse-response-disconnect",
+        )
+        tasks = (stream_task, disconnect_task)
+        try:
+            await asyncio.wait(
+                tasks,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+        finally:
+            pending = [task for task in tasks if not task.done()]
+            for task in pending:
+                task.cancel()
+            cleanup = asyncio.gather(*tasks, return_exceptions=True)
+            await complete_cleanup(cleanup)
+
+        failures = [
+            result
+            for result in cleanup.result()
+            if isinstance(result, BaseException) and not isinstance(result, asyncio.CancelledError)
+        ]
+
+        if failures:
+            raise failures[0]
+
+        if self.background is not None:
+            await self.background()
 
 
 class TenantScopedSSEStream(AsyncIterator[bytes]):
