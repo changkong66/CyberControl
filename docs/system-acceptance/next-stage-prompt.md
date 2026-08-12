@@ -26,13 +26,17 @@ acceptance decisions. Gate D, Gate E, Gate F and Gate G remain locked.
   `bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a`
 - Immutable Release:
   `phase7-gate-c-sixth-remediation-failed-20260811-a6979d7`
+- Sixth failure archive PR: [#62](https://github.com/changkong66/CyberControl/pull/62)
+- Sixth archive head: `03aeee034c2927554d480fe4f75ce71060d389d6`
+- Sixth archive merge: `a1f65411e770ec843a861fd87eb9ce1834c04c4a`
+- Sixth archive push CI: [Run 31544016873](https://github.com/changkong66/CyberControl/actions/runs/31544016873), 8/8
+- Sixth archive pull-request CI: [Run 31544021134](https://github.com/changkong66/CyberControl/actions/runs/31544021134), 8/8
+- Sixth archive protected-main CI: [Run 31544460542](https://github.com/changkong66/CyberControl/actions/runs/31544460542), 8/8
 
-## Mandatory Phase 0: Close The Sixth Failure Archive
+## Mandatory Phase 0: Verify The Closed Sixth Failure Archive
 
-The evidence-only branch is
-`codex/phase7-gate-c-sixth-rerun-failure-evidence`, PR
-[#62](https://github.com/changkong66/CyberControl/pull/62). Before creating a
-remediation branch:
+The sixth failure archive is already merged. Before creating a remediation
+branch:
 
 1. Verify branch, HEAD, tree, status, diff, `origin/main`, protected-main CI,
    all historical Gate C volumes and the two new sixth-run volumes.
@@ -44,8 +48,8 @@ remediation branch:
 4. Verify all JSON, repository file hashes, source/tree binding, threshold and
    workload hashes, immutable Release state, asset size/digest and redaction
    scan.
-5. Require push CI 8/8, pull-request CI 8/8, Squash Merge and protected-main CI
-   8/8. Do not create the seventh-remediation branch before this closure.
+5. Confirm PR #62 is Squash Merged and its push, pull-request and protected-main
+   Release Quality Gates are all 8/8. Do not recreate or amend PR #62.
 
 ## Proven Sixth-Run Boundary
 
@@ -75,7 +79,7 @@ Do not reinterpret any partial pass as Gate C acceptance.
 
 ## Required PR-1: Seventh Scoped Remediation
 
-After archive closure and a fresh `origin/main` 8/8 verification, create
+After verifying the archive closure and a fresh `origin/main` 8/8 result, create
 exactly `codex/phase7-gate-c-seventh-remediation` from that main.
 
 Before behavior changes, add an ADR mapping each proposed change to a measured

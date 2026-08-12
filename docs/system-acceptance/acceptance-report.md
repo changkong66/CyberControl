@@ -90,7 +90,11 @@ locked. No single-host production capacity claim is permitted.
 - PR #61 pull-request CI: [Run 31538456518](https://github.com/changkong66/CyberControl/actions/runs/31538456518), 8/8
 - PR #61 protected-main CI: [Run 31538917814](https://github.com/changkong66/CyberControl/actions/runs/31538917814), 8/8
 - Sixth-remediation failure-evidence PR:
-  [#62](https://github.com/changkong66/CyberControl/pull/62), pending closure
+  [#62](https://github.com/changkong66/CyberControl/pull/62), Squash Merge
+  `a1f65411e770ec843a861fd87eb9ce1834c04c4a`
+- PR #62 push CI: [Run 31544016873](https://github.com/changkong66/CyberControl/actions/runs/31544016873), 8/8
+- PR #62 pull-request CI: [Run 31544021134](https://github.com/changkong66/CyberControl/actions/runs/31544021134), 8/8
+- PR #62 protected-main CI: [Run 31544460542](https://github.com/changkong66/CyberControl/actions/runs/31544460542), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -611,20 +615,18 @@ failure.
 
 ## Remaining Release Blockers
 
-1. Merge the independent sixth-remediation failure-evidence PR through push,
-   pull-request and protected-main Release Quality Gates 8/8.
-2. Create a seventh scoped remediation for the measured Outbox
+1. Create a seventh scoped remediation for the measured Outbox
    created-to-published, event-loop scheduling, fan-out and admission latency;
    preserve trusted authorization and all frozen semantics.
-3. Add deterministic unit and real PostgreSQL regressions, then rerun Gate C
+2. Add deterministic unit and real PostgreSQL regressions, then rerun Gate C
    from the resulting main baseline and another fresh isolated
    PostgreSQL volume. The 2,000 stage remains unproven until all stages pass in
    the same formal run.
-4. Only after Gate C is accepted, complete a minimum eight-hour soak across
+3. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-5. Only after Gate D is accepted, restore a PostgreSQL backup into an
+4. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+5. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 

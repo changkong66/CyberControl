@@ -135,7 +135,9 @@ risk.
   `phase7-gate-c-sixth-remediation-failed-20260811-a6979d7` with SHA256
   `bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a`.
 - PR #62 is the independent sixth-remediation failure-evidence archive and is
-  pending push, pull-request, Squash Merge and protected-main CI closure.
+  Squash Merged as `a1f65411e770ec843a861fd87eb9ce1834c04c4a` after push Run
+  31544016873 and pull-request Run 31544021134 passed 8/8. Protected-main Run
+  31544460542 also passed 8/8.
 
 ## 3. Current Gate C Failure Boundary
 
@@ -199,8 +201,9 @@ Gate C evidence remains immutable.
    image digests and the immutable external package.
 3. Preserve every prior Gate C snapshot and retain
    `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
-4. Require the sixth failure-evidence branch to pass push and pull-request 8/8,
-   Squash Merge, and protected-main 8/8 before creating another remediation.
+4. PR #62 passed push and pull-request 8/8, Squash Merged as
+   `a1f65411e770ec843a861fd87eb9ce1834c04c4a`, and protected-main Run
+   31544460542 passed 8/8.
 
 ### 4.2 P0 Seventh Gate C Remediation
 
@@ -246,7 +249,7 @@ A/B evidence is accepted. The project is not production accepted because Gate
 C remains the active release blocker. The sixth remediation preserved the prior
 finalized-event `DEAD` condition and preserved zero loss, duplicate render and
 tenant leakage, but the protected-main replay still breached commit-to-client
-and Outbox latency at 1,000 streams. The next authorized action is to close the
-sixth failure-evidence archive, then perform a seventh scoped Gate C remediation
-and fresh replay. Gate D-G remain locked until an
+and Outbox latency at 1,000 streams. The sixth failure-evidence archive is now
+closed. The next authorized action is a seventh scoped Gate C remediation and
+fresh replay. Gate D-G remain locked until an
 independent Gate C success-evidence PR passes CI and merges.

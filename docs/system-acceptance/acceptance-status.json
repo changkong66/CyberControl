@@ -1,14 +1,14 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-08-11T22:45:00Z",
+  "generated_at_utc": "2026-08-12T05:33:35Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
   "snapshot_semantics": "VERIFIED_PARENT_MAIN_BEFORE_STATUS_ONLY_COMMIT",
   "snapshot_note": "Git commits cannot contain their own final SHA. The protected_main fields bind the verified parent main; the live branch head is authoritative for the status-only commit containing this snapshot.",
   "baseline": {
-    "protected_main_sha": "a6979d760701271d579776b082dabe247ac6138b",
+    "protected_main_sha": "a1f65411e770ec843a861fd87eb9ce1834c04c4a",
     "protected_main_tree_sha": "52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f",
-    "product_source_sha": "a6979d760701271d579776b082dabe247ac6138b",
+    "product_source_sha": "a1f65411e770ec843a861fd87eb9ce1834c04c4a",
     "product_source_tree_sha": "52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f",
     "evaluated_gate_c_source_sha": "a6979d760701271d579776b082dabe247ac6138b",
     "evaluated_gate_c_source_tree_sha": "52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f",
@@ -18,7 +18,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 31538917814,
+    "protected_main_ci_run": 31544460542,
     "protected_main_ci_run_attempt": 1,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
@@ -164,7 +164,12 @@
     "phase7_gate_c_sixth_remediation_failure_archive_package_sha256": "bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a",
     "phase7_gate_c_sixth_remediation_failure_archive_pr": 62,
     "phase7_gate_c_sixth_remediation_failure_archive_pr_url": "https://github.com/changkong66/CyberControl/pull/62",
-    "phase7_gate_c_sixth_remediation_failure_archive_pr_pending": true
+    "phase7_gate_c_sixth_remediation_failure_archive_head_sha": "03aeee034c2927554d480fe4f75ce71060d389d6",
+    "phase7_gate_c_sixth_remediation_failure_archive_push_ci_run": 31544016873,
+    "phase7_gate_c_sixth_remediation_failure_archive_pr_ci_run": 31544021134,
+    "phase7_gate_c_sixth_remediation_failure_archive_merge_sha": "a1f65411e770ec843a861fd87eb9ce1834c04c4a",
+    "phase7_gate_c_sixth_remediation_failure_archive_main_ci_run": 31544460542,
+    "phase7_gate_c_sixth_remediation_failure_archive_pr_pending": false
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -787,7 +792,7 @@
         "dead_event_error_code": "LIYAN-AUTH-FORBIDDEN",
         "database_evidence_captured_from_read_only_snapshot": true,
         "load_rerun_after_failure": false,
-        "archive_state": "SOURCE_BOUND_EVIDENCE_PUBLISHED",
+        "archive_state": "MAINLINE_ARCHIVED",
         "archive_branch": "codex/phase7-gate-c-fourth-remediation-failure-evidence",
         "archive_pr": 55,
         "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/55",
@@ -971,11 +976,17 @@
         "database_foreign_tenant_visible_rows": 0,
         "jwt_scan": "passed",
         "secrets_directory_present": false,
-        "archive_state": "SOURCE_BOUND_EVIDENCE_PUBLISHED",
+        "archive_state": "MAINLINE_ARCHIVED",
         "archive_branch": "codex/phase7-gate-c-sixth-rerun-failure-evidence",
         "archive_pr": 62,
         "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/62",
-        "archive_pr_pending": true
+        "archive_head_sha": "03aeee034c2927554d480fe4f75ce71060d389d6",
+        "archive_push_ci_run": 31544016873,
+        "archive_pull_request_ci_run": 31544021134,
+        "archive_merge_sha": "a1f65411e770ec843a861fd87eb9ce1834c04c4a",
+        "archive_protected_main_ci_run": 31544460542,
+        "archive_all_ci_jobs_successful": true,
+        "archive_pr_pending": false
       }
     }
   },
@@ -1088,7 +1099,7 @@
   "next_stage": {
     "name": "PHASE7_GATE_C_SEVENTH_REMEDIATION_AND_RERUN",
     "allowed_scope": [
-      "complete the sixth-remediation failure-evidence PR and protected-main CI closure before creating any remediation branch",
+      "verify the merged sixth-remediation failure archive and its protected-main 8/8 evidence before creating the seventh remediation branch",
       "measure and remediate Outbox created-to-published, event-loop scheduling, fan-out, admission and socket-delivery latency without changing frozen semantics",
       "preserve finalized-workflow authorization with zero Outbox DEAD and fail-closed invalid or cross-tenant events",
       "add deterministic unit, concurrency and real PostgreSQL Outbox-to-SSE regressions",
@@ -1115,7 +1126,7 @@
     "gate_c_sixth_remediation_pr_pending": false,
     "gate_c_sixth_remediation_mainline_accepted": true,
     "gate_c_sixth_remediation_rerun_failed": true,
-    "gate_c_sixth_remediation_failure_archive_pr_pending": true,
+    "gate_c_sixth_remediation_failure_archive_pr_pending": false,
     "gate_c_seventh_remediation_pr_pending": false,
     "gate_c_rerun_ready": false,
     "gates_d_through_g_locked": true,
@@ -1126,7 +1137,6 @@
   },
   "blocking_items": [
     "The sixth-remediation Gate C replay passed 20, 200 and 500 authenticated streams, then failed frozen delivery and Outbox latency controls at 1,000 streams; the 2,000 and recovery stages were not executed.",
-    "Complete the independent sixth-remediation failure-evidence PR and protected-main CI closure.",
     "Complete a seventh scoped remediation for Outbox created-to-published, scheduling, fan-out, admission and socket-delivery latency while preserving zero loss, duplicates, tenant leakage and Outbox DEAD.",
     "Rerun the unchanged Gate C workload from a new protected-main baseline and fresh isolated PostgreSQL volume without lowering thresholds or changing the workload.",
     "Only after Gate C acceptance, complete a minimum eight-hour soak test.",
