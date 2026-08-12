@@ -6,7 +6,6 @@ from typing import Annotated, Any, Literal, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
-from fastapi.responses import StreamingResponse
 from liyans_contracts.common import canonical_sha256
 from liyans_contracts.envelope import (
     DeliveryMetadataV1,
@@ -37,7 +36,7 @@ from liyans_contracts.verification import (
 from pydantic import BaseModel, ConfigDict, Field
 
 from liyans.api.auth import require_scopes
-from liyans.api.streaming import TenantScopedSSEStream
+from liyans.api.streaming import OwnedStreamingResponse, TenantScopedSSEStream
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import current_tenant
 from liyans.domains.release.engine import PublicationRequest, ReleasePolicy
@@ -815,7 +814,7 @@ async def replay_public_events(
 async def stream_public_events(
     request: Request,
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
-) -> StreamingResponse:
+) -> OwnedStreamingResponse:
     context = current_tenant()
     after_sequence = None
     if last_event_id:
@@ -830,7 +829,7 @@ async def stream_public_events(
         event_type_prefixes=("topic4.",),
     )
 
-    return StreamingResponse(
+    return OwnedStreamingResponse(
         TenantScopedSSEStream(
             request,
             subscription,

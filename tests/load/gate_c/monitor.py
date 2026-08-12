@@ -70,6 +70,62 @@ def _file_descriptor_metrics(executable: str, name: str) -> dict[str, int | None
     return {"open": int(lines[0]), "limit": limit}
 
 
+def _process_memory_metrics(executable: str, name: str) -> dict[str, int]:
+    script = (
+        "cat /proc/1/status; printf '%s\\n' __SMAPS_ROLLUP__; "
+        "cat /proc/1/smaps_rollup; printf '%s\\n' __MAP_COUNT__; "
+        "wc -l < /proc/1/maps"
+    )
+    result = subprocess.run(  # noqa: S603 - executable and container name come from Docker.
+        [executable, "exec", name, "sh", "-c", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    section = "status"
+    values: dict[str, int] = {}
+    private_kib = 0
+    for line in result.stdout.splitlines():
+        if line == "__SMAPS_ROLLUP__":
+            section = "smaps"
+            continue
+        if line == "__MAP_COUNT__":
+            section = "maps"
+            continue
+        if section == "maps":
+            if line.strip().isdigit():
+                values["map_count"] = int(line.strip())
+            continue
+        match = re.match(r"^([A-Za-z_]+):\s+([0-9]+)\s+kB$", line)
+        if match is None:
+            continue
+        key, raw_value = match.groups()
+        value = int(raw_value) * 1024
+        if section == "status" and key in {"VmRSS", "RssAnon", "RssFile", "VmData"}:
+            values[
+                {
+                    "VmRSS": "rss_bytes",
+                    "RssAnon": "anonymous_rss_bytes",
+                    "RssFile": "file_rss_bytes",
+                    "VmData": "data_bytes",
+                }[key]
+            ] = value
+        elif section == "smaps" and key == "Pss":
+            values["pss_bytes"] = value
+        elif section == "smaps" and key in {
+            "Private_Clean",
+            "Private_Dirty",
+            "Private_Hugetlb",
+        }:
+            private_kib += int(raw_value)
+    if private_kib:
+        values["uss_bytes"] = private_kib * 1024
+    if "rss_bytes" not in values or "pss_bytes" not in values or "uss_bytes" not in values:
+        raise RuntimeError("container process memory metrics are incomplete")
+    return values
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Capture Gate C host and runtime metrics.")
     parser.add_argument("--project", required=True)
@@ -167,6 +223,11 @@ def _docker_stats(project: str) -> list[dict[str, Any]]:
             record["file_descriptor_limit"] = descriptors["limit"]
         except Exception as exc:
             record["file_descriptor_error"] = type(exc).__name__
+        if record.get("service") == "api":
+            try:
+                record["process_memory"] = _process_memory_metrics(executable, name)
+            except Exception as exc:
+                record["process_memory_error"] = type(exc).__name__
         records.append(record)
     return records
 

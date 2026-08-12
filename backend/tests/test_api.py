@@ -63,6 +63,12 @@ class StubTenantAuthorizer:
         )
 
 
+class StubWakeListener:
+    def __init__(self, *, connected: bool) -> None:
+        self.running = True
+        self.connected = connected
+
+
 def install_auth_stubs(app, *, scopes: frozenset[str]) -> None:
     app.state.token_verifier = StubTokenVerifier(scopes=scopes)
     app.state.tenant_authorizer = StubTenantAuthorizer()
@@ -110,6 +116,30 @@ async def test_health_and_envelope_validation(monkeypatch, tmp_path: Path, make_
         )
         assert invalid.status_code == 422
         assert invalid.json()["error"]["error_code"] == "LIYAN-CONTRACT-INVALID"
+    get_settings.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_readiness_reports_degraded_outbox_wake_listener_without_blocking_polling(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("LIYAN_AUDIT_LOG_PATH", str(tmp_path / "audit.jsonl"))
+    get_settings.cache_clear()
+    app = create_app()
+    transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=transport, base_url="http://testserver") as client,
+    ):
+        app.state.database_health = StubDatabaseHealthProbe()
+        app.state.outbox_wake_listener = StubWakeListener(connected=False)
+        install_auth_stubs(app, scopes=frozenset())
+
+        response = await client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json()["outbox_wake_listener"] == "degraded"
     get_settings.cache_clear()
 
 

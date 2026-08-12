@@ -21,7 +21,11 @@ from gate_c.config import (  # noqa: E402
     is_duplicate_replay_client,
     is_slow_consumer,
 )
-from gate_c.monitor import _size_bytes, _split_stat_bytes  # noqa: E402
+from gate_c.monitor import (  # noqa: E402
+    _process_memory_metrics,
+    _size_bytes,
+    _split_stat_bytes,
+)
 from gate_c.publisher import _http_failure  # noqa: E402
 from gate_c.recorder import GateCRecorder  # noqa: E402
 from gate_c.runtime_controls import summarize_api_log  # noqa: E402
@@ -53,6 +57,71 @@ def test_gate_c_workload_has_two_tenants_and_topic4_projection() -> None:
     assert workload.event_type.startswith("topic4.")
     assert workload.integer("duplicate_replay_percent") == 5
     assert workload.integer("forced_disconnect_after_sustain_seconds") == 5
+
+
+def test_gate_c_monitor_parses_process_memory_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Result:
+        stdout = """\
+VmRSS:       100 kB
+RssAnon:      60 kB
+RssFile:      40 kB
+VmData:      120 kB
+__SMAPS_ROLLUP__
+Pss:          90 kB
+Private_Clean: 10 kB
+Private_Dirty: 70 kB
+Private_Hugetlb: 2 kB
+__MAP_COUNT__
+37
+"""
+
+    def run(*args, **kwargs):
+        assert args[0][:4] == ["docker", "exec", "api-1", "sh"]
+        assert kwargs == {
+            "check": True,
+            "capture_output": True,
+            "text": True,
+            "timeout": 10,
+        }
+        return Result()
+
+    monkeypatch.setattr("gate_c.monitor.subprocess.run", run)
+
+    assert _process_memory_metrics("docker", "api-1") == {
+        "rss_bytes": 100 * 1024,
+        "anonymous_rss_bytes": 60 * 1024,
+        "file_rss_bytes": 40 * 1024,
+        "data_bytes": 120 * 1024,
+        "pss_bytes": 90 * 1024,
+        "uss_bytes": 82 * 1024,
+        "map_count": 37,
+    }
+
+
+def test_gate_c_monitor_rejects_incomplete_process_memory_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Result:
+        stdout = "VmRSS: 100 kB\n__SMAPS_ROLLUP__\n__MAP_COUNT__\n4\n"
+
+    monkeypatch.setattr("gate_c.monitor.subprocess.run", lambda *args, **kwargs: Result())
+
+    with pytest.raises(RuntimeError, match="incomplete"):
+        _process_memory_metrics("docker", "api-1")
+
+
+def test_backend_runtime_uses_process_start_allocator_configuration() -> None:
+    dockerfile = (Path(__file__).resolve().parents[2] / "infra" / "backend.Dockerfile").read_text(
+        encoding="utf-8"
+    )
+
+    assert "jemalloc=5.3.0-r6" in dockerfile
+    assert "PYTHONMALLOC=malloc" in dockerfile
+    assert "LD_PRELOAD=/usr/lib/libjemalloc.so.2" in dockerfile
+    assert "dirty_decay_ms:1000" in dockerfile
+    assert "muzzy_decay_ms:1000" in dockerfile
+    assert "malloc_trim" not in dockerfile
+    assert "gc.collect" not in dockerfile
 
 
 def test_frame_activity_scanner_handles_fragmented_heartbeat_and_event() -> None:

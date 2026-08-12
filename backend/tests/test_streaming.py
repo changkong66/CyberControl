@@ -12,7 +12,7 @@ import pytest
 from pydantic import ValidationError
 
 import liyans.infrastructure.streaming.sse as sse_module
-from liyans.api.streaming import TenantScopedSSEStream
+from liyans.api.streaming import OwnedStreamingResponse, TenantScopedSSEStream
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import TenantContext
 from liyans.infrastructure.observability.metrics import PlatformMetrics
@@ -967,6 +967,82 @@ async def test_http_scope_falls_back_to_watcher_for_asgi_24() -> None:
 
     await stream.aclose()
     assert stream._disconnect_task is None
+
+
+@pytest.mark.asyncio
+async def test_owned_streaming_response_cancels_and_awaits_asgi_23_peer_task() -> None:
+    body_closed = asyncio.Event()
+    receive_cancelled = asyncio.Event()
+    started = asyncio.Event()
+    sent: list[dict[str, object]] = []
+
+    async def body():
+        try:
+            yield b"data: ready\\n\\n"
+            started.set()
+            await asyncio.Event().wait()
+        finally:
+            body_closed.set()
+
+    async def receive() -> dict[str, str]:
+        try:
+            await started.wait()
+            return {"type": "http.disconnect"}
+        except asyncio.CancelledError:
+            receive_cancelled.set()
+            raise
+
+    async def send(message: dict[str, object]) -> None:
+        sent.append(message)
+
+    response = OwnedStreamingResponse(body(), media_type="text/event-stream")
+    await response(
+        {"type": "http", "asgi": {"spec_version": "2.3"}},
+        receive,
+        send,
+    )
+
+    assert body_closed.is_set()
+    assert receive_cancelled.is_set() is False
+    assert [message["type"] for message in sent] == [
+        "http.response.start",
+        "http.response.body",
+    ]
+    assert not any(
+        task.get_name() in {"sse-response-send", "sse-response-disconnect"}
+        for task in asyncio.all_tasks()
+        if task is not asyncio.current_task()
+    )
+
+
+@pytest.mark.asyncio
+async def test_owned_streaming_response_propagates_send_failure_after_peer_cleanup() -> None:
+    receive_cancelled = asyncio.Event()
+
+    async def body():
+        yield b"data: ready\\n\\n"
+
+    async def receive() -> dict[str, str]:
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            receive_cancelled.set()
+            raise
+        return {"type": "http.disconnect"}
+
+    async def send(message: dict[str, object]) -> None:
+        if message["type"] == "http.response.body":
+            raise RuntimeError("socket write failed")
+
+    response = OwnedStreamingResponse(body(), media_type="text/event-stream")
+    with pytest.raises(RuntimeError, match="socket write failed"):
+        await response(
+            {"type": "http", "asgi": {"spec_version": "2.3"}},
+            receive,
+            send,
+        )
+
+    assert receive_cancelled.is_set()
 
 
 @pytest.mark.asyncio

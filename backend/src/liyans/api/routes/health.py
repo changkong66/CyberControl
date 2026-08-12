@@ -21,6 +21,17 @@ async def ready(request: Request, response: Response) -> dict[str, object]:
     auth_configured = request.app.state.auth_configured
     publisher = request.app.state.outbox_publisher
     publisher_ready = publisher is None or publisher.healthy
+    wake_listener = getattr(request.app.state, "outbox_wake_listener", None)
+    wake_listener_ready = wake_listener is None or (
+        wake_listener.running and wake_listener.connected
+    )
+    wake_listener_status = (
+        "disabled"
+        if wake_listener is None
+        else "connected"
+        if wake_listener.connected
+        else "degraded"
+    )
     bridge = request.app.state.sse_notification_bridge
     bridge_ready = bridge is None or (bridge.running and bridge.connected)
     ready_status = (
@@ -37,6 +48,7 @@ async def ready(request: Request, response: Response) -> dict[str, object]:
     metrics.set_component_ready("message_bus", not message_bus.closed)
     metrics.set_component_ready("authentication", auth_configured)
     metrics.set_component_ready("outbox_publisher", publisher_ready)
+    metrics.set_component_ready("outbox_wake_listener", wake_listener_ready)
     metrics.set_component_ready("sse_notification_bridge", bridge_ready)
     return {
         "status": "ready" if ready_status else "degraded",
@@ -56,6 +68,7 @@ async def ready(request: Request, response: Response) -> dict[str, object]:
             if publisher is not None
             else "disabled"
         ),
+        "outbox_wake_listener": wake_listener_status,
         "sse_notification_bridge": (
             "connected" if bridge is not None and bridge.connected else "disabled"
         ),

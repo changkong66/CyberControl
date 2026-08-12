@@ -13,6 +13,7 @@ from .outbox_publisher import MessageBusOutboxSink, OutboxPublisher
 from .postgres_artifacts import PostgresArtifactRepository
 from .postgres_outbox import PostgresOutboxRepository
 from .postgres_outbox_dispatcher import PostgresOutboxDispatcherRepository
+from .postgres_outbox_notifications import PostgresOutboxWakeListener
 
 __all__ = [
     "ArtifactObjectStore",
@@ -28,5 +29,6 @@ __all__ = [
     "PostgresArtifactRepository",
     "PostgresOutboxDispatcherRepository",
     "PostgresOutboxRepository",
+    "PostgresOutboxWakeListener",
     "StoredArtifactObject",
 ]

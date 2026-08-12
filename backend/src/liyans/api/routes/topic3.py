@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
-from fastapi.responses import StreamingResponse
 from liyans_contracts.envelope import (
     DeliveryMetadataV1,
     MessageKind,
@@ -15,7 +14,7 @@ from liyans_contracts.envelope import (
 from liyans_contracts.topic3 import Topic3GenerationCommandV1
 
 from liyans.api.auth import require_scopes
-from liyans.api.streaming import TenantScopedSSEStream
+from liyans.api.streaming import OwnedStreamingResponse, TenantScopedSSEStream
 from liyans.core.errors import ContractError, ErrorCategory, ErrorCode, LiyanError
 from liyans.core.tenant import assert_tenant, current_tenant
 from liyans.domains.generation.compatibility import CompatibilityError, Topic3EnvelopeAdapter
@@ -279,7 +278,7 @@ async def publish_sse_event(request: Request, body: dict[str, Any]) -> dict[str,
 async def stream_sse(
     request: Request,
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
-) -> StreamingResponse:
+) -> OwnedStreamingResponse:
     context = current_tenant()
     after_sequence = None
     if last_event_id:
@@ -293,7 +292,7 @@ async def stream_sse(
         after_sequence=after_sequence,
     )
 
-    return StreamingResponse(
+    return OwnedStreamingResponse(
         TenantScopedSSEStream(
             request,
             subscription,
