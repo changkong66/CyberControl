@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
 from liyans_contracts.envelope import MessagePriority, Topic3EnvelopeV1
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from sqlalchemy.exc import DBAPIError
 
 from liyans.core.errors import ErrorCode, LiyanError
@@ -588,3 +588,79 @@ async def test_restart_recovers_claim_and_duplicate_completion_marks_outbox_publ
             )
     assert state == OutboxStatus.PUBLISHED.value
     assert handler_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_recovers_expired_pending_claim_on_the_next_claim(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    message = await _append(
+        database,
+        context,
+        partition=f"{context.tenant_id}:expired-pending",
+        sequence=0,
+        max_attempts=3,
+    )
+    repository = PostgresOutboxDispatcherRepository(
+        postgres_dispatcher,
+        claim_lease_seconds=30,
+    )
+    claimed = await repository.claim_batch("expired-owner", 1000)
+    assert message.outbox_id in {item.outbox_id for item in claimed}
+
+    expired_at = datetime.now(UTC) - timedelta(seconds=1)
+    with tenant_scope(context):
+        async with database.transaction(context=session_context_from_tenant(context)) as session:
+            await session.execute(
+                update(OutboxMessageModel)
+                .where(OutboxMessageModel.outbox_id == message.outbox_id)
+                .values(claim_expires_at=expired_at)
+            )
+
+    recovered = await repository.claim_batch("recovery-owner", 1000)
+    recovered_message = next(item for item in recovered if item.outbox_id == message.outbox_id)
+    assert recovered_message.attempts == 2
+    assert recovered_message.claimed_at is not None
+    await repository.mark_published(message.outbox_id, "recovery-owner", datetime.now(UTC))
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_moves_expired_max_attempt_claim_directly_to_dead(
+    postgres_runtime,
+    postgres_dispatcher,
+) -> None:
+    database, _migrator, context = postgres_runtime
+    message = await _append(
+        database,
+        context,
+        partition=f"{context.tenant_id}:expired-dead",
+        sequence=0,
+        max_attempts=1,
+    )
+    repository = PostgresOutboxDispatcherRepository(
+        postgres_dispatcher,
+        claim_lease_seconds=30,
+    )
+    claimed = await repository.claim_batch("dead-owner", 1000)
+    assert message.outbox_id in {item.outbox_id for item in claimed}
+
+    with tenant_scope(context):
+        async with database.transaction(context=session_context_from_tenant(context)) as session:
+            await session.execute(
+                update(OutboxMessageModel)
+                .where(OutboxMessageModel.outbox_id == message.outbox_id)
+                .values(claim_expires_at=datetime.now(UTC) - timedelta(seconds=1))
+            )
+
+    dead_probe = await repository.claim_batch("probe", 1000)
+    assert all(item.outbox_id != message.outbox_id for item in dead_probe)
+    with tenant_scope(context):
+        async with database.transaction(context=session_context_from_tenant(context)) as session:
+            state = await session.scalar(
+                select(OutboxMessageModel.state).where(
+                    OutboxMessageModel.outbox_id == message.outbox_id
+                )
+            )
+    assert state == OutboxStatus.DEAD.value

@@ -31,23 +31,47 @@ class TenantScopedSSEStream(AsyncIterator[bytes]):
         self._disconnect_poll_seconds = 0.5
         self._disconnect_task: asyncio.Task[None] | None = None
 
+    @property
+    def _response_owns_disconnect_cancellation(self) -> bool:
+        """Use Starlette's listener only for ASGI servers that provide it."""
+
+        scope = getattr(self._request, "scope", None)
+        if not isinstance(scope, dict) or scope.get("type") != "http":
+            return False
+        asgi = scope.get("asgi")
+        if not isinstance(asgi, dict):
+            return False
+        raw_spec_version = asgi.get("spec_version", "2.0")
+        try:
+            major, minor = (int(part) for part in str(raw_spec_version).split(".", 1))
+        except (TypeError, ValueError):
+            return False
+        return (major, minor) < (2, 4)
+
     def __aiter__(self) -> TenantScopedSSEStream:
         return self
 
     async def __anext__(self) -> bytes:
         if self._closed:
             raise StopAsyncIteration
-        self._ensure_disconnect_watcher()
+        if not self._response_owns_disconnect_cancellation:
+            self._ensure_disconnect_watcher()
         try:
             while True:
-                if await self._request.is_disconnected():
+                if (
+                    not self._response_owns_disconnect_cancellation
+                    and await self._request.is_disconnected()
+                ):
                     await self._close_from_advance()
                     raise StopAsyncIteration
                 event = await next_tenant_scoped_event(
                     self._subscription,
                     self._context,
                 )
-                if await self._request.is_disconnected():
+                if (
+                    not self._response_owns_disconnect_cancellation
+                    and await self._request.is_disconnected()
+                ):
                     await self._close_from_advance()
                     raise StopAsyncIteration
                 if event is None:

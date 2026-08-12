@@ -271,25 +271,16 @@ class PostgresOutboxDispatcherRepository:
             .where(
                 OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
                 OutboxMessageModel.claim_expires_at <= now,
-                OutboxMessageModel.attempts >= OutboxMessageModel.max_attempts,
+                OutboxMessageModel.attempts >= 0,
             )
             .values(
-                state=OutboxStatus.DEAD.value,
-                claimed_by=None,
-                claimed_at=None,
-                claim_expires_at=None,
-                updated_at=now,
-            )
-        )
-        await session.execute(
-            update(OutboxMessageModel)
-            .where(
-                OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
-                OutboxMessageModel.claim_expires_at <= now,
-                OutboxMessageModel.attempts < OutboxMessageModel.max_attempts,
-            )
-            .values(
-                state=OutboxStatus.PENDING.value,
+                state=case(
+                    (
+                        OutboxMessageModel.attempts >= OutboxMessageModel.max_attempts,
+                        OutboxStatus.DEAD.value,
+                    ),
+                    else_=OutboxStatus.PENDING.value,
+                ),
                 claimed_by=None,
                 claimed_at=None,
                 claim_expires_at=None,
