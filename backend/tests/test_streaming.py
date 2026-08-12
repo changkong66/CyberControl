@@ -157,14 +157,45 @@ async def test_broker_coalesces_identical_subscription_replay_queries() -> None:
             self.latest_calls += 1
             return await super().latest_sequence(tenant_id)
 
+    class CoordinatedBroker(SSEBroker):
+        def __init__(self, replay_log) -> None:
+            super().__init__(replay_log, replay_cache_seconds=0.01)
+            self.replay_arrivals = 0
+            self.both_replays_arrived = asyncio.Event()
+            self.release_replay = asyncio.Event()
+
+        async def _coalesced_replay(
+            self,
+            tenant_id,
+            after_sequence,
+            *,
+            through_sequence,
+        ):
+            self.replay_arrivals += 1
+            if self.replay_arrivals == 2:
+                self.both_replays_arrived.set()
+            await self.both_replays_arrived.wait()
+            result = await super()._coalesced_replay(
+                tenant_id,
+                after_sequence,
+                through_sequence=through_sequence,
+            )
+            await self.release_replay.wait()
+            return result
+
     log = CountingReplayLog()
     event = await log.append("tenant-a", "progress", {"value": 1})
-    broker = SSEBroker(log, replay_cache_seconds=0.01)
+    broker = CoordinatedBroker(log)
     first = broker.subscribe("tenant-a", heartbeat_seconds=60)
     second = broker.subscribe("tenant-a", heartbeat_seconds=60)
 
-    assert await anext(first) == event
-    assert await anext(second) == event
+    first_event = asyncio.create_task(anext(first))
+    second_event = asyncio.create_task(anext(second))
+    await broker.both_replays_arrived.wait()
+    broker.release_replay.set()
+
+    assert await first_event == event
+    assert await second_event == event
     assert log.replay_calls == 1
     assert log.latest_calls == 1
 
@@ -721,6 +752,16 @@ def test_encode_sse_frame_preserves_multiline_json_payload() -> None:
     assert frame.endswith("\n\n")
 
 
+def test_encode_sse_frame_is_byte_compatible_with_uncached_encoding() -> None:
+    event = _event(7, event_type="topic3.gate-c.probe", value="line-1\nline-2")
+    expected = (
+        f"id: signed-cursor\nevent: {event.event_type}\ndata: {event.data_json}\n\n"
+    ).encode()
+
+    assert encode_sse_frame(event, "signed-cursor") == expected
+    assert event.frame_body == expected.removeprefix(b"id: signed-cursor\n")
+
+
 def test_chunk_assembler_rejects_duplicate_index_and_late_fragments() -> None:
     stream_id = uuid4()
     candidate_id = uuid4()
@@ -864,6 +905,68 @@ def test_sse_event_reuses_serialized_payload_for_fanout_and_frame_encoding(
         assert b'"nested":["value"]' in sse_module.encode_sse_frame(event, "cursor")
 
     assert calls == 1
+
+
+def test_replay_cursor_cache_is_bounded_lru_and_tenant_bound() -> None:
+    codec = ReplayCursorCodec(b"x" * 32, cache_size=2)
+    tenant_a_zero = codec.encode("tenant-a", 0)
+    codec.encode("tenant-a", 1)
+    assert codec.encode("tenant-a", 0) == tenant_a_zero
+
+    codec.encode("tenant-a", 2)
+    assert ("tenant-a", 1) not in codec._encoded
+    assert codec.decode(tenant_a_zero, "tenant-a") == 0
+    with pytest.raises(LiyanError):
+        codec.decode(tenant_a_zero, "tenant-b")
+
+
+@pytest.mark.asyncio
+async def test_http_scope_uses_starlette_disconnect_owner_for_asgi_23() -> None:
+    class Request:
+        scope = {"type": "http", "asgi": {"version": "3.0", "spec_version": "2.3"}}
+
+        async def is_disconnected(self) -> bool:
+            raise AssertionError("the response listener owns the ASGI 2.3 receive channel")
+
+    broker = SSEBroker(InMemorySSEReplayLog())
+    subscription = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    context = TenantContext(
+        tenant_id="tenant-a",
+        subject_ref="subject-a",
+        roles=frozenset({"learner"}),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id="0" * 32,
+    )
+    stream = TenantScopedSSEStream(Request(), subscription, context, object())
+
+    assert await anext(stream) == b": heartbeat\n\n"
+    assert stream._disconnect_task is None
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_http_scope_falls_back_to_watcher_for_asgi_24() -> None:
+    class Request:
+        scope = {"type": "http", "asgi": {"version": "3.0", "spec_version": "2.4"}}
+
+        async def is_disconnected(self) -> bool:
+            return False
+
+    broker = SSEBroker(InMemorySSEReplayLog())
+    subscription = broker.subscribe("tenant-a", heartbeat_seconds=0.001)
+    context = TenantContext(
+        tenant_id="tenant-a",
+        subject_ref="subject-a",
+        roles=frozenset({"learner"}),
+        scopes=frozenset({"topic4:sse:read"}),
+        trace_id="0" * 32,
+    )
+    stream = TenantScopedSSEStream(Request(), subscription, context, object())
+    assert await anext(stream) == b": heartbeat\n\n"
+    assert stream._disconnect_task is not None
+
+    await stream.aclose()
+    assert stream._disconnect_task is None
 
 
 @pytest.mark.asyncio

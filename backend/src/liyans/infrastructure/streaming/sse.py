@@ -260,6 +260,7 @@ class SSEEvent:
     data: dict[str, Any]
     emitted_at: datetime
     _data_json: str = field(init=False, repr=False, compare=False)
+    _frame_body: bytes = field(init=False, repr=False, compare=False)
     _size_bytes: int = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -272,6 +273,9 @@ class SSEEvent:
             separators=(",", ":"),
         )
         object.__setattr__(self, "_data_json", encoded)
+        lines = [f"event: {self.event_type}"]
+        lines.extend(f"data: {line}" for line in encoded.splitlines() or [""])
+        object.__setattr__(self, "_frame_body", ("\n".join(lines) + "\n\n").encode("utf-8"))
         object.__setattr__(
             self,
             "_size_bytes",
@@ -285,6 +289,10 @@ class SSEEvent:
     @property
     def size_bytes(self) -> int:
         return self._size_bytes
+
+    @property
+    def frame_body(self) -> bytes:
+        return self._frame_body
 
 
 class SSEReplayLog(Protocol):
@@ -313,17 +321,31 @@ class SSEMetricsObserver(Protocol):
 
 
 class ReplayCursorCodec:
-    def __init__(self, secret: bytes) -> None:
+    def __init__(self, secret: bytes, *, cache_size: int = 8192) -> None:
         if len(secret) < 32:
             raise ValueError("SSE cursor secret must contain at least 32 bytes")
+        if not 1 <= cache_size <= 100_000:
+            raise ValueError("SSE cursor cache_size must be between one and 100000")
         self._secret = secret
+        self._cache_size = cache_size
+        self._encoded: OrderedDict[tuple[str, int], str] = OrderedDict()
 
     def encode(self, tenant_id: str, sequence: int) -> str:
         if not tenant_id or sequence < 0:
             raise ValueError("SSE cursor tenant and nonnegative sequence are required")
+        key = (tenant_id, sequence)
+        cached = self._encoded.get(key)
+        if cached is not None:
+            self._encoded.move_to_end(key)
+            return cached
         payload = f"{tenant_id}:{sequence}".encode()
         signature = hmac.new(self._secret, payload, hashlib.sha256).digest()
-        return base64.urlsafe_b64encode(payload + b"." + signature).decode("ascii").rstrip("=")
+        cursor = base64.urlsafe_b64encode(payload + b"." + signature).decode("ascii").rstrip("=")
+        self._encoded[key] = cursor
+        self._encoded.move_to_end(key)
+        while len(self._encoded) > self._cache_size:
+            self._encoded.popitem(last=False)
+        return cursor
 
     def decode(self, cursor: str, tenant_id: str) -> int:
         try:
@@ -1565,7 +1587,4 @@ class SSEBroker:
 
 
 def encode_sse_frame(event: SSEEvent, cursor: str) -> bytes:
-    data = event.data_json
-    lines = [f"id: {cursor}", f"event: {event.event_type}"]
-    lines.extend(f"data: {line}" for line in data.splitlines() or [""])
-    return ("\n".join(lines) + "\n\n").encode("utf-8")
+    return b"id: " + cursor.encode("ascii") + b"\n" + event.frame_body

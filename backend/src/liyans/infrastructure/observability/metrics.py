@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from time import perf_counter
+from bisect import bisect_left
+from collections.abc import Iterable
+from threading import Lock
+from time import perf_counter, time
 from typing import Final
 
 from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram
+from prometheus_client.core import Metric
 from prometheus_client.exposition import generate_latest
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -13,6 +17,91 @@ APPROVED_HTTP_METHODS: Final = frozenset(
 APPROVED_DATABASE_POOL_NAMES: Final = frozenset(
     {"api", "identity-reconciler", "outbox-dispatcher", "other"}
 )
+
+
+class _BatchedHistogramChild:
+    def __init__(self, histogram: _BatchedHistogram, label_values: tuple[str, ...]) -> None:
+        self._histogram = histogram
+        self._label_values = label_values
+
+    def observe(self, value: float) -> None:
+        self._histogram.observe(self._label_values, value)
+
+
+class _BatchedHistogram:
+    """Exact fixed-bucket histogram with one lock per observation.
+
+    The public exposition is identical to prometheus_client's Histogram. The
+    local implementation avoids taking one lock for every cumulative bucket on
+    the SSE and Outbox hot paths, while retaining every observation.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        documentation: str,
+        labelnames: tuple[str, ...],
+        buckets: Iterable[float],
+        *,
+        registry: CollectorRegistry,
+    ) -> None:
+        self._name = name
+        self._documentation = documentation
+        self._labelnames = labelnames
+        self._bounds = tuple(float(bound) for bound in buckets) + (float("inf"),)
+        self._states: dict[tuple[str, ...], tuple[list[int], float, int, float]] = {}
+        self._lock = Lock()
+        registry.register(self)
+
+    def labels(self, *label_values: str, **label_kwargs: str) -> _BatchedHistogramChild:
+        if label_kwargs:
+            if label_values or set(label_kwargs) != set(self._labelnames):
+                raise ValueError("histogram labels must be positional or complete keyword labels")
+            label_values = tuple(label_kwargs[name] for name in self._labelnames)
+        values = self._normalize_label_values(label_values)
+        with self._lock:
+            if values not in self._states:
+                self._states[values] = ([0] * len(self._bounds), 0.0, 0, time())
+        return _BatchedHistogramChild(self, values)
+
+    def observe(self, label_values: tuple[str, ...], value: float) -> None:
+        if value < 0 or value != value or value == float("inf") or value == float("-inf"):
+            raise ValueError("histogram observations must be finite and nonnegative")
+        values = self._normalize_label_values(label_values)
+        with self._lock:
+            state = self._states.get(values)
+            if state is None:
+                state = ([0] * len(self._bounds), 0.0, 0, time())
+            buckets, total, count, created = state
+            buckets[bisect_left(self._bounds, value)] += 1
+            self._states[values] = (buckets, total + value, count + 1, created)
+
+    def _normalize_label_values(self, label_values: tuple[str, ...]) -> tuple[str, ...]:
+        if len(label_values) != len(self._labelnames):
+            raise ValueError("histogram label count does not match the metric definition")
+        return tuple(str(value) for value in label_values)
+
+    def collect(self):
+        metric = Metric(self._name, self._documentation, "histogram")
+        with self._lock:
+            states = [
+                (labels, list(buckets), total, count, created)
+                for labels, (buckets, total, count, created) in self._states.items()
+            ]
+        for labels, buckets, total, count, created in states:
+            label_set = dict(zip(self._labelnames, labels, strict=True))
+            cumulative = 0
+            for bound, bucket_count in zip(self._bounds, buckets, strict=True):
+                cumulative += bucket_count
+                metric.add_sample(
+                    f"{self._name}_bucket",
+                    {**label_set, "le": "+Inf" if bound == float("inf") else str(bound)},
+                    float(cumulative),
+                )
+            metric.add_sample(f"{self._name}_sum", label_set, total)
+            metric.add_sample(f"{self._name}_count", label_set, float(count))
+            metric.add_sample(f"{self._name}_created", label_set, created)
+        yield metric
 
 
 class PlatformMetrics:
@@ -39,7 +128,7 @@ class PlatformMetrics:
             ("operation", "outcome"),
             registry=self.registry,
         )
-        self._outbox_latency = Histogram(
+        self._outbox_latency = _BatchedHistogram(
             "liyans_outbox_latency_seconds",
             "Outbox lifecycle latency by measured stage.",
             ("stage",),
@@ -52,7 +141,7 @@ class PlatformMetrics:
             ("operation", "outcome"),
             registry=self.registry,
         )
-        self._sse_latency = Histogram(
+        self._sse_latency = _BatchedHistogram(
             "liyans_sse_latency_seconds",
             "SSE lifecycle latency by measured stage.",
             ("stage",),
@@ -137,14 +226,14 @@ class PlatformMetrics:
             self._outbox_operations.labels(operation, outcome).inc(count)
 
     def observe_outbox_latency(self, stage: str, duration_seconds: float) -> None:
-        self._outbox_latency.labels(stage[:64]).observe(max(0.0, duration_seconds))
+        self._outbox_latency.observe((stage[:64],), max(0.0, duration_seconds))
 
     def observe_sse(self, operation: str, outcome: str, count: int = 1) -> None:
         if count > 0:
             self._sse_operations.labels(operation, outcome).inc(count)
 
     def observe_sse_latency(self, stage: str, duration_seconds: float) -> None:
-        self._sse_latency.labels(stage[:64]).observe(max(0.0, duration_seconds))
+        self._sse_latency.observe((stage[:64],), max(0.0, duration_seconds))
 
     def set_sse_gauge(self, metric: str, value: int) -> None:
         self._sse_gauges.labels(metric[:64]).set(max(0, value))

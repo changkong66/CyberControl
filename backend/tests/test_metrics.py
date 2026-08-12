@@ -7,7 +7,41 @@ import pytest
 from fastapi import FastAPI
 
 from liyans.api.routes.metrics import metrics as metrics_route
-from liyans.infrastructure.observability.metrics import HTTPMetricsMiddleware, PlatformMetrics
+from liyans.infrastructure.observability.metrics import (
+    HTTPMetricsMiddleware,
+    PlatformMetrics,
+)
+
+
+def test_batched_histogram_matches_prometheus_histogram_observation_semantics() -> None:
+    metrics = PlatformMetrics()
+    observations = (0.004, 0.011, 0.7, 11.0)
+    for value in observations:
+        metrics.observe_sse_latency("fanout_locked", value)
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'liyans_sse_latency_seconds_bucket{le="0.005",stage="fanout_locked"} 1.0' in rendered
+    assert 'liyans_sse_latency_seconds_bucket{le="0.01",stage="fanout_locked"} 1.0' in rendered
+    assert 'liyans_sse_latency_seconds_bucket{le="1.0",stage="fanout_locked"} 3.0' in rendered
+    assert 'liyans_sse_latency_seconds_bucket{le="+Inf",stage="fanout_locked"} 4.0' in rendered
+    assert 'liyans_sse_latency_seconds_count{stage="fanout_locked"} 4.0' in rendered
+    assert 'liyans_sse_latency_seconds_sum{stage="fanout_locked"} 11.715' in rendered
+
+
+def test_batched_histogram_observations_are_not_lost_under_concurrency() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    metrics = PlatformMetrics()
+
+    def observe_many() -> None:
+        for _ in range(250):
+            metrics.observe_sse_latency("fanout_locked", 0.01)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(lambda _index: observe_many(), range(8)))
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'liyans_sse_latency_seconds_count{stage="fanout_locked"} 2000.0' in rendered
 
 
 def test_metrics_use_isolated_registries_and_never_label_raw_tenants() -> None:
