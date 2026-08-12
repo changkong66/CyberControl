@@ -2,18 +2,18 @@
 
 ## Decision
 
-Protected-main Gate C sixth-remediation baseline
-`a6979d760701271d579776b082dabe247ac6138b` remains a **release candidate**, but
-Gate C is **not accepted**. The sixth-remediation workload passed 20, 200 and
-500 authenticated streams, then failed frozen delivery and Outbox-latency
-controls at 1,000 streams. The fail-fast harness did not execute the 2,000
-stream or ten-minute recovery stages.
+Protected-main Gate C seventh-remediation baseline
+`fa5b4bd92e4b56704f70b63416906a10c54e0ee1` remains a **release candidate**,
+but Gate C is **not accepted**. The seventh-remediation workload completed and
+stage-locally passed 20, 200, 500, 1,000 and 2,000 authenticated streams plus
+the ten-minute recovery observation. The final aggregate failed the frozen
+Outbox p95 and post-ramp memory-recovery controls.
 
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
-initial Gate C failure and all six remediation reruns are preserved as
+initial Gate C failure and all seven remediation reruns are preserved as
 distinct evidence snapshots. Gate D, Gate E, Gate F and Gate G remain serially
 locked. No single-host production capacity claim is permitted.
 
@@ -95,6 +95,12 @@ locked. No single-host production capacity claim is permitted.
 - PR #62 push CI: [Run 31544016873](https://github.com/changkong66/CyberControl/actions/runs/31544016873), 8/8
 - PR #62 pull-request CI: [Run 31544021134](https://github.com/changkong66/CyberControl/actions/runs/31544021134), 8/8
 - PR #62 protected-main CI: [Run 31544460542](https://github.com/changkong66/CyberControl/actions/runs/31544460542), 8/8
+- Gate C seventh remediation PR:
+  [#64](https://github.com/changkong66/CyberControl/pull/64), Squash Merge
+  `fa5b4bd92e4b56704f70b63416906a10c54e0ee1`
+- PR #64 push CI: [Run 31592761559](https://github.com/changkong66/CyberControl/actions/runs/31592761559), 8/8
+- PR #64 pull-request CI: [Run 31592947063](https://github.com/changkong66/CyberControl/actions/runs/31592947063), 8/8
+- PR #64 protected-main CI: [Run 31593377181](https://github.com/changkong66/CyberControl/actions/runs/31593377181), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -461,55 +467,106 @@ The immutable external package is `2,047,902` bytes with SHA256
 [download evidence package](https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-fifth-remediation-failed-20260808-76cd099/gate-c-20260808T154326Z-76cd099a034a-fifth-remediation-failed-evidence-v1.zip).
 The package JWT/credential scan passed with zero hits.
 
+## Gate C Seventh Remediation Rerun Evidence
 
-## Source And Runtime Fingerprints
+The seventh-remediation rerun was bound to protected main
+`fa5b4bd92e4b56704f70b63416906a10c54e0ee1`, tree
+`a9f020fd5cceb7a094439ad4c4089b63d3b473a7`, with newly built images, real
+Keycloak-issued Tokens, two tenants, twenty real subjects, a unique Compose
+project and a fresh PostgreSQL volume. It executed the complete frozen workload
+and the fixed ten-minute recovery observation.
 
-- Compose config SHA256: `753f194f5d0863270e88db16c7120845bd3ccfa741075edfca2a99fba582657f`
-- `uv.lock` SHA256: `a8785433e7f7f5889cca945ebc445f432e352e281caf57bd84b117a0cbb56ecb`
-- `frontend/pnpm-lock.yaml` SHA256: `3deaa86d71b429a38db5eb2d99db110794448acf2c6958befca5d369b717b295`
-- Backend image: `sha256:2b8576edf35d31903b0deecf3c1a3ad8f045a92f405e5c6408cf87cf719c344a`
-- Frontend image: `sha256:bdb772e9172bf7f59607bf95ca2d20deab8e1019709419176df99e12fca8b5f2`
-- Mock Provider image: `sha256:beadb8d8873079e74c72716e6dd53fd23d437a5f6dd2d7202516c3218260ab27`
-- Trivy findings at all severities: backend 0, frontend 0, Mock Provider 0
+| Check | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Active authenticated streams | 2,000 for 1,803s | 2,000 for >=1,800s | PASS |
+| Connection / reconnect success | 1.0 / 1.0 | >=0.995 / >=0.999 | PASS |
+| Delivery latency p95/p99 | 781 / 990ms | <=1,000 / <=3,000ms | PASS |
+| Event loss / duplicate final render | 0 / 0 | 0 / 0 | PASS |
+| Cross-tenant leakage / invalid cursor acceptance | 0 / 0 | 0 / 0 | PASS |
+| HTTP 5xx / unexpected disconnect | 0 / 0 | <=0.1% / <=0.5% | PASS |
+| Outbox `DEAD` | 0 | 0 | PASS |
+| Outbox lag p95 | 2,225.796ms | <=2,000ms | **FAIL** |
+| Outbox lag p99 | 3,026.102ms | <=5,000ms | PASS |
+| Post-ramp API RSS ratio | 1.492792 | <=1.10 | **FAIL** |
 
-## Database Invariants
+The API RSS first/last/peak values were `276404634 / 412614656 / 448371098`
+bytes. Final subscribers, closing owners, queued events/bytes, replay buffers,
+replay caches and replay tasks were all zero. API file descriptors returned
+from 29 to 30 after peaking at 2,039 against a 1,048,576 limit. The API logs
+contained zero `aclose()` races, tracebacks, errors, pool timeouts, OOMs or
+unplanned restarts. These passed controls must not regress, but they do not
+override the two failed aggregate controls.
 
+PostgreSQL terminal evidence reports migration head `20260720_0010`, FORCE RLS
+`74/74`, `57` append-only triggers, Outbox `PUBLISHED=221`, `DEAD=0`, and zero
+foreign-tenant visibility. The original failed volume and the read-only-derived
+forensic volume remain preserved.
+
+Seventh-remediation evidence files:
+
+- Summary: [phase7-gate-c-seventh-remediation-summary.json](evidence/phase7-gate-c-seventh-remediation-summary.json)
+- Report: [phase7-gate-c-seventh-remediation-report.md](evidence/phase7-gate-c-seventh-remediation-report.md)
+- Failure analysis: [phase7-gate-c-seventh-remediation-failure-analysis.md](evidence/phase7-gate-c-seventh-remediation-failure-analysis.md)
+- Database evidence: [phase7-gate-c-seventh-remediation-database-evidence.json](evidence/phase7-gate-c-seventh-remediation-database-evidence.json)
+- Environment: [phase7-gate-c-seventh-remediation-environment.json](evidence/phase7-gate-c-seventh-remediation-environment.json)
+- Manifest: [phase7-gate-c-seventh-remediation-evidence-manifest.json](evidence/phase7-gate-c-seventh-remediation-evidence-manifest.json)
+- Package metadata: [phase7-gate-c-seventh-remediation-package.json](evidence/phase7-gate-c-seventh-remediation-package.json)
+
+The immutable external package is `5,337,204` bytes with SHA256
+`a01a16fdfc4f50f14b0a74a234a9e5f332ab20a29451c49096b6f7901236f2fd`:
+[download evidence package](https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-seventh-remediation-failed-20260812-fa5b4bd/gate-c-20260812T120720Z-fa5b4bd92e4b-seventh-remediation-failed-evidence-v1.zip).
+GitHub reports the prerelease and asset as immutable, and the package
+JWT/credential scan passed with zero hits.
+
+
+## Seventh-Run Source And Runtime Fingerprints
+
+- Compose config SHA256: `0963f97984919fadea8bccdfa96d7a2064c9578c6a9d912b8f887050e954b8a6`
+- `uv.lock` SHA256: `60bf4f22b50f516bebe7f734254d64617e6e08042424d09e606995be10d8cb77`
+- `frontend/pnpm-lock.yaml` SHA256: `090ef1ef6a9023a905c233da400a85bf5f6af7b65833cf693c9a8c387579595c`
+- API image: `sha256:1c97a7209094dda18f4cd1b7cc4cef19db8ba891bc03b45b44c259edb5255a44`
+- Migration image: `sha256:faa91979d9b67bb4fbfda861b0508cf3226c418e35c77827663dab0eeec3a133`
+- Mock Provider image: `sha256:8331fb41c3af6aac9ab5b6380de026128fa8a34c9f5e2a819855c6fd840d7ced`
+- Gate C load image: `sha256:a196ad69da024aae07b02de8d61db895b90badf00336eaf19326701bfac6c73a`
+- PostgreSQL image: `sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777`
+- Keycloak image: `sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0`
+
+## Seventh-Run Database Terminal State
+
+- Migration head: `20260720_0010`
 - Tenant tables with `tenant_id`: 74
 - Tables with RLS and FORCE RLS: 74
 - Append-only triggers: 57
-- Audit hash-chain breaks: 0
-- Outbox `DEAD`: 0
-- Outbox `PENDING` or `CLAIMED`: 0
-- Outbox `PUBLISHED`: 29
-- Foreign-tenant visible Topic4 verifications: 0
-- Foreign-tenant visible identity accounts: 0
-- Plaintext contact matches in encrypted identity columns: 0
-- Authorization consumptions: exactly 1
-- Committed publication batches: exactly 1
-- Public publication stream events: exactly 1
+- Application, dispatcher and migrator roles are non-superuser and do not have
+  `BYPASSRLS`.
+- Outbox `PUBLISHED`: 221
+- Outbox `PENDING`, `CLAIMED` and `DEAD`: 0
+- Adversarial foreign-tenant visible rows: 0
 
 ## Quality And Security
 
 | Gate | Current result |
 | --- | --- |
 | Ruff and frozen contract drift | passed |
-| Python/real PostgreSQL/real Keycloak suite | 680 passed, 1 skipped |
-| Python coverage | 92.14%; hard threshold 90% |
+| Focused seventh-remediation tests | 92 passed; real PostgreSQL Outbox 12 passed |
+| Complete Python/PostgreSQL regression | 711 passed, 4 skipped |
+| Python coverage | 91.68%; hard threshold 90% |
 | Python observation target | historical 91.19%; met locally |
 | Vitest | 72 passed |
 | Frontend coverage | 89.12% statements, 81.79% branches, 83.79% functions, 92.38% lines |
 | Playwright Chromium | 8 passed |
 | Browser runtime inspection | three locales rendered; zero console errors/warnings |
 | Go fmt/vet/race/test/build | passed |
-| Fourth remediation push/PR/main CI | 8/8 / 8/8 / 8/8 |
+| Seventh remediation push/PR/main CI | 8/8 / 8/8 / 8/8 |
 | Python and Node dependency audit | no known vulnerabilities |
 | Gitleaks | local and remote history/worktree gates passed |
 | Runtime Trivy | 0 findings at all severities for all three release images |
 | SBOM and license policy | passed |
 
-The explicit Python skip is not represented as a pass. The third-remediation
-quality result is evidence for code readiness only; it does not override the
-failed formal 2,000-stream Gate C controls.
+The four explicit skips are not represented as passes; they cover environment-
+conditioned Keycloak, restart-probe and Windows symlink cases. The quality
+result is evidence for code readiness only and does not override the failed
+final Gate C controls.
 
 ## Phase 7.4 Progress
 
@@ -560,13 +617,13 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness and six remediation implementations
-are complete on protected main. The current protected-main baseline is
-`a6979d760701271d579776b082dabe247ac6138b`, tree
-`52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`; Run 31538917814 completed 8/8.
-The sixth formal Gate C replay failed at `ramp-1000`; `gate-2000` and recovery
-were not executed. Gate D-G and unrelated feature development remain
-locked.
+mainline acceptance, the Gate C harness and seven remediation implementations
+are complete on protected main. The current evaluated protected-main baseline
+is `fa5b4bd92e4b56704f70b63416906a10c54e0ee1`, tree
+`a9f020fd5cceb7a094439ad4c4089b63d3b473a7`; Run 31593377181 completed 8/8.
+The seventh formal Gate C replay completed all five stages and recovery, but
+failed final Outbox p95 and memory-recovery controls. Gate D-G and unrelated
+feature development remain locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
 chain and passed push Run 30134676485, pull-request Run 30134728232 and main
@@ -613,20 +670,27 @@ push Run 31264197240, pull-request Run 31264254111 and protected-main Run
 31264518015 all completed 8/8. None of these closures changes the Gate C
 failure.
 
+PR #61 and PR #62 delivered and archived the sixth remediation through 8/8
+push, pull-request and protected-main gates. PR #64 then delivered the seventh
+remediation as `fa5b4bd92e4b56704f70b63416906a10c54e0ee1` after push Run
+31592761559, pull-request Run 31592947063 and protected-main Run 31593377181
+all passed 8/8. The complete fresh-volume replay moved every stage-local control
+to pass but left the final Outbox p95 and RSS recovery controls failed.
+
 ## Remaining Release Blockers
 
-1. Create a seventh scoped remediation for the measured Outbox
-   created-to-published, event-loop scheduling, fan-out and admission latency;
-   preserve trusted authorization and all frozen semantics.
-2. Add deterministic unit and real PostgreSQL regressions, then rerun Gate C
-   from the resulting main baseline and another fresh isolated
-   PostgreSQL volume. The 2,000 stage remains unproven until all stages pass in
-   the same formal run.
-3. Only after Gate C is accepted, complete a minimum eight-hour soak across
+1. Complete the independent seventh-remediation failure-evidence PR through
+   push and pull-request 8/8, Squash Merge and protected-main 8/8.
+2. Create an eighth scoped remediation only for the measured Outbox p95 tail
+   and retained RSS owner; preserve every stage-local pass and frozen semantic.
+3. Add deterministic allocation-lifetime and real PostgreSQL Outbox-tail
+   regressions, then rerun the unchanged complete Gate C workload from another
+   protected-main baseline and fresh isolated PostgreSQL volume.
+4. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-4. Only after Gate D is accepted, restore a PostgreSQL backup into an
+5. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-5. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 

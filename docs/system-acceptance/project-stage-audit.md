@@ -2,39 +2,39 @@
 
 ## 1. Precise Stage Position
 
-CyberControl is in **Phase 7 release closure**. The product scope, clean-volume
-Gate B business replay, identity and account-management extension, and
-`zh-CN`/`zh-TW`/`en-US` workbench are implemented on protected main. The
-current protected-main archive baseline is
-`a6979d760701271d579776b082dabe247ac6138b`, tree
-`52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`. Release Quality Gates Run
-31538917814 completed 8/8 jobs successfully. The sixth Gate C workload was
-evaluated against that protected-main source and tree.
+CyberControl is in **Phase 7 release closure**. The current product scope,
+clean-volume Gate B business replay, Keycloak-backed registration and account
+management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
+protected main. The evaluated protected-main source is
+`fa5b4bd92e4b56704f70b63416906a10c54e0ee1`, tree
+`a9f020fd5cceb7a094439ad4c4089b63d3b473a7`. Protected-main Release Quality
+Gates Run 31593377181 completed 8/8 jobs successfully.
 
 The formal state remains:
 
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
-Gate A and Gate B are accepted. Gate C has not been accepted. The sixth
-remediation replay passed 20, 200 and 500 authenticated SSE connections, then
-failed frozen controls at 1,000 connections. The fail-fast harness therefore
-did not execute the 2,000-connection stage or the ten-minute recovery
-observation. Gate D through Gate G and unrelated product development remain
-locked.
+Gate A and Gate B are accepted. Gate C is not accepted. The seventh formal
+Gate C replay completed the entire frozen workload, including 2,000
+authenticated SSE streams for 1,803 seconds and the fixed ten-minute recovery
+observation. Every stage-local control passed, but the final aggregate failed
+the frozen Outbox p95 and memory-recovery controls. A partial or near-threshold
+pass cannot advance the release state. Gate D through Gate G and unrelated
+product work remain locked.
 
 | Area | Current maturity | Evidence-based judgment |
 | --- | --- | --- |
-| Phase1.1 foundation | complete and frozen | protected, reproducible and covered by release gates |
-| Topic1-Topic4 backend | complete for current product scope | trusted generation, verification, review and atomic release chain is frozen |
-| Identity and account backend | complete for current product scope | Keycloak authority, registration, projection, administration and recovery are integrated |
-| Frontend workbench | complete for current product scope | business, account and three-language surfaces are merged |
+| Phase 1.1 foundation | complete and frozen | protected, reproducible and covered by release gates |
+| Topic1-Topic4 backend | complete for current scope | trusted generation, verification, review and atomic release chain is frozen |
+| Identity and account backend | complete for current scope | Keycloak authority, registration, projection, administration and recovery are integrated |
+| Three-language frontend | complete for current scope | business, account and locale surfaces are merged and tested |
 | Gate B business replay | accepted | clean PostgreSQL replay and evidence dataset controls passed from protected main |
-| Gate C authenticated SSE | failed | sixth replay stopped at 1,000 due commit-to-client and Outbox latency failures; 2,000 and recovery remain unexecuted |
+| Gate C authenticated SSE | failed | all stages passed locally, but final Outbox p95 and RSS recovery controls failed |
 | Production operations | locked | soak, DR, Provider and deployment acceptance cannot start before Gate C success |
 
-Feature completeness is not production acceptance. The remaining work is
-smaller in feature count but contains the highest reliability and operational
-risk.
+Feature completeness is not production acceptance. The remaining feature count
+is small, but the unresolved reliability and operational work carries the
+highest release risk.
 
 ## 2. Completed And Frozen Assets
 
@@ -43,7 +43,7 @@ risk.
 - Async FastAPI and SQLAlchemy on PostgreSQL 16.
 - OIDC/JWKS authentication with server-derived `TenantContext`.
 - 74 tenant tables with RLS and FORCE RLS.
-- SERIALIZABLE transactions, idempotency, CAS and bounded retry controls.
+- SERIALIZABLE transactions, idempotency, CAS and bounded retries.
 - Append-only evidence, SHA-linked audit, Artifact Store and transactional
   Outbox.
 - Persistent tenant SSE replay with signed cursors and fail-closed tenant
@@ -60,36 +60,33 @@ risk.
 - Topic2 six-dimensional learner profile, memory model and adaptive path.
 - Topic3 five-Agent generation with immutable Blueprint and Candidate
   resources.
-- Topic4 C1-C12 claim extraction, specialist verification, revision, human
-  review and server-derived atomic publication.
+- Topic4 C1-C12 extraction, specialist verification, revision, human review
+  and server-derived atomic publication.
 - Human-review CAS, C12 one-time authorization and Topic3-to-Topic4 handoff.
-- Authenticated and public SSE projections with cross-language frozen
+- Authenticated and public SSE projections with frozen cross-language
   contracts.
-- C3 semantic verifier v2 with label-blind PostgreSQL evidence: 72/72 owner-
-  reviewed records correct and zero unsafe `CONTRADICTED -> SUPPORTED`
-  decisions.
+- C3 semantic verifier v2 with label-blind PostgreSQL evidence: 72/72
+  owner-reviewed records correct and zero unsafe
+  `CONTRADICTED -> SUPPORTED` decisions.
 
-### 2.3 Identity, Account And Frontend Delivery
+### 2.3 Identity, Accounts And Frontend
 
-- Keycloak remains the only password and identity-credential authority.
+- Keycloak is the sole password and identity-credential authority.
 - Additive migration `20260720_0010`; migrations `0001-0009` remain unchanged.
 - Email/phone registration, verification, profile/contact changes, tenant
   account administration, audit, disable/restore and recovery boundaries.
 - Encrypted contact projection, keyed lookup digests, FORCE RLS, append-only
   audit and Outbox events.
-- Vue 3, Vite, TypeScript strict, Pinia, Vue Router and OIDC PKCE.
-- Envelope/runtime schema validation and no client-supplied tenant, subject,
-  role or scope authority headers.
-- Registration, profile, tenant account administration and Topic1-Topic4
-  workbench pages.
-- `zh-CN`, `zh-TW` and `en-US` application and Keycloak locale integration.
+- Vue 3, Vite, strict TypeScript, Pinia, Vue Router and OIDC PKCE.
+- Runtime schema validation and no client-supplied tenant, subject, role or
+  scope authority headers.
+- Registration, profile, tenant administration and Topic1-Topic4 workbench
+  pages in `zh-CN`, `zh-TW` and `en-US`.
 - Hardened non-root Nginx runtime with CSP and SSE proxy controls.
 - Frontend unit, browser and mobile workflow coverage integrated into CI.
 
-### 2.4 Mainline Release Evidence
+### 2.4 Accepted Release Evidence
 
-- PR #30 merged identity, registration, account management and internationalized
-  frontend capabilities through protected main.
 - Gate B used a clean PostgreSQL 16 volume and completed registration, real
   Keycloak PKCE login, Topic1-Topic4, review, C12 release and SSE delivery with
   final state `RELEASED`.
@@ -97,159 +94,153 @@ risk.
   cross-tenant RLS checks passed.
 - Gate B separated the content-addressed 100,000-record synthetic performance
   corpus, the 72-record owner-reviewed academic fact set and local fixtures.
-- PR #34 archived the accepted academic evidence; PR #35 merged the C3 semantic
+- PR #34 archived the academic evidence; PR #35 merged the C3 semantic
   verifier v2; PR #36 archived the merged-main Gate B replay.
-- PR #38 merged the frozen Gate C harness and workload.
-- PRs #47, #50, #52 and #58 merged scoped Gate C reliability remediations without
+- PR #38 merged the frozen Gate C harness, thresholds and workload.
+- PRs #47, #50, #52, #58, #61 and #64 merged scoped Gate C remediations without
   changing migrations, frozen contracts, workload or thresholds.
-- PR #52 head `3c75c532bc8860debfe865eb08f63543fbd70eea` Squash Merged as
-  `97bfa5fef7e1bb72cf711d1b93dcde2b7f3d9504` after push Run 30195808808 and
-  pull-request Run 30195810215 passed 8/8. Protected-main Run 30196139462
-  attempt 2 also passed 8/8.
-- PR #56 patched the newly disclosed Python and frontend dependency advisories
-  and Squash Merged as `6f4a58b44ef6e30a850b50aa522b490f525215b1` after
-  push Run 31255259498 and pull-request Run 31255260722 passed 8/8;
-  protected-main Run 31255474059 also passed 8/8.
-- PR #55 archived the fourth-remediation failure evidence and Squash Merged as
-  `40c8a4c076b59d9c9fd3384454df7f4eab9a6f98` after push Run 31255692354 and
-  pull-request Run 31255694689 passed 8/8; protected-main Run 31255915622 also
-  passed 8/8.
-- PR #58 merged the fifth remediation as
-  `76cd099a034a395a89b26496c0d40e0673aaa97d`, tree
-  `ffb7c72b3156f1dc271b5b0ec1afc2ce3f2c6870`, after push Run 31264197240 and
-  pull-request Run 31264254111 passed 8/8; protected-main Run 31264518015 also
-  passed 8/8.
-- The fifth formal run used real Keycloak Tokens, two tenants, twenty subjects,
-  a newly built image set, unique Compose project and fresh isolated PostgreSQL
-  volume.
-- Raw fifth-run evidence is retained in a GitHub prerelease asset with SHA256
-  `566a65a5ac01d1eb6ec0f06a1bc85529bebcf7f53dc37c382d74dcbfa707630e`.
-- PR #61 merged the sixth remediation as
-  `a6979d760701271d579776b082dabe247ac6138b`, tree
-  `52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`, after push Run 31537797593,
-  pull-request Run 31538456518 and protected-main Run 31538917814 passed 8/8.
-- The sixth formal run used real Keycloak Tokens, two tenants, twenty subjects,
-  newly built images, a unique Compose project and a fresh isolated PostgreSQL
-  volume.
-- Raw sixth-run evidence is retained in immutable GitHub Release
-  `phase7-gate-c-sixth-remediation-failed-20260811-a6979d7` with SHA256
-  `bb406ab73e7bc4532266f3274605402e28c356b58586ea20eee6648a54b5a18a`.
-- PR #62 is the independent sixth-remediation failure-evidence archive and is
-  Squash Merged as `a1f65411e770ec843a861fd87eb9ce1834c04c4a` after push Run
-  31544016873 and pull-request Run 31544021134 passed 8/8. Protected-main Run
-  31544460542 also passed 8/8.
+- PR #64 delivered the seventh remediation as protected main
+  `fa5b4bd92e4b56704f70b63416906a10c54e0ee1` after push Run 31592761559,
+  pull-request Run 31592947063 and protected-main Run 31593377181 each passed
+  8/8.
+- Complete Python/PostgreSQL regression recorded 711 passed and 4 explicit
+  environment-conditioned skips with 91.68% Python coverage. Frontend, browser,
+  Go, contract, SBOM/license, dependency audit, Trivy and Gitleaks gates passed.
+- Seven prior Gate C failures and their packages remain immutable; none is
+  rewritten as a success.
 
-## 3. Current Gate C Failure Boundary
+## 3. Seventh Gate C Evidence Boundary
 
-The current formal run directory is:
+The authoritative run is:
 
-`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260811T214704Z-a6979d760701`
+`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260812T120720Z-fa5b4bd92e4b`
 
-It used Compose project `cybercontrol-gate-c-sixth-a6979d7-20260811t214703z`
-and fresh PostgreSQL volume `cybercontrol_gate_c_sixth_a6979d7_20260811t214703z`.
-The original failed volume remains preserved. Terminal database inspection used
-a separate forensic copy and did not start the original failed volume.
+It used Compose project
+`cybercontrol-gate-c-seventh-fa5b4bd-20260812`, fresh PostgreSQL volume
+`cybercontrol_gate_c_seventh_fa5b4bd_20260812`, real Keycloak-issued Tokens,
+two tenants and twenty real subjects. All images were built from the evaluated
+main. The result is a single-host acceptance result and is not a production
+cluster capacity claim.
 
-The 20, 200 and 500 stages passed. The 1,000 stage sustained 1,000 active
-authenticated streams for 603 seconds and retained these passed controls:
+| Stage | Active streams and duration | Delivery p95/p99 | Result |
+| --- | ---: | ---: | --- |
+| Smoke | 20 for 181s | 24/40 ms | pass |
+| Ramp | 200 for 304s | 46/163 ms | pass |
+| Ramp | 500 for 305s | 239/404 ms | pass |
+| Ramp | 1,000 for 604s | 416/609 ms | pass |
+| Formal | 2,000 for 1,803s | 781/990 ms | pass |
+
+The complete run retained these controls:
 
 - connection and reconnect/replay success: `1.0 / 1.0`;
-- committed event loss, duplicate final render and cross-tenant leakage: `0`;
-- HTTP 5xx, pool acquisition timeout, OOM and unplanned restart: `0`;
-- final subscribers, queued events and replay-cache events: `0 / 0 / 0`;
-- migration head `20260720_0010`, FORCE RLS `74/74`, foreign-tenant visibility
-  `0`.
+- committed event loss and duplicate final render: `0 / 0`;
+- cross-tenant leakage and invalid cursor acceptance: `0 / 0`;
+- HTTP 5xx, unexpected disconnect, pool timeout, OOM and restart: all `0`;
+- Outbox `PUBLISHED=221`, `DEAD=0`, with no terminal `PENDING/CLAIMED` rows;
+- final subscribers, close owners, queued events/bytes, replay buffers, replay
+  caches and replay tasks: all `0`;
+- API file descriptors returned from `29` to `30` after peaking at `2,039`;
+- migration head `20260720_0010`, FORCE RLS `74/74`, append-only triggers `57`
+  and foreign-tenant visibility `0`;
+- no `aclose()` race, traceback, error, pool-timeout, OOM or unplanned restart
+  log entries.
 
-The same stage failed:
+The final aggregate failed exactly two frozen controls:
 
-| Frozen control | Observed | Required |
-| --- | ---: | ---: |
-| Commit-to-client p95 | 1,805 ms | <= 1,000 ms |
-| Commit-to-client p99 | 7,190 ms | <= 3,000 ms |
-| Outbox DEAD | 0 | 0 |
-| Outbox lag p95 | 10,102.261 ms | <= 2,000 ms |
-| Outbox lag p99 | 11,812.566 ms | <= 5,000 ms |
+| Frozen control | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Outbox created-to-published p95 | 2,225.796 ms | <= 2,000 ms | fail |
+| Outbox created-to-published p99 | 3,026.102 ms | <= 5,000 ms | pass |
+| Post-ramp API RSS ratio | 1.492792 | <= 1.10 | fail |
 
-API CPU reached `128.502/145.910` one-core units at p95/max and peak API file
-descriptors reached `1038`. Fail-fast ended with subscribers, closing owners,
-queues, replay caches and replay tasks all at zero; because the recovery stage
-was not executed, this is cleanup evidence rather than a memory-recovery
-acceptance conclusion.
+API RSS first/last/peak was
+`276404634 / 412614656 / 448371098` bytes. Host CPU p95/max was
+`37.4/52.6%`; database connections and checked-out pool connections peaked at
+`21/6`. The remaining RSS is not explained by a live subscriber, queue,
+replay-cache or file-descriptor owner because those inventories returned to
+baseline. Allocator arenas, metric state, object pools and allocation high-water
+retention are candidates only; none is yet a proven root cause.
 
-The sixth remediation preserved the fifth remediation's elimination of `DEAD`
-`topic3.workflow.finalized` rows and preserved zero cross-tenant visibility,
-but did not bring the commit-to-client or Outbox latency within the frozen
-thresholds. The 2,000-stream and recovery stages remain unexecuted, so memory
-recovery and full-scale continuity are still unproven.
+The Outbox sample contains 221 lifecycle observations. Events were immediately
+claimable, 203 were claimed within one second, and 211 were published within
+2.5 seconds. Claim-batch execution was generally small. Existing evidence
+implicates a combined created-to-claimed, durable-acceptance and published-mark
+tail, but does not prove which segment owns the p95 breach.
 
-Connection-establishment p95/p99 was `21,888/25,735 ms` while real Keycloak
-token issuance remained successful. This is a readiness signal that
-must be decomposed into token, admission, replay and LIVE-handoff latency.
+The original failed volume is preserved. Forensic inspection used
+`cybercontrol_gate_c_seventh_fa5b4bd_20260812_forensics`, derived without
+writable mounting of the original; its content SHA256 is
+`e78e3ff34f14fa88a5d931081621704ce4fb0ef96375ff50005ec6d4ad7ba67a`.
 
-The authoritative current evidence is under
-`docs/system-acceptance/evidence/phase7-gate-c-sixth-remediation-*`. Historical
-Gate C evidence remains immutable.
+The immutable external package is 5,337,204 bytes with SHA256
+`a01a16fdfc4f50f14b0a74a234a9e5f332ab20a29451c49096b6f7901236f2fd`:
+https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-seventh-remediation-failed-20260812-fa5b4bd.
+GitHub reports the Release and asset as immutable, and the credential/JWT scan
+recorded zero hits.
 
-## 4. Remaining Work
+## 4. Remaining Release Work
 
-### 4.1 Sixth Failure-Evidence Archive Closure
+### 4.1 P0 Seventh Failure Archive Closure
 
-1. Commit only the sixth-remediation partial-failure summary, report, database
-   and environment evidence, manifest, package metadata and current-state docs.
-2. Bind the archive to source `a6979d760701271d579776b082dabe247ac6138b`,
-   tree `52ba6cd9f1c532cedbfe27fbcaf8b206c5d02c3f`, frozen hashes, fresh volume,
-   image digests and the immutable external package.
-3. Preserve every prior Gate C snapshot and retain
-   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
-4. PR #62 passed push and pull-request 8/8, Squash Merged as
-   `a1f65411e770ec843a861fd87eb9ce1834c04c4a`, and protected-main Run
-   31544460542 passed 8/8.
+1. Commit only the seven seventh-run evidence files and four current-state
+   documents in an independent docs/evidence-only PR.
+2. Validate JSON, repository manifest hashes, source/tree and frozen-hash
+   bindings, immutable asset size/digest and credential/JWT redaction.
+3. Require push and pull-request Release Quality Gates 8/8, Squash Merge, then
+   protected-main 8/8.
+4. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the eighth
+   remediation branch until this closure is complete.
 
-### 4.2 P0 Seventh Gate C Remediation
+### 4.2 P0 Eighth Scoped Remediation
 
-Only after archive closure, trace and remediate the measured Outbox
-created-to-published delay, event-loop scheduling, slow-consumer backpressure,
-notification/publisher wakeup and Outbox-to-client latency. Preserve valid finalized-
-event authorization, zero Outbox `DEAD`, fail-closed invalid/cross-tenant events,
-ordered delivery, leases, retries, atomic publication and tenant context. Add
-deterministic unit, concurrency and real PostgreSQL regressions, with each
-behavior change mapped to a failed metric and disproof metric.
+- Correlate each Outbox event from transaction commit through claim,
+  authorization, durable acceptance, published marking, notification and SSE
+  enqueue. Fix only the measured owner of the p95 tail while preserving leases,
+  retries, partition order, idempotency and atomic publication.
+- Distinguish live-object retention from allocator fragmentation/high-water
+  behavior using tracemalloc, object counts, USS/PSS/RSS and allocator evidence.
+  Fix the actual owner or production allocator behavior; forced GC, recovery-
+  only trimming, restart or altered aggregation is not an acceptance fix.
+- Preserve all five stage passes, zero loss, zero final duplicates, zero tenant
+  leakage, zero Outbox `DEAD`, signed tenant-bound cursors, ordered delivery,
+  zero close races and terminal lifecycle gauges of zero.
+- Add deterministic unit, concurrency and real PostgreSQL regressions. Keep
+  Python coverage at least 90% and pass every release-quality gate.
 
-### 4.3 P0 Protected-Main Rerun
+### 4.3 P0 Fresh Protected-Main Replay
 
-1. Merge the seventh remediation only after push and pull-request Release Quality
-   Gates pass 8/8, then require protected-main 8/8.
-2. Rebuild all images from the new main without `-SkipBuild`.
+1. Merge the eighth remediation only after push and pull-request 8/8, then
+   require protected-main 8/8.
+2. Build all images from that main without `-SkipBuild`.
 3. Use a unique Compose project, evidence directory and fresh PostgreSQL volume;
    never reuse development, release or historical Gate C volumes.
-4. Execute the unchanged 20, 200, 500, 1,000 and 2,000 stages plus the
-   ten-minute recovery observation with real Keycloak Tokens.
-5. Any frozen-control failure keeps Gate D locked and requires a new immutable
-   failure-evidence PR. Only a complete same-run pass can mark Gate C accepted.
+4. Execute the unchanged 20, 200, 500, 1,000 and 2,000 stages plus the fixed
+   ten-minute recovery observation using real Keycloak Tokens.
+5. Any frozen-control failure requires a new immutable failure archive and
+   keeps Gate D locked. Only a complete same-run pass can mark Gate C accepted.
 
-### 4.4 P1-P2 Work Locked Behind Gate C
+### 4.4 Work Locked Behind Gate C
 
 - Gate D: at least eight hours of generation, verification, review, release and
-  SSE soak with thresholds frozen before execution.
-- Disaster recovery: independent PostgreSQL backup restore, measured RPO/RTO,
-  audit/Artifact Store/Outbox consistency and fail-closed fault drills.
-- Provider acceptance: sealed-environment credentials only; no repository or
-  development secrets.
-- Production operations: target platform, TLS, secret manager, monitoring,
-  alerting, SLOs, capacity, PITR, rollback and incident rehearsal.
-- Commercial assurance: cross-browser, WCAG, PII retention/export/correction/
-  deletion, tenant offboarding and artifact-retention review.
-- Major dependency upgrades and unrelated features only after release closure,
-  in isolated PRs.
+  SSE soak under pre-frozen thresholds.
+- Gate E: independent PostgreSQL backup restore, measured RPO/RTO and recovered
+  audit/Artifact Store/Outbox/publication consistency.
+- Gate F: database restart, Faiss corruption, temporary OIDC loss and Provider
+  circuit-breaker fail-closed drills; sealed Provider credentials only.
+- Gate G: target deployment, TLS, secret management, monitoring, alerting,
+  capacity, PITR, rollback, incident rehearsal, cross-browser/WCAG and PII
+  lifecycle acceptance.
+- Major dependency upgrades and unrelated product features remain isolated and
+  unauthorized during Gate C closure.
 
 ## 5. Final Audit Judgment
 
-CyberControl's current commercial product feature chain is implemented and Gate
-A/B evidence is accepted. The project is not production accepted because Gate
-C remains the active release blocker. The sixth remediation preserved the prior
-finalized-event `DEAD` condition and preserved zero loss, duplicate render and
-tenant leakage, but the protected-main replay still breached commit-to-client
-and Outbox latency at 1,000 streams. The sixth failure-evidence archive is now
-closed. The next authorized action is a seventh scoped Gate C remediation and
-fresh replay. Gate D-G remain locked until an
-independent Gate C success-evidence PR passes CI and merges.
+CyberControl's current commercial product feature chain is implemented, and
+Gate A/B evidence is accepted. The project is not production accepted. The
+seventh remediation materially advanced Gate C by completing and passing every
+stage-local control at 2,000 authenticated streams, but the same run still
+failed Outbox p95 by 225.796 ms and retained 149.2792% of the frozen memory
+baseline after recovery. The next authorized action is to close the independent
+failure-evidence PR, followed by an eighth narrowly scoped remediation and a
+fresh protected-main replay. Gate D-G remain locked until an independent Gate C
+success-evidence PR passes CI and merges.
