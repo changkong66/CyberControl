@@ -1,0 +1,69 @@
+{
+  "schema_version": "cybercontrol.gate-c-seventh-remediation-environment.v1",
+  "captured_from": {
+    "schema_version": "cybercontrol.gate-c-environment.v1",
+    "mode": "Full",
+    "run_id": "gate-c-20260812T120720Z",
+    "source_commit": "fa5b4bd92e4b56704f70b63416906a10c54e0ee1",
+    "source_tree": "a9f020fd5cceb7a094439ad4c4089b63d3b473a7",
+    "branch": "main",
+    "clean_source": true,
+    "single_host_execution": true,
+    "production_capacity_claim_permitted": false,
+    "compose_config_sha256": "0963f97984919fadea8bccdfa96d7a2064c9578c6a9d912b8f887050e954b8a6",
+    "thresholds_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+    "docker_server_version": "29.6.1",
+    "docker_compose_version": "5.3.0",
+    "docker_cpu_limit": 16,
+    "docker_memory_limit_bytes": 7958888448,
+    "runtime_images": {
+      "api": "sha256:1c97a7209094dda18f4cd1b7cc4cef19db8ba891bc03b45b44c259edb5255a44",
+      "migrate": "sha256:faa91979d9b67bb4fbfda861b0508cf3226c418e35c77827663dab0eeec3a133",
+      "mock_provider": "sha256:8331fb41c3af6aac9ab5b6380de026128fa8a34c9f5e2a819855c6fd840d7ced",
+      "gate_c_load": "sha256:a196ad69da024aae07b02de8d61db895b90badf00336eaf19326701bfac6c73a",
+      "postgres": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+      "keycloak": "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0"
+    }
+  },
+  "protected_main_ci": {
+    "run": 31593377181,
+    "attempt": 1,
+    "jobs_successful": 8,
+    "jobs_total": 8,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/31593377181"
+  },
+  "seventh_remediation": {
+    "pull_request": 64,
+    "url": "https://github.com/changkong66/CyberControl/pull/64",
+    "implementation_head": "f891ddd1c4b757f38e214a3019c82c0a777130cd",
+    "merge_sha": "fa5b4bd92e4b56704f70b63416906a10c54e0ee1",
+    "push_ci_run": 31592761559,
+    "pull_request_ci_run": 31592947063,
+    "protected_main_ci_run": 31593377181
+  },
+  "compose_project": "cybercontrol-gate-c-seventh-fa5b4bd-20260812",
+  "formal_run_directory": "D:\\CyberControlAcceptance\\phase7\\gate-c\\gate-c-20260812T120720Z-fa5b4bd92e4b",
+  "original_postgres_volume": "cybercontrol_gate_c_seventh_fa5b4bd_20260812",
+  "forensic_snapshot_volume": "cybercontrol_gate_c_seventh_fa5b4bd_20260812_forensics",
+  "original_volume_mounted_writable_for_forensics": false,
+  "forensic_file_count": 1829,
+  "forensic_content_sha256": "e78e3ff34f14fa88a5d931081621704ce4fb0ef96375ff50005ec6d4ad7ba67a",
+  "uv_lock_sha256": "60bf4f22b50f516bebe7f734254d64617e6e08042424d09e606995be10d8cb77",
+  "pnpm_lock_sha256": "090ef1ef6a9023a905c233da400a85bf5f6af7b65833cf693c9a8c387579595c",
+  "host_storage": {
+    "docker_vhdx": "D:\\Docker\\wsl\\DockerDesktopWSL\\disk\\docker_data.vhdx",
+    "docker_vhdx_gib_after_run": 65.46,
+    "c_free_gib_after_run": 17.09,
+    "d_free_gib_after_run": 54.53
+  },
+  "release_immutability": {
+    "release_id": 369259462,
+    "release_tag": "phase7-gate-c-seventh-remediation-failed-20260812-fa5b4bd",
+    "release_url": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-seventh-remediation-failed-20260812-fa5b4bd",
+    "release_immutable": true,
+    "asset_id": 511607690,
+    "asset_bytes": 5337204,
+    "asset_digest": "sha256:a01a16fdfc4f50f14b0a74a234a9e5f332ab20a29451c49096b6f7901236f2fd"
+  }
+}
