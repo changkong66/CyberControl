@@ -331,6 +331,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             resources.push_async_callback(bridge.close)
             app.state.sse_notification_bridge = bridge
         app.state.sse_cursor_codec = ReplayCursorCodec(settings.sse_cursor_secret.encode("utf-8"))
+
+        def sse_notification_ready() -> bool:
+            bridge = app.state.sse_notification_bridge
+            return bridge is not None and bridge.ready
+
         topic3_provider_registry = build_topic3_provider_registry(
             settings,
             app.state.provider_policy,
@@ -496,9 +501,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         message_bus.register(
             "topic4.publication.committed",
-            Topic4PublicationSSEConsumer(app.state.sse_broker, topic4_metrics),
+            Topic4PublicationSSEConsumer(
+                app.state.sse_broker,
+                topic4_metrics,
+                notification_ready=sse_notification_ready,
+            ),
         )
-        outbox_sse_bridge = DurableOutboxSSEBridge(app.state.sse_broker)
+        outbox_sse_bridge = DurableOutboxSSEBridge(
+            app.state.sse_broker,
+            notification_ready=sse_notification_ready,
+        )
         register_identity_outbox_handlers(message_bus, outbox_sse_bridge)
         for event_type in DOMAIN_OUTBOX_EVENT_TYPES:
             message_bus.register(event_type, outbox_sse_bridge)

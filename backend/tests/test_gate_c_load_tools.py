@@ -120,6 +120,8 @@ def test_backend_runtime_uses_process_start_allocator_configuration() -> None:
     assert "LD_PRELOAD=/usr/lib/libjemalloc.so.2" in dockerfile
     assert "dirty_decay_ms:1000" in dockerfile
     assert "muzzy_decay_ms:1000" in dockerfile
+    assert "narenas:1" in dockerfile
+    assert "retain:false" in dockerfile
     assert "malloc_trim" not in dockerfile
     assert "gc.collect" not in dockerfile
 

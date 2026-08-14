@@ -17,6 +17,20 @@ T = TypeVar("T")
 class OwnedStreamingResponse(StreamingResponse):
     """Streaming response with explicit task ownership on the ASGI 2.3 path."""
 
+    async def _cleanup_response_tasks(
+        self,
+        tasks: tuple[asyncio.Task[Any], asyncio.Task[Any]],
+    ) -> list[object]:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        results = list(await asyncio.gather(*tasks, return_exceptions=True))
+        try:
+            await close_subscription(self.body_iterator)
+        except BaseException as exc:
+            results.append(exc)
+        return results
+
     async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         spec_version = tuple(
             int(part) for part in scope.get("asgi", {}).get("spec_version", "2.0").split(".")
@@ -40,10 +54,10 @@ class OwnedStreamingResponse(StreamingResponse):
                 return_when=asyncio.FIRST_COMPLETED,
             )
         finally:
-            pending = [task for task in tasks if not task.done()]
-            for task in pending:
-                task.cancel()
-            cleanup = asyncio.gather(*tasks, return_exceptions=True)
+            cleanup = asyncio.create_task(
+                self._cleanup_response_tasks(tasks),
+                name="sse-response-cleanup",
+            )
             await complete_cleanup(cleanup)
 
         failures = [
