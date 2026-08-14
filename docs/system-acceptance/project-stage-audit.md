@@ -233,15 +233,60 @@ SHA256 `b22f81bbcd42fb5dab0c9bc64891fe8b49888663ab9c0f13260b1de313802ff1`,
 on Release `369510663`. Immutable Release `369509815` has zero assets and is
 preserved as a disclosed audit exception.
 
+## 4A. Ninth Gate C Evidence Boundary
+
+The current authoritative run is:
+
+`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260814T163148Z-993ed9719dfb`
+
+It evaluated protected-main source
+`993ed9719dfb363238fe3c2f075f1d7e7e269b40`, tree
+`8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5`, after PR #72 and its push,
+pull-request and main CI runs each passed 8/8. The run used Compose project
+`cybercontrol-gate-c-ninth-993ed97-20260815`, fresh PostgreSQL volume
+`cybercontrol_gate_c_ninth_993ed97_20260815`, real Keycloak-issued Tokens,
+two tenants and twenty real subjects.
+
+All five stages and recovery completed. Stage-local safety and delivery
+controls passed, including connection/reconnect `1.0/1.0`, delivery p95/p99
+`811/1070ms`, zero loss, zero final duplicate rendering, zero tenant leakage,
+zero Outbox `DEAD`, zero HTTP 5xx and zero pool timeout. The final 30 recovery
+samples had zero subscribers, close owners, queued events/bytes, replay cache
+events and replay tasks; this proves that the eighth run's one-live-subscriber
+residual did not persist.
+
+The same run failed frozen Outbox p95 at `3102.698ms` against `<=2000ms` and
+post-ramp memory ratio at `1.416064` against `<=1.10`. Outbox p99 was
+`3935.444ms` and passed. API container memory first/last/peak was
+`261095424 / 369727898 / 437256192` bytes; process RSS was
+`307769344 / 413544448 / 482349056`; anonymous RSS increased from
+`257699840` to `363474944`, while file RSS stayed at `50069504`. FDs returned
+from `29` to `29` after peaking at `2037`. PostgreSQL ended at migration 0010,
+FORCE RLS `74/74`, Outbox `PUBLISHED=223`, terminal
+`PENDING/CLAIMED/DEAD=0`, and foreign-tenant visibility `0`.
+
+The immutable package is
+`gate-c-20260814T163148Z-993ed9719dfb-ninth-remediation-failed-evidence-v1.zip`,
+`5481915` bytes with SHA256
+`d6b5454dad9c4b9471415211b5f212efc6f73c8f90358af2743f363f87362ea3`,
+on immutable GitHub Release ID `370734489`, asset ID `514719132`. The asset
+digest matches, and the JWT/credential/PII scan recorded zero hits.
+
 ## 5. Remaining Release Work
 
-### 5.1 P0 Ninth Scoped Remediation
+### 5.1 P0 Ninth Failure Archive Closure
 
-- Trace and eliminate the persistent one-live-subscriber owner through the
-  complete close path, then correlate each Outbox event from transaction commit
-  through claim, authorization, durable acceptance, published marking,
-  notification and SSE enqueue. Fix only measured owners while preserving leases,
-  retries, partition order, idempotency and atomic publication.
+- Merge the independent docs/evidence-only archive through push and
+  pull-request 8/8, Squash Merge and protected-main 8/8.
+- Preserve every historical run, Release, image and volume and retain
+  `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
+
+### 5.2 P0 Tenth Scoped Remediation
+
+- Correlate each Outbox event from transaction commit through claim,
+  authorization, durable acceptance, published marking, notification and SSE
+  enqueue. Fix only measured owners while preserving leases, retries,
+  partition order, idempotency and atomic publication.
 - Distinguish live-object retention from allocator fragmentation/high-water
   behavior using tracemalloc, object counts, USS/PSS/RSS, allocator and map
   evidence.
@@ -249,13 +294,13 @@ preserved as a disclosed audit exception.
   only trimming, restart or altered aggregation is not an acceptance fix.
 - Preserve all five stage passes, zero loss, zero final duplicates, zero tenant
   leakage, zero Outbox `DEAD`, signed tenant-bound cursors, ordered delivery,
-  zero close races and terminal lifecycle gauges of zero.
+  zero close races and the ninth run's terminal lifecycle gauges of zero.
 - Add deterministic unit, concurrency and real PostgreSQL regressions. Keep
   Python coverage at least 90% and pass every release-quality gate.
 
-### 5.2 P0 Fresh Protected-Main Replay
+### 5.3 P0 Fresh Protected-Main Replay
 
-1. Merge the ninth remediation only after push and pull-request 8/8, then
+1. Merge the tenth remediation only after push and pull-request 8/8, then
    require protected-main 8/8.
 2. Build all images from that main without `-SkipBuild`.
 3. Use a unique Compose project, evidence directory and fresh PostgreSQL volume;
@@ -265,7 +310,7 @@ preserved as a disclosed audit exception.
 5. Any frozen-control failure requires a new immutable failure archive and
    keeps Gate D locked. Only a complete same-run pass can mark Gate C accepted.
 
-### 5.3 Work Locked Behind Gate C
+### 5.4 Work Locked Behind Gate C
 
 - Gate D: at least eight hours of generation, verification, review, release and
   SSE soak under pre-frozen thresholds.
@@ -283,10 +328,10 @@ preserved as a disclosed audit exception.
 
 CyberControl's current commercial product feature chain is implemented, and
 Gate A/B evidence is accepted. The project is not production accepted. The
-eighth remediation completed the full Gate C workload and passed all stage-local
-controls, but the same run still failed Outbox p95 by `247.346ms`, retained
-`1.393027` of the frozen RSS baseline and left one LIVE subscriber through the
-final recovery samples. The eighth failure archive is closed on protected main.
-The next authorized action is a ninth narrowly scoped remediation followed by a
-fresh protected-main replay. Gate D-G remain locked until an independent Gate C
-success-evidence PR passes CI and merges.
+ninth remediation completed the full Gate C workload, passed all stage-local
+controls and ended with zero terminal subscriber/queue/replay state. The same
+run still failed Outbox p95 by `1102.698ms` and retained `1.416064` of the
+frozen RSS baseline. The immediate authorized work is the ninth failure archive
+closure. A tenth remediation may begin only from the resulting protected main
+under a separate task. Gate D-G remain locked until an independent complete
+Gate C success-evidence PR passes CI and merges.
