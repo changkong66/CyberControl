@@ -5,10 +5,13 @@
 CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
-protected main. The evaluated protected-main source is
+protected main. The current protected-main source is
+`c826b508ee5b094532a13bbe88d68e66948ed84c`, tree
+`8a63aeefc047d4e4836db67601b0fdb4363955f3`. Protected-main Release Quality
+Gates Run 31796150290 completed 8/8 jobs successfully. The eighth Gate C replay
+itself remains bound to evaluated source
 `4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
-`d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`. Protected-main Release Quality
-Gates Run 31629561293 completed 8/8 jobs successfully.
+`d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`.
 
 The formal state remains:
 
@@ -116,6 +119,13 @@ highest release risk.
   pull-request Run 31629100666 and protected-main Run 31629561293 each passed
   8/8. Its complete fresh-volume replay still failed Outbox p95 and RSS
   recovery; its failure package is newly archived and immutable.
+- PR #67 opened the independent failure-evidence archive. Its initial push Run
+  31788710871 and pull-request Run 31788806194 were blocked by newly published
+  advisory `GHSA-2v37-7h3g-55p8` in `nanoid 3.3.17`, not by the evidence files.
+- Independent PR #68 updated `nanoid` to 3.3.18 and merged as protected main
+  `c826b508ee5b094532a13bbe88d68e66948ed84c`; push Run 31790758140,
+  pull-request Run 31790811040 and protected-main Run 31796150290 each passed
+  8/8. PR #67 still requires fresh green CI and archive merge closure.
 
 ## 3. Historical Seventh Gate C Evidence Boundary
 
@@ -223,9 +233,11 @@ preserved as a disclosed audit exception.
    documents in an independent docs/evidence-only PR.
 2. Validate JSON, repository manifest hashes, source/tree and frozen-hash
    bindings, immutable asset size/digest and credential/JWT redaction.
-3. Require push and pull-request Release Quality Gates 8/8, Squash Merge, then
-   protected-main 8/8.
-4. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the ninth
+3. Preserve the recorded initial CI block from `GHSA-2v37-7h3g-55p8`; PR #68
+   has independently resolved it through push, pull-request and main 8/8.
+4. Require fresh PR #67 push and pull-request Release Quality Gates 8/8,
+   Squash Merge, then protected-main 8/8.
+5. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the ninth
    remediation branch until this closure is complete.
 
 ### 5.2 P0 Ninth Scoped Remediation
