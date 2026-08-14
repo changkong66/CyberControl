@@ -114,6 +114,50 @@ async def test_two_instances_receive_once_after_explicit_readiness_barrier(
 
 
 @pytest.mark.asyncio
+async def test_ready_notification_bridge_delivers_a_durable_only_append(
+    postgres_runtime,
+) -> None:
+    if not RUNTIME_URL:
+        pytest.skip("PostgreSQL runtime integration URL is not configured")
+    database, _migrator, context = postgres_runtime
+    broker = SSEBroker(PostgresSSEReplayLog(database), subscriber_queue_size=16)
+    bridge = PostgresSSENotificationBridge(
+        RUNTIME_URL,
+        broker,
+        reconnect_base_seconds=0.01,
+        reconnect_max_seconds=0.05,
+        startup_timeout_seconds=2,
+    )
+    stream = broker.subscribe(context.tenant_id, heartbeat_seconds=60)
+    with tenant_scope(context):
+        received = asyncio.create_task(_next_non_heartbeat(stream))
+    await bridge.start()
+
+    try:
+        await asyncio.wait_for(stream.wait_ready(), timeout=2)
+        with tenant_scope(context):
+            persisted = await broker.persist(
+                context.tenant_id,
+                "generation.progress",
+                {"progress": 25},
+            )
+        delivered = await asyncio.wait_for(received, timeout=2)
+        assert delivered.sequence == persisted.sequence
+        with tenant_scope(context):
+            replayed = await broker._replay_log.replay(context.tenant_id, None)
+        subscriber = stream._subscriber
+        assert subscriber is not None
+        assert subscriber.last_sequence == persisted.sequence
+        assert subscriber.queue.empty()
+        assert [event.sequence for event in replayed] == [persisted.sequence]
+    finally:
+        received.cancel()
+        await asyncio.gather(received, return_exceptions=True)
+        await stream.aclose()
+        await bridge.close()
+
+
+@pytest.mark.asyncio
 async def test_notification_bridge_recovers_a_true_durable_disconnect_gap(
     postgres_runtime,
 ) -> None:

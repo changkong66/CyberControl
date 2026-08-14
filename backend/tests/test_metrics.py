@@ -28,6 +28,28 @@ def test_batched_histogram_matches_prometheus_histogram_observation_semantics() 
     assert 'liyans_sse_latency_seconds_sum{stage="fanout_locked"} 11.715' in rendered
 
 
+def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
+    metrics = PlatformMetrics()
+    metrics._jemalloc_stats = SimpleNamespace(
+        snapshot=lambda: {
+            "allocated": 10,
+            "active": 20,
+            "resident": 30,
+            "retained": 40,
+            "arenas": 1,
+        }
+    )
+
+    rendered = metrics.render().decode("utf-8")
+
+    assert "liyans_jemalloc_available 1.0" in rendered
+    assert 'liyans_jemalloc_bytes{metric="allocated"} 10.0' in rendered
+    assert 'liyans_jemalloc_bytes{metric="retained"} 40.0' in rendered
+    assert "liyans_jemalloc_arenas 1.0" in rendered
+    assert "tenant" not in rendered
+    assert "cursor" not in rendered
+
+
 def test_batched_histogram_observations_are_not_lost_under_concurrency() -> None:
     from concurrent.futures import ThreadPoolExecutor
 

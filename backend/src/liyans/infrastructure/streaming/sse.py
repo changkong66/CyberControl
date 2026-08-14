@@ -690,9 +690,16 @@ class SSEBroker:
         self._next_gauge_update_at = 0.0
 
     async def publish(self, tenant_id: str, event_type: str, data: dict[str, Any]) -> SSEEvent:
-        event = await self._replay_log.append(tenant_id, event_type, data)
-        self._observe("publish", "persisted")
+        event = await self.persist(tenant_id, event_type, data)
         await self.deliver(event)
+        return event
+
+    async def persist(self, tenant_id: str, event_type: str, data: dict[str, Any]) -> SSEEvent:
+        """Append an SSE event durably without synchronously fanning it out."""
+
+        event = await self._replay_log.append(tenant_id, event_type, data)
+        self._record_durable_event(event)
+        self._observe("publish", "persisted")
         return event
 
     async def deliver(self, event: SSEEvent) -> int:

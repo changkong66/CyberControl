@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from typing import Any
@@ -1590,26 +1590,33 @@ class Topic3CandidateVerificationConsumer:
 class Topic4PublicationSSEConsumer:
     """Projects committed C12 events into the durable public SSE broker."""
 
-    def __init__(self, broker: SSEBroker, metrics: Topic4RuntimeMetrics) -> None:
+    def __init__(
+        self,
+        broker: SSEBroker,
+        metrics: Topic4RuntimeMetrics,
+        *,
+        notification_ready: Callable[[], bool] | None = None,
+    ) -> None:
         self._broker = broker
         self._metrics = metrics
+        self._notification_ready = notification_ready
 
     async def __call__(self, envelope) -> None:
         if envelope.event_type != "topic4.publication.committed":
             raise ValueError("unexpected publication event")
-        await self._broker.publish(
-            envelope.tenant_id,
-            "topic4.publication.committed",
-            {
-                "schema_version": "topic4.publication.sse.v1",
-                "trace_id": envelope.trace_id,
-                "tenant_id": envelope.tenant_id,
-                "envelope_id": str(envelope.envelope_id),
-                "partition_key": envelope.partition_key,
-                "partition_sequence": envelope.sequence,
-                "payload": dict(envelope.payload),
-            },
-        )
+        data = {
+            "schema_version": "topic4.publication.sse.v1",
+            "trace_id": envelope.trace_id,
+            "tenant_id": envelope.tenant_id,
+            "envelope_id": str(envelope.envelope_id),
+            "partition_key": envelope.partition_key,
+            "partition_sequence": envelope.sequence,
+            "payload": dict(envelope.payload),
+        }
+        if self._notification_ready is not None and self._notification_ready():
+            await self._broker.persist(envelope.tenant_id, "topic4.publication.committed", data)
+        else:
+            await self._broker.publish(envelope.tenant_id, "topic4.publication.committed", data)
         self._metrics.publications.labels("committed").inc()
 
 

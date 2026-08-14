@@ -522,3 +522,47 @@ async def test_outbox_sse_bridge_removes_large_candidate_and_chunk_bodies(make_e
         "stream_ids": [str(stream_id)],
         "endpoint_template": "/internal/topic3/streams/{stream_id}/chunks",
     }
+
+
+@pytest.mark.asyncio
+async def test_outbox_sse_bridge_uses_durable_only_mode_when_notification_bridge_is_ready(
+    make_envelope,
+) -> None:
+    calls: list[str] = []
+
+    class Broker:
+        async def persist(self, *_args) -> None:
+            calls.append("persist")
+
+        async def publish(self, *_args) -> None:
+            calls.append("publish")
+
+    bridge = DurableOutboxSSEBridge(Broker(), notification_ready=lambda: True)  # type: ignore[arg-type]
+    envelope = make_envelope(3, event_type="topic3.agent-task.completed", payload={})
+
+    with tenant_scope(context()):
+        await bridge(envelope)
+
+    assert calls == ["persist"]
+
+
+@pytest.mark.asyncio
+async def test_outbox_sse_bridge_falls_back_to_immediate_fanout_until_notification_ready(
+    make_envelope,
+) -> None:
+    calls: list[str] = []
+
+    class Broker:
+        async def persist(self, *_args) -> None:
+            calls.append("persist")
+
+        async def publish(self, *_args) -> None:
+            calls.append("publish")
+
+    bridge = DurableOutboxSSEBridge(Broker(), notification_ready=lambda: False)  # type: ignore[arg-type]
+    envelope = make_envelope(3, event_type="topic3.agent-task.completed", payload={})
+
+    with tenant_scope(context()):
+        await bridge(envelope)
+
+    assert calls == ["publish"]

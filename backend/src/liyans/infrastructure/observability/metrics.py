@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ctypes
+import sys
 from bisect import bisect_left
 from collections.abc import Iterable
 from threading import Lock
@@ -17,6 +19,70 @@ APPROVED_HTTP_METHODS: Final = frozenset(
 APPROVED_DATABASE_POOL_NAMES: Final = frozenset(
     {"api", "identity-reconciler", "outbox-dispatcher", "other"}
 )
+
+
+class _JemallocStatsReader:
+    """Read fixed-cardinality jemalloc process statistics when available."""
+
+    _BYTE_STATS = ("allocated", "active", "resident", "retained")
+
+    def __init__(self) -> None:
+        self._mallctl = None
+        if sys.platform == "win32":
+            return
+        try:
+            library = ctypes.CDLL(None)
+            mallctl = library.mallctl
+            mallctl.argtypes = [
+                ctypes.c_char_p,
+                ctypes.c_void_p,
+                ctypes.POINTER(ctypes.c_size_t),
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+            ]
+            mallctl.restype = ctypes.c_int
+            self._mallctl = mallctl
+        except (AttributeError, OSError):
+            return
+
+    def _read(self, name: str, value_type: type[ctypes._SimpleCData]) -> int | None:
+        if self._mallctl is None:
+            return None
+        value = value_type()
+        size = ctypes.c_size_t(ctypes.sizeof(value))
+        try:
+            result = self._mallctl(
+                name.encode("ascii"),
+                ctypes.byref(value),
+                ctypes.byref(size),
+                None,
+                0,
+            )
+        except (OSError, TypeError):
+            return None
+        return int(value.value) if result == 0 else None
+
+    def snapshot(self) -> dict[str, int] | None:
+        if self._mallctl is None:
+            return None
+        epoch = ctypes.c_uint64(1)
+        try:
+            result = self._mallctl(
+                b"epoch",
+                None,
+                None,
+                ctypes.byref(epoch),
+                ctypes.sizeof(epoch),
+            )
+        except (OSError, TypeError):
+            return None
+        if result != 0:
+            return None
+        values = {name: self._read(f"stats.{name}", ctypes.c_size_t) for name in self._BYTE_STATS}
+        values["arenas"] = self._read("opt.narenas", ctypes.c_uint)
+        if any(value is None for value in values.values()):
+            return None
+        return {name: int(value) for name, value in values.items()}
 
 
 class _BatchedHistogramChild:
@@ -109,6 +175,7 @@ class PlatformMetrics:
 
     def __init__(self) -> None:
         self.registry = CollectorRegistry(auto_describe=True)
+        self._jemalloc_stats = _JemallocStatsReader()
         self._http_requests = Counter(
             "liyans_http_requests_total",
             "Completed HTTP requests.",
@@ -191,13 +258,43 @@ class PlatformMetrics:
             ("pool",),
             registry=self.registry,
         )
+        self._allocator_bytes = Gauge(
+            "liyans_jemalloc_bytes",
+            "Current jemalloc process byte statistics when jemalloc is available.",
+            ("metric",),
+            registry=self.registry,
+        )
+        self._allocator_arenas = Gauge(
+            "liyans_jemalloc_arenas",
+            "Configured jemalloc arena count when jemalloc is available.",
+            registry=self.registry,
+        )
+        self._allocator_available = Gauge(
+            "liyans_jemalloc_available",
+            "Whether fixed-cardinality jemalloc statistics are available.",
+            registry=self.registry,
+        )
 
     @property
     def content_type(self) -> str:
         return CONTENT_TYPE_LATEST
 
     def render(self) -> bytes:
+        self._refresh_jemalloc_metrics()
         return generate_latest(self.registry)
+
+    def _refresh_jemalloc_metrics(self) -> None:
+        stats = self._jemalloc_stats.snapshot()
+        if stats is None:
+            self._allocator_available.set(0)
+            for metric in _JemallocStatsReader._BYTE_STATS:
+                self._allocator_bytes.labels(metric).set(0)
+            self._allocator_arenas.set(0)
+            return
+        self._allocator_available.set(1)
+        for metric in _JemallocStatsReader._BYTE_STATS:
+            self._allocator_bytes.labels(metric).set(stats[metric])
+        self._allocator_arenas.set(stats["arenas"])
 
     def observe_http(
         self,

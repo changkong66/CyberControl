@@ -6,6 +6,7 @@ import hashlib
 import hmac
 from dataclasses import replace
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -14,7 +15,7 @@ from pydantic import ValidationError
 import liyans.infrastructure.streaming.sse as sse_module
 from liyans.api.streaming import OwnedStreamingResponse, TenantScopedSSEStream
 from liyans.core.errors import ErrorCategory, ErrorCode, LiyanError
-from liyans.core.tenant import TenantContext
+from liyans.core.tenant import TenantContext, tenant_scope
 from liyans.infrastructure.observability.metrics import PlatformMetrics
 from liyans.infrastructure.streaming.sse import (
     InMemorySSEReplayLog,
@@ -123,6 +124,22 @@ async def test_broker_deduplicates_local_and_notification_delivery() -> None:
     assert await waiting == event
     assert await broker.deliver(event) == 0
     assert await anext(stream) is None
+    await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_broker_persist_does_not_block_on_live_fanout() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog(), subscriber_queue_size=4)
+    stream = broker.subscribe("tenant-a", heartbeat_seconds=60)
+    waiting = asyncio.create_task(anext(stream))
+    await _wait_for_live_subscription(broker)
+
+    event = await broker.persist("tenant-a", "progress", {"value": 1})
+    await asyncio.sleep(0)
+
+    assert waiting.done() is False
+    await broker.deliver(event)
+    assert await waiting == event
     await stream.aclose()
 
 
@@ -1010,6 +1027,58 @@ async def test_owned_streaming_response_cancels_and_awaits_asgi_23_peer_task() -
     ]
     assert not any(
         task.get_name() in {"sse-response-send", "sse-response-disconnect"}
+        for task in asyncio.all_tasks()
+        if task is not asyncio.current_task()
+    )
+
+
+@pytest.mark.asyncio
+async def test_owned_streaming_response_closes_subscription_after_blocked_send_disconnect() -> None:
+    broker = SSEBroker(InMemorySSEReplayLog(), subscriber_queue_size=4)
+    context = TenantContext(
+        tenant_id="tenant-a",
+        subject_ref="subject-a",
+        roles=frozenset({"learner"}),
+        scopes=frozenset({"topic3:sse:read"}),
+        trace_id="a" * 32,
+    )
+    subscription = broker.subscribe(context.tenant_id, heartbeat_seconds=60)
+    stream = TenantScopedSSEStream(
+        SimpleNamespace(scope={"type": "http", "asgi": {"spec_version": "2.3"}}),
+        subscription,
+        context,
+        ReplayCursorCodec(b"s" * 32),
+    )
+    send_started = asyncio.Event()
+    response = OwnedStreamingResponse(stream, media_type="text/event-stream")
+
+    async def receive() -> dict[str, str]:
+        await send_started.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message: dict[str, object]) -> None:
+        if message["type"] == "http.response.body" and message.get("body"):
+            send_started.set()
+            await asyncio.Event().wait()
+
+    response_task = asyncio.create_task(
+        response(
+            {"type": "http", "asgi": {"spec_version": "2.3"}},
+            receive,
+            send,
+        )
+    )
+    await _wait_for_live_subscription(broker)
+    with tenant_scope(context):
+        await broker.publish(context.tenant_id, "progress", {"value": 1})
+
+    await asyncio.wait_for(response_task, timeout=1)
+
+    assert stream._closed is True
+    assert subscription._cleanup_complete is True
+    assert broker.active_tenants() == ()
+    assert not any(
+        task.get_name().startswith("sse-response-")
         for task in asyncio.all_tasks()
         if task is not asyncio.current_task()
     )

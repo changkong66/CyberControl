@@ -10,6 +10,7 @@ import pytest
 from integration.test_postgres_topic4 import _verification_request
 from liyans_contracts.topic4_c1 import ClaimV1, ReviewTaskState
 from liyans_contracts.topic4_c11 import ComplianceBuildProvenanceInputV1
+from prometheus_client import CollectorRegistry
 from test_topic4_c12_release import _authorization, _report
 from test_topic4_control_plane import TENANT_ID, TRACE_ID, _candidate
 
@@ -21,6 +22,8 @@ from liyans.domains.release.engine import ReleaseError
 from liyans.domains.verification.claim_extraction import DeterministicClaimExtractor
 from liyans.domains.verification.runtime import (
     TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES,
+    Topic4PublicationSSEConsumer,
+    Topic4RuntimeMetrics,
     map_topic4_error,
 )
 from liyans.infrastructure.security import AuthenticatedPrincipal
@@ -47,6 +50,37 @@ def test_topic4_internal_outbox_events_have_a_durable_runtime_sink() -> None:
         "topic4.verification.human_review_decided",
     }
     assert "topic4.publication.committed" not in TOPIC4_INTERNAL_OUTBOX_EVENT_TYPES
+
+
+@pytest.mark.asyncio
+async def test_topic4_publication_uses_durable_only_mode_when_notification_ready() -> None:
+    calls: list[str] = []
+
+    class Broker:
+        async def persist(self, *_args) -> None:
+            calls.append("persist")
+
+        async def publish(self, *_args) -> None:
+            calls.append("publish")
+
+    consumer = Topic4PublicationSSEConsumer(
+        Broker(),  # type: ignore[arg-type]
+        Topic4RuntimeMetrics(CollectorRegistry()),
+        notification_ready=lambda: True,
+    )
+    envelope = SimpleNamespace(
+        event_type="topic4.publication.committed",
+        tenant_id="tenant-a",
+        trace_id="a" * 32,
+        envelope_id=uuid4(),
+        partition_key="tenant-a:publication",
+        sequence=0,
+        payload={"publication_id": str(uuid4())},
+    )
+
+    await consumer(envelope)
+
+    assert calls == ["persist"]
 
 
 @pytest.mark.asyncio

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any, Protocol
 from uuid import UUID, uuid4
 
@@ -316,24 +317,30 @@ class Topic3WorkflowOutboxConsumer:
 class DurableOutboxSSEBridge:
     """Publishes a bounded, replayable projection of every committed domain event."""
 
-    def __init__(self, broker: SSEBroker) -> None:
+    def __init__(
+        self,
+        broker: SSEBroker,
+        *,
+        notification_ready: Callable[[], bool] | None = None,
+    ) -> None:
         self._broker = broker
+        self._notification_ready = notification_ready
 
     async def __call__(self, envelope: Topic3EnvelopeV1) -> None:
-        await self._broker.publish(
-            envelope.tenant_id,
-            envelope.event_type,
-            {
-                "schema_version": "outbox.sse-relay.v1",
-                "envelope_id": str(envelope.envelope_id),
-                "correlation_id": str(envelope.correlation_id),
-                "subject_ref": envelope.subject_ref,
-                "partition_key": envelope.partition_key,
-                "partition_sequence": envelope.sequence,
-                "created_at": envelope.created_at.isoformat(),
-                "payload": self._bounded_payload(envelope.payload),
-            },
-        )
+        data = {
+            "schema_version": "outbox.sse-relay.v1",
+            "envelope_id": str(envelope.envelope_id),
+            "correlation_id": str(envelope.correlation_id),
+            "subject_ref": envelope.subject_ref,
+            "partition_key": envelope.partition_key,
+            "partition_sequence": envelope.sequence,
+            "created_at": envelope.created_at.isoformat(),
+            "payload": self._bounded_payload(envelope.payload),
+        }
+        if self._notification_ready is not None and self._notification_ready():
+            await self._broker.persist(envelope.tenant_id, envelope.event_type, data)
+            return
+        await self._broker.publish(envelope.tenant_id, envelope.event_type, data)
 
     @staticmethod
     def _bounded_payload(payload: dict[str, Any]) -> dict[str, Any]:
