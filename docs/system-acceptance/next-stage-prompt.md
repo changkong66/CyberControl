@@ -8,12 +8,13 @@ Gate E, Gate F and Gate G remain locked.
 
 ## Fixed Evaluated Baseline
 
-- Current protected main: `c826b508ee5b094532a13bbe88d68e66948ed84c`
-- Current protected-main tree: `8a63aeefc047d4e4836db67601b0fdb4363955f3`
+- Current protected main: `0c35364d79cd89d149190c02557d2c352643300e`
+- Current protected-main tree: `284df2edd208daf2379f5e1827bad18f92e303c8`
 - Current protected-main CI:
-  [Run 31796150290](https://github.com/changkong66/CyberControl/actions/runs/31796150290), 8/8
-- Evaluated protected main: `4f0a7670782c5002a2da6e429c0428d8fef29153`
-- Evaluated tree: `d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`
+  [Run 31798607779](https://github.com/changkong66/CyberControl/actions/runs/31798607779), 8/8
+- Current product-code main: `c826b508ee5b094532a13bbe88d68e66948ed84c`
+- Evaluated Gate C source: `4f0a7670782c5002a2da6e429c0428d8fef29153`
+- Evaluated Gate C tree: `d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`
 - Seventh failure archive PR: [#65](https://github.com/changkong66/CyberControl/pull/65)
 - Seventh archive merge: `4563ad4696c2cd8cd6aaec3108a287780d236293`
 - Seventh archive protected-main CI:
@@ -25,6 +26,14 @@ Gate E, Gate F and Gate G remain locked.
 - Pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
 - Protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
 - Eighth failure-evidence PR: [#70](https://github.com/changkong66/CyberControl/pull/70)
+- Eighth archive head: `c96f64f5230bf90ffebe4d9b125af4b6be138971`
+- Eighth archive merge: `0c35364d79cd89d149190c02557d2c352643300e`
+- Eighth archive push CI:
+  [Run 31798234042](https://github.com/changkong66/CyberControl/actions/runs/31798234042), 8/8
+- Eighth archive pull-request CI:
+  [Run 31798238730](https://github.com/changkong66/CyberControl/actions/runs/31798238730), 8/8
+- Eighth archive protected-main CI:
+  [Run 31798607779](https://github.com/changkong66/CyberControl/actions/runs/31798607779), 8/8
 - Superseded archive PR: [#67](https://github.com/changkong66/CyberControl/pull/67)
 - Initial evidence push CI:
   [Run 31788710871](https://github.com/changkong66/CyberControl/actions/runs/31788710871),
@@ -60,39 +69,6 @@ Gate E, Gate F and Gate G remain locked.
 - Forensic PostgreSQL volume:
   `cybercontrol_gate_c_eighth_4f0a767_20260813_forensics`
 
-## Mandatory Phase 0: Close The Eighth Failure Archive
-
-The current evidence branch is
-`codex/phase7-gate-c-eighth-rerun-failure-evidence-v2`. Before creating any
-remediation branch:
-
-1. Perform read-only checks of branch, HEAD, tree, status, diff, `origin/main`,
-   protected-main CI, Docker state and every historical Gate C volume. The
-   replacement PR is #70; PR #67 remains an immutable superseded attempt.
-   Require the branch to contain protected main
-   `c826b508ee5b094532a13bbe88d68e66948ed84c` and preserve the evaluated Gate C
-   source binding to `4f0a7670782c5002a2da6e429c0428d8fef29153`.
-2. Preserve all existing evidence, Releases, images and volumes. Do not reset,
-   checkout, prune, delete, overwrite or amend historical snapshots.
-3. Validate and commit only the eighth-run summary, report, failure analysis,
-   database evidence, environment evidence, package metadata, manifest and the
-   four current-state documents.
-4. Verify every JSON file, repository-manifest hash/size, source/tree binding,
-   threshold/workload hash, immutable Release and asset size/digest, and the
-   credential/JWT/PII redaction scan.
-5. Keep `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Do not reinterpret five
-   stage-local passes as Gate C acceptance.
-6. Preserve and disclose immutable empty Release ID `369509815`; the valid
-   package is Release ID `369510663`, asset ID `512034056`.
-7. Preserve the initial PR #67 CI failure as a supply-chain advisory event.
-   PR #68 has resolved it independently and protected-main Run 31796150290 is
-   8/8; do not rewrite those failed runs as successful.
-8. Push the replacement docs/evidence-only branch, require fresh push and
-   pull-request Release Quality Gates 8/8, Squash Merge, then require
-   protected-main 8/8.
-9. Only after that merge and post-merge main CI are verified may the ninth
-   remediation branch be created.
-
 ## Proven Eighth-Run Boundary
 
 - All five stages passed: 20/181s, 200/304s, 500/304s, 1,000/605s and
@@ -127,9 +103,12 @@ Do not weaken any passed control while remediating these failures.
 
 ## Required PR-1: Ninth Scoped Remediation
 
-After Phase 0 closes, fetch `origin/main` and require its exact current tip to
-contain the eighth failure archive with a successful 8/8 protected-main run.
-Create exactly:
+Before creating a branch, fetch `origin/main` and require its exact tip to be
+`0c35364d79cd89d149190c02557d2c352643300e`, tree
+`284df2edd208daf2379f5e1827bad18f92e303c8`, with protected-main Run
+31798607779 at 8/8. Require the worktree to be clean, verify the frozen hashes,
+and preserve every historical Gate C package, Release, image and PostgreSQL
+volume. Then create exactly:
 
 `codex/phase7-gate-c-ninth-remediation`
 

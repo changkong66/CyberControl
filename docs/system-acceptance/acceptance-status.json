@@ -1,13 +1,13 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-08-14T11:49:39Z",
+  "generated_at_utc": "2026-08-14T12:08:44Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
   "snapshot_semantics": "VERIFIED_PARENT_MAIN_BEFORE_STATUS_ONLY_COMMIT",
   "snapshot_note": "Git commits cannot contain their own final SHA. The protected_main fields bind the verified parent main; the live branch head is authoritative for the status-only commit containing this snapshot.",
   "baseline": {
-    "protected_main_sha": "c826b508ee5b094532a13bbe88d68e66948ed84c",
-    "protected_main_tree_sha": "8a63aeefc047d4e4836db67601b0fdb4363955f3",
+    "protected_main_sha": "0c35364d79cd89d149190c02557d2c352643300e",
+    "protected_main_tree_sha": "284df2edd208daf2379f5e1827bad18f92e303c8",
     "product_source_sha": "c826b508ee5b094532a13bbe88d68e66948ed84c",
     "product_source_tree_sha": "8a63aeefc047d4e4836db67601b0fdb4363955f3",
     "evaluated_gate_c_source_sha": "4f0a7670782c5002a2da6e429c0428d8fef29153",
@@ -18,7 +18,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 31796150290,
+    "protected_main_ci_run": 31798607779,
     "protected_main_ci_run_attempt": 1,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
@@ -216,7 +216,12 @@
     "phase7_gate_c_eighth_remediation_failure_archive_initial_push_ci_run": 31788710871,
     "phase7_gate_c_eighth_remediation_failure_archive_initial_pr_ci_run": 31788806194,
     "phase7_gate_c_eighth_remediation_failure_archive_initial_ci_blocker": "GHSA-2v37-7h3g-55p8 in nanoid 3.3.17; evidence documentation was not the failing surface",
-    "phase7_gate_c_eighth_remediation_failure_archive_pr_pending": true
+    "phase7_gate_c_eighth_remediation_failure_archive_head_sha": "c96f64f5230bf90ffebe4d9b125af4b6be138971",
+    "phase7_gate_c_eighth_remediation_failure_archive_merge_sha": "0c35364d79cd89d149190c02557d2c352643300e",
+    "phase7_gate_c_eighth_remediation_failure_archive_push_ci_run": 31798234042,
+    "phase7_gate_c_eighth_remediation_failure_archive_pr_ci_run": 31798238730,
+    "phase7_gate_c_eighth_remediation_failure_archive_main_ci_run": 31798607779,
+    "phase7_gate_c_eighth_remediation_failure_archive_pr_pending": false
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -1219,7 +1224,7 @@
         "database_foreign_tenant_visible_rows": 0,
         "jwt_scan": "passed",
         "secrets_directory_present": false,
-        "archive_state": "SOURCE_BOUND_EVIDENCE_PUBLISHED",
+        "archive_state": "MAINLINE_ARCHIVED",
         "archive_branch": "codex/phase7-gate-c-eighth-rerun-failure-evidence-v2",
         "archive_pr": 70,
         "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/70",
@@ -1234,7 +1239,13 @@
         "supply_chain_fix_pr": 68,
         "supply_chain_fix_merge_sha": "c826b508ee5b094532a13bbe88d68e66948ed84c",
         "supply_chain_fix_protected_main_ci_run": 31796150290,
-        "archive_pr_pending": true
+        "archive_head_sha": "c96f64f5230bf90ffebe4d9b125af4b6be138971",
+        "archive_merge_sha": "0c35364d79cd89d149190c02557d2c352643300e",
+        "archive_push_ci_run": 31798234042,
+        "archive_pull_request_ci_run": 31798238730,
+        "archive_protected_main_ci_run": 31798607779,
+        "archive_all_ci_jobs_successful": true,
+        "archive_pr_pending": false
       }
     }
   },
@@ -1347,7 +1358,6 @@
   "next_stage": {
     "name": "PHASE7_GATE_C_NINTH_REMEDIATION_AND_RERUN",
     "allowed_scope": [
-      "complete the independent eighth-remediation failure-evidence PR and protected-main 8/8 closure before creating any remediation branch",
       "measure and remediate the persistent one-live-subscriber terminal owner, anonymous RSS retention and remaining Outbox p95 tail without changing frozen semantics",
       "preserve all five stage-local passes, zero loss, zero duplicates, zero tenant leakage, zero Outbox DEAD, ordered replay and zero aclose races",
       "add deterministic subscriber-owner, allocation-lifetime and real PostgreSQL Outbox-tail regressions tied to the measured failures",
@@ -1382,7 +1392,7 @@
     "gate_c_eighth_remediation_pr_pending": false,
     "gate_c_eighth_remediation_mainline_accepted": true,
     "gate_c_eighth_remediation_rerun_failed": true,
-    "gate_c_eighth_remediation_failure_archive_pr_pending": true,
+    "gate_c_eighth_remediation_failure_archive_pr_pending": false,
     "gate_c_ninth_remediation_pr_pending": false,
     "gate_c_rerun_ready": false,
     "gates_d_through_g_locked": true,
@@ -1394,7 +1404,6 @@
   "blocking_items": [
     "The eighth-remediation Gate C replay completed and passed all five authenticated SSE stages, including 2,000 streams for 1,804 seconds, but the final aggregate failed Outbox p95 at 2247.346ms and memory recovery at 1.393027.",
     "The final 30 recovery samples retained one LIVE subscriber even though close owners, queues and replay structures were zero; this lifecycle residual must be traced and eliminated.",
-    "Complete the independent eighth-remediation failure-evidence PR through push, pull-request, Squash Merge and protected-main 8/8 before creating the ninth remediation branch.",
     "Complete a ninth scoped remediation for the subscriber owner, anonymous RSS retention and measured Outbox p95 tail while preserving every passing frozen control.",
     "Rerun the unchanged complete Gate C workload from a new protected-main baseline and fresh isolated PostgreSQL volume without lowering thresholds or changing the workload.",
     "Only after Gate C acceptance, complete a minimum eight-hour soak test.",

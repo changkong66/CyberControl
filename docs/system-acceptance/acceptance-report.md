@@ -2,7 +2,7 @@
 
 ## Decision
 
-Current protected main `c826b508ee5b094532a13bbe88d68e66948ed84c`
+Current protected main `0c35364d79cd89d149190c02557d2c352643300e`
 remains a **release candidate**, but Gate C is **not accepted**. The formal
 eighth-remediation replay evaluated source
 `4f0a7670782c5002a2da6e429c0428d8fef29153`; its workload completed and
@@ -115,7 +115,12 @@ locked. No single-host production capacity claim is permitted.
 - PR #66 pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
 - PR #66 protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
 - Eighth-remediation failure-evidence PR:
-  [#70](https://github.com/changkong66/CyberControl/pull/70), pending archive closure
+  [#70](https://github.com/changkong66/CyberControl/pull/70), Squash Merge
+  `0c35364d79cd89d149190c02557d2c352643300e`
+- PR #70 head: `c96f64f5230bf90ffebe4d9b125af4b6be138971`
+- PR #70 push CI: [Run 31798234042](https://github.com/changkong66/CyberControl/actions/runs/31798234042), 8/8
+- PR #70 pull-request CI: [Run 31798238730](https://github.com/changkong66/CyberControl/actions/runs/31798238730), 8/8
+- PR #70 protected-main CI: [Run 31798607779](https://github.com/changkong66/CyberControl/actions/runs/31798607779), 8/8
 - Superseded evidence PR:
   [#67](https://github.com/changkong66/CyberControl/pull/67); its updated branch
   was not merged because merge commit `939d4b7b98c4` failed the repository
@@ -715,8 +720,11 @@ before and after, and the temporary replay container and volume were removed.
 Frontend identity, account administration, three-language workbench, Gate B
 mainline acceptance, the Gate C harness and eight remediation implementations
 are complete on protected main. The current protected-main baseline is
-`c826b508ee5b094532a13bbe88d68e66948ed84c`, tree
-`8a63aeefc047d4e4836db67601b0fdb4363955f3`; Run 31796150290 completed 8/8.
+`0c35364d79cd89d149190c02557d2c352643300e`, tree
+`284df2edd208daf2379f5e1827bad18f92e303c8`; Run 31798607779 completed 8/8.
+The latest product-code commit remains supply-chain main
+`c826b508ee5b094532a13bbe88d68e66948ed84c` because PR #70 changed evidence
+and current-state documentation only.
 The evaluated eighth Gate C source remains
 `4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
 `d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`. Its formal replay completed all
@@ -790,29 +798,30 @@ blocked by the newly published high-severity `GHSA-2v37-7h3g-55p8` advisory in
 `nanoid 3.3.17`, not by an evidence-document assertion. Independent PR #68
 updated only the frontend dependency override and lockfile to `nanoid 3.3.18`;
 its push Run 31790758140, pull-request Run 31790811040 and protected-main Run
-31796150290 each passed 8/8. The evidence branch now contains that protected
-main and must complete fresh push and pull-request CI before archive merge.
+31796150290 each passed 8/8.
 The subsequent PR #67 retry reached 6/8 in both Runs 31797008505 and
 31797011334; the only failing prerequisite was commit-subject validation of
 merge commit `939d4b7b98c4`, with the other six jobs successful. PR #70 is the
 non-rewritten replacement based directly on protected main and contains only
 the two validated `docs:` commits.
+Its push Run 31798234042 and pull-request Run 31798238730 passed 8/8. PR #70
+then Squash Merged as `0c35364d79cd89d149190c02557d2c352643300e`, and protected-main Run
+31798607779 passed 8/8. The eighth failure archive is therefore closed on
+mainline without changing the failed Gate C decision.
 
 ## Remaining Release Blockers
 
-1. Complete replacement evidence PR #70 through
-   push and pull-request 8/8, Squash Merge and protected-main 8/8.
-2. Create a ninth scoped remediation only for the measured one-live-subscriber
+1. Create a ninth scoped remediation only for the measured one-live-subscriber
    owner, anonymous RSS retention and Outbox p95 tail; preserve every
    stage-local pass and frozen semantic.
-3. Add deterministic subscriber-lifecycle, allocation-lifetime and real PostgreSQL Outbox-tail
+2. Add deterministic subscriber-lifecycle, allocation-lifetime and real PostgreSQL Outbox-tail
    regressions, then rerun the unchanged complete Gate C workload from another
    protected-main baseline and fresh isolated PostgreSQL volume.
-4. Only after Gate C is accepted, complete a minimum eight-hour soak across
+3. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-5. Only after Gate D is accepted, restore a PostgreSQL backup into an
+4. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+5. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 
