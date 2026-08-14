@@ -7,6 +7,13 @@ acceptance decisions. Gate D, Gate E, Gate F and Gate G remain locked.
 
 ## Verified Baseline
 
+- Current protected main after the ninth failure archive:
+  `b15ec9b63b15a36603f606c4da94f7382fb4a9fb`
+- Current protected-main tree:
+  `e74106a694a5e40a190b84951d84473584e0758a`
+- Current protected-main CI:
+  [31829334301](https://github.com/changkong66/CyberControl/actions/runs/31829334301),
+  8/8
 - Evaluated protected-main source:
   `993ed9719dfb363238fe3c2f075f1d7e7e269b40`
 - Evaluated tree:
@@ -32,27 +39,15 @@ acceptance decisions. Gate D, Gate E, Gate F and Gate G remain locked.
   `phase7-gate-c-ninth-remediation-failed-20260814-993ed97-evidence-v1`
 - Ninth PostgreSQL volume:
   `cybercontrol_gate_c_ninth_993ed97_20260815`
-
-## Mandatory Phase 0: Close Ninth Failure Archive
-
-Before any remediation branch is created:
-
-1. Verify the evidence-only branch
-   `codex/phase7-gate-c-ninth-rerun-failure-evidence`, its source/tree, clean
-   status, `origin/main`, protected-main Run `31819184923` and all historical
-   Gate C volumes.
-2. Preserve every historical snapshot, Release, image, Compose project and
-   PostgreSQL volume. Never reset, checkout, prune, delete, overwrite or amend
-   historical evidence.
-3. Validate only the ninth evidence package and the four current-state
-   documents. Verify JSON syntax, source/tree bindings, all file hashes,
-   package size, package SHA256, Release asset digest and redaction scan.
-4. Create a docs/evidence-only PR. Require push CI 8/8, pull-request CI 8/8,
-   Squash Merge and protected-main CI 8/8.
-5. Keep the formal state failed and Gate D-G locked. Do not interpret the five
-   stage-local passes as Gate C acceptance.
-6. Only after the archive merge and protected-main 8/8 may the tenth-remediation
-   branch be created.
+- Ninth failure-evidence PR: [#73](https://github.com/changkong66/CyberControl/pull/73)
+- Ninth archive head/merge:
+  `1fac554dda73b5d614bfae7981538583c4eae5ff` /
+  `b15ec9b63b15a36603f606c4da94f7382fb4a9fb`
+- Ninth archive push/PR/main CI: Runs
+  [31828555182](https://github.com/changkong66/CyberControl/actions/runs/31828555182),
+  [31828625199](https://github.com/changkong66/CyberControl/actions/runs/31828625199)
+  and [31829334301](https://github.com/changkong66/CyberControl/actions/runs/31829334301),
+  each 8/8
 
 ## Ninth Failure Boundary
 
@@ -75,7 +70,10 @@ Outbox p95 tail segments.
 
 ## Required PR-1: Tenth Scoped Remediation
 
-After the archive is merged and protected main is verified, create exactly:
+Fetch `origin/main` and require the exact tip above with a clean worktree and
+successful 8/8 protected-main run. Re-verify both frozen hashes and preserve
+every historical Gate C package, Release, image and PostgreSQL volume. Then
+create exactly:
 `codex/phase7-gate-c-tenth-remediation`.
 
 Before behavioral changes, add an ADR mapping every modification to one of the

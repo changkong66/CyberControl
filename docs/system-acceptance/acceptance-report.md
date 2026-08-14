@@ -774,10 +774,13 @@ before and after, and the temporary replay container and volume were removed.
 
 Frontend identity, account administration, three-language workbench, Gate B
 mainline acceptance, the Gate C harness and nine remediation implementations
-are complete on protected main. The current protected-main baseline is
+are complete on protected main. The current protected-main baseline is the
+archive-merged documentation commit
+`b15ec9b63b15a36603f606c4da94f7382fb4a9fb`, tree
+`e74106a694a5e40a190b84951d84473584e0758a`; Run 31829334301 completed 8/8.
+The evaluated ninth Gate C product source remains
 `993ed9719dfb363238fe3c2f075f1d7e7e269b40`, tree
-`8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5`; Run 31819184923 completed 8/8.
-That commit is also the evaluated ninth Gate C product source. Its formal replay
+`8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5`. Its formal replay
 completed all five stages and recovery and ended with zero terminal subscriber,
 queue and replay state, but failed final Outbox p95 at `3102.698ms` and memory
 recovery at `1.416064`. Gate D-G and unrelated feature development remain
@@ -864,25 +867,24 @@ PR #72 delivered the ninth remediation as
 pull-request Run 31818567543 and protected-main Run 31819184923 each passed
 8/8. The ninth fresh-volume replay removed the prior terminal subscriber
 residual and preserved every stage-local safety and delivery pass, but its
-frozen aggregate still failed Outbox p95 and RSS recovery. This evidence
-archive is being closed without reinterpreting either failure as acceptance.
+frozen aggregate still failed Outbox p95 and RSS recovery. PR #73 archived the
+evidence through push Run 31828555182, pull-request Run 31828625199 and
+protected-main Run 31829334301, each with 8/8 successful jobs. This closure
+does not reinterpret either failure as acceptance.
 
 ## Remaining Release Blockers
 
-1. Merge the ninth failure-evidence archive through push, pull-request and
-   protected-main 8/8 while retaining
-   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
-2. Create a separately authorized tenth scoped remediation only for the
+1. Create a separately authorized tenth scoped remediation only for the
    measured RSS ownership and Outbox p95 tail; preserve every stage-local pass,
    zero terminal subscriber state and frozen semantic.
-3. Add deterministic allocation-lifetime and real PostgreSQL Outbox-tail
+2. Add deterministic allocation-lifetime and real PostgreSQL Outbox-tail
    regressions, then rerun the unchanged complete Gate C workload from another
    protected-main baseline and fresh isolated PostgreSQL volume.
-4. Only after Gate C is accepted, complete a minimum eight-hour soak across
+3. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
-5. Only after Gate D is accepted, restore a PostgreSQL backup into an
+4. Only after Gate D is accepted, restore a PostgreSQL backup into an
    independent instance and measure RPO/RTO.
-6. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
+5. Complete database/index/OIDC/Provider fail-closed drills, sealed Provider
    acceptance, production deployment, cross-browser/WCAG and PII lifecycle
    acceptance.
 
