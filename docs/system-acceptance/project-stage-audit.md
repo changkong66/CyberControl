@@ -274,12 +274,13 @@ digest matches, and the JWT/credential/PII scan recorded zero hits.
 
 ## 5. Remaining Release Work
 
-### 5.1 P0 Ninth Failure Archive Closure
+### 5.1 Ninth Failure Archive Closure: Completed
 
-- Merge the independent docs/evidence-only archive through push and
-  pull-request 8/8, Squash Merge and protected-main 8/8.
-- Preserve every historical run, Release, image and volume and retain
-  `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
+- PR #73 merged the independent docs/evidence-only archive as
+  `b15ec9b63b15a36603f606c4da94f7382fb4a9fb` after push Run `31828555182`,
+  pull-request Run `31828625199` and protected-main Run `31829334301` each
+  passed 8/8. Historical runs, Releases, images and volumes remain preserved.
+- The formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
 
 ### 5.2 P0 Tenth Scoped Remediation
 
@@ -331,7 +332,7 @@ Gate A/B evidence is accepted. The project is not production accepted. The
 ninth remediation completed the full Gate C workload, passed all stage-local
 controls and ended with zero terminal subscriber/queue/replay state. The same
 run still failed Outbox p95 by `1102.698ms` and retained `1.416064` of the
-frozen RSS baseline. The immediate authorized work is the ninth failure archive
-closure. A tenth remediation may begin only from the resulting protected main
-under a separate task. Gate D-G remain locked until an independent complete
+frozen RSS baseline. The ninth failure archive is now closed on protected main.
+A tenth remediation may begin only from this resulting protected main under a
+separate task. Gate D-G remain locked until an independent complete
 Gate C success-evidence PR passes CI and merges.

@@ -1,13 +1,13 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-08-14T18:08:05Z",
+  "generated_at_utc": "2026-08-14T18:41:51Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
-  "snapshot_semantics": "VERIFIED_PARENT_MAIN_BEFORE_FAILURE_EVIDENCE_ARCHIVE_COMMIT",
-  "snapshot_note": "Git commits cannot contain their own final SHA. The protected_main fields bind the verified parent main that produced the evaluated run; the archive branch head is authoritative for this evidence-only snapshot until its PR is merged.",
+  "snapshot_semantics": "VERIFIED_PARENT_MAIN_BEFORE_STATUS_ONLY_COMMIT",
+  "snapshot_note": "Git commits cannot contain their own final SHA. The protected_main fields bind the verified archive-merged main; the live status-closure branch head is authoritative for this status-only snapshot.",
   "baseline": {
-    "protected_main_sha": "993ed9719dfb363238fe3c2f075f1d7e7e269b40",
-    "protected_main_tree_sha": "8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5",
+    "protected_main_sha": "b15ec9b63b15a36603f606c4da94f7382fb4a9fb",
+    "protected_main_tree_sha": "e74106a694a5e40a190b84951d84473584e0758a",
     "product_source_sha": "993ed9719dfb363238fe3c2f075f1d7e7e269b40",
     "product_source_tree_sha": "8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5",
     "evaluated_gate_c_source_sha": "993ed9719dfb363238fe3c2f075f1d7e7e269b40",
@@ -18,7 +18,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 31819184923,
+    "protected_main_ci_run": 31829334301,
     "protected_main_ci_run_attempt": 1,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
@@ -234,7 +234,14 @@
     "phase7_gate_c_ninth_remediation_failure_archive_run_directory": "D:\\CyberControlAcceptance\\phase7\\gate-c\\gate-c-20260814T163148Z-993ed9719dfb",
     "phase7_gate_c_ninth_remediation_failure_archive_package_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-ninth-remediation-failed-20260814-993ed97-evidence-v1/gate-c-20260814T163148Z-993ed9719dfb-ninth-remediation-failed-evidence-v1.zip",
     "phase7_gate_c_ninth_remediation_failure_archive_package_sha256": "d6b5454dad9c4b9471415211b5f212efc6f73c8f90358af2743f363f87362ea3",
-    "phase7_gate_c_ninth_remediation_failure_archive_pr_pending": true
+    "phase7_gate_c_ninth_remediation_failure_archive_pr_pending": false,
+    "phase7_gate_c_ninth_remediation_failure_archive_pr": 73,
+    "phase7_gate_c_ninth_remediation_failure_archive_pr_url": "https://github.com/changkong66/CyberControl/pull/73",
+    "phase7_gate_c_ninth_remediation_failure_archive_head_sha": "1fac554dda73b5d614bfae7981538583c4eae5ff",
+    "phase7_gate_c_ninth_remediation_failure_archive_push_ci_run": 31828555182,
+    "phase7_gate_c_ninth_remediation_failure_archive_pr_ci_run": 31828625199,
+    "phase7_gate_c_ninth_remediation_failure_archive_merge_sha": "b15ec9b63b15a36603f606c4da94f7382fb4a9fb",
+    "phase7_gate_c_ninth_remediation_failure_archive_main_ci_run": 31829334301
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -1357,9 +1364,17 @@
         "database_foreign_tenant_visible_rows": 0,
         "jwt_credential_pii_scan": "passed",
         "secrets_directory_present": false,
-        "archive_state": "EVIDENCE_PR_PENDING",
+        "archive_state": "MAINLINE_ARCHIVED",
         "archive_branch": "codex/phase7-gate-c-ninth-rerun-failure-evidence",
-        "archive_pr_pending": true
+        "archive_pr": 73,
+        "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/73",
+        "archive_head_sha": "1fac554dda73b5d614bfae7981538583c4eae5ff",
+        "archive_merge_sha": "b15ec9b63b15a36603f606c4da94f7382fb4a9fb",
+        "archive_push_ci_run": 31828555182,
+        "archive_pull_request_ci_run": 31828625199,
+        "archive_protected_main_ci_run": 31829334301,
+        "archive_all_ci_jobs_successful": true,
+        "archive_pr_pending": false
       }
     }
   },
@@ -1510,7 +1525,7 @@
     "gate_c_ninth_remediation_pr_pending": false,
     "gate_c_ninth_remediation_mainline_accepted": true,
     "gate_c_ninth_remediation_rerun_failed": true,
-    "gate_c_ninth_remediation_failure_archive_pr_pending": true,
+    "gate_c_ninth_remediation_failure_archive_pr_pending": false,
     "gate_c_rerun_ready": false,
     "gates_d_through_g_locked": true,
     "backend_feature_changes_allowed": false,
@@ -1521,8 +1536,8 @@
   "blocking_items": [
     "The ninth-remediation Gate C replay completed and passed all five authenticated SSE stages, including 2,000 streams for 1,805 seconds and the fixed recovery observation, but the final aggregate failed Outbox p95 at 3102.698ms and memory recovery at 1.416064.",
     "The ninth run ended with zero subscribers, close owners, queues, replay cache events and replay tasks; the remaining memory failure is not evidence of the eighth run's one-live-subscriber residual and requires fresh ownership analysis.",
-    "Close the ninth failure evidence archive with immutable package, Release, source/tree, volume, manifest and current-state bindings; preserve PHASE7_GATE_C_FAILED_GATE_D_LOCKED.",
-    "Complete a tenth scoped remediation only after the ninth evidence archive is merged, using measured Outbox tail and RSS ownership evidence without lowering thresholds or changing the workload.",
+    "The ninth failure evidence archive is merged as b15ec9b63b15a36603f606c4da94f7382fb4a9fb through PR #73 and protected-main Run 31829334301 at 8/8; the archive does not alter the failed Gate C decision.",
+    "Complete a separately authorized tenth scoped remediation from the archive-merged protected main, using measured Outbox tail and RSS ownership evidence without lowering thresholds or changing the workload.",
     "Rerun the unchanged complete Gate C workload from a new protected-main baseline and fresh isolated PostgreSQL volume after the tenth remediation.",
     "Only after Gate C acceptance, complete a minimum eight-hour soak test.",
     "Only after Gate D acceptance, complete backup/restore, DR fail-closed drills, sealed Provider, production deployment, cross-browser/WCAG and PII lifecycle acceptance."
