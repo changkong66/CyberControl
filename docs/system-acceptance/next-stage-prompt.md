@@ -1,48 +1,80 @@
-# CyberControl Phase 7 Gate C Eighth Remediation And Rerun
+# CyberControl Phase 7 Gate C Ninth Remediation And Rerun
 
 Work only from real protected-main, GitHub Actions, Docker, PostgreSQL,
-Keycloak Token and immutable load evidence in
+Keycloak-issued Tokens and immutable load evidence in
 `C:/Users/wch06/Documents/CyberControl`. Do not fabricate source, tests, CI,
 Tokens, metrics, images, volumes, packages or acceptance decisions. Gate D,
 Gate E, Gate F and Gate G remain locked.
 
 ## Fixed Evaluated Baseline
 
-- Evaluated protected main: `fa5b4bd92e4b56704f70b63416906a10c54e0ee1`
-- Evaluated tree: `a9f020fd5cceb7a094439ad4c4089b63d3b473a7`
-- Seventh remediation PR: [#64](https://github.com/changkong66/CyberControl/pull/64)
-- Seventh remediation head: `f891ddd1c4b757f38e214a3019c82c0a777130cd`
-- Seventh remediation merge: `fa5b4bd92e4b56704f70b63416906a10c54e0ee1`
-- Push CI: [Run 31592761559](https://github.com/changkong66/CyberControl/actions/runs/31592761559), 8/8
-- Pull-request CI: [Run 31592947063](https://github.com/changkong66/CyberControl/actions/runs/31592947063), 8/8
-- Protected-main CI: [Run 31593377181](https://github.com/changkong66/CyberControl/actions/runs/31593377181), 8/8
+- Current protected main: `c826b508ee5b094532a13bbe88d68e66948ed84c`
+- Current protected-main tree: `8a63aeefc047d4e4836db67601b0fdb4363955f3`
+- Current protected-main CI:
+  [Run 31796150290](https://github.com/changkong66/CyberControl/actions/runs/31796150290), 8/8
+- Evaluated protected main: `4f0a7670782c5002a2da6e429c0428d8fef29153`
+- Evaluated tree: `d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`
+- Seventh failure archive PR: [#65](https://github.com/changkong66/CyberControl/pull/65)
+- Seventh archive merge: `4563ad4696c2cd8cd6aaec3108a287780d236293`
+- Seventh archive protected-main CI:
+  [Run 31610698379](https://github.com/changkong66/CyberControl/actions/runs/31610698379), 8/8
+- Eighth remediation PR: [#66](https://github.com/changkong66/CyberControl/pull/66)
+- Eighth remediation head: `e71654389dd2c3bf85a535faf956731cc82b289b`
+- Eighth remediation merge: `4f0a7670782c5002a2da6e429c0428d8fef29153`
+- Push CI: [Run 31629029809](https://github.com/changkong66/CyberControl/actions/runs/31629029809), 8/8
+- Pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
+- Protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
+- Eighth failure-evidence PR: [#70](https://github.com/changkong66/CyberControl/pull/70)
+- Superseded archive PR: [#67](https://github.com/changkong66/CyberControl/pull/67)
+- Initial evidence push CI:
+  [Run 31788710871](https://github.com/changkong66/CyberControl/actions/runs/31788710871),
+  failed on `GHSA-2v37-7h3g-55p8` in `nanoid 3.3.17`
+- Initial evidence pull-request CI:
+  [Run 31788806194](https://github.com/changkong66/CyberControl/actions/runs/31788806194),
+  failed on the same newly published advisory
+- Independent supply-chain PR: [#68](https://github.com/changkong66/CyberControl/pull/68)
+- Supply-chain head/merge:
+  `91d5e74904bc5b17e6d55e05b556497649ec4fd1` /
+  `c826b508ee5b094532a13bbe88d68e66948ed84c`
+- Supply-chain push/pull-request CI:
+  [Run 31790758140](https://github.com/changkong66/CyberControl/actions/runs/31790758140) /
+  [Run 31790811040](https://github.com/changkong66/CyberControl/actions/runs/31790811040), both 8/8
+- Superseded PR #67 retry CI:
+  [Run 31797008505](https://github.com/changkong66/CyberControl/actions/runs/31797008505) /
+  [Run 31797011334](https://github.com/changkong66/CyberControl/actions/runs/31797011334),
+  both 6/8 because merge commit `939d4b7b98c4` failed Conventional Commit
+  subject validation; preserve these runs as failed evidence
 - Formal state: `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Frozen thresholds SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
 - Frozen workload SHA256:
   `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`
 - Failed run:
-  `D:/CyberControlAcceptance/phase7/gate-c/gate-c-20260812T120720Z-fa5b4bd92e4b`
+  `D:/CyberControlAcceptance/phase7/gate-c/gate-c-20260812T190722Z-4f0a7670782c`
 - Immutable package SHA256:
-  `a01a16fdfc4f50f14b0a74a234a9e5f332ab20a29451c49096b6f7901236f2fd`
-- Immutable Release:
-  `phase7-gate-c-seventh-remediation-failed-20260812-fa5b4bd`
+  `b22f81bbcd42fb5dab0c9bc64891fe8b49888663ab9c0f13260b1de313802ff1`
+- Valid immutable Release:
+  `phase7-gate-c-eighth-remediation-failed-20260812-4f0a767-evidence-v1`
 - Original PostgreSQL volume:
-  `cybercontrol_gate_c_seventh_fa5b4bd_20260812`
+  `cybercontrol_gate_c_eighth_4f0a767_20260813`
 - Forensic PostgreSQL volume:
-  `cybercontrol_gate_c_seventh_fa5b4bd_20260812_forensics`
+  `cybercontrol_gate_c_eighth_4f0a767_20260813_forensics`
 
-## Mandatory Phase 0: Close The Seventh Failure Archive
+## Mandatory Phase 0: Close The Eighth Failure Archive
 
 The current evidence branch is
-`codex/phase7-gate-c-seventh-rerun-failure-evidence`. Before creating any
+`codex/phase7-gate-c-eighth-rerun-failure-evidence-v2`. Before creating any
 remediation branch:
 
 1. Perform read-only checks of branch, HEAD, tree, status, diff, `origin/main`,
-   protected-main CI, Docker state and every historical Gate C volume.
+   protected-main CI, Docker state and every historical Gate C volume. The
+   replacement PR is #70; PR #67 remains an immutable superseded attempt.
+   Require the branch to contain protected main
+   `c826b508ee5b094532a13bbe88d68e66948ed84c` and preserve the evaluated Gate C
+   source binding to `4f0a7670782c5002a2da6e429c0428d8fef29153`.
 2. Preserve all existing evidence, Releases, images and volumes. Do not reset,
    checkout, prune, delete, overwrite or amend historical snapshots.
-3. Validate and commit only the seventh-run summary, report, failure analysis,
+3. Validate and commit only the eighth-run summary, report, failure analysis,
    database evidence, environment evidence, package metadata, manifest and the
    four current-state documents.
 4. Verify every JSON file, repository-manifest hash/size, source/tree binding,
@@ -50,122 +82,153 @@ remediation branch:
    credential/JWT/PII redaction scan.
 5. Keep `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Do not reinterpret five
    stage-local passes as Gate C acceptance.
-6. Push the docs/evidence-only branch, create a ready PR, require push and
+6. Preserve and disclose immutable empty Release ID `369509815`; the valid
+   package is Release ID `369510663`, asset ID `512034056`.
+7. Preserve the initial PR #67 CI failure as a supply-chain advisory event.
+   PR #68 has resolved it independently and protected-main Run 31796150290 is
+   8/8; do not rewrite those failed runs as successful.
+8. Push the replacement docs/evidence-only branch, require fresh push and
    pull-request Release Quality Gates 8/8, Squash Merge, then require
    protected-main 8/8.
-7. Only after that merge and post-merge main CI are verified may the eighth
+9. Only after that merge and post-merge main CI are verified may the ninth
    remediation branch be created.
 
-## Proven Seventh-Run Boundary
+## Proven Eighth-Run Boundary
 
-- All five stages passed: 20/181s, 200/304s, 500/305s, 1,000/604s and
-  2,000/1,803s.
+- All five stages passed: 20/181s, 200/304s, 500/304s, 1,000/605s and
+  2,000/1,804s.
 - The fixed ten-minute recovery observation completed.
 - Connection and reconnect/replay success: `1.0 / 1.0`.
-- Delivery p95/p99 at 2,000 streams: `781/990ms`.
+- Delivery p95/p99 at 2,000 streams: `788/1042ms`.
 - Event loss, duplicate final rendering, tenant leakage and invalid-cursor
   acceptance: all `0`.
 - HTTP 5xx, unexpected disconnect, pool timeout, Outbox `DEAD`, OOM and
   unplanned restart: all `0`.
-- Final subscribers, close owners, queued events/bytes, replay buffers, replay
-  caches and replay tasks: all `0`.
-- API FDs first/last/peak: `29/30/2039` against a limit of `1,048,576`.
-- Outbox `PUBLISHED=221`, terminal `PENDING/CLAIMED/DEAD=0`.
+- Closing owners, queued events/bytes, replay buffers/caches and replay tasks:
+  all `0`.
+- API FDs first/last/peak: `29/29/2039` against a limit of `1,048,576`.
+- Outbox `PUBLISHED=223`, terminal `PENDING/CLAIMED/DEAD=0`.
 - Migration head `20260720_0010`, FORCE RLS `74/74`, append-only triggers `57`
   and foreign-tenant visibility `0`.
 - No `aclose()` race, traceback, error, pool timeout, OOM or restart log.
-- Failed Outbox p95: `2225.796ms`, required `<=2000ms`; Outbox p99
-  `3026.102ms` passed its `<=5000ms` limit.
-- Failed post-ramp RSS ratio: `1.492792`, required `<=1.10`; API RSS
-  first/last/peak was `276404634/412614656/448371098` bytes.
+- Failed Outbox p95: `2247.346ms`, required `<=2000ms`; Outbox p99
+  `3438.55ms` passed its `<=5000ms` limit.
+- Failed post-ramp RSS ratio: `1.393027`, required `<=1.10`; container RSS
+  first/last/peak was `264660582/368679322/435054182` bytes.
+- Process PSS was `300299264 -> 407353344`, USS was
+  `297070592 -> 404389888`, anonymous RSS was
+  `259416064 -> 363573248`, file RSS was unchanged at `48758784`, and map count
+  changed from `615` to `619`.
+- The final 30 recovery samples continuously reported `subscribers=1` and
+  `subscribers_live=1`. This violates the required terminal lifecycle boundary
+  and may relate to RSS retention, but the evidence does not yet prove causality.
 
-Do not weaken any passed control while remediating the two failures.
+Do not weaken any passed control while remediating these failures.
 
-## Required PR-1: Eighth Scoped Remediation
+## Required PR-1: Ninth Scoped Remediation
 
 After Phase 0 closes, fetch `origin/main` and require its exact current tip to
-contain the seventh failure archive with a successful 8/8 protected-main run.
+contain the eighth failure archive with a successful 8/8 protected-main run.
 Create exactly:
 
-`codex/phase7-gate-c-eighth-remediation`
+`codex/phase7-gate-c-ninth-remediation`
 
-from that tip. Before behavior changes, add an ADR mapping each modification to
-one measured failed control, a proposed causal mechanism and a quantitative
-disproof metric.
+Before behavior changes, add an ADR mapping every modification to one measured
+failed control, a proposed causal mechanism and a quantitative disproof metric.
 
-### A. Outbox p95 Tail Isolation
+### A. Persistent Subscriber Close Ownership
 
-- Correlate every sampled event using internal non-PII identifiers from
-  transaction commit through claimable, claim start/end, partition scheduling,
-  dispatch, server-derived service-principal authorization, durable acceptance,
-  published marking, notification bridge, SSE enqueue and client receipt.
-- Reconstruct the exact p50/p90/p95/p99 segment contributions and inspect the
-  events around the p95 boundary. The existing evidence has 221 lifecycle
-  observations, 203 claimed within one second and 211 published within 2.5
-  seconds; do not infer a single cause from aggregate timestamps.
-- Determine whether the remaining 225.796ms p95 breach is caused by wake/poll
-  jitter, claim scheduling, transaction/session acquisition, partition
-  head-of-line blocking, authorization/durable acceptance, published marking or
-  event-loop scheduling.
-- Keep `FOR UPDATE SKIP LOCKED`, claim tokens, leases, retries, partition order,
-  idempotent durable acceptance, published cursor and atomic Outbox semantics.
-- A valid finalized event must end `PUBLISHED`; invalid and cross-tenant events
-  must remain fail-closed. Cancellation and timeout must release or renew claims
-  without long-lived `CLAIMED/PENDING` rows.
-- Do not acknowledge publication early, skip durable acceptance, weaken order,
-  broaden service roles or add client-supplied identity headers.
+- Trace the single residual subscriber from HTTP request admission through
+  generator ownership, disconnect monitoring, heartbeat/live wait, response
+  cancellation, task completion and subscriber removal.
+- Determine whether the retained stream is the expired-token/invalid-cursor
+  probe, a readiness request, a planned disconnect, a Locust connection or a
+  server-side lifecycle task. Do not identify it by tenant, subject or cursor in
+  logs or metric labels.
+- Preserve one explicit idempotent close owner. No task may call `aclose()`
+  while another task advances the same generator.
+- Cancel and await disconnect, heartbeat, replay, live-queue and response-body
+  tasks before subscriber removal, ContextVar restoration, session rollback and
+  connection-pool return.
+- Prove cleanup after replay yield, live wait, token expiry, invalid cursor,
+  forced disconnect, timeout, client cancellation and coordinated shutdown.
+- Keep all lifecycle metrics bounded and free of PII/cardinality expansion.
 
-Disproof metric: under the unchanged formal workload, created-to-published p95
-must be `<=2000ms` and p99 `<=5000ms`, with `DEAD=0`, no long-lived
-`CLAIMED/PENDING`, unchanged partition order and zero tenant leakage.
+Disproof metric: after formal clients disconnect, subscriber and
+live-subscriber gauges must reach zero and remain zero throughout the unchanged
+ten-minute recovery, with close owners, queues, replay state, tasks and FDs at
+their required terminal values and no async-generator close warning.
 
-### B. RSS Retention Ownership
+### B. Anonymous RSS/PSS/USS Retention
 
-- Capture synchronized RSS, USS/PSS, `/proc` memory maps, tracemalloc current
-  and peak allocations, allocator statistics, GC generation counts, object
-  counts and bounded inventories before ramp, at 2,000 streams, after forced
-  disconnect and throughout the unchanged ten-minute recovery.
-- Compare snapshots by allocation traceback and object type. Verify ownership
-  in metric label/state storage, HTTP and database pools, task exceptions and
-  frames, SSE serialization buffers, queue payloads, replay structures and
-  client/request lifecycle objects.
-- Distinguish reachable Python objects from native allocator arena
-  fragmentation and legitimate bounded pool high-water state. If allocator
-  behavior is the proven owner, any production configuration change must apply
-  from process start, be justified in the ADR and pass complete regression; a
-  recovery-only trim is not acceptable.
-- Preserve the single idempotent close owner. Cancel and await disconnect,
-  heartbeat, replay and live-queue tasks before subscriber, ContextVar, session
-  and connection cleanup.
-- Prove connection-pool return, transaction rollback, ContextVar restoration,
-  queue/replay eviction and metric-label cardinality bounds on success,
-  cancellation, token expiry, timeout and coordinated shutdown.
+- Capture synchronized container RSS, process RSS/PSS/USS, anonymous/file RSS,
+  memory maps, allocator stats, GC generations, tracemalloc snapshots, object
+  counts, task/frame inventories, pool inventories and metric cardinality
+  before ramp, at 2,000 streams, immediately after disconnect and throughout
+  recovery.
+- Compare snapshots by allocation traceback and type. Test the residual
+  subscriber as one candidate owner, but also inspect ASGI response/request
+  objects, task exceptions/frames, socket buffers, SSE serialized payloads,
+  SQLAlchemy/HTTP pools, metric label state and allocator arena high-water.
+- Distinguish reachable Python objects from native allocator fragmentation and
+  legitimate bounded pool retention. Any allocator configuration change must
+  apply from process start, be justified by measurements and pass the complete
+  regression suite.
 - Do not use `gc.collect()`, process restart, recovery-only `malloc_trim`, lower
-  cache limits without ownership evidence, changed RSS baseline, changed
-  aggregation or a client grace period as the fix.
+  cache limits without ownership evidence, changed baseline/aggregation or a
+  client grace period as the fix.
 
 Disproof metric: the unchanged recovery observation must finish with API RSS
 `<=1.10` of the frozen pre-ramp baseline, terminal lifecycle gauges at zero,
 FDs near baseline and no OOM/restart.
 
-### C. Tests And Quality Gates
+### C. Outbox p95 Tail Correlation
+
+- Correlate every sampled event using internal non-PII identifiers from
+  transaction commit through claimable, claim start/end, partition scheduling,
+  dispatch, server-derived service-principal authorization, durable acceptance,
+  published marking, notification bridge, SSE enqueue and client receipt.
+- Reconstruct p50/p90/p95/p99 segment contributions and inspect events around
+  the actual p95 boundary. Do not infer a single cause from aggregate timestamps.
+- Determine whether the remaining `247.346ms` breach is caused by wake/poll
+  jitter, session acquisition, claim scheduling, partition head-of-line
+  blocking, authorization/durable acceptance, published marking or event-loop
+  scheduling.
+- Keep `FOR UPDATE SKIP LOCKED`, claim tokens, leases, retries, partition order,
+  idempotent durable acceptance, published cursor and atomic Outbox semantics.
+- Valid finalized events must end `PUBLISHED`; invalid and cross-tenant events
+  remain fail-closed. Cancellation and timeout must not leave long-lived
+  `CLAIMED/PENDING` work.
+- Do not acknowledge publication early, skip durable acceptance, broaden
+  service roles or add client-supplied identity headers.
+
+Disproof metric: under the unchanged workload, created-to-published p95 must be
+`<=2000ms` and p99 `<=5000ms`, with `DEAD=0`, no long-lived
+`CLAIMED/PENDING`, unchanged partition order and zero tenant leakage.
+
+### D. Tests And Quality Gates
 
 Add focused unit, deterministic concurrency and real PostgreSQL tests for:
 
-- Outbox wakeup and poll jitter at the p95 boundary;
-- claim-batch, lease renewal/release, retry exhaustion and partition ordering;
+- the exact residual-subscriber request/lifecycle path;
+- replay/live cancellation, token expiry, invalid cursor and double close;
+- coordinated shutdown, response-body completion and close-owner idempotency;
+- ContextVar restoration, session rollback, pool return, task/frame and FD
+  release;
+- bounded queue/replay/metric-label state and slow-consumer backpressure;
+- allocation ownership and anonymous-memory recovery without forced GC;
+- Outbox wake/poll jitter, claim batch, lease release/renewal, retry exhaustion
+  and partition ordering;
 - valid finalized, invalid, duplicate and cross-tenant dispatch;
 - publisher cancellation/timeout and terminal `PENDING/CLAIMED/DEAD` state;
-- notification bridge readiness and ordered SSE enqueue;
-- allocation ownership and bounded metric-label cardinality;
-- slow-consumer, replay, cancellation, double-close and coordinated shutdown;
-- ContextVar restoration, session/pool return, task/frame release and FD cleanup;
-- signed cursor tamper/cross-tenant rejection and concurrent tenant isolation.
+- notification bridge readiness, ordered SSE enqueue and concurrent tenant
+  isolation.
 
-The regression for each proven defect must fail without the fix and pass with
-it. Performance tests must use real measured operations and must not claim a
-fabricated 2,000-client scale. Keep Python coverage `>=90%`, targeting no lower
-than the current 91.68% evidence. No exclusions, empty assertions or forced GC.
+Each proven-defect regression must fail without its fix and pass with it.
+Performance tests must use real measured operations and must not claim a
+fabricated 2,000-client scale. Keep Python coverage `>=90%`; target no lower
+than the current accepted code-quality evidence. No exclusions, empty
+assertions, fabricated timing or forced GC.
 
 Run the complete local quality suite: Python and real PostgreSQL integration,
 frontend unit/build/coverage, Playwright, Go fmt/vet/race/test/build, frozen
@@ -189,19 +252,21 @@ Only after PR-1 merges and protected main is clean:
    periods, baseline selection or aggregation.
 6. Bind source/tree, image IDs, Compose and lock hashes, threshold/workload
    hashes, Keycloak issuance, admission/replay/handoff, Outbox segment and
-   client metrics, CPU/RSS/USS/PSS/FD/restarts, PostgreSQL sessions/pool/RLS/
-   Outbox terminal state, redacted logs and a SHA256 manifest to the result.
+   client metrics, CPU/RSS/USS/PSS/FD/restarts, terminal subscriber/task/queue/
+   replay inventories, PostgreSQL sessions/pool/RLS/Outbox state, redacted logs
+   and a SHA256 manifest to the result.
 7. Publish a new immutable external package. Preserve every previous failed
-   package and PostgreSQL volume.
+   package, Release and PostgreSQL volume.
 
-If every frozen control passes, create an independent success-evidence PR,
-mark `PHASE7_GATE_C_MAINLINE_ACCEPTED_GATE_D_READY`, require push and
-pull-request 8/8, Squash Merge and protected-main 8/8, then stop.
+If every frozen control passes and the required terminal lifecycle boundary is
+zero, create an independent success-evidence PR, mark
+`PHASE7_GATE_C_MAINLINE_ACCEPTED_GATE_D_READY`, require push and pull-request
+8/8, Squash Merge and protected-main 8/8, then stop.
 
-If any frozen control fails, stop the workload, publish a new immutable failure
-package, create an independent failure-evidence PR, retain
-`PHASE7_GATE_C_FAILED_GATE_D_LOCKED`, complete the same CI/merge closure and
-stop.
+If any frozen control or required terminal lifecycle boundary fails, stop the
+workload, publish a new immutable failure package, create an independent
+failure-evidence PR, retain `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`, complete the
+same CI/merge closure and stop.
 
 ## Permanent Constraints And Stop Rule
 
