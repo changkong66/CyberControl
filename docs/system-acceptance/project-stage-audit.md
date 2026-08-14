@@ -6,9 +6,11 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main source is
-`c826b508ee5b094532a13bbe88d68e66948ed84c`, tree
-`8a63aeefc047d4e4836db67601b0fdb4363955f3`. Protected-main Release Quality
-Gates Run 31796150290 completed 8/8 jobs successfully. The eighth Gate C replay
+`0c35364d79cd89d149190c02557d2c352643300e`, tree
+`284df2edd208daf2379f5e1827bad18f92e303c8`. Protected-main Release Quality
+Gates Run 31798607779 completed 8/8 jobs successfully. The latest product-code
+commit remains `c826b508ee5b094532a13bbe88d68e66948ed84c`; PR #70 changed evidence and
+current-state documentation only. The eighth Gate C replay
 itself remains bound to evaluated source
 `4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
 `d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`.
@@ -127,8 +129,11 @@ highest release risk.
   pull-request Run 31790811040 and protected-main Run 31796150290 each passed
   8/8. The subsequent PR #67 retry reached 6/8 in Runs 31797008505 and
   31797011334 because merge commit `939d4b7b98c4` failed Conventional Commit
-  subject validation; its other six jobs passed. PR #70 is the replacement
-  archive based directly on protected main and requires fresh green CI.
+  subject validation; its other six jobs passed. PR #70 replaced it directly
+  from protected main, passed push Run 31798234042 and pull-request Run
+  31798238730 at 8/8, Squash Merged as
+  `0c35364d79cd89d149190c02557d2c352643300e`, and passed protected-main Run
+  31798607779 at 8/8. The eighth failure archive is closed on mainline.
 
 ## 3. Historical Seventh Gate C Evidence Boundary
 
@@ -230,21 +235,7 @@ preserved as a disclosed audit exception.
 
 ## 5. Remaining Release Work
 
-### 5.1 P0 Eighth Failure Archive Closure
-
-1. Complete replacement PR #70, containing only the seven eighth-run evidence
-   files and four current-state documents, as an independent docs/evidence-only
-   archive.
-2. Validate JSON, repository manifest hashes, source/tree and frozen-hash
-   bindings, immutable asset size/digest and credential/JWT redaction.
-3. Preserve the recorded initial CI block from `GHSA-2v37-7h3g-55p8`; PR #68
-   has independently resolved it through push, pull-request and main 8/8.
-4. Require fresh PR #70 push and pull-request Release Quality Gates 8/8,
-   Squash Merge, then protected-main 8/8.
-5. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the ninth
-   remediation branch until this closure is complete.
-
-### 5.2 P0 Ninth Scoped Remediation
+### 5.1 P0 Ninth Scoped Remediation
 
 - Trace and eliminate the persistent one-live-subscriber owner through the
   complete close path, then correlate each Outbox event from transaction commit
@@ -262,7 +253,7 @@ preserved as a disclosed audit exception.
 - Add deterministic unit, concurrency and real PostgreSQL regressions. Keep
   Python coverage at least 90% and pass every release-quality gate.
 
-### 5.3 P0 Fresh Protected-Main Replay
+### 5.2 P0 Fresh Protected-Main Replay
 
 1. Merge the ninth remediation only after push and pull-request 8/8, then
    require protected-main 8/8.
@@ -274,7 +265,7 @@ preserved as a disclosed audit exception.
 5. Any frozen-control failure requires a new immutable failure archive and
    keeps Gate D locked. Only a complete same-run pass can mark Gate C accepted.
 
-### 5.4 Work Locked Behind Gate C
+### 5.3 Work Locked Behind Gate C
 
 - Gate D: at least eight hours of generation, verification, review, release and
   SSE soak under pre-frozen thresholds.
@@ -295,7 +286,7 @@ Gate A/B evidence is accepted. The project is not production accepted. The
 eighth remediation completed the full Gate C workload and passed all stage-local
 controls, but the same run still failed Outbox p95 by `247.346ms`, retained
 `1.393027` of the frozen RSS baseline and left one LIVE subscriber through the
-final recovery samples. The next authorized action is to close the independent
-eighth failure-evidence PR, followed by a ninth narrowly scoped remediation and
-a fresh protected-main replay. Gate D-G remain locked until an independent Gate
-C success-evidence PR passes CI and merges.
+final recovery samples. The eighth failure archive is closed on protected main.
+The next authorized action is a ninth narrowly scoped remediation followed by a
+fresh protected-main replay. Gate D-G remain locked until an independent Gate C
+success-evidence PR passes CI and merges.
