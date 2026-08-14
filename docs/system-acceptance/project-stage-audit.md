@@ -6,21 +6,22 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The evaluated protected-main source is
-`fa5b4bd92e4b56704f70b63416906a10c54e0ee1`, tree
-`a9f020fd5cceb7a094439ad4c4089b63d3b473a7`. Protected-main Release Quality
-Gates Run 31593377181 completed 8/8 jobs successfully.
+`4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
+`d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`. Protected-main Release Quality
+Gates Run 31629561293 completed 8/8 jobs successfully.
 
 The formal state remains:
 
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
-Gate A and Gate B are accepted. Gate C is not accepted. The seventh formal
+Gate A and Gate B are accepted. Gate C is not accepted. The eighth formal
 Gate C replay completed the entire frozen workload, including 2,000
-authenticated SSE streams for 1,803 seconds and the fixed ten-minute recovery
+authenticated SSE streams for 1,804 seconds and the fixed ten-minute recovery
 observation. Every stage-local control passed, but the final aggregate failed
-the frozen Outbox p95 and memory-recovery controls. A partial or near-threshold
-pass cannot advance the release state. Gate D through Gate G and unrelated
-product work remain locked.
+the frozen Outbox p95 and memory-recovery controls. The final 30 recovery
+samples also retained one LIVE subscriber, violating the required lifecycle
+boundary. A partial or near-threshold pass cannot advance the release state.
+Gate D through Gate G and unrelated product work remain locked.
 
 | Area | Current maturity | Evidence-based judgment |
 | --- | --- | --- |
@@ -29,7 +30,7 @@ product work remain locked.
 | Identity and account backend | complete for current scope | Keycloak authority, registration, projection, administration and recovery are integrated |
 | Three-language frontend | complete for current scope | business, account and locale surfaces are merged and tested |
 | Gate B business replay | accepted | clean PostgreSQL replay and evidence dataset controls passed from protected main |
-| Gate C authenticated SSE | failed | all stages passed locally, but final Outbox p95 and RSS recovery controls failed |
+| Gate C authenticated SSE | failed | all stages passed locally, but final Outbox p95 and RSS recovery controls failed; one LIVE subscriber remained in recovery |
 | Production operations | locked | soak, DR, Provider and deployment acceptance cannot start before Gate C success |
 
 Feature completeness is not production acceptance. The remaining feature count
@@ -108,8 +109,15 @@ highest release risk.
   Go, contract, SBOM/license, dependency audit, Trivy and Gitleaks gates passed.
 - Seven prior Gate C failures and their packages remain immutable; none is
   rewritten as a success.
+- PR #65 closed the seventh failure archive as a docs/evidence-only change;
+  protected-main Run 31610698379 completed 8/8.
+- PR #66 delivered the eighth remediation as protected main
+  `4f0a7670782c5002a2da6e429c0428d8fef29153` after push Run 31629029809,
+  pull-request Run 31629100666 and protected-main Run 31629561293 each passed
+  8/8. Its complete fresh-volume replay still failed Outbox p95 and RSS
+  recovery; its failure package is newly archived and immutable.
 
-## 3. Seventh Gate C Evidence Boundary
+## 3. Historical Seventh Gate C Evidence Boundary
 
 The authoritative run is:
 
@@ -178,27 +186,58 @@ https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-seventh-r
 GitHub reports the Release and asset as immutable, and the credential/JWT scan
 recorded zero hits.
 
-## 4. Remaining Release Work
+## 4. Eighth Gate C Evidence Boundary
 
-### 4.1 P0 Seventh Failure Archive Closure
+The current authoritative run is:
 
-1. Commit only the seven seventh-run evidence files and four current-state
+`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260812T190722Z-4f0a7670782c`
+
+It used Compose project `cybercontrol-gate-c-eighth-4f0a767-20260813`, fresh
+PostgreSQL volume `cybercontrol_gate_c_eighth_4f0a767_20260813`, real
+Keycloak-issued Tokens, two tenants and twenty real subjects. The five stages
+and fixed recovery completed. Stage-local safety and delivery controls passed;
+the final Outbox p95 was `2247.346ms` against `<=2000ms`, and post-ramp RSS
+ratio was `1.393027` against `<=1.10`. Outbox p99 was `3438.55ms` and passed.
+
+The last 30 recovery samples all had `subscribers=1` and
+`subscribers_live=1`, while close owners, queued events/bytes, replay
+buffers/caches and replay tasks were zero. This residual is explicitly recorded
+as a lifecycle defect and possible memory owner, not treated as acceptance.
+Container RSS first/last/peak was `264660582 / 368679322 / 435054182` bytes;
+PSS `300299264 -> 407353344`; USS `297070592 -> 404389888`; anonymous RSS
+`259416064 -> 363573248`; file RSS was unchanged. FDs returned to `29` after
+peaking at `2039`; Outbox terminal `PENDING/CLAIMED/DEAD=0`; FORCE RLS was
+`74/74`; foreign-tenant visibility was `0`.
+
+The valid immutable package is
+`gate-c-20260812T190722Z-4f0a7670782c-eighth-remediation-failed-evidence-v1.zip`,
+SHA256 `b22f81bbcd42fb5dab0c9bc64891fe8b49888663ab9c0f13260b1de313802ff1`,
+on Release `369510663`. Immutable Release `369509815` has zero assets and is
+preserved as a disclosed audit exception.
+
+## 5. Remaining Release Work
+
+### 5.1 P0 Eighth Failure Archive Closure
+
+1. Commit only the seven eighth-run evidence files and four current-state
    documents in an independent docs/evidence-only PR.
 2. Validate JSON, repository manifest hashes, source/tree and frozen-hash
    bindings, immutable asset size/digest and credential/JWT redaction.
 3. Require push and pull-request Release Quality Gates 8/8, Squash Merge, then
    protected-main 8/8.
-4. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the eighth
+4. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the ninth
    remediation branch until this closure is complete.
 
-### 4.2 P0 Eighth Scoped Remediation
+### 5.2 P0 Ninth Scoped Remediation
 
-- Correlate each Outbox event from transaction commit through claim,
-  authorization, durable acceptance, published marking, notification and SSE
-  enqueue. Fix only the measured owner of the p95 tail while preserving leases,
+- Trace and eliminate the persistent one-live-subscriber owner through the
+  complete close path, then correlate each Outbox event from transaction commit
+  through claim, authorization, durable acceptance, published marking,
+  notification and SSE enqueue. Fix only measured owners while preserving leases,
   retries, partition order, idempotency and atomic publication.
 - Distinguish live-object retention from allocator fragmentation/high-water
-  behavior using tracemalloc, object counts, USS/PSS/RSS and allocator evidence.
+  behavior using tracemalloc, object counts, USS/PSS/RSS, allocator and map
+  evidence.
   Fix the actual owner or production allocator behavior; forced GC, recovery-
   only trimming, restart or altered aggregation is not an acceptance fix.
 - Preserve all five stage passes, zero loss, zero final duplicates, zero tenant
@@ -207,9 +246,9 @@ recorded zero hits.
 - Add deterministic unit, concurrency and real PostgreSQL regressions. Keep
   Python coverage at least 90% and pass every release-quality gate.
 
-### 4.3 P0 Fresh Protected-Main Replay
+### 5.3 P0 Fresh Protected-Main Replay
 
-1. Merge the eighth remediation only after push and pull-request 8/8, then
+1. Merge the ninth remediation only after push and pull-request 8/8, then
    require protected-main 8/8.
 2. Build all images from that main without `-SkipBuild`.
 3. Use a unique Compose project, evidence directory and fresh PostgreSQL volume;
@@ -219,7 +258,7 @@ recorded zero hits.
 5. Any frozen-control failure requires a new immutable failure archive and
    keeps Gate D locked. Only a complete same-run pass can mark Gate C accepted.
 
-### 4.4 Work Locked Behind Gate C
+### 5.4 Work Locked Behind Gate C
 
 - Gate D: at least eight hours of generation, verification, review, release and
   SSE soak under pre-frozen thresholds.
@@ -233,14 +272,14 @@ recorded zero hits.
 - Major dependency upgrades and unrelated product features remain isolated and
   unauthorized during Gate C closure.
 
-## 5. Final Audit Judgment
+## 6. Final Audit Judgment
 
 CyberControl's current commercial product feature chain is implemented, and
 Gate A/B evidence is accepted. The project is not production accepted. The
-seventh remediation materially advanced Gate C by completing and passing every
-stage-local control at 2,000 authenticated streams, but the same run still
-failed Outbox p95 by 225.796 ms and retained 149.2792% of the frozen memory
-baseline after recovery. The next authorized action is to close the independent
-failure-evidence PR, followed by an eighth narrowly scoped remediation and a
-fresh protected-main replay. Gate D-G remain locked until an independent Gate C
-success-evidence PR passes CI and merges.
+eighth remediation completed the full Gate C workload and passed all stage-local
+controls, but the same run still failed Outbox p95 by `247.346ms`, retained
+`1.393027` of the frozen RSS baseline and left one LIVE subscriber through the
+final recovery samples. The next authorized action is to close the independent
+eighth failure-evidence PR, followed by a ninth narrowly scoped remediation and
+a fresh protected-main replay. Gate D-G remain locked until an independent Gate
+C success-evidence PR passes CI and merges.
