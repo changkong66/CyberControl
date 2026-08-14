@@ -2,9 +2,10 @@
 
 ## Decision
 
-Protected-main Gate C eighth-remediation baseline
-`4f0a7670782c5002a2da6e429c0428d8fef29153` remains a **release candidate**,
-but Gate C is **not accepted**. The eighth-remediation workload completed and
+Current protected main `c826b508ee5b094532a13bbe88d68e66948ed84c`
+remains a **release candidate**, but Gate C is **not accepted**. The formal
+eighth-remediation replay evaluated source
+`4f0a7670782c5002a2da6e429c0428d8fef29153`; its workload completed and
 stage-locally passed 20, 200, 500, 1,000 and 2,000 authenticated streams plus
 the ten-minute recovery observation. The final aggregate failed the frozen
 Outbox p95 and post-ramp memory-recovery controls. The last 30 recovery samples
@@ -113,6 +114,18 @@ locked. No single-host production capacity claim is permitted.
 - PR #66 push CI: [Run 31629029809](https://github.com/changkong66/CyberControl/actions/runs/31629029809), 8/8
 - PR #66 pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
 - PR #66 protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
+- Eighth-remediation failure-evidence PR:
+  [#67](https://github.com/changkong66/CyberControl/pull/67), pending archive closure
+- PR #67 initial push/pull-request CI:
+  [Run 31788710871](https://github.com/changkong66/CyberControl/actions/runs/31788710871) /
+  [Run 31788806194](https://github.com/changkong66/CyberControl/actions/runs/31788806194),
+  blocked by new advisory `GHSA-2v37-7h3g-55p8` in `nanoid 3.3.17`
+- Frontend supply-chain PR:
+  [#68](https://github.com/changkong66/CyberControl/pull/68), Squash Merge
+  `c826b508ee5b094532a13bbe88d68e66948ed84c`
+- PR #68 push CI: [Run 31790758140](https://github.com/changkong66/CyberControl/actions/runs/31790758140), 8/8
+- PR #68 pull-request CI: [Run 31790811040](https://github.com/changkong66/CyberControl/actions/runs/31790811040), 8/8
+- PR #68 protected-main CI: [Run 31796150290](https://github.com/changkong66/CyberControl/actions/runs/31796150290), 8/8
 - Frontend identity/i18n PR: [#30](https://github.com/changkong66/CyberControl/pull/30)
 - Evidence PR: [#32](https://github.com/changkong66/CyberControl/pull/32)
 - Alembic head: `20260720_0010`
@@ -697,10 +710,13 @@ before and after, and the temporary replay container and volume were removed.
 
 Frontend identity, account administration, three-language workbench, Gate B
 mainline acceptance, the Gate C harness and eight remediation implementations
-are complete on protected main. The current evaluated protected-main baseline
-is `4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
-`d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`; Run 31629561293 completed 8/8.
-The eighth formal Gate C replay completed all five stages and recovery, but
+are complete on protected main. The current protected-main baseline is
+`c826b508ee5b094532a13bbe88d68e66948ed84c`, tree
+`8a63aeefc047d4e4836db67601b0fdb4363955f3`; Run 31796150290 completed 8/8.
+The evaluated eighth Gate C source remains
+`4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
+`d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`. Its formal replay completed all
+five stages and recovery, but
 failed final Outbox p95 and memory-recovery controls and retained one live
 subscriber through the final 30 recovery samples. Gate D-G and unrelated
 feature development remain locked.
@@ -764,6 +780,14 @@ pull-request Run 31629100666 and protected-main Run 31629561293 each passed
 8/8. Its fresh-volume replay again passed every stage-local control but failed
 Outbox p95 at 2247.346ms and RSS recovery at 1.393027. One live subscriber
 remained throughout the final 30 recovery samples.
+
+PR #67's initial push Run 31788710871 and pull-request Run 31788806194 were
+blocked by the newly published high-severity `GHSA-2v37-7h3g-55p8` advisory in
+`nanoid 3.3.17`, not by an evidence-document assertion. Independent PR #68
+updated only the frontend dependency override and lockfile to `nanoid 3.3.18`;
+its push Run 31790758140, pull-request Run 31790811040 and protected-main Run
+31796150290 each passed 8/8. The evidence branch now contains that protected
+main and must complete fresh push and pull-request CI before archive merge.
 
 ## Remaining Release Blockers
 

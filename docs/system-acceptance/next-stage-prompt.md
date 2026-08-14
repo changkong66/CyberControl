@@ -8,6 +8,10 @@ Gate E, Gate F and Gate G remain locked.
 
 ## Fixed Evaluated Baseline
 
+- Current protected main: `c826b508ee5b094532a13bbe88d68e66948ed84c`
+- Current protected-main tree: `8a63aeefc047d4e4836db67601b0fdb4363955f3`
+- Current protected-main CI:
+  [Run 31796150290](https://github.com/changkong66/CyberControl/actions/runs/31796150290), 8/8
 - Evaluated protected main: `4f0a7670782c5002a2da6e429c0428d8fef29153`
 - Evaluated tree: `d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`
 - Seventh failure archive PR: [#65](https://github.com/changkong66/CyberControl/pull/65)
@@ -20,6 +24,20 @@ Gate E, Gate F and Gate G remain locked.
 - Push CI: [Run 31629029809](https://github.com/changkong66/CyberControl/actions/runs/31629029809), 8/8
 - Pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
 - Protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
+- Eighth failure-evidence PR: [#67](https://github.com/changkong66/CyberControl/pull/67)
+- Initial evidence push CI:
+  [Run 31788710871](https://github.com/changkong66/CyberControl/actions/runs/31788710871),
+  failed on `GHSA-2v37-7h3g-55p8` in `nanoid 3.3.17`
+- Initial evidence pull-request CI:
+  [Run 31788806194](https://github.com/changkong66/CyberControl/actions/runs/31788806194),
+  failed on the same newly published advisory
+- Independent supply-chain PR: [#68](https://github.com/changkong66/CyberControl/pull/68)
+- Supply-chain head/merge:
+  `91d5e74904bc5b17e6d55e05b556497649ec4fd1` /
+  `c826b508ee5b094532a13bbe88d68e66948ed84c`
+- Supply-chain push/pull-request CI:
+  [Run 31790758140](https://github.com/changkong66/CyberControl/actions/runs/31790758140) /
+  [Run 31790811040](https://github.com/changkong66/CyberControl/actions/runs/31790811040), both 8/8
 - Formal state: `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Frozen thresholds SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
@@ -44,6 +62,9 @@ remediation branch:
 
 1. Perform read-only checks of branch, HEAD, tree, status, diff, `origin/main`,
    protected-main CI, Docker state and every historical Gate C volume.
+   Require the branch to contain protected main
+   `c826b508ee5b094532a13bbe88d68e66948ed84c` and preserve the evaluated Gate C
+   source binding to `4f0a7670782c5002a2da6e429c0428d8fef29153`.
 2. Preserve all existing evidence, Releases, images and volumes. Do not reset,
    checkout, prune, delete, overwrite or amend historical snapshots.
 3. Validate and commit only the eighth-run summary, report, failure analysis,
@@ -56,10 +77,13 @@ remediation branch:
    stage-local passes as Gate C acceptance.
 6. Preserve and disclose immutable empty Release ID `369509815`; the valid
    package is Release ID `369510663`, asset ID `512034056`.
-7. Push the docs/evidence-only branch, create a ready PR, require push and
+7. Preserve the initial PR #67 CI failure as a supply-chain advisory event.
+   PR #68 has resolved it independently and protected-main Run 31796150290 is
+   8/8; do not rewrite those failed runs as successful.
+8. Push the updated docs/evidence-only branch, require fresh push and
    pull-request Release Quality Gates 8/8, Squash Merge, then require
    protected-main 8/8.
-8. Only after that merge and post-merge main CI are verified may the ninth
+9. Only after that merge and post-merge main CI are verified may the ninth
    remediation branch be created.
 
 ## Proven Eighth-Run Boundary
