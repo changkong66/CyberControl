@@ -1,0 +1,44 @@
+{
+  "schema_version": "cybercontrol.gate-c-repository-evidence-manifest.v1",
+  "generated_at_utc": "2026-08-14T18:08:05Z",
+  "source_commit": "993ed9719dfb363238fe3c2f075f1d7e7e269b40",
+  "source_tree": "8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5",
+  "raw_run_manifest": {
+    "path": "D:/CyberControlAcceptance/phase7/gate-c/gate-c-20260814T163148Z-993ed9719dfb/gate-c-evidence-manifest.json",
+    "entries": 110,
+    "bytes": 19432,
+    "sha256": "a2ad048f177729b8a8c09a10bc357d5660dcdd75e4bea2284da271512ffaf9f0"
+  },
+  "files": [
+    {
+      "path": "docs/system-acceptance/evidence/phase7-gate-c-ninth-remediation-summary.json",
+      "bytes": 18000,
+      "sha256": "31df2e856357dfcbd7682500e1b710c29551e60fe70d13b0e71072ca4b892f64"
+    },
+    {
+      "path": "docs/system-acceptance/evidence/phase7-gate-c-ninth-remediation-environment.json",
+      "bytes": 4112,
+      "sha256": "e340165f59eb14755af42b0d374f349ee2cb81299e7ca51907acc7f31c226e69"
+    },
+    {
+      "path": "docs/system-acceptance/evidence/phase7-gate-c-ninth-remediation-database-evidence.json",
+      "bytes": 1056,
+      "sha256": "19a9251b19078a5ff1246621930a8163e4bb5c3fa6512fccc3067a2d50e50c58"
+    },
+    {
+      "path": "docs/system-acceptance/evidence/phase7-gate-c-ninth-remediation-report.md",
+      "bytes": 4577,
+      "sha256": "58ce55480ebcdfaa4ad98167f4459966ab9fd44762becc000570a9e23885fc25"
+    },
+    {
+      "path": "docs/system-acceptance/evidence/phase7-gate-c-ninth-remediation-failure-analysis.md",
+      "bytes": 3268,
+      "sha256": "bfd48c0a2f242a54b98b75a9927f4804fe5fbb2b6864aebca3a61655b8a6d2c8"
+    },
+    {
+      "path": "docs/system-acceptance/evidence/phase7-gate-c-ninth-remediation-package.json",
+      "bytes": 2556,
+      "sha256": "c22b63e63fafc33afcef5db7d1f1fb349e97b97eb690c9a6ca84f46885302861"
+    }
+  ]
+}

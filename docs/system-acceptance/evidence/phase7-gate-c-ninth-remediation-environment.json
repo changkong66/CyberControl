@@ -1,0 +1,76 @@
+﻿{
+    "schema_version":  "cybercontrol.gate-c-environment.v1",
+    "mode":  "Full",
+    "run_id":  "gate-c-20260814T163148Z",
+    "source_commit":  "993ed9719dfb363238fe3c2f075f1d7e7e269b40",
+    "source_tree":  "8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5",
+    "branch":  "main",
+    "clean_source":  true,
+    "single_host_execution":  true,
+    "production_capacity_claim_permitted":  false,
+    "compose_config_sha256":  "1bdc70714c3c0d50d5e492403d64ba3d96703f1a85bd3bba204b4b5c5a444b4c",
+    "thresholds_sha256":  "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256":  "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+    "docker_server_version":  "29.6.1",
+    "docker_cpu_limit":  16,
+    "docker_memory_limit_bytes":  7958888448,
+    "volume":  {
+                   "CreatedAt":  "2026-08-14T16:31:50Z",
+                   "Driver":  "local",
+                   "Labels":  {
+                                  "com.cybercontrol.data-class":  "isolated-clean-postgres",
+                                  "com.cybercontrol.purpose":  "phase7-gate-c"
+                              },
+                   "Mountpoint":  "/var/lib/docker/volumes/cybercontrol_gate_c_ninth_993ed97_20260815/_data",
+                   "Name":  "cybercontrol_gate_c_ninth_993ed97_20260815",
+                   "Options":  null,
+                   "Scope":  "local"
+               },
+    "runtime_images":  {
+                           "api":  "sha256:5867732917ed02eb97911a41adcf12fa9a79b8036d68df893c97d65f910d44aa",
+                           "postgres":  "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+                           "keycloak":  "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0"
+                       },
+    "tools":  {
+                  "locust":  "locust 2.46.1 from C:\\Users\\wch06\\Documents\\CyberControl\\.venv\\Lib\\site-packages\\locust (Python 3.11.15)",
+                  "python":  "Python 3.11.15",
+                  "uv":  "uv 0.11.28 (ebf0f43d7 2026-07-07 x86_64-pc-windows-msvc)"
+              },
+    "docker_compose_version":  "5.3.0",
+    "uv_lock_sha256":  "60bf4f22b50f516bebe7f734254d64617e6e08042424d09e606995be10d8cb77",
+    "pnpm_lock_sha256":  "3112d3380670baeaa4a99ed910b4f4f215db59d470c772bc9953a2bd19ea000d",
+    "mainline_remediation":  {
+        "pull_request":  72,
+        "url":  "https://github.com/changkong66/CyberControl/pull/72",
+        "implementation_head":  "81bc33208cc5368a97ca74b9f519144cad93f196",
+        "merge_sha":  "993ed9719dfb363238fe3c2f075f1d7e7e269b40",
+        "push_ci_run":  31818504209,
+        "pull_request_ci_run":  31818567543,
+        "protected_main_ci_run":  31819184923,
+        "all_ci_jobs_successful":  true,
+        "jobs_successful_per_run":  8,
+        "jobs_total_per_run":  8
+    },
+    "formal_run":  {
+        "compose_project":  "cybercontrol-gate-c-ninth-993ed97-20260815",
+        "run_directory":  "D:\\CyberControlAcceptance\\phase7\\gate-c\\gate-c-20260814T163148Z-993ed9719dfb",
+        "postgres_volume_preserved":  true,
+        "historical_gate_c_volumes_preserved":  true,
+        "original_volume_mounted_writable_for_forensics":  false,
+        "gate_2000_executed":  true,
+        "recovery_observation_executed":  true
+    },
+    "external_package":  {
+        "name":  "gate-c-20260814T163148Z-993ed9719dfb-ninth-remediation-failed-evidence-v1.zip",
+        "bytes":  5481915,
+        "sha256":  "d6b5454dad9c4b9471415211b5f212efc6f73c8f90358af2743f363f87362ea3",
+        "release_id":  370734489,
+        "release_tag":  "phase7-gate-c-ninth-remediation-failed-20260814-993ed97-evidence-v1",
+        "release_url":  "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-ninth-remediation-failed-20260814-993ed97-evidence-v1",
+        "asset_id":  514719132,
+        "asset_digest":  "sha256:d6b5454dad9c4b9471415211b5f212efc6f73c8f90358af2743f363f87362ea3",
+        "release_immutable":  true,
+        "jwt_credential_pii_scan":  "passed",
+        "secrets_directory_present":  false
+    }
+}
