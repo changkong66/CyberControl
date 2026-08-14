@@ -119,13 +119,16 @@ highest release risk.
   pull-request Run 31629100666 and protected-main Run 31629561293 each passed
   8/8. Its complete fresh-volume replay still failed Outbox p95 and RSS
   recovery; its failure package is newly archived and immutable.
-- PR #67 opened the independent failure-evidence archive. Its initial push Run
+- PR #67 opened the first independent failure-evidence archive. Its initial push Run
   31788710871 and pull-request Run 31788806194 were blocked by newly published
   advisory `GHSA-2v37-7h3g-55p8` in `nanoid 3.3.17`, not by the evidence files.
 - Independent PR #68 updated `nanoid` to 3.3.18 and merged as protected main
   `c826b508ee5b094532a13bbe88d68e66948ed84c`; push Run 31790758140,
   pull-request Run 31790811040 and protected-main Run 31796150290 each passed
-  8/8. PR #67 still requires fresh green CI and archive merge closure.
+  8/8. The subsequent PR #67 retry reached 6/8 in Runs 31797008505 and
+  31797011334 because merge commit `939d4b7b98c4` failed Conventional Commit
+  subject validation; its other six jobs passed. PR #70 is the replacement
+  archive based directly on protected main and requires fresh green CI.
 
 ## 3. Historical Seventh Gate C Evidence Boundary
 
@@ -229,13 +232,14 @@ preserved as a disclosed audit exception.
 
 ### 5.1 P0 Eighth Failure Archive Closure
 
-1. Commit only the seven eighth-run evidence files and four current-state
-   documents in an independent docs/evidence-only PR.
+1. Complete replacement PR #70, containing only the seven eighth-run evidence
+   files and four current-state documents, as an independent docs/evidence-only
+   archive.
 2. Validate JSON, repository manifest hashes, source/tree and frozen-hash
    bindings, immutable asset size/digest and credential/JWT redaction.
 3. Preserve the recorded initial CI block from `GHSA-2v37-7h3g-55p8`; PR #68
    has independently resolved it through push, pull-request and main 8/8.
-4. Require fresh PR #67 push and pull-request Release Quality Gates 8/8,
+4. Require fresh PR #70 push and pull-request Release Quality Gates 8/8,
    Squash Merge, then protected-main 8/8.
 5. Preserve `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; do not create the ninth
    remediation branch until this closure is complete.

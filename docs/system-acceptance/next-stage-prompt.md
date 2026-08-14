@@ -24,7 +24,8 @@ Gate E, Gate F and Gate G remain locked.
 - Push CI: [Run 31629029809](https://github.com/changkong66/CyberControl/actions/runs/31629029809), 8/8
 - Pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
 - Protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
-- Eighth failure-evidence PR: [#67](https://github.com/changkong66/CyberControl/pull/67)
+- Eighth failure-evidence PR: [#70](https://github.com/changkong66/CyberControl/pull/70)
+- Superseded archive PR: [#67](https://github.com/changkong66/CyberControl/pull/67)
 - Initial evidence push CI:
   [Run 31788710871](https://github.com/changkong66/CyberControl/actions/runs/31788710871),
   failed on `GHSA-2v37-7h3g-55p8` in `nanoid 3.3.17`
@@ -38,6 +39,11 @@ Gate E, Gate F and Gate G remain locked.
 - Supply-chain push/pull-request CI:
   [Run 31790758140](https://github.com/changkong66/CyberControl/actions/runs/31790758140) /
   [Run 31790811040](https://github.com/changkong66/CyberControl/actions/runs/31790811040), both 8/8
+- Superseded PR #67 retry CI:
+  [Run 31797008505](https://github.com/changkong66/CyberControl/actions/runs/31797008505) /
+  [Run 31797011334](https://github.com/changkong66/CyberControl/actions/runs/31797011334),
+  both 6/8 because merge commit `939d4b7b98c4` failed Conventional Commit
+  subject validation; preserve these runs as failed evidence
 - Formal state: `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Frozen thresholds SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
@@ -57,11 +63,12 @@ Gate E, Gate F and Gate G remain locked.
 ## Mandatory Phase 0: Close The Eighth Failure Archive
 
 The current evidence branch is
-`codex/phase7-gate-c-eighth-rerun-failure-evidence`. Before creating any
+`codex/phase7-gate-c-eighth-rerun-failure-evidence-v2`. Before creating any
 remediation branch:
 
 1. Perform read-only checks of branch, HEAD, tree, status, diff, `origin/main`,
-   protected-main CI, Docker state and every historical Gate C volume.
+   protected-main CI, Docker state and every historical Gate C volume. The
+   replacement PR is #70; PR #67 remains an immutable superseded attempt.
    Require the branch to contain protected main
    `c826b508ee5b094532a13bbe88d68e66948ed84c` and preserve the evaluated Gate C
    source binding to `4f0a7670782c5002a2da6e429c0428d8fef29153`.
@@ -80,7 +87,7 @@ remediation branch:
 7. Preserve the initial PR #67 CI failure as a supply-chain advisory event.
    PR #68 has resolved it independently and protected-main Run 31796150290 is
    8/8; do not rewrite those failed runs as successful.
-8. Push the updated docs/evidence-only branch, require fresh push and
+8. Push the replacement docs/evidence-only branch, require fresh push and
    pull-request Release Quality Gates 8/8, Squash Merge, then require
    protected-main 8/8.
 9. Only after that merge and post-merge main CI are verified may the ninth

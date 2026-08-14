@@ -115,7 +115,11 @@ locked. No single-host production capacity claim is permitted.
 - PR #66 pull-request CI: [Run 31629100666](https://github.com/changkong66/CyberControl/actions/runs/31629100666), 8/8
 - PR #66 protected-main CI: [Run 31629561293](https://github.com/changkong66/CyberControl/actions/runs/31629561293), 8/8
 - Eighth-remediation failure-evidence PR:
-  [#67](https://github.com/changkong66/CyberControl/pull/67), pending archive closure
+  [#70](https://github.com/changkong66/CyberControl/pull/70), pending archive closure
+- Superseded evidence PR:
+  [#67](https://github.com/changkong66/CyberControl/pull/67); its updated branch
+  was not merged because merge commit `939d4b7b98c4` failed the repository
+  Conventional Commit subject gate
 - PR #67 initial push/pull-request CI:
   [Run 31788710871](https://github.com/changkong66/CyberControl/actions/runs/31788710871) /
   [Run 31788806194](https://github.com/changkong66/CyberControl/actions/runs/31788806194),
@@ -788,10 +792,15 @@ updated only the frontend dependency override and lockfile to `nanoid 3.3.18`;
 its push Run 31790758140, pull-request Run 31790811040 and protected-main Run
 31796150290 each passed 8/8. The evidence branch now contains that protected
 main and must complete fresh push and pull-request CI before archive merge.
+The subsequent PR #67 retry reached 6/8 in both Runs 31797008505 and
+31797011334; the only failing prerequisite was commit-subject validation of
+merge commit `939d4b7b98c4`, with the other six jobs successful. PR #70 is the
+non-rewritten replacement based directly on protected main and contains only
+the two validated `docs:` commits.
 
 ## Remaining Release Blockers
 
-1. Complete the independent eighth-remediation failure-evidence PR through
+1. Complete replacement evidence PR #70 through
    push and pull-request 8/8, Squash Merge and protected-main 8/8.
 2. Create a ninth scoped remediation only for the measured one-live-subscriber
    owner, anonymous RSS retention and Outbox p95 tail; preserve every
