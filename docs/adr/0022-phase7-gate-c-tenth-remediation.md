@@ -1,0 +1,46 @@
+# ADR-0022: Phase 7 Gate C Tenth Remediation Measurements
+
+**Status:** Proposed
+
+## Context
+
+The ninth protected-main Gate C replay completed every frozen workload stage
+and the ten-minute recovery observation, but the aggregate controls still
+failed:
+
+- created-to-published Outbox p95 was `3102.698 ms` against `<=2000 ms`;
+- post-ramp API RSS ratio was `1.416064` against `<=1.10`.
+
+The evidence proves the failures, but does not identify their owners. This
+remediation therefore starts with bounded, non-PII lifecycle measurements and
+must not change the frozen workload, thresholds, aggregation, or durable
+delivery semantics.
+
+## Measurements And Falsifiable Hypotheses
+
+| Failure control | Candidate mechanism | Required measurement | Disproof metric |
+| --- | --- | --- | --- |
+| Outbox p95 | wake/poll delay or claim scheduling | Correlate one internal event key through `created`, `claimable`, `claimed`, dispatch start/end, service-principal authorization, durable acceptance, `PUBLISHED`, notification and SSE enqueue. Record bounded histograms for each segment and the exact p95 cohort. | Under the unchanged formal workload, created-to-published p95 `<=2000 ms`, p99 `<=5000 ms`, `DEAD=0`, terminal `PENDING/CLAIMED=0`, and partition order unchanged. |
+| Outbox p95 | transaction/session acquisition, partition head-of-line blocking, or event-loop delay | Add queue/claim batch size, claim transaction duration, per-partition wait, dispatch duration, mark-published duration, wake-to-claim delay and event-loop scheduling observations without tenant or cursor labels. | No segment or wait reason may remain unbounded at the p95 cohort; claim release/renewal tests leave no long-lived claims after cancellation or timeout. |
+| RSS ratio | reachable Python objects, task/frame exceptions, metric state, pools, queues, replay buffers or serialization payloads | Capture synchronized bounded inventories at baseline, 2,000 streams, forced disconnect and recovery: tracemalloc current/peak, object type counts, live task names and frames, subscriber/queue/replay ownership, metric state cardinality, pool checkout state, RSS/USS/PSS/anonymous/file RSS and allocator statistics. | Recovery RSS `<=1.10` of the frozen pre-ramp baseline, lifecycle gauges zero, FD count near baseline, and no OOM/restart. The owning inventory must actually shrink after disconnect. |
+| RSS ratio | native allocator arena high-water state | Compare Python-traced bytes with process anonymous RSS and allocator statistics from process start. Any allocator configuration change must be justified by the comparison and verified from startup. | A production change is rejected unless native allocation is the measured owner and the unchanged recovery control passes without restart or recovery-only trimming. |
+
+## Constraints
+
+This ADR preserves `FOR UPDATE SKIP LOCKED`, claim leases, retries,
+partition ordering, idempotent durable acceptance, the Outbox atomic state
+transition, signed tenant-bound SSE cursors, strict sequence ordering,
+TenantContext, RLS, SERIALIZABLE transactions and C12 semantics. No client
+identity headers, broader service roles, forced GC, process restart, timeout
+increase, grace period, lower load or changed metric aggregation is allowed.
+
+All measurements have fixed-cardinality labels and use internal correlation
+identifiers only in bounded evidence files. Tenant IDs, cursor values, Tokens,
+credentials and PII are excluded from logs and metric labels.
+
+## Decision
+
+Implement measurement first, then apply only a causal fix supported by the
+captured evidence. Each behavior change must include a deterministic unit or
+real PostgreSQL regression that fails without the change, passes with it, and
+proves claim release, ordering, tenant isolation and lifecycle cleanup.
