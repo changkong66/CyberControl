@@ -51,6 +51,22 @@ TIMEOUT_BY_AGENT: dict[SourceAgent, float] = {
     SourceAgent.EXTENSION: 60.0,
 }
 
+RESOURCE_ORDER: dict[ResourceType, int] = {
+    ResourceType.LECTURER_DOC: 0,
+    ResourceType.MIND_MAP: 1,
+    ResourceType.GRADIENT_QUIZ: 2,
+    ResourceType.SIMULATION_CODE: 3,
+    ResourceType.EXTENSION_MATERIAL: 4,
+}
+
+LECTURER_DEPENDENT_AGENTS = frozenset(
+    {
+        SourceAgent.TESTER,
+        SourceAgent.CODE_SANDBOX,
+        SourceAgent.EXTENSION,
+    }
+)
+
 
 @dataclass(frozen=True, slots=True)
 class BlueprintDecision:
@@ -68,14 +84,7 @@ class ImmutableBlueprintPlanner:
         personalization: Topic2AgentContextV1,
     ) -> BlueprintDecision:
         self._validate_bindings(command, graph, personalization)
-        resource_order = {
-            ResourceType.LECTURER_DOC: 0,
-            ResourceType.MIND_MAP: 1,
-            ResourceType.GRADIENT_QUIZ: 2,
-            ResourceType.SIMULATION_CODE: 3,
-            ResourceType.EXTENSION_MATERIAL: 4,
-        }
-        ordered_resources = sorted(command.requested_resources, key=resource_order.__getitem__)
+        ordered_resources = sorted(command.requested_resources, key=RESOURCE_ORDER.__getitem__)
         agents = [AGENT_BY_RESOURCE[resource] for resource in ordered_resources]
         lecturer_task_id = (
             uuid5(command.operation_id, f"topic3-task:{SourceAgent.LECTURER.value}")
@@ -88,15 +97,14 @@ class ImmutableBlueprintPlanner:
             agent = AGENT_BY_RESOURCE[resource]
             task_id = uuid5(command.operation_id, f"topic3-task:{agent.value}")
             dependencies: list[UUID] = []
-            if lecturer_task_id is not None and agent in {
-                SourceAgent.TESTER,
-                SourceAgent.CODE_SANDBOX,
-                SourceAgent.EXTENSION,
-            }:
+            if lecturer_task_id is not None and agent in LECTURER_DEPENDENT_AGENTS:
                 dependencies.append(lecturer_task_id)
             reasons = ["explicit-resource-request", *activation[agent.value]]
+            # Inputs are validated command enums and immutable planner constants.
+            # The final blueprint validation still checks the complete DAG/hash;
+            # avoid repeating nested field validation on every deterministic build.
             steps.append(
-                Topic3BlueprintStepV1(
+                Topic3BlueprintStepV1.model_construct(
                     schema_version="topic3.blueprint-step.v1",
                     task_id=task_id,
                     ordinal=ordinal,

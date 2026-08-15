@@ -106,3 +106,25 @@ immutable index and precomputes the fixed score weights. This is a semantics-
 preserving local quality-gate fix, not a Gate C threshold or workload change. Its
 disproof is any changed path document, ordering/score regression, or failure of
 the existing Topic 2 algorithm and performance tests.
+
+## Deterministic Quality-Gate Follow-Up
+
+Push run `31864355293` and pull-request run `31864357797` both reached the
+deterministic unit suite and failed the unchanged Topic 3 planner control at
+`backend/tests/test_topic3_performance.py:32`: the Linux runner measured a
+`6.23435377 ms` mean against the existing local control budget of `<5 ms`.
+The failure was reproduced in both runs while PostgreSQL, container, Go,
+frontend, audit, SBOM, and secret-scan jobs passed. Local profiling isolated
+repeated construction of the same resource-order mapping and repeated
+validation of five planner steps whose values are derived from validated
+command enums and immutable planner constants.
+
+The follow-up hoists those immutable mappings and constructs only the nested
+step models through Pydantic's trusted `model_construct` path. The enclosing
+blueprint continues to run normal validation, including DAG ordering and the
+canonical hash validator, and `test_blueprint_steps_remain_contract_validated`
+revalidates every produced step through the public contract. The disproof is a
+changed blueprint document, ordering, dependency, activation signal, or hash,
+or a subsequent push/PR quality-gate failure. No performance assertion,
+workload, Gate C threshold, contract, identity boundary, or acceptance metric
+is changed.

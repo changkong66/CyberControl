@@ -14,6 +14,7 @@ from liyans_contracts.topic3 import (
     ExtensionContentV1,
     LecturerContentV1,
     MindMapContentV1,
+    Topic3BlueprintStepV1,
 )
 from liyans_contracts.topic3 import (
     TesterContentV1 as QuizContentV1,
@@ -109,6 +110,19 @@ def test_blueprint_is_deterministic_topological_and_personalized() -> None:
     assert all(step.dependency_task_ids == [lecturer_id] for step in first.blueprint.steps[2:])
     assert "memory-reinforcement-required" in first.activation_document["signals"]["Lecturer"]
     assert first.blueprint.max_parallelism == 3
+
+
+def test_blueprint_steps_remain_contract_validated() -> None:
+    graph = graph_snapshot()
+    decision = ImmutableBlueprintPlanner().build(
+        generation_command(),
+        graph,
+        personalization_context(graph),
+    )
+
+    for step in decision.blueprint.steps:
+        validated = Topic3BlueprintStepV1.model_validate(step.model_dump(mode="json"))
+        assert validated == step
 
 
 def test_blueprint_rejects_unknown_target_and_mixed_course() -> None:
