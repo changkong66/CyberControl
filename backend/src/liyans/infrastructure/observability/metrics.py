@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 import ctypes
+import gc
+import json
+import logging
+import os
 import sys
+import tracemalloc
 from bisect import bisect_left
+from collections import Counter as CollectionCounter
 from collections.abc import Iterable
+from pathlib import Path
 from threading import Lock
 from time import perf_counter, time
 from typing import Final
@@ -12,6 +20,56 @@ from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, G
 from prometheus_client.core import Metric
 from prometheus_client.exposition import generate_latest
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+logger = logging.getLogger(__name__)
+
+
+def _read_process_memory() -> dict[str, int]:
+    """Read Linux process memory counters without retaining process objects."""
+
+    values: dict[str, int] = {}
+    status_path = Path("/proc/self/status")
+    try:
+        for line in status_path.read_text(encoding="ascii").splitlines():
+            name, separator, raw_value = line.partition(":")
+            if not separator or name not in {
+                "VmRSS",
+                "VmSize",
+                "VmPeak",
+                "VmData",
+                "RssAnon",
+                "RssFile",
+                "RssShmem",
+            }:
+                continue
+            number = raw_value.strip().split(maxsplit=1)[0]
+            values[name.lower() + "_bytes"] = int(number) * 1024
+    except (FileNotFoundError, OSError, ValueError):
+        pass
+
+    try:
+        for line in Path("/proc/self/smaps_rollup").read_text(encoding="ascii").splitlines():
+            name, separator, raw_value = line.partition(":")
+            if not separator or name not in {
+                "Rss",
+                "Pss",
+                "Private_Clean",
+                "Private_Dirty",
+                "Anonymous",
+                "Swap",
+            }:
+                continue
+            number = raw_value.strip().split(maxsplit=1)[0]
+            values["smaps_" + name.lower() + "_bytes"] = int(number) * 1024
+    except (FileNotFoundError, OSError, ValueError):
+        pass
+
+    try:
+        with Path("/proc/self/maps").open(encoding="ascii") as maps:
+            values["memory_map_count"] = sum(1 for _ in maps)
+    except (FileNotFoundError, OSError):
+        pass
+    return values
 
 APPROVED_HTTP_METHODS: Final = frozenset(
     {"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"}
@@ -176,6 +234,25 @@ class PlatformMetrics:
     def __init__(self) -> None:
         self.registry = CollectorRegistry(auto_describe=True)
         self._jemalloc_stats = _JemallocStatsReader()
+        self._memory_diagnostics_enabled = os.getenv(
+            "LIYAN_MEMORY_DIAGNOSTICS",
+            "",
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        self._memory_diagnostics_interval = max(
+            5.0,
+            float(os.getenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "30")),
+        )
+        self._next_memory_diagnostics_at = 0.0
+        if self._memory_diagnostics_enabled and not tracemalloc.is_tracing():
+            tracemalloc.start(
+                max(
+                    1,
+                    min(
+                        25,
+                        int(os.getenv("LIYAN_MEMORY_DIAGNOSTICS_FRAMES", "8")),
+                    ),
+                )
+            )
         self._http_requests = Counter(
             "liyans_http_requests_total",
             "Completed HTTP requests.",
@@ -274,6 +351,12 @@ class PlatformMetrics:
             "Whether fixed-cardinality jemalloc statistics are available.",
             registry=self.registry,
         )
+        self._memory_diagnostics = Gauge(
+            "liyans_memory_diagnostics_gauge",
+            "Bounded process memory and task diagnostics when explicitly enabled.",
+            ("metric",),
+            registry=self.registry,
+        )
 
     @property
     def content_type(self) -> str:
@@ -281,6 +364,7 @@ class PlatformMetrics:
 
     def render(self) -> bytes:
         self._refresh_jemalloc_metrics()
+        self._refresh_memory_diagnostics()
         return generate_latest(self.registry)
 
     def _refresh_jemalloc_metrics(self) -> None:
@@ -295,6 +379,70 @@ class PlatformMetrics:
         for metric in _JemallocStatsReader._BYTE_STATS:
             self._allocator_bytes.labels(metric).set(stats[metric])
         self._allocator_arenas.set(stats["arenas"])
+
+    def _refresh_memory_diagnostics(self) -> None:
+        if not self._memory_diagnostics_enabled:
+            return
+        now = perf_counter()
+        if now < self._next_memory_diagnostics_at:
+            return
+        self._next_memory_diagnostics_at = now + self._memory_diagnostics_interval
+        current, peak = tracemalloc.get_traced_memory()
+        task_names: CollectionCounter[str] = CollectionCounter()
+        task_frames = 0
+        task_count = 0
+        try:
+            tasks = list(asyncio.all_tasks())
+        except RuntimeError:
+            tasks = []
+        for task in tasks:
+            task_count += 1
+            task_kind = task.get_name().split(":", 1)[0][:64]
+            task_names[task_kind] += 1
+            task_frames += len(task.get_stack(limit=8))
+        object_counts: CollectionCounter[str] = CollectionCounter()
+        tracked_objects = 0
+        for value in gc.get_objects():
+            tracked_objects += 1
+            value_type = type(value)
+            module = value_type.__module__
+            if isinstance(module, str) and module.startswith(
+                ("liyans", "asyncio", "starlette", "uvicorn")
+            ):
+                object_counts[f"{module}.{value_type.__qualname__}"] += 1
+        snapshot = tracemalloc.take_snapshot()
+        top_allocations = [
+            {
+                "count": statistic.count,
+                "size_bytes": statistic.size,
+                "trace": str(statistic.traceback[0]),
+            }
+            for statistic in snapshot.statistics("traceback")[:8]
+        ]
+        diagnostics = {
+            "tracemalloc_current_bytes": current,
+            "tracemalloc_peak_bytes": peak,
+            "tasks": task_count,
+            "task_frames": task_frames,
+            "tracked_objects": tracked_objects,
+            "gc_generation_0": gc.get_count()[0],
+            "gc_generation_1": gc.get_count()[1],
+            "gc_generation_2": gc.get_count()[2],
+        }
+        diagnostics.update(_read_process_memory())
+        for metric, value in diagnostics.items():
+            self._memory_diagnostics.labels(metric).set(value)
+        logger.info(
+            "Memory diagnostics snapshot %s",
+            json.dumps(
+                {
+                    "tasks": task_names.most_common(20),
+                    "object_types": object_counts.most_common(20),
+                    "top_allocations": top_allocations,
+                },
+                sort_keys=True,
+            ),
+        )
 
     def observe_http(
         self,

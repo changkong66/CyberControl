@@ -50,6 +50,27 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "cursor" not in rendered
 
 
+def test_memory_diagnostics_are_opt_in_and_expose_only_bounded_fields(monkeypatch, caplog) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "5")
+    metrics = PlatformMetrics()
+
+    with caplog.at_level("INFO"):
+        rendered = metrics.render().decode("utf-8")
+
+    assert "liyans_memory_diagnostics_gauge" in rendered
+    assert "tracemalloc_current_bytes" in rendered
+    diagnostics = [
+        record.message
+        for record in caplog.records
+        if "Memory diagnostics snapshot" in record.message
+    ]
+    assert diagnostics
+    assert "tenant_id" not in diagnostics[-1]
+    assert "Authorization" not in diagnostics[-1]
+    assert "cursor" not in diagnostics[-1]
+
+
 def test_batched_histogram_observations_are_not_lost_under_concurrency() -> None:
     from concurrent.futures import ThreadPoolExecutor
 

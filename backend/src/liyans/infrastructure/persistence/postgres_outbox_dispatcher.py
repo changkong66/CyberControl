@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from time import monotonic
 from uuid import UUID
 
 from liyans_contracts.envelope import Topic3EnvelopeV1
-from sqlalchemy import case, func, select, update
+from sqlalchemy import case, exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -27,12 +28,30 @@ class PostgresOutboxDispatcherRepository:
             raise ValueError("claim_lease_seconds must be positive")
         self._database = database
         self._claim_lease = timedelta(seconds=claim_lease_seconds)
+        self._recovery_interval = min(1.0, max(0.1, claim_lease_seconds / 2))
+        self._next_recovery_at = 0.0
 
     async def claim_batch(self, worker_id: str, limit: int) -> list[OutboxMessage]:
         self._validate_claim_request(worker_id, limit)
         now = datetime.now(UTC)
         async with self._database.transaction() as session:
-            await self._recover_expired_claims(session, now)
+            if monotonic() >= self._next_recovery_at:
+                await self._recover_expired_claims(session, now)
+                self._next_recovery_at = monotonic() + self._recovery_interval
+            else:
+                expired = await session.scalar(
+                    select(
+                        exists(
+                            select(1).where(
+                                OutboxMessageModel.state == OutboxStatus.CLAIMED.value,
+                                OutboxMessageModel.claim_expires_at <= now,
+                            )
+                        )
+                    )
+                )
+                if expired:
+                    await self._recover_expired_claims(session, now)
+                    self._next_recovery_at = monotonic() + self._recovery_interval
             published = aliased(OutboxMessageModel)
             published_cursor = (
                 select(func.coalesce(func.max(published.sequence) + 1, 0))

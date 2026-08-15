@@ -44,3 +44,28 @@ Implement measurement first, then apply only a causal fix supported by the
 captured evidence. Each behavior change must include a deterministic unit or
 real PostgreSQL regression that fails without the change, passes with it, and
 proves claim release, ordering, tenant isolation and lifecycle cleanup.
+
+## Measured Tenth-Remediation Decision
+
+The ninth-run terminal metrics recorded 223 published Outbox messages and
+7,224 empty claim polls during the 1,805-second stage. The dispatcher executed
+the expired-claim recovery updates on every one of those polls, even when no
+claim was expired. This is a measured scheduling and database-work amplifier
+that is consistent with the remaining created-to-published tail, but it is not
+treated as the sole cause until the new per-batch traces confirm the segment.
+
+The scoped behavior change keeps recovery available on the first claim and
+whenever an expired row is detected, while avoiding the two no-op recovery
+updates between bounded recovery checkpoints. The checkpoint is at most one
+second for the frozen 30-second lease and an indexed existence probe still
+detects an expired claim between checkpoints. This changes neither lease
+duration, claim ownership, retries, ordering, durable acceptance nor the
+atomic PUBLISHED transition. Its disproof is an unchanged-workload Outbox p95
+above 2,000 ms, any non-terminal claim, DEAD row, ordering violation or tenant
+leakage.
+
+The RSS change is measurement-only at this point. Opt-in diagnostics record
+Python allocations, object types, task/frame counts, process RSS/USS/PSS
+proxies, anonymous/file RSS, mappings and allocator statistics without tenant
+or cursor labels. No allocator or cache policy is changed until a diagnostic
+run identifies a reachable owner or native allocation mechanism.

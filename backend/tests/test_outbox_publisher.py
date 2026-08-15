@@ -129,6 +129,54 @@ async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope)
 
 
 @pytest.mark.asyncio
+async def test_outbox_publisher_emits_redacted_lifecycle_trace(
+    make_envelope,
+    caplog,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LIYAN_OUTBOX_LIFECYCLE_DIAGNOSTICS", "true")
+    original = _message(make_envelope)
+    message = replace(original, claimed_at=original.created_at)
+    repository = FakeDispatchRepository([message])
+
+    async def sink(_item: OutboxMessage) -> None:
+        return None
+
+    publisher = OutboxPublisher(repository, sink, worker_id="unit-worker")
+
+    with caplog.at_level("INFO"):
+        assert await publisher.run_once() == 1
+
+    traces = [
+        record.message
+        for record in caplog.records
+        if "Outbox lifecycle trace" in record.message
+    ]
+    assert len(traces) == 1
+    trace = traces[0]
+    assert "batch_key=" in trace
+    assert "outbox_key=" in trace
+    assert "partition_key=" in trace
+    assert "claimable_to_claimed_ms=" in trace
+    assert "dispatch_to_durable_acceptance_ms=" in trace
+    assert "durable_acceptance_to_published_ms=" in trace
+    assert message.tenant_id not in trace
+    assert message.envelope.partition_key not in trace
+
+
+@pytest.mark.asyncio
+async def test_outbox_lifecycle_trace_is_disabled_by_default(make_envelope, caplog) -> None:
+    message = replace(_message(make_envelope), claimed_at=datetime.now(UTC))
+    repository = FakeDispatchRepository([message])
+    publisher = OutboxPublisher(repository, AsyncMock(), worker_id="unit-worker")
+
+    with caplog.at_level("INFO"):
+        assert await publisher.run_once() == 1
+
+    assert not any("Outbox lifecycle trace" in record.message for record in caplog.records)
+
+
+@pytest.mark.asyncio
 async def test_outbox_publisher_processes_partition_windows_in_sequence(make_envelope) -> None:
     first = _message(make_envelope, sequence=0)
     second = _message(make_envelope, sequence=1)

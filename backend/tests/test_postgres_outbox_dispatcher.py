@@ -16,6 +16,14 @@ def test_dispatcher_repository_rejects_invalid_lease_configuration() -> None:
         PostgresOutboxDispatcherRepository(object(), claim_lease_seconds=0)
 
 
+def test_dispatcher_recovery_probe_is_bounded_by_the_claim_lease() -> None:
+    repository = PostgresOutboxDispatcherRepository(object(), claim_lease_seconds=30)
+
+    assert repository._recovery_interval == 1.0
+    assert repository._next_recovery_at == 0.0
+    assert repository._recovery_interval <= repository._claim_lease.total_seconds() / 2
+
+
 @pytest.mark.asyncio
 async def test_dispatcher_claim_and_renewal_inputs_are_bounded() -> None:
     repository = PostgresOutboxDispatcherRepository(object())
