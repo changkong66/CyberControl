@@ -1,13 +1,13 @@
 {
   "schema_version": "cybercontrol.system-acceptance-status.v1",
-  "generated_at_utc": "2026-08-15T11:33:50Z",
+  "generated_at_utc": "2026-08-15T12:14:59Z",
   "state": "RELEASE_CANDIDATE",
   "formal_release_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
-  "snapshot_semantics": "EVALUATED_PROTECTED_MAIN_BEFORE_EVIDENCE_ONLY_COMMIT",
-  "snapshot_note": "The protected_main fields bind the exact tenth-remediation main evaluated by the partial failed replay. The independent failure-evidence branch and its later merge are tracked separately and cannot change the failed Gate C decision.",
+  "snapshot_semantics": "VERIFIED_PARENT_MAIN_BEFORE_STATUS_ONLY_COMMIT",
+  "snapshot_note": "Git commits cannot contain their own final SHA. The protected_main fields bind the verified tenth failure-archive main; the live status-closure branch head is authoritative for this status-only snapshot and cannot change the failed Gate C decision.",
   "baseline": {
-    "protected_main_sha": "64792b0420f436d18beea2a301bd4017bc7e7a82",
-    "protected_main_tree_sha": "61da331c23a5d5b6988aff70d0db5455732886cc",
+    "protected_main_sha": "e6b461cd0b919dfe01e87ed040d04771a746d6c2",
+    "protected_main_tree_sha": "50adc4192cd235155233a5ba5d216e808d5349ec",
     "product_source_sha": "64792b0420f436d18beea2a301bd4017bc7e7a82",
     "product_source_tree_sha": "61da331c23a5d5b6988aff70d0db5455732886cc",
     "evaluated_gate_c_source_sha": "64792b0420f436d18beea2a301bd4017bc7e7a82",
@@ -18,7 +18,7 @@
     "frontend_merge_sha": "8f0966f96dad8a6be34bd4ab11c985d001dd0185",
     "push_ci_run": 29830793779,
     "pull_request_ci_run": 29830972987,
-    "protected_main_ci_run": 31865636339,
+    "protected_main_ci_run": 31883708144,
     "protected_main_ci_run_attempt": 1,
     "push_ci_jobs_successful": 8,
     "pull_request_ci_jobs_successful": 8,
@@ -254,7 +254,14 @@
     "phase7_gate_c_tenth_remediation_failure_archive_package_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-tenth-remediation-failed-20260815-64792b0-evidence-v1/gate-c-20260815T050434Z-64792b0420f4-tenth-remediation-failed-evidence-v1.zip",
     "phase7_gate_c_tenth_remediation_failure_archive_package_sha256": "036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c",
     "phase7_gate_c_tenth_remediation_failure_archive_release_id": 371033270,
-    "phase7_gate_c_tenth_remediation_failure_archive_pr_pending": true
+    "phase7_gate_c_tenth_remediation_failure_archive_pr_pending": false,
+    "phase7_gate_c_tenth_remediation_failure_archive_pr": 76,
+    "phase7_gate_c_tenth_remediation_failure_archive_pr_url": "https://github.com/changkong66/CyberControl/pull/76",
+    "phase7_gate_c_tenth_remediation_failure_archive_head_sha": "40471a50f58c758a5acf129f259126ca2ece0288",
+    "phase7_gate_c_tenth_remediation_failure_archive_push_ci_run": 31883430063,
+    "phase7_gate_c_tenth_remediation_failure_archive_pr_ci_run": 31883432630,
+    "phase7_gate_c_tenth_remediation_failure_archive_merge_sha": "e6b461cd0b919dfe01e87ed040d04771a746d6c2",
+    "phase7_gate_c_tenth_remediation_failure_archive_main_ci_run": 31883708144
   },
   "docker_migration": {
     "result": "ACCEPTED_NO_ASSET_LOSS",
@@ -1461,9 +1468,17 @@
         "database_foreign_tenant_visible_rows": 0,
         "jwt_credential_pii_scan": "passed after deterministic redaction",
         "secrets_directory_present": false,
-        "archive_state": "PACKAGE_PUBLISHED_PR_PENDING",
+        "archive_state": "MAINLINE_ARCHIVED",
         "archive_branch": "codex/phase7-gate-c-tenth-rerun-failure-evidence",
-        "archive_pr_pending": true
+        "archive_pr": 76,
+        "archive_pr_url": "https://github.com/changkong66/CyberControl/pull/76",
+        "archive_head_sha": "40471a50f58c758a5acf129f259126ca2ece0288",
+        "archive_merge_sha": "e6b461cd0b919dfe01e87ed040d04771a746d6c2",
+        "archive_push_ci_run": 31883430063,
+        "archive_pull_request_ci_run": 31883432630,
+        "archive_protected_main_ci_run": 31883708144,
+        "archive_all_ci_jobs_successful": true,
+        "archive_pr_pending": false
       }
     }
   },
@@ -1618,7 +1633,7 @@
     "gate_c_tenth_remediation_pr_pending": false,
     "gate_c_tenth_remediation_mainline_accepted": true,
     "gate_c_tenth_remediation_rerun_failed": true,
-    "gate_c_tenth_remediation_failure_archive_pr_pending": true,
+    "gate_c_tenth_remediation_failure_archive_pr_pending": false,
     "gate_c_rerun_ready": false,
     "gates_d_through_g_locked": true,
     "backend_feature_changes_allowed": false,
@@ -1631,9 +1646,8 @@
     "Smoke delivery p99 was 6850ms against the frozen 3000ms limit; p95 was 439ms. The delivery histogram contained 40 observations above 3000ms.",
     "Monitor completeness was 31/39=0.7948717949 against the frozen 0.95 minimum because seven /metrics reads timed out and one final Docker inspection failed.",
     "The mandatory stop rule left 200, 500, 1000, 2000 and recovery unexecuted; no post-ramp RSS or terminal recovery conclusion is permitted.",
-    "The immutable failure package is Release 371033270, 341283 bytes, SHA256 036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c; its independent failure-evidence PR is pending.",
-    "Close the tenth failure archive through push, pull-request, Squash Merge and protected-main 8/8 before creating an eleventh remediation branch.",
-    "After evidence closure, perform a separately authorized eleventh scoped remediation and unchanged fresh-volume replay.",
+    "The immutable failure package is Release 371033270, 341283 bytes, SHA256 036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c; PR #76 archived it as e6b461cd0b919dfe01e87ed040d04771a746d6c2 through push, pull-request and protected-main 8/8.",
+    "Perform a separately authorized eleventh scoped remediation from the archive-merged protected main and rerun the unchanged fresh-volume workload.",
     "Only after Gate C acceptance, complete a minimum eight-hour soak test.",
     "Only after Gate D acceptance, complete backup/restore, DR fail-closed drills, sealed Provider, production deployment, cross-browser/WCAG and PII lifecycle acceptance."
   ]

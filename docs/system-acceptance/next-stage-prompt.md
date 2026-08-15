@@ -8,6 +8,13 @@ Gate E, Gate F and Gate G remain locked.
 
 ## Verified Tenth-Run Baseline
 
+- Current protected main after the tenth failure archive:
+  `e6b461cd0b919dfe01e87ed040d04771a746d6c2`
+- Current protected-main tree:
+  `50adc4192cd235155233a5ba5d216e808d5349ec`
+- Current protected-main CI:
+  [31883708144](https://github.com/changkong66/CyberControl/actions/runs/31883708144),
+  8/8
 - Evaluated protected main:
   `64792b0420f436d18beea2a301bd4017bc7e7a82`
 - Evaluated tree:
@@ -36,26 +43,33 @@ Gate E, Gate F and Gate G remain locked.
   `036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c`
 - Immutable Release:
   [371033270](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-tenth-remediation-failed-20260815-64792b0-evidence-v1)
+- Tenth failure-evidence PR:
+  [#76](https://github.com/changkong66/CyberControl/pull/76)
+- Tenth archive head/merge:
+  `40471a50f58c758a5acf129f259126ca2ece0288` /
+  `e6b461cd0b919dfe01e87ed040d04771a746d6c2`
+- Tenth archive push/PR/main CI:
+  [31883430063](https://github.com/changkong66/CyberControl/actions/runs/31883430063),
+  [31883432630](https://github.com/changkong66/CyberControl/actions/runs/31883432630)
+  and
+  [31883708144](https://github.com/changkong66/CyberControl/actions/runs/31883708144),
+  each 8/8
 
-## Mandatory Phase 0: Close The Tenth Failure Archive
+## Mandatory Protected-Main Preflight
 
 Before creating a remediation branch:
 
-1. Fetch `origin/main` and require its tip to contain the tenth failure
-   evidence package metadata, report, failure analysis and four current-state
-   documents.
-2. Require the independent failure-evidence PR to have passed push and
-   pull-request Release Quality Gates 8/8, Squash Merged, and require its
-   protected-main run to pass 8/8.
+1. Fetch `origin/main` and require its exact tip to contain archive merge
+   `e6b461cd0b919dfe01e87ed040d04771a746d6c2` with successful protected-main
+   Run `31883708144` at 8/8. If a later main exists, require it to be a clean
+   descendant with its own successful 8/8 protected-main run.
+2. Require a clean worktree and re-verify the frozen threshold/workload hashes.
 3. Preserve the run directory, immutable Release, package, images and
    PostgreSQL volume. Do not reset, amend, prune, delete or overwrite history.
 4. Keep `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. No smoke-local pass may be
    reinterpreted as Gate C acceptance.
-5. If the archive documents still mark the evidence PR as pending, complete a
-   docs-only status closure through the same push/PR/main 8/8 chain before
-   creating the eleventh remediation branch.
 
-Only after this closure, create exactly:
+After preflight, create exactly:
 
 `codex/phase7-gate-c-eleventh-remediation`
 

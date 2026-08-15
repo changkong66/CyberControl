@@ -773,17 +773,16 @@ before and after, and the temporary replay container and volume were removed.
 ## Current Boundary
 
 Frontend identity, account administration, three-language workbench, Gate B
-mainline acceptance, the Gate C harness and nine remediation implementations
+mainline acceptance, the Gate C harness and ten remediation implementations
 are complete on protected main. The current protected-main baseline is the
 archive-merged documentation commit
-`b15ec9b63b15a36603f606c4da94f7382fb4a9fb`, tree
-`e74106a694a5e40a190b84951d84473584e0758a`; Run 31829334301 completed 8/8.
-The evaluated ninth Gate C product source remains
-`993ed9719dfb363238fe3c2f075f1d7e7e269b40`, tree
-`8dcbe0c2c23b618c851acc9e4b5de4dd4f3681c5`. Its formal replay
-completed all five stages and recovery and ended with zero terminal subscriber,
-queue and replay state, but failed final Outbox p95 at `3102.698ms` and memory
-recovery at `1.416064`. Gate D-G and unrelated feature development remain
+`e6b461cd0b919dfe01e87ed040d04771a746d6c2`, tree
+`50adc4192cd235155233a5ba5d216e808d5349ec`; Run 31883708144 completed 8/8.
+The evaluated tenth Gate C product source remains
+`64792b0420f436d18beea2a301bd4017bc7e7a82`, tree
+`61da331c23a5d5b6988aff70d0db5455732886cc`. Its formal replay stopped at
+smoke-20 after delivery p99 and monitor completeness failed; later stages and
+recovery were not executed. Gate D-G and unrelated feature development remain
 locked.
 
 PR #42 resolved GHSA-mh99-v99m-4gvg in the frontend development dependency
@@ -870,16 +869,22 @@ residual and preserved every stage-local safety and delivery pass, but its
 frozen aggregate still failed Outbox p95 and RSS recovery. PR #73 archived the
 evidence through push Run 31828555182, pull-request Run 31828625199 and
 protected-main Run 31829334301, each with 8/8 successful jobs. This closure
-does not reinterpret either failure as acceptance.
+does not reinterpret either failure as acceptance. PR #75 then delivered the
+tenth remediation as `64792b0420f436d18beea2a301bd4017bc7e7a82` through push
+Run 31865357058, pull-request Run 31865358914 and protected-main Run
+31865636339, each 8/8. Its independent replay failed at smoke-20, and PR #76
+archived that immutable failure through push Run 31883430063, pull-request Run
+31883432630 and protected-main Run 31883708144, each 8/8. The archive closure
+does not reinterpret the failed Gate C controls as acceptance.
 
 ## Remaining Release Blockers
 
-1. Create a separately authorized tenth scoped remediation only for the
-   measured RSS ownership and Outbox p95 tail; preserve every stage-local pass,
-   zero terminal subscriber state and frozen semantic.
-2. Add deterministic allocation-lifetime and real PostgreSQL Outbox-tail
-   regressions, then rerun the unchanged complete Gate C workload from another
-   protected-main baseline and fresh isolated PostgreSQL volume.
+1. Create a separately authorized eleventh scoped remediation only for the
+   measured smoke-20 delivery p99 tail and monitor-readiness failures; preserve
+   every completed-stage safety pass and frozen semantic.
+2. Add deterministic delivery-tail, event-loop/diagnostic-cost and real
+   PostgreSQL regressions, then rerun the unchanged complete Gate C workload
+   from another protected-main baseline and fresh isolated PostgreSQL volume.
 3. Only after Gate C is accepted, complete a minimum eight-hour soak across
    generation, verification, review, release and SSE.
 4. Only after Gate D is accepted, restore a PostgreSQL backup into an
@@ -941,7 +946,8 @@ subject references in the full API diagnostic log were redacted.
 CyberControl remains a release candidate, not a production-accepted system.
 The tenth code remediation passed all release-quality CI, but the independent
 fresh-volume replay failed at the first stage. Partial safety passes do not
-advance Gate C. The formal state remains
+advance Gate C. PR #76 has now archived the immutable failure through
+protected-main Run 31883708144 at 8/8. The formal state remains
 `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; Gate D-G and all product expansion remain
-locked. An eleventh remediation may begin only after this independent failure
-archive is merged through protected-main 8/8.
+locked. An eleventh remediation may begin only from this archive-merged
+protected main under a separately authorized task.
