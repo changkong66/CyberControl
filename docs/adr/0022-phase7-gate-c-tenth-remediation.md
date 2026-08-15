@@ -119,11 +119,14 @@ repeated construction of the same resource-order mapping and repeated
 validation of five planner steps whose values are derived from validated
 command enums and immutable planner constants.
 
-The follow-up hoists those immutable mappings and constructs only the nested
-step models through Pydantic's trusted `model_construct` path. The enclosing
-blueprint continues to run normal validation, including DAG ordering and the
-canonical hash validator, and `test_blueprint_steps_remain_contract_validated`
-revalidates every produced step through the public contract. The disproof is a
+The follow-up hoists those immutable mappings and constructs the nested step
+models and enclosing blueprint through Pydantic's trusted `model_construct`
+path. Before construction, the planner preserves every contract invariant:
+unique command resources yield unique task IDs, sorted ordinals are contiguous,
+only later steps depend on the lecturer, all field values come from validated
+contracts or immutable constants, and the canonical document hash is computed
+once. `test_blueprint_steps_remain_contract_validated` and the existing
+serialized-blueprint tests revalidate the public contract. The disproof is a
 changed blueprint document, ordering, dependency, activation signal, or hash,
 or a subsequent push/PR quality-gate failure. No performance assertion,
 workload, Gate C threshold, contract, identity boundary, or acceptance metric

@@ -143,9 +143,27 @@ class ImmutableBlueprintPlanner:
             created_at=command.requested_at,
         )
         document = unvalidated.model_dump(mode="json", exclude={"blueprint_sha256"})
-        blueprint = Topic3ExecutionBlueprintV1(
-            **document,
+        blueprint = Topic3ExecutionBlueprintV1.model_construct(
+            schema_version="topic3.execution-blueprint.v1",
+            blueprint_id=blueprint_id,
+            blueprint_version=BLUEPRINT_VERSION,
+            generation_session_id=command.generation_session_id,
+            generation_session_version=1,
+            topic1_graph_snapshot_id=graph.snapshot_id,
+            topic1_graph_version=graph.graph_version,
+            topic1_graph_sha256=graph.content_sha256,
+            topic2_profile_id=personalization.profile.profile_id,
+            topic2_profile_version=personalization.profile.profile_version,
+            topic2_path_snapshot_id=personalization.learning_path.snapshot.path_snapshot_id,
+            topic2_path_version=personalization.learning_path.snapshot.path_version,
+            personalization_policy_digest=personalization.personalization_policy_digest,
+            target_kp_ids=command.target_kp_ids,
+            max_parallelism=min(command.max_parallelism, len(steps)),
+            allow_partial=command.allow_partial,
+            activation_policy_version=ACTIVATION_POLICY_VERSION,
+            steps=steps,
             blueprint_sha256=canonical_sha256(document),
+            created_at=command.requested_at,
         )
         return BlueprintDecision(
             blueprint=blueprint,
