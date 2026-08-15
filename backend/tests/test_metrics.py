@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import httpx
 import pytest
 from fastapi import FastAPI
 
+import liyans.infrastructure.observability.metrics as metrics_module
 from liyans.api.routes.metrics import metrics as metrics_route
 from liyans.infrastructure.observability.metrics import (
     HTTPMetricsMiddleware,
@@ -50,20 +52,21 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "cursor" not in rendered
 
 
-def test_memory_diagnostics_are_opt_in_and_expose_only_bounded_fields(monkeypatch, caplog) -> None:
+def test_memory_diagnostics_are_opt_in_and_expose_only_bounded_fields(monkeypatch) -> None:
     monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
     monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "5")
     metrics = PlatformMetrics()
 
-    with caplog.at_level("INFO"):
-        rendered = metrics.render().decode("utf-8")
+    log_info = Mock()
+    monkeypatch.setattr(metrics_module.logger, "info", log_info)
+    rendered = metrics.render().decode("utf-8")
 
     assert "liyans_memory_diagnostics_gauge" in rendered
     assert "tracemalloc_current_bytes" in rendered
     diagnostics = [
-        record.message
-        for record in caplog.records
-        if "Memory diagnostics snapshot" in record.message
+        " ".join(str(argument) for argument in call.args)
+        for call in log_info.call_args_list
+        if call.args and "Memory diagnostics snapshot" in str(call.args[0])
     ]
     assert diagnostics
     assert "tenant_id" not in diagnostics[-1]

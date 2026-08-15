@@ -4,11 +4,12 @@ import asyncio
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
 
+import liyans.infrastructure.persistence.outbox_publisher as outbox_publisher_module
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.infrastructure.messaging.bus import DispatchStatus
 from liyans.infrastructure.observability.metrics import PlatformMetrics
@@ -131,7 +132,6 @@ async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope)
 @pytest.mark.asyncio
 async def test_outbox_publisher_emits_redacted_lifecycle_trace(
     make_envelope,
-    caplog,
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("LIYAN_OUTBOX_LIFECYCLE_DIAGNOSTICS", "true")
@@ -144,13 +144,14 @@ async def test_outbox_publisher_emits_redacted_lifecycle_trace(
 
     publisher = OutboxPublisher(repository, sink, worker_id="unit-worker")
 
-    with caplog.at_level("INFO"):
-        assert await publisher.run_once() == 1
+    log_info = Mock()
+    monkeypatch.setattr(outbox_publisher_module.logger, "info", log_info)
+    assert await publisher.run_once() == 1
 
     traces = [
-        record.message
-        for record in caplog.records
-        if "Outbox lifecycle trace" in record.message
+        " ".join(str(argument) for argument in call.args)
+        for call in log_info.call_args_list
+        if call.args and "Outbox lifecycle trace" in str(call.args[0])
     ]
     assert len(traces) == 1
     trace = traces[0]
@@ -165,15 +166,19 @@ async def test_outbox_publisher_emits_redacted_lifecycle_trace(
 
 
 @pytest.mark.asyncio
-async def test_outbox_lifecycle_trace_is_disabled_by_default(make_envelope, caplog) -> None:
+async def test_outbox_lifecycle_trace_is_disabled_by_default(make_envelope, monkeypatch) -> None:
     message = replace(_message(make_envelope), claimed_at=datetime.now(UTC))
     repository = FakeDispatchRepository([message])
     publisher = OutboxPublisher(repository, AsyncMock(), worker_id="unit-worker")
 
-    with caplog.at_level("INFO"):
-        assert await publisher.run_once() == 1
+    log_info = Mock()
+    monkeypatch.setattr(outbox_publisher_module.logger, "info", log_info)
+    assert await publisher.run_once() == 1
 
-    assert not any("Outbox lifecycle trace" in record.message for record in caplog.records)
+    assert not any(
+        call.args and "Outbox lifecycle trace" in str(call.args[0])
+        for call in log_info.call_args_list
+    )
 
 
 @pytest.mark.asyncio

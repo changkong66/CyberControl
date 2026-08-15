@@ -71,6 +71,7 @@ def _read_process_memory() -> dict[str, int]:
         pass
     return values
 
+
 APPROVED_HTTP_METHODS: Final = frozenset(
     {"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"}
 )

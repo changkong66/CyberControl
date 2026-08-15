@@ -69,3 +69,25 @@ Python allocations, object types, task/frame counts, process RSS/USS/PSS
 proxies, anonymous/file RSS, mappings and allocator statistics without tenant
 or cursor labels. No allocator or cache policy is changed until a diagnostic
 run identifies a reachable owner or native allocation mechanism.
+
+## Existing Allocator Evidence
+
+The ninth-run `gate-2000/monitor.jsonl` already separates file-backed memory
+from anonymous/native memory. The first sample recorded process RSS
+`307,769,344` bytes, anonymous RSS `257,699,840`, file RSS `50,069,504`,
+jemalloc allocated/active/resident `211,110,032/248,905,728/257,269,760`
+bytes, and map count `2,097`. The final recovery sample recorded process RSS
+`413,544,448`, anonymous RSS `363,474,944`, unchanged file RSS `50,069,504`,
+jemalloc allocated/active/resident `249,026,632/351,956,992/362,364,928`
+bytes, and map count `4,286`. This correlates the failed ratio with anonymous
+allocator active/resident high-water rather than file mappings, but does not
+prove that allocator trimming alone is safe or sufficient. The tenth
+remediation therefore retains the existing process-start allocator settings,
+adds opt-in allocation/object/task evidence, and defers any allocator policy
+change until the unchanged formal replay supplies a causal before/after
+comparison.
+
+A separate non-formal local diagnostic Smoke after API restart observed
+`tracemalloc_current_bytes=11,777,016`, jemalloc allocated/resident about
+`166/179MB`, and zero checked-out database connections. It is a readiness
+measurement only and is not a Gate C scale or recovery result.

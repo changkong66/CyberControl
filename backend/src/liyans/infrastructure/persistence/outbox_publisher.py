@@ -219,9 +219,7 @@ class OutboxPublisher:
         self._observe("claim", "claimed", len(messages))
         claim_batch_id = None
         if self._lifecycle_diagnostics:
-            claim_batch_id = self._fingerprint(
-                f"{self._worker_id}\0{claim_started:.9f}"
-            )
+            claim_batch_id = self._fingerprint(f"{self._worker_id}\0{claim_started:.9f}")
             self._log_claim_batch_trace(
                 claim_batch_id=claim_batch_id,
                 duration_seconds=claim_batch_seconds,
