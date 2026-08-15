@@ -91,3 +91,13 @@ A separate non-formal local diagnostic Smoke after API restart observed
 `tracemalloc_current_bytes=11,777,016`, jemalloc allocated/resident about
 `166/179MB`, and zero checked-out database connections. It is a readiness
 measurement only and is not a Gate C scale or recovery result.
+
+## Quality-gate timing observation
+
+The unchanged Topic 2 and Topic 3 planner performance tests passed locally in
+three consecutive runs after this remediation. The first three protected GitHub
+runner attempts for this branch measured the pre-existing planner assertions at
+`6.2646-6.5499 s` and `5.4224-5.5165 ms`, respectively, while PostgreSQL,
+frontend, Go, supply-chain and container gates passed. This is recorded as a
+runner-baseline signal only; no test budget, aggregation, workload or acceptance
+criterion is changed, and the planner code is outside this remediation diff.
