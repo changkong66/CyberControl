@@ -13,43 +13,43 @@
     },
     {
       "path": "phase7-gate-c-tenth-remediation-environment.json",
-      "bytes": 5488,
-      "sha256": "1c220a46b3cb6ae5d0d7392b497e10be8a947c14c69f2b20f9c93791f6b38675"
+      "bytes": 5366,
+      "sha256": "e4d9c8625474b8e4d175ec4b0ecabde821d3232272f45907c0fa1347784dbe1e"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-failure-analysis.md",
-      "bytes": 2630,
-      "sha256": "951291da5e531f9bdb40819bcf5bf7edaf2fe71714f7ec30118b1d39276e069d"
+      "bytes": 2629,
+      "sha256": "86a9ff461e7ce6a0f24555f1985852c35af5bf7e068feb619b2336e820932a21"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-package.json",
-      "bytes": 1753,
-      "sha256": "ecbbd1b18d746e2a2751860d7e1145cdc36aa3c97f35246ffd53d2b3ff29ee22"
+      "bytes": 1728,
+      "sha256": "1e0c7026b0c4fba789515a49a44cc603989cbbb1d3a7b97187b84681235e15ce"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-redaction-scan.json",
-      "bytes": 355,
-      "sha256": "2a70c1cccc78908365ffc48a823f457efdadc67d08c42fe204ea7195752a528d"
+      "bytes": 342,
+      "sha256": "191dfcc89e5eb27290228db6bfe4ebd793760f0f08c76e05bc2f8c6afea981c2"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-report.md",
-      "bytes": 2370,
-      "sha256": "36ac64872874be9794bdf758907651685b40b6fc2462ac901c0550bf7e79a35f"
+      "bytes": 2369,
+      "sha256": "e4845f1e62d3bcc65cd0a4c8b7669c2709506b6c0aab67dcdea1e54150d848d5"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-repository-manifest.json",
-      "bytes": 4149,
-      "sha256": "054868f65185ca6b501b2865ffdba35b8e21a3f829a7cc1085d10adefaa60189"
+      "bytes": 4068,
+      "sha256": "7b9919319aa36f7efbdff151eb5e7842a5bc8d46bbc2afafaecb2a1bee3bfc65"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-run-evidence-manifest.json",
-      "bytes": 10381,
-      "sha256": "41d3961a809dfda2ac70d1027315cb61ad0db90d1fd50bcd9cd00c1fcdf08316"
+      "bytes": 10073,
+      "sha256": "dc7fc46a79119d26cb2146392e819c389ea55ca2bc78c2a7bf285e153106cefb"
     },
     {
       "path": "phase7-gate-c-tenth-remediation-summary.json",
-      "bytes": 6936,
-      "sha256": "7a2a3135a817e009cf4a7e96462347c5d6d483f21b221c8b117f2e5f2652e764"
+      "bytes": 6730,
+      "sha256": "0cb28725f2ecb17ad74de39b3aa8c47955276a5f42f7d4afd4c8410ad88c7db6"
     }
   ]
 }
