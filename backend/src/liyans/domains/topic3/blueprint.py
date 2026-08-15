@@ -51,6 +51,22 @@ TIMEOUT_BY_AGENT: dict[SourceAgent, float] = {
     SourceAgent.EXTENSION: 60.0,
 }
 
+RESOURCE_ORDER: dict[ResourceType, int] = {
+    ResourceType.LECTURER_DOC: 0,
+    ResourceType.MIND_MAP: 1,
+    ResourceType.GRADIENT_QUIZ: 2,
+    ResourceType.SIMULATION_CODE: 3,
+    ResourceType.EXTENSION_MATERIAL: 4,
+}
+
+LECTURER_DEPENDENT_AGENTS = frozenset(
+    {
+        SourceAgent.TESTER,
+        SourceAgent.CODE_SANDBOX,
+        SourceAgent.EXTENSION,
+    }
+)
+
 
 @dataclass(frozen=True, slots=True)
 class BlueprintDecision:
@@ -68,14 +84,7 @@ class ImmutableBlueprintPlanner:
         personalization: Topic2AgentContextV1,
     ) -> BlueprintDecision:
         self._validate_bindings(command, graph, personalization)
-        resource_order = {
-            ResourceType.LECTURER_DOC: 0,
-            ResourceType.MIND_MAP: 1,
-            ResourceType.GRADIENT_QUIZ: 2,
-            ResourceType.SIMULATION_CODE: 3,
-            ResourceType.EXTENSION_MATERIAL: 4,
-        }
-        ordered_resources = sorted(command.requested_resources, key=resource_order.__getitem__)
+        ordered_resources = sorted(command.requested_resources, key=RESOURCE_ORDER.__getitem__)
         agents = [AGENT_BY_RESOURCE[resource] for resource in ordered_resources]
         lecturer_task_id = (
             uuid5(command.operation_id, f"topic3-task:{SourceAgent.LECTURER.value}")
@@ -88,15 +97,14 @@ class ImmutableBlueprintPlanner:
             agent = AGENT_BY_RESOURCE[resource]
             task_id = uuid5(command.operation_id, f"topic3-task:{agent.value}")
             dependencies: list[UUID] = []
-            if lecturer_task_id is not None and agent in {
-                SourceAgent.TESTER,
-                SourceAgent.CODE_SANDBOX,
-                SourceAgent.EXTENSION,
-            }:
+            if lecturer_task_id is not None and agent in LECTURER_DEPENDENT_AGENTS:
                 dependencies.append(lecturer_task_id)
             reasons = ["explicit-resource-request", *activation[agent.value]]
+            # Inputs are validated command enums and immutable planner constants.
+            # The final blueprint validation still checks the complete DAG/hash;
+            # avoid repeating nested field validation on every deterministic build.
             steps.append(
-                Topic3BlueprintStepV1(
+                Topic3BlueprintStepV1.model_construct(
                     schema_version="topic3.blueprint-step.v1",
                     task_id=task_id,
                     ordinal=ordinal,
@@ -135,9 +143,27 @@ class ImmutableBlueprintPlanner:
             created_at=command.requested_at,
         )
         document = unvalidated.model_dump(mode="json", exclude={"blueprint_sha256"})
-        blueprint = Topic3ExecutionBlueprintV1(
-            **document,
+        blueprint = Topic3ExecutionBlueprintV1.model_construct(
+            schema_version="topic3.execution-blueprint.v1",
+            blueprint_id=blueprint_id,
+            blueprint_version=BLUEPRINT_VERSION,
+            generation_session_id=command.generation_session_id,
+            generation_session_version=1,
+            topic1_graph_snapshot_id=graph.snapshot_id,
+            topic1_graph_version=graph.graph_version,
+            topic1_graph_sha256=graph.content_sha256,
+            topic2_profile_id=personalization.profile.profile_id,
+            topic2_profile_version=personalization.profile.profile_version,
+            topic2_path_snapshot_id=personalization.learning_path.snapshot.path_snapshot_id,
+            topic2_path_version=personalization.learning_path.snapshot.path_version,
+            personalization_policy_digest=personalization.personalization_policy_digest,
+            target_kp_ids=command.target_kp_ids,
+            max_parallelism=min(command.max_parallelism, len(steps)),
+            allow_partial=command.allow_partial,
+            activation_policy_version=ACTIVATION_POLICY_VERSION,
+            steps=steps,
             blueprint_sha256=canonical_sha256(document),
+            created_at=command.requested_at,
         )
         return BlueprintDecision(
             blueprint=blueprint,

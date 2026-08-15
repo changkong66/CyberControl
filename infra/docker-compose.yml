@@ -153,7 +153,10 @@ services:
       LIYAN_OUTBOX_DISPATCHER_DATABASE_URL: postgresql+asyncpg://liyans_dispatcher:liyans-dispatcher-local-only@postgres:5432/liyans
       LIYAN_IDENTITY_RECONCILER_DATABASE_URL: postgresql+asyncpg://liyans_identity_reconciler:liyans-identity-reconciler-local-only@postgres:5432/liyans
       LIYAN_OUTBOX_PUBLISHER_ENABLED: "true"
+      LIYAN_OUTBOX_LIFECYCLE_DIAGNOSTICS: ${LIYAN_OUTBOX_LIFECYCLE_DIAGNOSTICS:-false}
       LIYAN_SSE_NOTIFICATION_ENABLED: "true"
+      LIYAN_MEMORY_DIAGNOSTICS: ${LIYAN_MEMORY_DIAGNOSTICS:-false}
+      LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS: ${LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS:-30}
       LIYAN_SSE_NOTIFICATION_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans
       LIYAN_AUDIT_LOG_PATH: /var/lib/liyans/audit/events.jsonl
       LIYAN_ARTIFACT_ROOT: /var/lib/liyans/artifacts

@@ -4,11 +4,12 @@ import asyncio
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
 
+import liyans.infrastructure.persistence.outbox_publisher as outbox_publisher_module
 from liyans.core.errors import ErrorCode, LiyanError
 from liyans.infrastructure.messaging.bus import DispatchStatus
 from liyans.infrastructure.observability.metrics import PlatformMetrics
@@ -126,6 +127,58 @@ async def test_outbox_publisher_marks_success_and_exports_metrics(make_envelope)
     assert b'stage="created_to_claimed"' in rendered
     assert b'stage="claimed_to_published"' in rendered
     assert b'stage="dispatch_to_published"' in rendered
+
+
+@pytest.mark.asyncio
+async def test_outbox_publisher_emits_redacted_lifecycle_trace(
+    make_envelope,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LIYAN_OUTBOX_LIFECYCLE_DIAGNOSTICS", "true")
+    original = _message(make_envelope)
+    message = replace(original, claimed_at=original.created_at)
+    repository = FakeDispatchRepository([message])
+
+    async def sink(_item: OutboxMessage) -> None:
+        return None
+
+    publisher = OutboxPublisher(repository, sink, worker_id="unit-worker")
+
+    log_info = Mock()
+    monkeypatch.setattr(outbox_publisher_module.logger, "info", log_info)
+    assert await publisher.run_once() == 1
+
+    traces = [
+        " ".join(str(argument) for argument in call.args)
+        for call in log_info.call_args_list
+        if call.args and "Outbox lifecycle trace" in str(call.args[0])
+    ]
+    assert len(traces) == 1
+    trace = traces[0]
+    assert "batch_key=" in trace
+    assert "outbox_key=" in trace
+    assert "partition_key=" in trace
+    assert "claimable_to_claimed_ms=" in trace
+    assert "dispatch_to_durable_acceptance_ms=" in trace
+    assert "durable_acceptance_to_published_ms=" in trace
+    assert message.tenant_id not in trace
+    assert message.envelope.partition_key not in trace
+
+
+@pytest.mark.asyncio
+async def test_outbox_lifecycle_trace_is_disabled_by_default(make_envelope, monkeypatch) -> None:
+    message = replace(_message(make_envelope), claimed_at=datetime.now(UTC))
+    repository = FakeDispatchRepository([message])
+    publisher = OutboxPublisher(repository, AsyncMock(), worker_id="unit-worker")
+
+    log_info = Mock()
+    monkeypatch.setattr(outbox_publisher_module.logger, "info", log_info)
+    assert await publisher.run_once() == 1
+
+    assert not any(
+        call.args and "Outbox lifecycle trace" in str(call.args[0])
+        for call in log_info.call_args_list
+    )
 
 
 @pytest.mark.asyncio

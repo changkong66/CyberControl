@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
+import os
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
@@ -162,6 +164,10 @@ class OutboxPublisher:
         self._task: asyncio.Task[None] | None = None
         self._last_error: str | None = None
         self._in_flight = 0
+        self._lifecycle_diagnostics = os.getenv(
+            "LIYAN_OUTBOX_LIFECYCLE_DIAGNOSTICS",
+            "",
+        ).strip().lower() in {"1", "true", "yes", "on"}
 
     @property
     def running(self) -> bool:
@@ -203,12 +209,22 @@ class OutboxPublisher:
     async def run_once(self) -> int:
         claim_started = perf_counter()
         messages = await self._repository.claim_batch(self._worker_id, self._batch_size)
-        self._observe_duration("claim_batch", perf_counter() - claim_started)
+        claim_completed = perf_counter()
+        claim_batch_seconds = claim_completed - claim_started
+        self._observe_duration("claim_batch", claim_batch_seconds)
         self._ready.set()
         if not messages:
             self._observe("claim", "empty")
             return 0
         self._observe("claim", "claimed", len(messages))
+        claim_batch_id = None
+        if self._lifecycle_diagnostics:
+            claim_batch_id = self._fingerprint(f"{self._worker_id}\0{claim_started:.9f}")
+            self._log_claim_batch_trace(
+                claim_batch_id=claim_batch_id,
+                duration_seconds=claim_batch_seconds,
+                message_count=len(messages),
+            )
         for message in messages:
             if message.claimed_at is not None:
                 self._observe_latency(
@@ -229,8 +245,15 @@ class OutboxPublisher:
         partitions: dict[tuple[str, str], list[OutboxMessage]] = defaultdict(list)
         for message in messages:
             partitions[(message.tenant_id, message.envelope.partition_key)].append(message)
+        claim_batch_seconds = perf_counter() - claim_started
         results = await asyncio.gather(
-            *(self._process_partition(items) for items in partitions.values()),
+            *(
+                self._process_partition(
+                    items,
+                    claim_batch_id=claim_batch_id,
+                )
+                for items in partitions.values()
+            ),
             return_exceptions=True,
         )
         failure = next(
@@ -241,7 +264,12 @@ class OutboxPublisher:
             raise failure
         return len(messages)
 
-    async def _process_partition(self, messages: list[OutboxMessage]) -> None:
+    async def _process_partition(
+        self,
+        messages: list[OutboxMessage],
+        *,
+        claim_batch_id: str | None,
+    ) -> None:
         ordered = sorted(messages, key=lambda message: message.envelope.sequence)
         lease_expires_at = min(
             (
@@ -267,7 +295,10 @@ class OutboxPublisher:
                     )
                     raise
             try:
-                published = await self._process(message)
+                published = await self._process(
+                    message,
+                    claim_batch_id=claim_batch_id,
+                )
             except asyncio.CancelledError:
                 await complete_cleanup(
                     self._release_partition_tail(
@@ -343,21 +374,30 @@ class OutboxPublisher:
             except TimeoutError:
                 continue
 
-    async def _process(self, message: OutboxMessage) -> bool:
+    async def _process(
+        self,
+        message: OutboxMessage,
+        *,
+        claim_batch_id: str | None,
+    ) -> bool:
         self._in_flight += 1
         self._update_gauges()
         dispatch_started = perf_counter()
+        dispatch_started_at = datetime.now(UTC)
+        sink_completed: float | None = None
         try:
             await asyncio.wait_for(
                 self._sink(message),
                 timeout=self._delivery_timeout,
             )
+            sink_completed = perf_counter()
             published_at = datetime.now(UTC)
             await self._repository.mark_published(
                 message.outbox_id,
                 self._worker_id,
                 published_at,
             )
+            mark_completed = perf_counter()
             if message.claimed_at is not None:
                 self._observe_latency(
                     "claimed_to_published",
@@ -372,6 +412,15 @@ class OutboxPublisher:
             self._observe_duration(
                 "dispatch_to_published",
                 perf_counter() - dispatch_started,
+            )
+            self._log_lifecycle_trace(
+                message,
+                claim_batch_id=claim_batch_id,
+                dispatch_started=dispatch_started,
+                dispatch_started_at=dispatch_started_at,
+                sink_completed=sink_completed,
+                mark_completed=mark_completed,
+                published_at=published_at,
             )
             self._observe("delivery", "published")
             return True
@@ -416,6 +465,67 @@ class OutboxPublisher:
         finally:
             self._in_flight = max(0, self._in_flight - 1)
             self._update_gauges()
+
+    @staticmethod
+    def _fingerprint(value: str) -> str:
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+    def _log_lifecycle_trace(
+        self,
+        message: OutboxMessage,
+        *,
+        claim_batch_id: str | None,
+        dispatch_started: float,
+        dispatch_started_at: datetime,
+        sink_completed: float | None,
+        mark_completed: float,
+        published_at: datetime,
+    ) -> None:
+        """Record one bounded, non-PII trace for p95 tail attribution."""
+
+        if (
+            not self._lifecycle_diagnostics
+            or claim_batch_id is None
+            or sink_completed is None
+            or message.claimed_at is None
+        ):
+            return
+        dispatch_to_acceptance = max(0.0, sink_completed - dispatch_started)
+        acceptance_to_published = (
+            0.0 if sink_completed is None else max(0.0, mark_completed - sink_completed)
+        )
+        logger.info(
+            "Outbox lifecycle trace batch_key=%s outbox_key=%s partition_key=%s "
+            "event_type=%s attempt=%s claimable_to_claimed_ms=%.3f "
+            "claimed_to_dispatch_start_ms=%.3f dispatch_to_durable_acceptance_ms=%.3f "
+            "durable_acceptance_to_published_ms=%.3f created_to_published_ms=%.3f",
+            claim_batch_id,
+            self._fingerprint(str(message.outbox_id)),
+            self._fingerprint(f"{message.tenant_id}\0{message.envelope.partition_key}"),
+            message.envelope.event_type,
+            message.attempts,
+            max(0.0, (message.claimed_at - message.available_at).total_seconds() * 1000),
+            max(0.0, (dispatch_started_at - message.claimed_at).total_seconds() * 1000),
+            dispatch_to_acceptance * 1000,
+            acceptance_to_published * 1000,
+            max(0.0, (published_at - message.created_at).total_seconds() * 1000),
+        )
+
+    def _log_claim_batch_trace(
+        self,
+        *,
+        claim_batch_id: str,
+        duration_seconds: float,
+        message_count: int,
+    ) -> None:
+        if not self._lifecycle_diagnostics:
+            return
+        logger.info(
+            "Outbox claim batch trace batch_key=%s duration_ms=%.3f message_count=%s",
+            claim_batch_id,
+            duration_seconds * 1000,
+            message_count,
+        )
 
     async def _release_claim_safely(
         self,

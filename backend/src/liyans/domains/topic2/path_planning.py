@@ -118,6 +118,9 @@ class AdaptivePathPlanner:
         mastery = self._mastery_by_kp(profile)
         memory = {record.draft.kp_id: record for record in memory_states}
         misconception = self._misconception_by_kp(profile)
+        incoming = self._incoming_edges(graph.prerequisites, selected)
+        policy_weights = dict(self.policy.weights)
+        target_set = None if target_kp_ids is None else set(target_kp_ids)
         scores: dict[str, dict[str, float]] = {}
         tiers: dict[str, LearningTier] = {}
         for kp_id in selected:
@@ -126,15 +129,15 @@ class AdaptivePathPlanner:
                 kp_id,
                 point,
                 graph,
-                selected,
                 profile,
                 mastery,
                 memory,
                 misconception,
-                target_kp_ids,
+                target_set,
+                incoming,
             )
             components["total"] = round(
-                sum(dict(self.policy.weights)[name] * value for name, value in components.items()),
+                sum(policy_weights[name] * value for name, value in components.items()),
                 12,
             )
             scores[kp_id] = components
@@ -147,7 +150,7 @@ class AdaptivePathPlanner:
             manual_order,
         )
         all_repairs = (*graph.repairs, *ordering_repairs)
-        prerequisites = self._incoming_edges(graph.prerequisites, selected)
+        prerequisites = incoming
         nodes = [
             {
                 "order": index,
@@ -328,17 +331,20 @@ class AdaptivePathPlanner:
         kp_id: str,
         point: Topic1KnowledgePointV1,
         graph: SanitizedGraph,
-        selected: set[str],
         profile: StudentProfileRecord,
         mastery: Mapping[str, float],
         memory: Mapping[str, MemoryStateRecord],
         misconception: Mapping[str, float],
-        target_kp_ids: Sequence[str] | None,
+        target_kp_ids: set[str] | None,
+        incoming: Mapping[str, tuple[Topic1PrerequisiteV1, ...]],
     ) -> dict[str, float]:
         kp_mastery = mastery.get(kp_id, profile.draft.knowledge_mastery)
         memory_risk = 1.0 - memory[kp_id].draft.retrievability if kp_id in memory else 1.0
-        incoming = self._incoming_edges(graph.prerequisites, selected).get(kp_id, ())
-        required = [edge for edge in incoming if edge.relation_type == PrerequisiteType.REQUIRED]
+        required = [
+            edge
+            for edge in incoming.get(kp_id, ())
+            if edge.relation_type == PrerequisiteType.REQUIRED
+        ]
         readiness_values = []
         for edge in required:
             prerequisite_mastery = mastery.get(
@@ -359,7 +365,7 @@ class AdaptivePathPlanner:
         )
         goal_alignment = (
             1.0
-            if target_kp_ids is not None and kp_id in set(target_kp_ids)
+            if target_kp_ids is not None and kp_id in target_kp_ids
             else 1 - abs(point.difficulty_score - profile.draft.learning_goal_tendency)
         )
         return {
