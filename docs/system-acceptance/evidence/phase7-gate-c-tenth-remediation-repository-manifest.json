@@ -1,0 +1,81 @@
+{
+  "schema_version": "cybercontrol.gate-c-repository-manifest.v1",
+  "source_commit": "64792b0420f436d18beea2a301bd4017bc7e7a82",
+  "source_tree": "61da331c23a5d5b6988aff70d0db5455732886cc",
+  "compose_project": "cybercontrol-gate-c-tenth-main-64792b-20260815050434",
+  "postgres_volume": "cybercontrol_gate_c_tenth_main_64792b_20260815050434",
+  "compose_config_sha256": "7eb61c351bbb3f6ff676ca7509b268e2aa03051e1a05c879afe4fd066b5d568a",
+  "uv_lock_sha256": "60bf4f22b50f516bebe7f734254d64617e6e08042424d09e606995be10d8cb77",
+  "pnpm_lock_sha256": "3112d3380670baeaa4a99ed910b4f4f215db59d470c772bc9953a2bd19ea000d",
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "runtime_images": [
+    {
+      "reference": "cybercontrol-gate-c-tenth-main-64792b-20260815050434-api:latest",
+      "id": "sha256:0a541d9591bfb07f1bd78b0a3c963182a33a1ddccff68c572b7d410845cc9e35",
+      "repo_digests": [
+        "cybercontrol-gate-c-tenth-main-64792b-20260815050434-api@sha256:0a541d9591bfb07f1bd78b0a3c963182a33a1ddccff68c572b7d410845cc9e35"
+      ],
+      "created": "2026-08-15T05:05:44.583457436Z",
+      "size_bytes": 90157382
+    },
+    {
+      "reference": "cybercontrol-gate-c-tenth-main-64792b-20260815050434-migrate:latest",
+      "id": "sha256:a2f7bf168efb6125d4291ef9fb120306e25149fccf6df222c2155c4920f865e1",
+      "repo_digests": [
+        "cybercontrol-gate-c-tenth-main-64792b-20260815050434-migrate@sha256:a2f7bf168efb6125d4291ef9fb120306e25149fccf6df222c2155c4920f865e1"
+      ],
+      "created": "2026-08-15T05:05:44.583457436Z",
+      "size_bytes": 90157386
+    },
+    {
+      "reference": "cybercontrol-gate-c-tenth-main-64792b-20260815050434-frontend:latest",
+      "id": "sha256:408a5a68f02999841f79fdad53b157a3741e0c91e1ee2d068b1384feaad8c30d",
+      "repo_digests": [
+        "cybercontrol-gate-c-tenth-main-64792b-20260815050434-frontend@sha256:408a5a68f02999841f79fdad53b157a3741e0c91e1ee2d068b1384feaad8c30d"
+      ],
+      "created": "2026-07-21T11:02:29.165315193Z",
+      "size_bytes": 7721333
+    },
+    {
+      "reference": "cybercontrol-gate-c-tenth-main-64792b-20260815050434-mock-provider:latest",
+      "id": "sha256:550c4591c42d354d068dd7e7b11ed078591515e8b410528b9a0c4c81bc818562",
+      "repo_digests": [
+        "cybercontrol-gate-c-tenth-main-64792b-20260815050434-mock-provider@sha256:550c4591c42d354d068dd7e7b11ed078591515e8b410528b9a0c4c81bc818562"
+      ],
+      "created": "2026-07-20T06:32:41.918755975Z",
+      "size_bytes": 20366281
+    },
+    {
+      "reference": "cybercontrol-gate-c-tenth-main-64792b-20260815050434-gate-c-load:latest",
+      "id": "sha256:33c7bb193e3371b346091253fff5ce09ed91b67f2ea4454363a90db07b0b27eb",
+      "repo_digests": [
+        "cybercontrol-gate-c-tenth-main-64792b-20260815050434-gate-c-load@sha256:33c7bb193e3371b346091253fff5ce09ed91b67f2ea4454363a90db07b0b27eb"
+      ],
+      "created": "2026-08-15T05:06:29.449800119Z",
+      "size_bytes": 79552807
+    },
+    {
+      "reference": "postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+      "id": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+      "repo_digests": [
+        "postgres@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777"
+      ],
+      "created": "2026-07-07T17:47:20.839800572Z",
+      "size_bytes": 116039394
+    },
+    {
+      "reference": "quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+      "id": "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+      "repo_digests": [
+        "quay.io/keycloak/keycloak@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0"
+      ],
+      "created": "2026-07-09T06:59:21.764260561Z",
+      "size_bytes": 267198904
+    }
+  ],
+  "docker_server_version": "29.6.1",
+  "docker_api_version": "1.55",
+  "docker_cpus": 16,
+  "docker_memory_limit_bytes": 7958888448
+}

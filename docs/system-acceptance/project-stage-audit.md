@@ -336,3 +336,35 @@ frozen RSS baseline. The ninth failure archive is now closed on protected main.
 A tenth remediation may begin only from this resulting protected main under a
 separate task. Gate D-G remain locked until an independent complete
 Gate C success-evidence PR passes CI and merges.
+
+## 7. Tenth Remediation And Partial Replay Audit
+
+PR #75 merged the tenth remediation as
+`64792b0420f436d18beea2a301bd4017bc7e7a82`, tree
+`61da331c23a5d5b6988aff70d0db5455732886cc`. Its push, pull-request and
+protected-main Release Quality Gates were each 8/8: Runs `31865357058`,
+`31865358914` and `31865636339`.
+
+The fresh run is
+`D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260815T050434Z-64792b0420f4`.
+It used unique Compose project
+`cybercontrol-gate-c-tenth-main-64792b-20260815050434`, preserved fresh volume
+`cybercontrol_gate_c_tenth_main_64792b_20260815050434`, real Keycloak Tokens,
+two tenants and twenty principals. All images were built without `-SkipBuild`.
+
+`smoke-20` completed and failed delivery p99 at `6850ms` against `<=3000ms`
+and monitor completeness at `31/39=0.7948717949` against `>=0.95`. Delivery
+p95 was `439ms`. Seven `/metrics` reads timed out and the final monitor sample
+had one Docker inspection failure. The mandatory stop rule left all later
+stages and recovery unexecuted; no RSS recovery conclusion is valid.
+
+The completed smoke stage retained connection/reconnect `1.0/1.0`, zero loss,
+zero final duplicates, zero tenant leakage, zero HTTP 5xx, zero pool timeout and
+zero Outbox `DEAD`. PostgreSQL retained migration 0010, FORCE RLS `74/74`, 57
+append-only triggers and zero foreign-tenant visibility. Terminal Outbox state
+was `PUBLISHED=25`, with no open or dead row.
+
+Immutable Release `371033270` contains the 341,283-byte package with SHA256
+`036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c`.
+The package and failed volume remain preserved. Gate C remains failed and Gate
+D-G remain locked.

@@ -1,0 +1,206 @@
+{
+  "schema_version": "cybercontrol.gate-c-partial-failure-summary.v1",
+  "state": "FAILED",
+  "formal_state": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "run_id": "gate-c-20260815T050434Z-64792b0420f4",
+  "run_directory": "D:\\CyberControlAcceptance\\phase7\\gate-c\\gate-c-20260815T050434Z-64792b0420f4",
+  "source_commit": "64792b0420f436d18beea2a301bd4017bc7e7a82",
+  "source_tree": "61da331c23a5d5b6988aff70d0db5455732886cc",
+  "local_checkout_commit": "184f06d9d4695c1d140f2195c267859cc40428ed",
+  "compose_project": "cybercontrol-gate-c-tenth-main-64792b-20260815050434",
+  "postgres_volume": "cybercontrol_gate_c_tenth_main_64792b_20260815050434",
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "stop_reason": "smoke-20 failed frozen delivery p99 and monitor completeness controls; mandatory stop rule applied",
+  "stages": {
+    "smoke-20": {
+      "status": "COMPLETED_FAILED",
+      "passed": false,
+      "metrics": {
+        "active_stream_peak": 20,
+        "active_stream_sustained_seconds": 121,
+        "client_records": 20,
+        "committed_event_loss": 0,
+        "connection_establishment_latency_p95_ms": 4393,
+        "connection_establishment_latency_p99_ms": 4497,
+        "connection_success_rate": 1.0,
+        "cross_tenant_leakage": 0,
+        "database_pool_acquisition_timeout_log_count": 0,
+        "database_pool_acquisition_timeout_peak": 0.0,
+        "database_pool_capacity": 90.0,
+        "database_pool_checked_out_peak": 7.0,
+        "delivery_latency_p95_ms": 439,
+        "delivery_latency_p99_ms": 6850,
+        "duplicate_final_render": 0,
+        "duplicate_replay_attempts": 1,
+        "duplicate_replay_clients": 1,
+        "duplicate_replay_suppressions": 1,
+        "expired_token_probe_attempts": 0,
+        "expired_token_probe_failures": 0,
+        "expired_token_probe_rejections": 0,
+        "expired_token_probe_unexpected_acceptances": 0,
+        "http_5xx_rate": 0.0,
+        "monitor_quality": {
+          "complete_count": 31,
+          "sample_count": 39,
+          "success_rate": 0.7948717948717948
+        },
+        "outbox_dead_peak": 0,
+        "planned_disconnects": 40,
+        "publisher_failures": 0,
+        "reconnect_replay_success_rate": 1.0,
+        "slow_consumer_clients": 1,
+        "tenant_client_counts": {
+          "gate-c-alpha": 10,
+          "gate-c-beta": 10
+        },
+        "token_acquisition_failures": 0,
+        "token_acquisition_latency_p95_ms": 116,
+        "token_acquisition_latency_p99_ms": 118,
+        "token_initial_acquisitions": 20,
+        "token_refreshes": 0,
+        "unexpected_disconnect_rate": 0.0,
+        "unique_principals": 20,
+        "users": 20,
+        "workflow_failures": 0
+      },
+      "checks": {
+        "client_count": true,
+        "connection_latency_observed": true,
+        "connection_success": true,
+        "database_pool_capacity_observed": true,
+        "database_pool_timeout_log": true,
+        "database_pool_timeout_metric": true,
+        "database_pool_utilization": true,
+        "delivery_p95": true,
+        "delivery_p99": false,
+        "duplicate_render": true,
+        "duplicate_replay_attempts": true,
+        "duplicate_replay_population": true,
+        "duplicate_replay_suppression": true,
+        "event_loss": true,
+        "expired_token_probe": true,
+        "http_5xx": true,
+        "monitor_quality": false,
+        "outbox_dead": true,
+        "peak_active": true,
+        "planned_disconnect_population": true,
+        "principal_distribution": true,
+        "publisher": true,
+        "reconnect": true,
+        "slow_consumer_population": true,
+        "sustain": true,
+        "tenant_distribution": true,
+        "tenant_isolation": true,
+        "token_acquisition": true,
+        "token_latency_observed": true,
+        "token_refresh": true,
+        "unexpected_disconnect": true,
+        "workflow": true
+      }
+    },
+    "ramp-200": {
+      "status": "NOT_EXECUTED"
+    },
+    "ramp-500": {
+      "status": "NOT_EXECUTED"
+    },
+    "ramp-1000": {
+      "status": "NOT_EXECUTED"
+    },
+    "gate-2000": {
+      "status": "NOT_EXECUTED"
+    },
+    "recovery-600": {
+      "status": "NOT_EXECUTED"
+    }
+  },
+  "measured_evidence": {
+    "security_controls": {
+      "cross_tenant_cursor_status": 400,
+      "invalid_cursor_acceptance": 0,
+      "invalid_token_status": 401,
+      "passed": true,
+      "schema_version": "cybercontrol.gate-c-security-controls.v1",
+      "tampered_cursor_status": 400,
+      "unauthenticated_status": 401,
+      "valid_cursor_status": 200
+    },
+    "smoke_delivery_p95_ms": 439,
+    "smoke_delivery_p99_ms": 6850,
+    "smoke_monitor_quality": {
+      "complete_count": 31,
+      "sample_count": 39,
+      "success_rate": 0.7948717948717948
+    },
+    "smoke_connection_success_rate": 1.0,
+    "smoke_reconnect_replay_success_rate": 1.0,
+    "smoke_committed_event_loss": 0,
+    "smoke_duplicate_final_render": 0,
+    "smoke_cross_tenant_leakage": 0,
+    "outbox_terminal_p95_ms": 6714.479,
+    "outbox_terminal_p99_ms": 9373.942,
+    "outbox_states": {
+      "PUBLISHED": 25
+    },
+    "api_rss_first_bytes": 199753728,
+    "api_rss_last_bytes": 221564109,
+    "api_rss_peak_bytes": 256271974.0,
+    "api_fd_first": 21,
+    "api_fd_last": 29,
+    "api_fd_peak": 52.0,
+    "post_ramp_memory_ratio": null,
+    "recovery_observation": "NOT_EXECUTED"
+  },
+  "database_terminal": {
+    "append_only_triggers": 57,
+    "force_rls_tables": 74,
+    "gate_c_sse_events": [
+      {
+        "count": 170,
+        "maximum_sequence": 184,
+        "minimum_sequence": 3,
+        "tenant_id": "gate-c-alpha"
+      },
+      {
+        "count": 170,
+        "maximum_sequence": 185,
+        "minimum_sequence": 3,
+        "tenant_id": "gate-c-beta"
+      }
+    ],
+    "generated_at_utc": "2026-08-15T11:22:41.443604Z",
+    "migration_head": "20260720_0010",
+    "outbox_lag": {
+      "p95_ms": 6714.479,
+      "p99_ms": 9373.942
+    },
+    "outbox_states": {
+      "PUBLISHED": 25
+    },
+    "rls_adversarial_read": {
+      "foreign_tenant_visible": 0,
+      "own_tenant_visible": 185
+    },
+    "roles": [
+      {
+        "rolbypassrls": false,
+        "rolname": "liyans_app",
+        "rolsuper": false
+      },
+      {
+        "rolbypassrls": false,
+        "rolname": "liyans_dispatcher",
+        "rolsuper": false
+      },
+      {
+        "rolbypassrls": false,
+        "rolname": "liyans_migrator",
+        "rolsuper": false
+      }
+    ],
+    "schema_version": "cybercontrol.gate-c-postgres-evidence.v1",
+    "tenant_tables": 74
+  },
+  "single_host_capacity_claim_permitted": false
+}

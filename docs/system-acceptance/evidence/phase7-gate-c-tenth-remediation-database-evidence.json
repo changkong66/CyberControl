@@ -1,0 +1,50 @@
+{
+  "append_only_triggers": 57,
+  "force_rls_tables": 74,
+  "gate_c_sse_events": [
+    {
+      "count": 170,
+      "maximum_sequence": 184,
+      "minimum_sequence": 3,
+      "tenant_id": "gate-c-alpha"
+    },
+    {
+      "count": 170,
+      "maximum_sequence": 185,
+      "minimum_sequence": 3,
+      "tenant_id": "gate-c-beta"
+    }
+  ],
+  "generated_at_utc": "2026-08-15T11:22:41.443604Z",
+  "migration_head": "20260720_0010",
+  "outbox_lag": {
+    "p95_ms": 6714.479,
+    "p99_ms": 9373.942
+  },
+  "outbox_states": {
+    "PUBLISHED": 25
+  },
+  "rls_adversarial_read": {
+    "foreign_tenant_visible": 0,
+    "own_tenant_visible": 185
+  },
+  "roles": [
+    {
+      "rolbypassrls": false,
+      "rolname": "liyans_app",
+      "rolsuper": false
+    },
+    {
+      "rolbypassrls": false,
+      "rolname": "liyans_dispatcher",
+      "rolsuper": false
+    },
+    {
+      "rolbypassrls": false,
+      "rolname": "liyans_migrator",
+      "rolsuper": false
+    }
+  ],
+  "schema_version": "cybercontrol.gate-c-postgres-evidence.v1",
+  "tenant_tables": 74
+}

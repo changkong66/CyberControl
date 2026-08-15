@@ -1,0 +1,13 @@
+{
+  "schema_version": "cybercontrol.gate-c-redaction-scan.v1",
+  "scanned_at_utc": "2026-08-15T11:29:10.2284976Z",
+  "scanned_file_count": 55,
+  "credential_value_count": 20,
+  "pii_value_count": 40,
+  "jwt_hits": 0,
+  "authorization_bearer_hits": 0,
+  "exact_credential_hits": 0,
+  "exact_pii_hits": 0,
+  "passed": true,
+  "hit_files": []
+}

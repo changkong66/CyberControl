@@ -890,3 +890,58 @@ does not reinterpret either failure as acceptance.
 
 Only after every blocker has reproducible evidence may the state advance to
 SYSTEM_ACCEPTED.
+
+## Tenth Gate C Mainline Replay Boundary
+
+The tenth remediation merged through PR
+[#75](https://github.com/changkong66/CyberControl/pull/75) as protected main
+`64792b0420f436d18beea2a301bd4017bc7e7a82`, tree
+`61da331c23a5d5b6988aff70d0db5455732886cc`. Push Run
+`31865357058`, pull-request Run `31865358914` and protected-main Run
+`31865636339` each passed 8/8.
+
+The fresh replay used Compose project
+`cybercontrol-gate-c-tenth-main-64792b-20260815050434`, PostgreSQL volume
+`cybercontrol_gate_c_tenth_main_64792b_20260815050434`, real Keycloak Tokens,
+two tenants and twenty principals. The volume remains preserved.
+
+The unchanged `smoke-20` stage completed with twenty authenticated streams and
+121 sustained seconds, then failed two frozen controls:
+
+| Frozen stage control | Observed | Required | Result |
+| --- | ---: | ---: | --- |
+| Delivery p95 | 439 ms | <= 1,000 ms | pass |
+| Delivery p99 | 6,850 ms | <= 3,000 ms | fail |
+| Monitor complete sample rate | 31/39 = 0.7948717949 | >= 0.95 | fail |
+
+The delivery histogram contained 3,380 observations, with 70 above 1,000 ms
+and 40 above 3,000 ms. Seven monitor samples timed out reading `/metrics`; one
+final sample could not inspect Docker. Connection and reconnect/replay success
+were `1.0/1.0`; committed loss, duplicate final rendering, tenant leakage,
+HTTP 5xx, Outbox `DEAD` and pool acquisition timeouts were zero in the completed
+stage. Security controls rejected unauthenticated and invalid Token requests
+with 401, and tampered/cross-tenant cursors with 400.
+
+The mandatory stop rule prevented 200, 500, 1,000, 2,000 and the ten-minute
+recovery observation from starting. No aggregate memory recovery or terminal
+lifecycle claim is made. PostgreSQL ended at migration `20260720_0010`, FORCE
+RLS `74/74`, append-only triggers `57`, foreign-tenant visibility `0`, and
+Outbox `PUBLISHED=25` with no `PENDING/CLAIMED/DEAD` row.
+
+The immutable external package is 341,283 bytes with SHA256
+`036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c`.
+GitHub Release
+[371033270](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-tenth-remediation-failed-20260815-64792b0-evidence-v1)
+and its asset are immutable, and GitHub's asset digest matches the local hash.
+The final scan found zero JWT, Bearer, credential or exact PII values after two
+subject references in the full API diagnostic log were redacted.
+
+## Current Audit Judgment
+
+CyberControl remains a release candidate, not a production-accepted system.
+The tenth code remediation passed all release-quality CI, but the independent
+fresh-volume replay failed at the first stage. Partial safety passes do not
+advance Gate C. The formal state remains
+`PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; Gate D-G and all product expansion remain
+locked. An eleventh remediation may begin only after this independent failure
+archive is merged through protected-main 8/8.

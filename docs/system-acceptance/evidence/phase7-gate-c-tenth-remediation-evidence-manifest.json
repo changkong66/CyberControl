@@ -1,0 +1,55 @@
+{
+  "schema_version": "cybercontrol.gate-c-docs-evidence-manifest.v1",
+  "evidence_type": "tenth-remediation-failed-partial-replay",
+  "source_commit": "64792b0420f436d18beea2a301bd4017bc7e7a82",
+  "source_tree": "61da331c23a5d5b6988aff70d0db5455732886cc",
+  "run_id": "gate-c-20260815T050434Z-64792b0420f4",
+  "package_sha256": "036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c",
+  "files": [
+    {
+      "path": "phase7-gate-c-tenth-remediation-database-evidence.json",
+      "bytes": 1050,
+      "sha256": "a82195d3025c4a73d84fff2987ab083fed852ff9999d753986bf4003c3f49fbb"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-environment.json",
+      "bytes": 5366,
+      "sha256": "e4d9c8625474b8e4d175ec4b0ecabde821d3232272f45907c0fa1347784dbe1e"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-failure-analysis.md",
+      "bytes": 2629,
+      "sha256": "86a9ff461e7ce6a0f24555f1985852c35af5bf7e068feb619b2336e820932a21"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-package.json",
+      "bytes": 1728,
+      "sha256": "1e0c7026b0c4fba789515a49a44cc603989cbbb1d3a7b97187b84681235e15ce"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-redaction-scan.json",
+      "bytes": 342,
+      "sha256": "191dfcc89e5eb27290228db6bfe4ebd793760f0f08c76e05bc2f8c6afea981c2"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-report.md",
+      "bytes": 2369,
+      "sha256": "e4845f1e62d3bcc65cd0a4c8b7669c2709506b6c0aab67dcdea1e54150d848d5"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-repository-manifest.json",
+      "bytes": 4068,
+      "sha256": "7b9919319aa36f7efbdff151eb5e7842a5bc8d46bbc2afafaecb2a1bee3bfc65"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-run-evidence-manifest.json",
+      "bytes": 10073,
+      "sha256": "dc7fc46a79119d26cb2146392e819c389ea55ca2bc78c2a7bf285e153106cefb"
+    },
+    {
+      "path": "phase7-gate-c-tenth-remediation-summary.json",
+      "bytes": 6730,
+      "sha256": "0cb28725f2ecb17ad74de39b3aa8c47955276a5f42f7d4afd4c8410ad88c7db6"
+    }
+  ]
+}
