@@ -274,34 +274,31 @@ digest matches, and the JWT/credential/PII scan recorded zero hits.
 
 ## 5. Remaining Release Work
 
-### 5.1 Ninth Failure Archive Closure: Completed
+### 5.1 Tenth Failure Archive Closure: Completed
 
-- PR #73 merged the independent docs/evidence-only archive as
-  `b15ec9b63b15a36603f606c4da94f7382fb4a9fb` after push Run `31828555182`,
-  pull-request Run `31828625199` and protected-main Run `31829334301` each
+- PR #76 merged the independent docs/evidence-only archive as
+  `e6b461cd0b919dfe01e87ed040d04771a746d6c2` after push Run `31883430063`,
+  pull-request Run `31883432630` and protected-main Run `31883708144` each
   passed 8/8. Historical runs, Releases, images and volumes remain preserved.
 - The formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
 
-### 5.2 P0 Tenth Scoped Remediation
+### 5.2 P0 Eleventh Scoped Remediation
 
-- Correlate each Outbox event from transaction commit through claim,
-  authorization, durable acceptance, published marking, notification and SSE
-  enqueue. Fix only measured owners while preserving leases, retries,
-  partition order, idempotency and atomic publication.
-- Distinguish live-object retention from allocator fragmentation/high-water
-  behavior using tracemalloc, object counts, USS/PSS/RSS, allocator and map
-  evidence.
-  Fix the actual owner or production allocator behavior; forced GC, recovery-
-  only trimming, restart or altered aggregation is not an acceptance fix.
-- Preserve all five stage passes, zero loss, zero final duplicates, zero tenant
-  leakage, zero Outbox `DEAD`, signed tenant-bound cursors, ordered delivery,
-  zero close races and the ninth run's terminal lifecycle gauges of zero.
+- Correlate the smoke-20 delivery tail from producer/commit through claim,
+  authorization, durable acceptance, notification, SSE enqueue, socket write
+  and client receipt. Diagnose the seven `/metrics` timeouts and one Docker
+  inspection failure as observability readiness or event-loop cost, not as a
+  reason to alter the monitor threshold.
+- Fix only measured owners while preserving leases, retries, partition order,
+  idempotency, atomic publication, signed tenant-bound cursors, ordered
+  delivery, zero loss, zero final duplicates, zero tenant leakage and zero
+  Outbox `DEAD`.
 - Add deterministic unit, concurrency and real PostgreSQL regressions. Keep
   Python coverage at least 90% and pass every release-quality gate.
 
-### 5.3 P0 Fresh Protected-Main Replay
+### 5.3 P0 Fresh Protected-Main Replay After Eleventh Remediation
 
-1. Merge the tenth remediation only after push and pull-request 8/8, then
+1. Merge the eleventh remediation only after push and pull-request 8/8, then
    require protected-main 8/8.
 2. Build all images from that main without `-SkipBuild`.
 3. Use a unique Compose project, evidence directory and fresh PostgreSQL volume;
@@ -329,13 +326,13 @@ digest matches, and the JWT/credential/PII scan recorded zero hits.
 
 CyberControl's current commercial product feature chain is implemented, and
 Gate A/B evidence is accepted. The project is not production accepted. The
-ninth remediation completed the full Gate C workload, passed all stage-local
-controls and ended with zero terminal subscriber/queue/replay state. The same
-run still failed Outbox p95 by `1102.698ms` and retained `1.416064` of the
-frozen RSS baseline. The ninth failure archive is now closed on protected main.
-A tenth remediation may begin only from this resulting protected main under a
-separate task. Gate D-G remain locked until an independent complete
-Gate C success-evidence PR passes CI and merges.
+tenth remediation passed release-quality CI, but its fresh Gate C replay failed
+at smoke-20 on delivery p99 and monitor completeness; later stages and recovery
+were not executed. PR #76 closed that immutable failure archive on protected
+main as `e6b461cd0b919dfe01e87ed040d04771a746d6c2` with Run `31883708144` at
+8/8. Gate D-G remain locked until an independent complete Gate C success-
+evidence PR passes CI and merges. An eleventh remediation requires a separate
+authorization and must start from this protected main.
 
 ## 7. Tenth Remediation And Partial Replay Audit
 
@@ -368,3 +365,11 @@ Immutable Release `371033270` contains the 341,283-byte package with SHA256
 `036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c`.
 The package and failed volume remain preserved. Gate C remains failed and Gate
 D-G remain locked.
+
+PR #76 archived the tenth failure as a docs/evidence-only change. Its final
+head `40471a50f58c758a5acf129f259126ca2ece0288` corrected repository evidence
+hashes to the committed LF bytes without changing the immutable external ZIP.
+Push Run `31883430063` and pull-request Run `31883432630` passed 8/8; the PR
+Squash Merged as `e6b461cd0b919dfe01e87ed040d04771a746d6c2`, and protected-main
+Run `31883708144` passed 8/8. The archive is closed without changing the failed
+Gate C decision.
