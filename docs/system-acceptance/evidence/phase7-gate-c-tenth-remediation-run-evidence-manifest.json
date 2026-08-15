@@ -1,0 +1,308 @@
+{
+  "schema_version": "cybercontrol.gate-c-evidence-manifest.v1",
+  "run_id": "gate-c-20260815T050434Z-64792b0420f4",
+  "source_commit": "64792b0420f436d18beea2a301bd4017bc7e7a82",
+  "source_tree": "61da331c23a5d5b6988aff70d0db5455732886cc",
+  "files": [
+    {
+      "path": "binding.json",
+      "bytes": 798,
+      "sha256": "54cea1c80373f195ebd54defaafa7cf5db598ad80a76eeeac9f101177d92c52d"
+    },
+    {
+      "path": "compose-down.log",
+      "bytes": 2993,
+      "sha256": "2d33b3c9c2af290dd38ef6bff6ebf4e00993b8e1b86ba23f979b95bf700bb66f"
+    },
+    {
+      "path": "compose-up.log",
+      "bytes": 4580,
+      "sha256": "9bb1c33ce4dfb4ca60cabc9972561151bbb9f8ab98325848723550ea66388b53"
+    },
+    {
+      "path": "database-evidence.json",
+      "bytes": 1050,
+      "sha256": "a82195d3025c4a73d84fff2987ab083fed852ff9999d753986bf4003c3f49fbb"
+    },
+    {
+      "path": "database-evidence.log",
+      "bytes": 289,
+      "sha256": "6b3fa6e545443bb733717576d6089e68c72b235c9be7ff06d0d2625b0e7aa997"
+    },
+    {
+      "path": "diagnostics/api.log",
+      "bytes": 322442,
+      "sha256": "1edd433119bc9ddf4abc45c2d2fc57c3550b2885e0438d8b167ba6103181e354"
+    },
+    {
+      "path": "diagnostics/compose-ps.json",
+      "bytes": 16442,
+      "sha256": "f1da87e33a7b93c072a9a03b7cbad7f803c7fe50570c065a42979face7afe7bc"
+    },
+    {
+      "path": "diagnostics/disk-terminal.json",
+      "bytes": 167,
+      "sha256": "e7787f171bccf8cc21e4507a6e2d47e3080ca3f75fa5758740b6ccf2b5941bb3"
+    },
+    {
+      "path": "diagnostics/docker-info.json",
+      "bytes": 16090,
+      "sha256": "0a32530ff6ef9daff5ee0712a7631b58baa96db250cbedf0ad7262005833a339"
+    },
+    {
+      "path": "diagnostics/docker-version.json",
+      "bytes": 1144,
+      "sha256": "696155b7700a58fa3280e2de372e4a7fcc845381eba766e42ca78a7ca5758729"
+    },
+    {
+      "path": "diagnostics/keycloak-config.log",
+      "bytes": 124,
+      "sha256": "35f0cc9a3604b880c080fc1e602f89e2fb765394401c428a5b43e8c387fc342a"
+    },
+    {
+      "path": "diagnostics/keycloak.log",
+      "bytes": 4463,
+      "sha256": "a17ae8ef542c632e2e5b3e91934aeea79591b469efaae5373af0610478edde52"
+    },
+    {
+      "path": "diagnostics/migrate.log",
+      "bytes": 1933,
+      "sha256": "e6780030f4712ac438dbd3a0d8a511ec208d52845c302725ecddca68d8b48ff7"
+    },
+    {
+      "path": "diagnostics/mock-provider.log",
+      "bytes": 477768,
+      "sha256": "d1b378b06da333db8c4ce6a88355cc7585890d797885df18c9560016660d8718"
+    },
+    {
+      "path": "diagnostics/postgres-role-bootstrap.log",
+      "bytes": 886,
+      "sha256": "02b89d9bcd9883a06e47249d3f3e6a51d5c863d387cd0b48e8a0fcc948291c94"
+    },
+    {
+      "path": "diagnostics/postgres-volume-terminal.json",
+      "bytes": 356,
+      "sha256": "a7e8d82d39a527c4f58ed515815b65f5b0854629fe1f7741dcbe223cff296a15"
+    },
+    {
+      "path": "diagnostics/postgres.log",
+      "bytes": 9492,
+      "sha256": "86c79189e4232e8640613e71805a2aff5b3f6e630a801587fa5b3776fca06006"
+    },
+    {
+      "path": "diagnostics/tenant-bind.log",
+      "bytes": 60,
+      "sha256": "b3bed72c8bd3a8e178fdcd5285f2b98a1044aa10887771a97e18ece78086f871"
+    },
+    {
+      "path": "diagnostics/terminal-docker-stats.jsonl",
+      "bytes": 1227,
+      "sha256": "d6f6b7f17c3c41de5c41568f560a6bfc52f12d84fc25593f9c293846e68483f9"
+    },
+    {
+      "path": "diagnostics/terminal-metrics.prom",
+      "bytes": 64082,
+      "sha256": "4caddbbde2f2216d317a5dbc3bad56fd7b8d91dd8b1dda71b7fee32a3d262446"
+    },
+    {
+      "path": "environment.json",
+      "bytes": 5488,
+      "sha256": "1c220a46b3cb6ae5d0d7392b497e10be8a947c14c69f2b20f9c93791f6b38675"
+    },
+    {
+      "path": "failure-analysis.md",
+      "bytes": 2630,
+      "sha256": "951291da5e531f9bdb40819bcf5bf7edaf2fe71714f7ec30118b1d39276e069d"
+    },
+    {
+      "path": "gate-c-report.md",
+      "bytes": 2370,
+      "sha256": "36ac64872874be9794bdf758907651685b40b6fc2462ac901c0550bf7e79a35f"
+    },
+    {
+      "path": "gate-c-summary.json",
+      "bytes": 6936,
+      "sha256": "7a2a3135a817e009cf4a7e96462347c5d6d483f21b221c8b117f2e5f2652e764"
+    },
+    {
+      "path": "image-build.log",
+      "bytes": 14548,
+      "sha256": "1aa428f10a576953c713fd0114ac78405158a68a0cb195bb71382aee1cb07ced"
+    },
+    {
+      "path": "load-image-build.log",
+      "bytes": 7112,
+      "sha256": "2cfd0d512f4e72e6000e6c4c78dca1701cdf77b683874e034e0e82f5eaecfae2"
+    },
+    {
+      "path": "package-binding.json",
+      "bytes": 900,
+      "sha256": "8cd4140b00f9a13fa67c65a49949552c5e1d99b07bb788ab5a4f487c7da0b352"
+    },
+    {
+      "path": "preflight.json",
+      "bytes": 877,
+      "sha256": "28320d30459e67a79788db16369b3a1ca61c05e9fb7d6262039db6d1edae0b1c"
+    },
+    {
+      "path": "provision.log",
+      "bytes": 308,
+      "sha256": "46b1e38e86b896f37b65e2b82779c227a6e2409c0a57ec5949270ca33c832bae"
+    },
+    {
+      "path": "redaction-scan.json",
+      "bytes": 355,
+      "sha256": "2a70c1cccc78908365ffc48a823f457efdadc67d08c42fe204ea7195752a528d"
+    },
+    {
+      "path": "repository-manifest.json",
+      "bytes": 4149,
+      "sha256": "054868f65185ca6b501b2865ffdba35b8e21a3f829a7cc1085d10adefaa60189"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-10.jsonl",
+      "bytes": 25816,
+      "sha256": "563349810510bb1bfd11308f76ac421190551750885efa0f34e5036da6679ca2"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-7.jsonl",
+      "bytes": 25632,
+      "sha256": "988402e85413ee344c389e8af04d0144320fd2b3e15e178ab7399f3f971732f9"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-8.jsonl",
+      "bytes": 25632,
+      "sha256": "68df64b2c76d2d4dfbd9789c22ecb5d86f7bfcfabd1b39794b79a5a2ee60872d"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-9.jsonl",
+      "bytes": 25632,
+      "sha256": "ef2cd5218444431241593686cce41038ec296233748c9b4f585cc7550a470594"
+    },
+    {
+      "path": "stages/smoke-20/api-runtime.log",
+      "bytes": 85273,
+      "sha256": "8ba74a56e0b65690cf583f82b6c3cbc13e598ccdfe59a0e6c2c9ff91b3d13bf3"
+    },
+    {
+      "path": "stages/smoke-20/baseline-cursors.json",
+      "bytes": 487,
+      "sha256": "cf3a2cc7ae66d23a06041ae784f41884d2bc463d5434c245177ab5ca9429bded"
+    },
+    {
+      "path": "stages/smoke-20/baseline.log",
+      "bytes": 302,
+      "sha256": "560721b27c1746ea5ad6f0213967c90e71f39c93ae7fe74c0ad6f8d38085385b"
+    },
+    {
+      "path": "stages/smoke-20/locust_exceptions.csv",
+      "bytes": 31,
+      "sha256": "3e73e8f665731ee4e45a6a91202a31b06999f2c53240f14aee2532e0e0b42b09"
+    },
+    {
+      "path": "stages/smoke-20/locust_failures.csv",
+      "bytes": 52,
+      "sha256": "51ba68968b591276c95496a6a9624797491ce4eb934b1f6392f44b95148fbb93"
+    },
+    {
+      "path": "stages/smoke-20/locust_stats_history.csv",
+      "bytes": 55037,
+      "sha256": "e51547ed894c1beed37d82d48bf971c0d12cbf3b1bb2022ae1caa37218f39422"
+    },
+    {
+      "path": "stages/smoke-20/locust_stats.csv",
+      "bytes": 549,
+      "sha256": "40f92a86e5a5c513cbf6711e05ea81119a88ee4fdffbf1cf2c1dc52d6c150c5d"
+    },
+    {
+      "path": "stages/smoke-20/locust-run.log",
+      "bytes": 4652,
+      "sha256": "039dd2fc5f8511f5430dd1c20d4a5c3eb054dbeb427bc0000efcb22505689f67"
+    },
+    {
+      "path": "stages/smoke-20/monitor.jsonl",
+      "bytes": 1694456,
+      "sha256": "ea8a068e717f0e81500d1259539bb4948dd9de8068c6040198358b70bf7be2a6"
+    },
+    {
+      "path": "stages/smoke-20/monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/smoke-20/monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/smoke-20/publisher-events.jsonl",
+      "bytes": 113955,
+      "sha256": "5b6cb60c4ec98d9644ecd3011804a9f609c8d446517a4da1541baa2d56073edf"
+    },
+    {
+      "path": "stages/smoke-20/publisher-result.json",
+      "bytes": 583,
+      "sha256": "d51886cc3448386620d786e5bd3a5379fd234f3eff0eb0d6aaf2e4194b4e34fb"
+    },
+    {
+      "path": "stages/smoke-20/runtime-controls.json",
+      "bytes": 309,
+      "sha256": "91479dc67636830123c66b50b12909c6f112039cab4419797470711750b9e660"
+    },
+    {
+      "path": "stages/smoke-20/runtime-controls.log",
+      "bytes": 153,
+      "sha256": "bcd2fba7c882f395ba2a50898a3fc4c9931e555fb1cf7e45f521f34877e81fe6"
+    },
+    {
+      "path": "stages/smoke-20/security-controls.json",
+      "bytes": 283,
+      "sha256": "41a9f680032dd505cef23e49ab8e2cef603f906b91d7b8429bc31ad1fa69eb28"
+    },
+    {
+      "path": "stages/smoke-20/security-controls.log",
+      "bytes": 411,
+      "sha256": "d57bff4ec41696a520e1b3e3fa84104ca08df569061772090094c27be3edfa33"
+    },
+    {
+      "path": "stages/smoke-20/stage-started-utc.txt",
+      "bytes": 30,
+      "sha256": "1741ee65784506ba3bcdd59be4fc5c495be9f585905e2910d9def084602a116e"
+    },
+    {
+      "path": "stages/smoke-20/stage-summary.json",
+      "bytes": 2980,
+      "sha256": "77a5605c16eb546a268febfe803d145490aef4ea6994e7dfc1cc3cb5593c88b0"
+    },
+    {
+      "path": "stages/smoke-20/summarize.log",
+      "bytes": 40,
+      "sha256": "16a5fd7fa2f44b991090f9f09e28e9cb409c771ab5596b5eee3c10a4ad2871c2"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-10.json",
+      "bytes": 6546,
+      "sha256": "9291f9b499babdc9781ab0f5426ed3cb32f796bb32e425d26dddd9a6d726fc26"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-7.json",
+      "bytes": 6377,
+      "sha256": "397a1d3f3c2c3886365f5f5489340d15971ac6740a9d87d74909da90fc15d8a3"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-8.json",
+      "bytes": 6468,
+      "sha256": "7514c27929b8a3841b15491d061d380159eafc4fe0055d059d0c454bb7961d39"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-9.json",
+      "bytes": 6404,
+      "sha256": "00a9351b7f5e26c91e276e7748f93912e5663e49567dec074a76c9f4a36b8a13"
+    },
+    {
+      "path": "volume-create.txt",
+      "bytes": 54,
+      "sha256": "8e175c5dea50628a184d7e7d2bbc6383f917bfad2e1f5ec88b632bec5514a7db"
+    }
+  ]
+}
