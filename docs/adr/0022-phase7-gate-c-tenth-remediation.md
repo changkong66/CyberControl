@@ -100,4 +100,9 @@ runner attempts for this branch measured the pre-existing planner assertions at
 `6.2646-6.5499 s` and `5.4224-5.5165 ms`, respectively, while PostgreSQL,
 frontend, Go, supply-chain and container gates passed. This is recorded as a
 runner-baseline signal only; no test budget, aggregation, workload or acceptance
-criterion is changed, and the planner code is outside this remediation diff.
+criterion is changed. Profiling also found repeated `_incoming_edges` index
+construction in the existing 500-node planner path; the tenth branch reuses that
+immutable index and precomputes the fixed score weights. This is a semantics-
+preserving local quality-gate fix, not a Gate C threshold or workload change. Its
+disproof is any changed path document, ordering/score regression, or failure of
+the existing Topic 2 algorithm and performance tests.
