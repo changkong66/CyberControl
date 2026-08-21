@@ -1,5 +1,5 @@
 ARG NODE_IMAGE=cgr.dev/chainguard/node:latest-dev@sha256:7f240e0b8a76496e6128948e4cfb0c3c145f629ac2b9d3cee3d554b746e82ca3
-ARG NGINX_IMAGE=cgr.dev/chainguard/nginx:latest@sha256:65ad444a372b9f69821ef15acb95c46e9cffdd520bbdc4f8a72d5d38d7c1ca92
+ARG NGINX_IMAGE=cgr.dev/chainguard/nginx:latest@sha256:f6cbe96998972d87ebe30952ec1b6f3cff4103c33c889ffca7e13053e2036571
 
 FROM ${NODE_IMAGE} AS builder
 
