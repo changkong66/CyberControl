@@ -373,3 +373,46 @@ Push Run `31883430063` and pull-request Run `31883432630` passed 8/8; the PR
 Squash Merged as `e6b461cd0b919dfe01e87ed040d04771a746d6c2`, and protected-main
 Run `31883708144` passed 8/8. The archive is closed without changing the failed
 Gate C decision.
+
+## 8. Eleventh Process Baseline Audit
+
+Process Version: `Gate-C-11-v1.0`
+
+Phase 0 revalidated the exact protected parent main
+`108e8aa0b6e85c304c9bcf4aa3a5c30ec6b5df1a`, tree
+`8cc53ce175a44f103b4733fd9e4afa46cff98937`. PR #79 push Run `32487117834`,
+pull-request Run `32487121236` and protected-main Run `32487659559` each passed
+8/8. The current product source and verified parent engineering baseline are
+therefore both `108e8aa0b6e85c304c9bcf4aa3a5c30ec6b5df1a` before this status-only
+commit.
+
+The isolated worktree was created directly from that protected tip. Its tree
+was clean, and its lock files, Dockerfiles, Compose files and runner came only
+from the protected tree. The main workspace was not used as a build context and
+was not reset, checked out, stashed or modified.
+
+Phase 0 evidence also established:
+
+- threshold SHA256
+  `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`;
+- workload SHA256
+  `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`;
+- Docker Engine 29.6.1 with 16 CPUs and 7,958,888,448 bytes of memory,
+  matching the tenth formal environment record;
+- 62 inspected CyberControl/Gate C volumes and zero running containers;
+- C/D free space not lower than the tenth-run environment record;
+- immutable Release `371033270`, asset size 341,283 bytes and GitHub-recorded
+  digest
+  `036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c`.
+
+No historical volume, image, Release, package or snapshot was deleted or
+rewritten. No diagnostic, preflight or formal workload was executed during the
+closure. `baseline_history` begins with the tenth product/closure chain, while
+older authoritative baseline fields remain intact. `gate_c_attempts` indexes
+all eleven existing formal runs and leaves their historical `process_version`
+as null.
+
+This baseline-closure PR is documentation-only. It does not alter deployable
+behavior or the frozen acceptance semantics. The formal state remains
+`RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; M1 has not been
+claimed, and Gate D-G remain locked.
