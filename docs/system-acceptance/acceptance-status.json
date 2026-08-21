@@ -1857,6 +1857,7 @@
   },
   "next_stage": {
     "name": "PHASE7_GATE_C_ELEVENTH_REMEDIATION_AND_RERUN",
+    "process_version": "Gate-C-11-v1.0",
     "allowed_scope": [
       "measure and remediate the smoke delivery p99 tail and periodic metrics-read timeouts without changing frozen semantics or diagnostics aggregation",
       "preserve smoke connection and reconnect success, zero loss, zero duplicates, zero tenant leakage, zero Outbox DEAD, ordered replay and zero aclose races",
