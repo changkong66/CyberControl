@@ -951,3 +951,42 @@ protected-main Run 31883708144 at 8/8. The formal state remains
 `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; Gate D-G and all product expansion remain
 locked. An eleventh remediation may begin only from this archive-merged
 protected main under a separately authorized task.
+
+## Gate C Eleventh Process Baseline Closure
+
+Process Version: `Gate-C-11-v1.0`
+
+This status-only snapshot binds the eleventh process to verified parent main
+`108e8aa0b6e85c304c9bcf4aa3a5c30ec6b5df1a`, tree
+`8cc53ce175a44f103b4733fd9e4afa46cff98937`. PR
+[#79](https://github.com/changkong66/CyberControl/pull/79) produced that product
+source after push Run `32487117834` and pull-request Run `32487121236` passed
+8/8; protected-main Run
+[32487659559](https://github.com/changkong66/CyberControl/actions/runs/32487659559)
+also passed 8/8.
+
+`product_source_sha` and verified parent `engineering_baseline_sha` are both
+`108e8aa0b6e85c304c9bcf4aa3a5c30ec6b5df1a`. This PR changes only current
+acceptance documentation. It does not alter product code, runtime
+configuration, security authority, frozen thresholds, workload or historical
+evidence. Its eventual merge SHA and post-merge CI are external GitHub
+attestations because a Git commit cannot contain its own final merge SHA.
+
+The threshold and workload hashes were reverified as
+`d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
+and `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`.
+Docker matched the tenth-run hard fingerprint at 16 CPUs and 7,958,888,448
+bytes of memory. Sixty-two CyberControl/Gate C volumes were inspected
+read-only; no container was running and every historical formal volume remains
+preserved.
+
+Immutable Release `371033270` still exposes the 341,283-byte asset with SHA256
+`036b3c8e09a8ff039b7b30a0d45cf9d67d6939f29690a39b35b9c52e8756e91c`.
+No new load run occurred. `acceptance-status.json` now has a normalized
+append-only baseline chain and an eleven-entry formal-attempt index. Historical
+attempts retain `process_version: null`; they are not relabeled as having run
+under `Gate-C-11-v1.0`.
+
+The formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Gate D-G remain
+locked. Every future preflight, diagnostic and formal run must record
+`process_version: Gate-C-11-v1.0`.
