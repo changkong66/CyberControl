@@ -12,6 +12,7 @@ from typing import Any
 from gate_c.config import Thresholds
 
 _JWT = re.compile(rb"eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}")
+_PROCESS_VERSION = "Gate-C-11-v1.0"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -27,6 +28,27 @@ def _read(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(f"{path} must contain an object")
     return value
+
+
+def _formal_execution_metadata(run_dir: Path) -> dict[str, Any]:
+    execution = _read(run_dir / "execution-metadata.json")
+    if execution.get("formal_gate_attempt") is not True:
+        raise ValueError("Gate C finalization requires formal execution metadata")
+    if execution.get("classification") != "FORMAL_GATE_C_ATTEMPT":
+        raise ValueError("Gate C finalization rejected non-formal execution metadata")
+    if execution.get("process_version") != _PROCESS_VERSION:
+        raise ValueError("Gate C finalization rejected an unknown process version")
+    required = (
+        "run_id",
+        "source_commit",
+        "source_tree",
+        "product_source_sha",
+        "engineering_baseline_sha",
+    )
+    missing = [field for field in required if not execution.get(field)]
+    if missing:
+        raise ValueError(f"Gate C execution metadata is missing: {', '.join(missing)}")
+    return execution
 
 
 def _monitor_rows(path: Path) -> list[dict[str, Any]]:
@@ -104,6 +126,7 @@ def _manifest(run_dir: Path, excluded: set[Path]) -> list[dict[str, Any]]:
 def main() -> int:
     args = _parser().parse_args()
     thresholds = Thresholds.load(args.thresholds)
+    execution = _formal_execution_metadata(args.run_dir)
     if (args.run_dir / "secrets").exists():
         raise SystemExit("Gate C secrets must be removed before evidence finalization")
     stage_summaries = [
@@ -261,6 +284,13 @@ def main() -> int:
     }
     document = {
         "schema_version": "cybercontrol.gate-c-summary.v1",
+        "process_version": execution["process_version"],
+        "classification": execution["classification"],
+        "run_id": execution["run_id"],
+        "source_commit": execution["source_commit"],
+        "source_tree": execution["source_tree"],
+        "product_source_sha": execution["product_source_sha"],
+        "engineering_baseline_sha": execution["engineering_baseline_sha"],
         "state": "ACCEPTED" if all(checks.values()) else "FAILED",
         "passed": all(checks.values()),
         "single_host_capacity_claim_permitted": False,
@@ -293,6 +323,13 @@ def main() -> int:
     manifest_path = args.run_dir / "gate-c-evidence-manifest.json"
     manifest = {
         "schema_version": "cybercontrol.gate-c-evidence-manifest.v1",
+        "process_version": execution["process_version"],
+        "classification": execution["classification"],
+        "run_id": execution["run_id"],
+        "source_commit": execution["source_commit"],
+        "source_tree": execution["source_tree"],
+        "product_source_sha": execution["product_source_sha"],
+        "engineering_baseline_sha": execution["engineering_baseline_sha"],
         "files": _manifest(args.run_dir, {manifest_path}),
     }
     manifest_path.write_text(

@@ -85,6 +85,11 @@ services:
       dockerfile: infra/backend.Dockerfile
       args:
         PYTHON_PACKAGE_INDEX_URL: ${LIYAN_PYTHON_PACKAGE_INDEX_URL:-https://pypi.org/simple}
+        CYBERCONTROL_SOURCE_SHA: ${GATE_C_SOURCE_SHA:-unknown}
+        CYBERCONTROL_SOURCE_TREE: ${GATE_C_SOURCE_TREE:-unknown}
+        CYBERCONTROL_PRODUCT_SOURCE_SHA: ${GATE_C_PRODUCT_SOURCE_SHA:-unknown}
+        CYBERCONTROL_ENGINEERING_BASELINE_SHA: ${GATE_C_ENGINEERING_BASELINE_SHA:-unknown}
+        CYBERCONTROL_PROCESS_VERSION: ${GATE_C_PROCESS_VERSION:-unknown}
     command: ["alembic", "-c", "alembic.ini", "upgrade", "head"]
     environment:
       LIYAN_ENVIRONMENT: development
@@ -122,6 +127,12 @@ services:
     build:
       context: ..
       dockerfile: infra/mock-provider.Dockerfile
+      args:
+        CYBERCONTROL_SOURCE_SHA: ${GATE_C_SOURCE_SHA:-unknown}
+        CYBERCONTROL_SOURCE_TREE: ${GATE_C_SOURCE_TREE:-unknown}
+        CYBERCONTROL_PRODUCT_SOURCE_SHA: ${GATE_C_PRODUCT_SOURCE_SHA:-unknown}
+        CYBERCONTROL_ENGINEERING_BASELINE_SHA: ${GATE_C_ENGINEERING_BASELINE_SHA:-unknown}
+        CYBERCONTROL_PROCESS_VERSION: ${GATE_C_PROCESS_VERSION:-unknown}
     environment:
       FIXTURE_PROVIDER_TOKEN: local-fixture-provider-only
       PORT: "8090"
@@ -147,6 +158,11 @@ services:
       dockerfile: infra/backend.Dockerfile
       args:
         PYTHON_PACKAGE_INDEX_URL: ${LIYAN_PYTHON_PACKAGE_INDEX_URL:-https://pypi.org/simple}
+        CYBERCONTROL_SOURCE_SHA: ${GATE_C_SOURCE_SHA:-unknown}
+        CYBERCONTROL_SOURCE_TREE: ${GATE_C_SOURCE_TREE:-unknown}
+        CYBERCONTROL_PRODUCT_SOURCE_SHA: ${GATE_C_PRODUCT_SOURCE_SHA:-unknown}
+        CYBERCONTROL_ENGINEERING_BASELINE_SHA: ${GATE_C_ENGINEERING_BASELINE_SHA:-unknown}
+        CYBERCONTROL_PROCESS_VERSION: ${GATE_C_PROCESS_VERSION:-unknown}
     environment:
       LIYAN_ENVIRONMENT: development
       LIYAN_DATABASE_URL: postgresql+asyncpg://liyans_app:liyans-app-local-only@postgres:5432/liyans
@@ -220,6 +236,11 @@ services:
         VITE_OIDC_AUTHORITY: http://localhost:8080/realms/cybercontrol
         VITE_OIDC_CLIENT_ID: cybercontrol-workbench
         VITE_OIDC_SCOPE: openid profile email
+        CYBERCONTROL_SOURCE_SHA: ${GATE_C_SOURCE_SHA:-unknown}
+        CYBERCONTROL_SOURCE_TREE: ${GATE_C_SOURCE_TREE:-unknown}
+        CYBERCONTROL_PRODUCT_SOURCE_SHA: ${GATE_C_PRODUCT_SOURCE_SHA:-unknown}
+        CYBERCONTROL_ENGINEERING_BASELINE_SHA: ${GATE_C_ENGINEERING_BASELINE_SHA:-unknown}
+        CYBERCONTROL_PROCESS_VERSION: ${GATE_C_PROCESS_VERSION:-unknown}
     ports:
       - "5173:8080"
     depends_on:

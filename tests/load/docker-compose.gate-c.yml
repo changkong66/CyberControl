@@ -49,6 +49,12 @@ services:
     build:
       context: ..
       dockerfile: tests/load/Dockerfile
+      args:
+        CYBERCONTROL_SOURCE_SHA: ${GATE_C_SOURCE_SHA:-unknown}
+        CYBERCONTROL_SOURCE_TREE: ${GATE_C_SOURCE_TREE:-unknown}
+        CYBERCONTROL_PRODUCT_SOURCE_SHA: ${GATE_C_PRODUCT_SOURCE_SHA:-unknown}
+        CYBERCONTROL_ENGINEERING_BASELINE_SHA: ${GATE_C_ENGINEERING_BASELINE_SHA:-unknown}
+        CYBERCONTROL_PROCESS_VERSION: ${GATE_C_PROCESS_VERSION:-unknown}
     environment:
       GATE_C_API_BASE_URL: http://api:8000
       GATE_C_KEYCLOAK_BASE_URL: http://keycloak:8080
