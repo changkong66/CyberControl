@@ -188,4 +188,6 @@ def test_inventory_rejects_object_values(tmp_path: Path) -> None:
         manager.register_inventory("tenant", lambda: {"count": 1})
     with pytest.raises(ValueError, match="numeric state"):
         _validate_inventory({"unsafe": object()})
+    with pytest.raises(ValueError, match="non-finite"):
+        _validate_inventory({"unsafe": float("inf")})
     assert tracemalloc.is_tracing()

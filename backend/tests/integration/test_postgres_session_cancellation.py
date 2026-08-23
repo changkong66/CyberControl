@@ -75,6 +75,15 @@ async def test_absolute_pool_metric_returns_to_zero_after_cancellation() -> None
         assert database.engine.pool.checkedout() == 0
         rendered = metrics.render().decode("utf-8")
         assert 'liyans_database_pool_checked_out{pool="api"} 0.0' in rendered
+        inventory = metrics.diagnostic_inventory()["database_pools"]["api"]
+        assert inventory["checked_out"] == 0
+        assert inventory["checked_in"] >= 1
+        assert inventory["compiled_cache_entries"] >= 1
+        assert inventory["connections_inspected"] >= 1
+        assert inventory["statement_cache_entries"] == (
+            inventory["prepared_statement_cache_entries"]
+            + inventory["driver_statement_cache_entries"]
+        )
     finally:
         await database.close()
 
@@ -113,5 +122,9 @@ async def test_absolute_pool_metric_tracks_timeout_and_terminal_return() -> None
         assert database.engine.pool.checkedout() == 0
         rendered = metrics.render().decode("utf-8")
         assert 'liyans_database_pool_checked_out{pool="api"} 0.0' in rendered
+        inventory = metrics.diagnostic_inventory()["database_pools"]["api"]
+        assert inventory["checked_out"] == 0
+        assert inventory["checked_in"] == 1
+        assert inventory["statement_cache_entries"] >= 1
     finally:
         await database.close()

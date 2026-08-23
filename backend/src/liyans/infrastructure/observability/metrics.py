@@ -910,7 +910,14 @@ class PlatformMetrics:
         metric_families: dict[str, int] = {}
         for family in self.registry.collect():
             metric_families[family.name[:128]] = len(
-                {(sample.name, tuple(sorted(sample.labels.items()))) for sample in family.samples}
+                {
+                    tuple(
+                        sorted(
+                            (name, value) for name, value in sample.labels.items() if name != "le"
+                        )
+                    )
+                    for sample in family.samples
+                }
             )
         return {
             "database_pools": pools,

@@ -14,14 +14,19 @@ logger = logging.getLogger(__name__)
 
 def _pool_inventory(engine: AsyncEngine) -> dict[str, int]:
     pool = engine.sync_engine.pool
-    statement_cache_entries = 0
-    records = getattr(getattr(pool, "_pool", None), "queue", ())
+    prepared_statement_cache_entries = 0
+    driver_statement_cache_entries = 0
+    queue = getattr(getattr(getattr(pool, "_pool", None), "_queue", None), "_queue", ())
+    records = tuple(queue)
     for record in tuple(records):
         connection = getattr(record, "dbapi_connection", None)
+        prepared_statement_cache = getattr(connection, "_prepared_statement_cache", None)
+        if prepared_statement_cache is not None:
+            prepared_statement_cache_entries += len(prepared_statement_cache)
         driver_connection = getattr(connection, "driver_connection", None)
         statement_cache = getattr(driver_connection, "_stmt_cache", None)
         if statement_cache is not None:
-            statement_cache_entries += len(statement_cache)
+            driver_statement_cache_entries += len(statement_cache)
     compiled_cache = getattr(engine.sync_engine, "_compiled_cache", None)
     return {
         "size": max(0, int(pool.size())),
@@ -29,7 +34,12 @@ def _pool_inventory(engine: AsyncEngine) -> dict[str, int]:
         "checked_out": max(0, int(pool.checkedout())),
         "overflow": max(0, int(pool.overflow())),
         "compiled_cache_entries": len(compiled_cache) if compiled_cache is not None else 0,
-        "statement_cache_entries": statement_cache_entries,
+        "connections_inspected": len(records),
+        "prepared_statement_cache_entries": prepared_statement_cache_entries,
+        "driver_statement_cache_entries": driver_statement_cache_entries,
+        "statement_cache_entries": (
+            prepared_statement_cache_entries + driver_statement_cache_entries
+        ),
     }
 
 

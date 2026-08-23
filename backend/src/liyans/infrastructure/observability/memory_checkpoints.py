@@ -5,6 +5,7 @@ import gc
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import signal
@@ -117,6 +118,8 @@ def _object_type_inventory() -> list[dict[str, int | str]]:
 def _validate_inventory(value: object, *, depth: int = 0) -> int:
     if depth > MAX_INVENTORY_DEPTH:
         raise ValueError("diagnostic inventory exceeds its maximum depth")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("diagnostic inventory contains a non-finite value")
     if isinstance(value, bool | int | float) or value is None:
         return 1
     if isinstance(value, Mapping):

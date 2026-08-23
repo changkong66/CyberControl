@@ -309,13 +309,17 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "Diagnostic stage $stageName retained a non-passing threshold summary." in runner
     assert "[int]$DiagnosticRecoverySeconds = 0" in runner
     assert "[switch]$MemoryCheckpoints" in runner
-    assert 'Join-Path $runDirectory "diagnostic-recovery"' in runner
+    assert "[switch]$NoCacheBuild" in runner
+    assert "if ($NoCacheBuild) {" in runner
+    assert '$buildArguments += "--no-cache"' in runner
     assert "Start-Sleep -Seconds $DiagnosticRecoverySeconds" in runner
     assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"' in runner
     assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"' in runner
     assert "Memory checkpoints require only ramp-200" in runner
     assert "memory_checkpoint_compare.py" in runner
     assert "[double]$metadata.duration_seconds -gt 30.0" in runner
+    assert "$checkpointTimer.Elapsed.TotalSeconds -gt 30.0" in runner
+    assert "did not complete within 30 seconds" in runner
 
     checkpoint_compose = (LOAD_ROOT / "docker-compose.gate-c-memory-checkpoints.yml").read_text(
         encoding="utf-8"

@@ -36,6 +36,8 @@ param(
 
     [switch]$SkipBuild,
 
+    [switch]$NoCacheBuild,
+
     [switch]$KeepEnvironment
 )
 
@@ -140,11 +142,12 @@ function Invoke-MemoryCheckpoint {
     if (Test-Path -LiteralPath $manifestPath) {
         throw "Memory checkpoint $Label already exists."
     }
+    $checkpointTimer = [Diagnostics.Stopwatch]::StartNew()
     & docker kill --signal USR1 $ContainerId | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to signal API memory checkpoint $Label."
     }
-    $deadline = (Get-Date).AddSeconds(45)
+    $deadline = (Get-Date).AddSeconds(31)
     do {
         if (Test-Path -LiteralPath $manifestPath) {
             $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 |
@@ -169,7 +172,8 @@ function Invoke-MemoryCheckpoint {
             if (
                 $metadata.schema_version -ne "cybercontrol.memory-checkpoint.v1" -or
                 $metadata.label -ne $Label -or
-                [double]$metadata.duration_seconds -gt 30.0
+                [double]$metadata.duration_seconds -gt 30.0 -or
+                $checkpointTimer.Elapsed.TotalSeconds -gt 30.0
             ) {
                 throw "Memory checkpoint $Label exceeded its integrity limits."
             }
@@ -177,7 +181,7 @@ function Invoke-MemoryCheckpoint {
         }
         Start-Sleep -Seconds 1
     } while ((Get-Date) -lt $deadline)
-    throw "Memory checkpoint $Label did not complete within 45 seconds."
+    throw "Memory checkpoint $Label did not complete within 30 seconds."
 }
 
 function Test-GateVolumeExists {
@@ -452,6 +456,12 @@ if ($Mode -ne "DiagnosticStages" -and $DiagnosticRecoverySeconds -ne 0) {
 if ($Mode -ne "DiagnosticStages" -and $MemoryCheckpoints) {
     throw "-MemoryCheckpoints is valid only with -Mode DiagnosticStages."
 }
+if ($Mode -ne "DiagnosticStages" -and $NoCacheBuild) {
+    throw "-NoCacheBuild is valid only with -Mode DiagnosticStages."
+}
+if ($SkipBuild -and $NoCacheBuild) {
+    throw "-SkipBuild and -NoCacheBuild are mutually exclusive."
+}
 if ($MemoryCheckpoints) {
     if (
         $DiagnosticStageNames.Count -ne 1 -or
@@ -527,6 +537,7 @@ $env:GATE_C_IMAGE_TAG = $sourceCommit
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
     diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
     memory_checkpoints = [bool]$MemoryCheckpoints
+    no_cache_build = [bool]$NoCacheBuild
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
     workload_sha256 = Get-FileSha256 $workloadPath
@@ -573,14 +584,18 @@ try {
         throw "Unable to render the Gate C Compose configuration."
     }
     if (-not $SkipBuild) {
-        Invoke-Compose @(
-            "build",
+        $buildArguments = @("build")
+        if ($NoCacheBuild) {
+            $buildArguments += "--no-cache"
+        }
+        $buildArguments += @(
             "api",
             "migrate",
             "mock-provider",
             "frontend",
             "gate-c-load"
         )
+        Invoke-Compose $buildArguments
     }
     Invoke-Compose @("up", "--detach", "--wait", "api")
 
@@ -635,6 +650,7 @@ try {
         diagnostic_idle_seconds = $DiagnosticIdleSeconds
         diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
         memory_checkpoints = [bool]$MemoryCheckpoints
+        no_cache_build = [bool]$NoCacheBuild
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()
@@ -729,6 +745,16 @@ try {
             if ($Mode -eq "Full" -and $stageName -eq [string]$selectedStages[-1].name) {
                 Start-Sleep -Seconds ([int]$thresholds.post_ramp_recovery_seconds)
             }
+            if (
+                $Mode -eq "DiagnosticStages" -and
+                $stageName -eq [string]$selectedStages[-1].name -and
+                $DiagnosticRecoverySeconds -gt 0
+            ) {
+                Start-Sleep -Seconds $DiagnosticRecoverySeconds
+                if ($MemoryCheckpoints) {
+                    Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"
+                }
+            }
         }
         finally {
             Stop-GateMonitor -Process $monitor
@@ -771,23 +797,6 @@ try {
         }
         elseif ($stageSummaryExitCode -ne 0) {
             throw "Gate C stage $stageName failed its frozen thresholds."
-        }
-    }
-
-    if ($Mode -eq "DiagnosticStages" -and $DiagnosticRecoverySeconds -gt 0) {
-        $recoveryDirectory = Join-Path $runDirectory "diagnostic-recovery"
-        New-Item -ItemType Directory -Path $recoveryDirectory -Force | Out-Null
-        $recoveryMonitor = Start-GateMonitor `
-            -StageDirectory $recoveryDirectory `
-            -StageName "diagnostic-recovery"
-        try {
-            Start-Sleep -Seconds $DiagnosticRecoverySeconds
-            if ($MemoryCheckpoints) {
-                Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"
-            }
-        }
-        finally {
-            Stop-GateMonitor -Process $recoveryMonitor
         }
     }
 
@@ -875,4 +884,5 @@ if ($Mode -eq "Full") {
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
     diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
     memory_checkpoints = [bool]$MemoryCheckpoints
+    no_cache_build = [bool]$NoCacheBuild
 } | ConvertTo-Json -Depth 4
