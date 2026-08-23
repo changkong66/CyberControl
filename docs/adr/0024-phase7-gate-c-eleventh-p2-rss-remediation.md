@@ -200,6 +200,8 @@ experiment relies on that gauge.
 - Preserved volume: `cybercontrol_gate_c_11_p2_round2_diag_20260824`
 - Package reference:
   `docs/diagnostics/phase7-gate-c-eleventh-p2/round2-package-reference.json`
+- First-push CI record:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round2-push-ci.json`
 - Immutable package SHA256:
   `554dc9991f8844fb7193d8fefb8fee292e97f208dbc699c869e94e8320403498`
 - Immutable Release:
