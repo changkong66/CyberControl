@@ -66,5 +66,16 @@
     "diagnostic_result_changed": false,
     "formal_state_changed": false
   },
+  "follow_up_push": {
+    "head_sha": "e5d2e2c0ae6c11f18870834c131e06a45f423cfd",
+    "run_id": 32660759095,
+    "run_uri": "https://github.com/changkong66/CyberControl/actions/runs/32660759095",
+    "workflow": "Release Quality Gates",
+    "event": "push",
+    "conclusion": "success",
+    "passed_jobs": 8,
+    "failed_jobs": 0,
+    "purpose": "A documentation-only follow-up commit supplied a non-zero before SHA and preserved the initial failed run while validating the complete branch head."
+  },
   "preservation": "This failed run remains authoritative and is not rerun, deleted, amended or replaced. A later push uses this head as its non-zero before SHA and is recorded separately by GitHub."
 }
