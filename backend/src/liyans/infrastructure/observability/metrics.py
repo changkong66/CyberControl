@@ -10,7 +10,7 @@ import sys
 import tracemalloc
 from bisect import bisect_left
 from collections import Counter as CollectionCounter
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from threading import Lock
 from time import perf_counter, time
@@ -383,6 +383,7 @@ class PlatformMetrics:
             ("pool",),
             registry=self.registry,
         )
+        self._database_pool_checked_out_readers: dict[str, Callable[[], int]] = {}
         self._database_pool_capacity = Gauge(
             "liyans_database_pool_capacity",
             "Configured maximum size of a named SQLAlchemy pool.",
@@ -768,10 +769,23 @@ class PlatformMetrics:
         self._database_pool_checked_out.labels(label).set(0)
         self._database_pool_acquisition_timeouts.labels(label).inc(0)
 
-    def observe_database_pool_checkout(self, pool_name: str, delta: int) -> None:
-        if delta == 0:
-            return
-        self._database_pool_checked_out.labels(self._database_pool_label(pool_name)).inc(delta)
+    def register_database_pool_checked_out_reader(
+        self,
+        pool_name: str,
+        reader: Callable[[], int],
+    ) -> None:
+        label = self._database_pool_label(pool_name)
+        if label in self._database_pool_checked_out_readers:
+            raise ValueError(f"database pool reader already registered for {label}")
+        self._database_pool_checked_out_readers[label] = reader
+
+        def read_absolute_checked_out() -> int:
+            value = int(reader())
+            if value < 0:
+                raise RuntimeError("database pool checked-out reader returned a negative value")
+            return value
+
+        self._database_pool_checked_out.labels(label).set_function(read_absolute_checked_out)
 
     def observe_database_pool_acquisition_timeout(self, pool_name: str) -> None:
         self._database_pool_acquisition_timeouts.labels(self._database_pool_label(pool_name)).inc()

@@ -109,8 +109,7 @@ def test_metrics_use_isolated_registries_and_never_label_raw_tenants() -> None:
     first.observe_database_health(healthy=True, latency_ms=1.5)
     first.set_component_ready("sse_notification_bridge", True)
     first.set_database_pool_capacity("api", 30)
-    first.observe_database_pool_checkout("api", 1)
-    first.observe_database_pool_checkout("api", -1)
+    first.register_database_pool_checked_out_reader("api", lambda: 0)
     first.observe_database_pool_acquisition_timeout("unexpected-untrusted-pool")
 
     rendered = first.render().decode("utf-8")
@@ -129,7 +128,7 @@ def test_database_pool_capacity_must_be_positive() -> None:
         PlatformMetrics().set_database_pool_capacity("api", 0)
 
 
-def test_metrics_normalize_unknown_method_and_ignore_zero_pool_delta() -> None:
+def test_metrics_normalize_unknown_method_without_creating_pool_labels() -> None:
     metrics = PlatformMetrics()
 
     metrics.observe_http(
@@ -138,11 +137,34 @@ def test_metrics_normalize_unknown_method_and_ignore_zero_pool_delta() -> None:
         status_code=200,
         duration_seconds=0,
     )
-    metrics.observe_database_pool_checkout("api", 0)
-
     rendered = metrics.render().decode("utf-8")
     assert 'method="OTHER"' in rendered
     assert 'liyans_database_pool_checked_out{pool="api"}' not in rendered
+
+
+def test_database_pool_reader_replaces_unbalanced_event_delta_accounting() -> None:
+    legacy_event_balance = 0
+    for delta in (-1, -1):
+        legacy_event_balance += delta
+    assert legacy_event_balance == -2
+
+    metrics = PlatformMetrics()
+    metrics.set_database_pool_capacity("api", 30)
+    metrics.register_database_pool_checked_out_reader("api", lambda: 0)
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'liyans_database_pool_checked_out{pool="api"} 0.0' in rendered
+
+
+def test_database_pool_reader_rejects_duplicate_and_negative_sources() -> None:
+    metrics = PlatformMetrics()
+    metrics.set_database_pool_capacity("api", 30)
+    metrics.register_database_pool_checked_out_reader("api", lambda: -1)
+
+    with pytest.raises(ValueError, match="already registered"):
+        metrics.register_database_pool_checked_out_reader("api", lambda: 0)
+    with pytest.raises(RuntimeError, match="negative"):
+        metrics.render()
 
 
 @pytest.mark.asyncio

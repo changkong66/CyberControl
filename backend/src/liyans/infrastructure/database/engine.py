@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import event
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -63,13 +62,9 @@ def create_database_engine(
             pool_name,
             settings.database_pool_size + settings.database_max_overflow,
         )
-
-        @event.listens_for(engine.sync_engine, "checkout")
-        def _pool_checkout(_connection, _record, _proxy) -> None:
-            metrics.observe_database_pool_checkout(pool_name, 1)
-
-        @event.listens_for(engine.sync_engine, "checkin")
-        def _pool_checkin(_connection, _record) -> None:
-            metrics.observe_database_pool_checkout(pool_name, -1)
+        metrics.register_database_pool_checked_out_reader(
+            pool_name,
+            engine.sync_engine.pool.checkedout,
+        )
 
     return engine
