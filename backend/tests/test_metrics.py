@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import threading
+import time
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -52,13 +55,15 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "cursor" not in rendered
 
 
-def test_memory_diagnostics_are_opt_in_and_expose_only_bounded_fields(monkeypatch) -> None:
+@pytest.mark.asyncio
+async def test_memory_diagnostics_are_opt_in_and_expose_only_bounded_fields(monkeypatch) -> None:
     monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
     monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "5")
     metrics = PlatformMetrics()
 
     log_info = Mock()
     monkeypatch.setattr(metrics_module.logger, "info", log_info)
+    await metrics.run_memory_diagnostics_once()
     rendered = metrics.render().decode("utf-8")
 
     assert "liyans_memory_diagnostics_gauge" in rendered
@@ -192,3 +197,133 @@ async def test_http_metrics_middleware_passes_non_http_scopes_through() -> None:
     await middleware(scope, receive, send)
 
     assert received_scopes == [scope]
+
+
+@pytest.mark.asyncio
+async def test_metrics_scrape_does_not_execute_heavy_memory_diagnostics(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+    invoked = False
+
+    def blocked_collector() -> None:
+        nonlocal invoked
+        invoked = True
+        time.sleep(0.05)
+
+    monkeypatch.setattr(metrics, "_refresh_memory_diagnostics", blocked_collector, raising=False)
+    request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(metrics=metrics)))
+
+    await metrics_route(request)
+
+    assert invoked is False
+
+
+@pytest.mark.asyncio
+async def test_memory_diagnostics_sampler_keeps_scrape_and_heartbeat_independent(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+    started = threading.Event()
+    release = threading.Event()
+
+    def controlled_collector(_loop):
+        started.set()
+        assert release.wait(1.0)
+        return {
+            "values": {"tracemalloc_current_bytes": 1},
+            "task_names": (),
+            "object_types": (),
+            "top_allocations": (),
+            "stage_durations": (),
+        }
+
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", controlled_collector, raising=False)
+    request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(metrics=metrics)))
+
+    await metrics.start_memory_diagnostics()
+    try:
+        for _ in range(100):
+            if started.is_set():
+                break
+            await asyncio.sleep(0.001)
+        assert started.is_set()
+
+        heartbeat = asyncio.create_task(asyncio.sleep(0))
+        response = await metrics_route(request)
+        await asyncio.wait_for(heartbeat, timeout=0.2)
+
+        assert response.body
+        assert heartbeat.done()
+    finally:
+        release.set()
+        await metrics.close()
+
+
+@pytest.mark.asyncio
+async def test_memory_diagnostics_sampler_has_one_owner_and_no_overlap(monkeypatch) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+    active = 0
+    maximum_active = 0
+    calls = 0
+    lock = threading.Lock()
+
+    def controlled_collector(_loop):
+        nonlocal active, maximum_active, calls
+        with lock:
+            active += 1
+            calls += 1
+            maximum_active = max(maximum_active, active)
+        try:
+            time.sleep(0.01)
+            return {
+                "values": {"tracemalloc_current_bytes": calls},
+                "task_names": (),
+                "object_types": (),
+                "top_allocations": (),
+                "stage_durations": (),
+            }
+        finally:
+            with lock:
+                active -= 1
+
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", controlled_collector, raising=False)
+    metrics._memory_diagnostics_interval = 0.001
+
+    await metrics.start_memory_diagnostics()
+    same_task = metrics.memory_diagnostics_task
+    await metrics.start_memory_diagnostics()
+    await asyncio.sleep(0.08)
+    await metrics.close()
+    await metrics.close()
+
+    assert same_task is not None
+    assert same_task.done()
+    assert metrics.memory_diagnostics_task is None
+    assert calls >= 2
+    assert maximum_active == 1
+
+
+@pytest.mark.asyncio
+async def test_memory_diagnostics_failure_keeps_scrape_available_and_labels_bounded(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+
+    def failing_collector(_loop):
+        raise RuntimeError("controlled diagnostic failure")
+
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", failing_collector, raising=False)
+
+    await metrics.run_memory_diagnostics_once()
+    rendered = metrics.render().decode("utf-8")
+
+    assert 'metric="sample_success"} 0.0' in rendered
+    assert 'metric="sample_stale"} 1.0' in rendered
+    assert "tenant" not in rendered
+    assert "subject" not in rendered
+    assert "cursor" not in rendered
