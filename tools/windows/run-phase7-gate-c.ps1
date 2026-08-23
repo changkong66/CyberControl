@@ -123,7 +123,7 @@ function Test-GateVolumeExists {
 }
 
 function Remove-EphemeralResources {
-    Invoke-Compose @("down", "--remove-orphans")
+    Invoke-Compose @("down", "--remove-orphans", "--volumes")
 
     $containers = @(& docker ps --all `
         --filter "label=com.docker.compose.project=$ProjectName" --format "{{.ID}}")
@@ -134,6 +134,11 @@ function Remove-EphemeralResources {
         --filter "label=com.docker.compose.project=$ProjectName" --format "{{.ID}}")
     if ($LASTEXITCODE -ne 0 -or $networks.Count -ne 0) {
         throw "Ephemeral cleanup left Compose networks for project $ProjectName behind."
+    }
+    $projectVolumes = @(& docker volume ls `
+        --filter "label=com.docker.compose.project=$ProjectName" --format "{{.Name}}")
+    if ($LASTEXITCODE -ne 0 -or $projectVolumes.Count -ne 0) {
+        throw "Ephemeral cleanup left Compose volumes for project $ProjectName behind."
     }
     if (Test-GateVolumeExists) {
         & docker volume rm $volumeName | Out-Null

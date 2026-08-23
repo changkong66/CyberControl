@@ -376,6 +376,9 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert "smoke_scenario = $SmokeScenario" in runner
     assert '$Mode -in @("DiagnosticStages", "HarnessSmoke")' in runner
     assert '$Mode -in @("PreflightSmoke", "HarnessSmoke")' in runner
+    assert 'Invoke-Compose @("down", "--remove-orphans", "--volumes")' in runner
+    assert 'label=com.docker.compose.project=$ProjectName' in runner
+    assert "Ephemeral cleanup left Compose volumes" in runner
     assert '"ControlledApiRestart" {' in runner
     assert 'Invoke-Compose @("restart", "api")' in runner
     assert 'Wait-ComposeServiceHealthy -Service "api"' in runner
