@@ -2,7 +2,7 @@
 
 Process Version: `Gate-C-11-v1.0`
 
-- Status: Root-cause round 1 rejected; round 2 measurement in progress
+- Status: P2 code changes frozen after two unsuccessful root-cause rounds
 - Product source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Product tree: `f721fca017c247aee93765d5f11fcbc37e12fcfc`
 - Engineering baseline: `d5494dd1dce671c30ebfe40e046319d7572a52f5`
@@ -165,6 +165,50 @@ Round 2 retains the parent allocator and enables the existing opt-in bounded
 diagnostic sampler from process start. It must identify whether live allocated
 bytes remain reachable from Python objects/tasks/frames or are native
 high-water state before another behavior candidate is permitted.
+
+### Root-Cause Round 2 Result
+
+Round 2 completed a 300-second idle baseline, the real `ramp-200` diagnostic
+and a separate 600-second recovery observation. The baseline-to-recovery
+cgroup/RSS ratios were `1.222468/1.185522`. Anonymous RSS grew `45,223,936`
+bytes while file RSS was unchanged. Jemalloc allocated growth was `24,484,432`
+bytes and active-minus-allocated growth was `19,338,672` bytes; together they
+explain `96.9025%` of the RSS delta. Tracemalloc current growth was only
+`7,173,112` bytes.
+
+Subscribers, owned streaming responses, tenant streams, subscriptions,
+Starlette requests and Uvicorn request cycles returned from their 200/400
+peaks to zero. Tasks and frames returned exactly to their baseline counts.
+This disproves those terminal SSE lifecycle objects as the material owner in
+this run. The current sampler retained only eight absolute tracemalloc groups
+and one traceback frame per group, so it cannot assign the remaining live
+allocation and allocator slack to a safe code target. Its GIL cost also
+materially distorted latency, making this run diagnostic-only.
+
+The pool checked-out gauge ended at `-2` despite idle PostgreSQL connections
+and no pool timeout. This is a separate observation-integrity anomaly, not
+evidence that a pool owns the RSS residual. It must be resolved before a future
+experiment relies on that gauge.
+
+- Comparison:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round2-comparison.json`
+- Complete root-cause report:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round2-root-cause.md`
+- Change impact:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round2-change-impact.md`
+- Diagnostic run: `gate-c-diagnostic-20260823T183106Z`
+- Preserved volume: `cybercontrol_gate_c_11_p2_round2_diag_20260824`
+- Package reference:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round2-package-reference.json`
+- Immutable package SHA256:
+  `554dc9991f8844fb7193d8fefb8fee292e97f208dbc699c869e94e8320403498`
+- Immutable Release:
+  https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-round2-20260824-v1
+
+Round 1 rejected the allocator-domain candidate and round 2 did not identify
+an actionable owner. The `Gate-C-11-v1.0` two-round rule therefore freezes P2
+code modifications. No third candidate, remediation PR, formal Gate C replay
+or acceptance claim is authorized by this ADR.
 
 ## Stop Conditions
 
