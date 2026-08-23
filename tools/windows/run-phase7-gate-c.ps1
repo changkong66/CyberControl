@@ -17,6 +17,9 @@ param(
     [ValidateSet("smoke-20", "ramp-200", "ramp-500", "ramp-1000", "gate-2000")]
     [string[]]$DiagnosticStageNames = @(),
 
+    [ValidateRange(0, 900)]
+    [int]$DiagnosticIdleSeconds = 0,
+
     [ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]
     [string]$SmokeScenario = "ColdDeployment",
 
@@ -380,6 +383,9 @@ if (
 if ($Mode -ne "DiagnosticStages" -and $DiagnosticStageNames.Count -ne 0) {
     throw "-DiagnosticStageNames is valid only with -Mode DiagnosticStages."
 }
+if ($Mode -ne "DiagnosticStages" -and $DiagnosticIdleSeconds -ne 0) {
+    throw "-DiagnosticIdleSeconds is valid only with -Mode DiagnosticStages."
+}
 if ($Mode -ne "HarnessSmoke" -and $SmokeScenario -ne "ColdDeployment") {
     throw "-SmokeScenario is valid only with -Mode HarnessSmoke."
 }
@@ -438,6 +444,7 @@ $env:GATE_C_IMAGE_TAG = $sourceCommit
     postgres_volume = $volumeName
     postgres_host_port = $PostgresHostPort
     diagnostic_stage_names = @($DiagnosticStageNames)
+    diagnostic_idle_seconds = $DiagnosticIdleSeconds
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
     workload_sha256 = Get-FileSha256 $workloadPath
@@ -543,6 +550,7 @@ try {
         docker_cpu_limit = [int](& docker info --format "{{.NCPU}}")
         docker_memory_limit_bytes = [int64](& docker info --format "{{.MemTotal}}")
         postgres_host_port = $PostgresHostPort
+        diagnostic_idle_seconds = $DiagnosticIdleSeconds
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()
@@ -562,6 +570,20 @@ try {
     Invoke-GateTool `
         -EnvironmentArguments @() `
         -Command @("python", "-m", "gate_c.provision")
+
+    if ($Mode -eq "DiagnosticStages" -and $DiagnosticIdleSeconds -gt 0) {
+        $baselineDirectory = Join-Path $runDirectory "diagnostic-baseline"
+        New-Item -ItemType Directory -Path $baselineDirectory -Force | Out-Null
+        $baselineMonitor = Start-GateMonitor `
+            -StageDirectory $baselineDirectory `
+            -StageName "diagnostic-baseline"
+        try {
+            Start-Sleep -Seconds $DiagnosticIdleSeconds
+        }
+        finally {
+            Stop-GateMonitor -Process $baselineMonitor
+        }
+    }
 
     foreach ($stage in $selectedStages) {
         $stageName = [string]$stage.name
