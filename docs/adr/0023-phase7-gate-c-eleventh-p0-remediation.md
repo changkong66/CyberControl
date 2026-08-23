@@ -54,11 +54,18 @@ Candidate diagnostic evidence:
   `docs/diagnostics/phase7-gate-c-eleventh-p0/root-cause.md`;
 - raw package SHA256:
   `761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef`;
+- immutable diagnostic Release:
+  `phase7-gate-c-11-p0-aba-20260823-v3`, Release ID `375173557`;
+- immutable diagnostic asset ID: `526077962`, `21,939` bytes, server digest
+  `sha256:761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef`;
+- immutable diagnostic Release URI:
+  `https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p0-aba-20260823-v3`;
 - package reference:
   `docs/diagnostics/phase7-gate-c-eleventh-p0/package-reference.json`.
 
-The immutable external package upload remains a merge blocker until the package
-reference records and verifies its Release and asset URI.
+GitHub API verification returned `immutable: true`, asset state `uploaded`,
+matching bytes and matching server digest. The external-package merge blocker
+is therefore closed without making a formal acceptance claim.
 
 The historical run predates this process version and remains recorded with
 `process_version: null`. This ADR applies `Gate-C-11-v1.0` only to new
@@ -198,8 +205,11 @@ disproof.
 ## Change Impact And Semantic Redlines
 
 Expected code scope is limited to metrics collection ownership, application
-lifespan task ownership, focused tests, diagnostic metadata and this ADR. The
-change does not touch migrations `0001-0010`, RLS, TenantContext,
+lifespan task ownership, focused tests, diagnostic metadata, execution-mode
+isolation, image provenance labels and this ADR. Diagnostic and preflight modes
+are non-formal by construction; only `Full` may invoke the formal finalizer,
+and `PreflightSmoke` verifies removal of its exact project/network/volume.
+The change does not touch migrations `0001-0010`, RLS, TenantContext,
 SERIALIZABLE transactions, C12, frozen contracts, threshold/workload files,
 SSE cursor signing, replay ordering, Outbox claim/lease/retry/partition logic,
 durable acceptance or atomic publication.

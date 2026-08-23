@@ -31,12 +31,22 @@
     "workspace_user_path_hits": 0
   },
   "external_package": {
-    "status": "PENDING_IMMUTABLE_UPLOAD",
-    "release_uri": null,
-    "asset_uri": null,
-    "verified_bytes": null,
-    "verified_sha256": null
+    "status": "VERIFIED_IMMUTABLE_RELEASE",
+    "release_id": 375173557,
+    "release_tag": "phase7-gate-c-11-p0-aba-20260823-v3",
+    "release_uri": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p0-aba-20260823-v3",
+    "release_immutable": true,
+    "release_prerelease": true,
+    "release_target": "92bcfd7be6a45ff97b03bad6afc53dac5c7e58c9",
+    "published_at": "2026-08-23T09:58:48Z",
+    "asset_id": 526077962,
+    "asset_name": "gate-c-11-p0-aba-20260823T091302Z-v3.zip",
+    "asset_uri": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-11-p0-aba-20260823-v3/gate-c-11-p0-aba-20260823T091302Z-v3.zip",
+    "asset_state": "uploaded",
+    "verified_bytes": 21939,
+    "verified_sha256": "761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef",
+    "server_digest": "sha256:761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef"
   },
-  "merge_blocked_until_external_package_verified": true,
+  "merge_blocked_until_external_package_verified": false,
   "acceptance_claim": false
 }

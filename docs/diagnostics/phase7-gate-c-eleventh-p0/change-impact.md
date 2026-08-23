@@ -41,3 +41,26 @@ aggregation change.
   authentication, and identity-header rejection regressions remain green.
 
 The mandatory full semantic regression set remains a pre-merge requirement.
+
+## Execution Contract
+
+Commits `6465519` and `4e22371` add the process-level regression and runner
+implementation required by `Gate-C-11-v1.0`:
+
+- `DiagnosticStages` records selected stages and non-passing diagnostic
+  summaries without invoking the formal finalizer or making an acceptance
+  claim;
+- `PreflightSmoke` records `PREFLIGHT_CHECK`, runs only the frozen Smoke stage,
+  and always verifies deletion of its exact Compose containers, network and
+  explicitly named PostgreSQL volume;
+- `Full` remains protected-main-only, now rejects `SkipBuild`, builds every
+  source-built service image, and is the only mode allowed to invoke the formal
+  finalizer;
+- source-built images carry and are checked against source/tree, product source,
+  engineering baseline and process-version labels before any workload starts;
+- formal summaries and manifests reject non-formal or unknown-process execution
+  metadata and preserve both baseline SHAs.
+
+These are execution provenance and isolation controls. They do not alter
+application runtime settings, frozen workload/threshold aggregation, client
+timeouts, database configuration, identity authority or acceptance semantics.
