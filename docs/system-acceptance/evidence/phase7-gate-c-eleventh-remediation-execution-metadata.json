@@ -1,0 +1,21 @@
+{
+  "schema_version": "cybercontrol.gate-c-execution-metadata.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "mode": "Full",
+  "classification": "FORMAL_GATE_C_ATTEMPT",
+  "formal_gate_attempt": true,
+  "acceptance_claim": false,
+  "run_id": "gate-c-20260823T144052Z",
+  "source_commit": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "source_tree": "f721fca017c247aee93765d5f11fcbc37e12fcfc",
+  "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "engineering_baseline_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "branch": "main",
+  "project": "gatec11formal5fcb917",
+  "postgres_volume": "cybercontrol_gate_c_eleventh_5fcb917_20260823",
+  "postgres_host_port": 59038,
+  "diagnostic_stage_names": [],
+  "smoke_scenario": "ColdDeployment",
+  "thresholds_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea"
+}

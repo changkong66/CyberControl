@@ -1,26 +1,55 @@
 # CyberControl System Acceptance Report
 
+Process Version: `Gate-C-11-v1.0`
+
 ## Decision
 
-Current protected main `0c35364d79cd89d149190c02557d2c352643300e`
-remains a **release candidate**, but Gate C is **not accepted**. The formal
-eighth-remediation replay evaluated source
-`4f0a7670782c5002a2da6e429c0428d8fef29153`; its workload completed and
-stage-locally passed 20, 200, 500, 1,000 and 2,000 authenticated streams plus
-the ten-minute recovery observation. The final aggregate failed the frozen
-Outbox p95 and post-ramp memory-recovery controls. The last 30 recovery samples
-also retained one LIVE subscriber, which violates the required lifecycle
-boundary even though it is not a separate frozen finalizer check.
+Evaluated protected main `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`,
+tree `f721fca017c247aee93765d5f11fcbc37e12fcfc`, remains a **release
+candidate**, but Gate C is **not accepted**. The eleventh-remediation formal
+replay completed and stage-locally passed 20, 200, 500, 1,000 and 2,000
+authenticated streams plus the fixed ten-minute recovery observation. The
+final aggregate failed only the frozen memory-recovery control: `1.417200`
+against `<=1.10`. Outbox p95/p99 was `1879.698/2898.555ms` and passed.
 
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
-initial Gate C failure and all eight remediation reruns are preserved as
-distinct evidence snapshots. Gate D, Gate E, Gate F and Gate G remain serially
-locked. No single-host production capacity claim is permitted.
+initial Gate C failure and all eleven remediation reruns are preserved as
+distinct evidence snapshots. The current run reached milestone M2, not M3.
+Gate D, Gate E, Gate F and Gate G remain serially locked. No single-host
+production capacity claim is permitted.
 
 ## Evaluated Baseline
+
+- Gate C eleventh baseline-closure PR:
+  [#80](https://github.com/changkong66/CyberControl/pull/80), Squash Merge
+  `16bab5d90f9a054b5c04f2399248e5b56603185d`
+- PR #80 push/PR/main CI:
+  [32526880467](https://github.com/changkong66/CyberControl/actions/runs/32526880467) /
+  [32527503618](https://github.com/changkong66/CyberControl/actions/runs/32527503618) /
+  [32527996878](https://github.com/changkong66/CyberControl/actions/runs/32527996878), each 8/8
+- Gate C eleventh remediation PR:
+  [#81](https://github.com/changkong66/CyberControl/pull/81), head
+  `af10947bf05b40a5759f40973770f3aaef561f89`, Squash Merge
+  `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
+- PR #81 push/PR/main CI:
+  [32644827393](https://github.com/changkong66/CyberControl/actions/runs/32644827393) /
+  [32644829425](https://github.com/changkong66/CyberControl/actions/runs/32644829425) /
+  [32645162420](https://github.com/changkong66/CyberControl/actions/runs/32645162420), each 8/8
+- Evaluated source/tree:
+  `5fcb917b63889cb6da8dd019efdd133f4ec3fb60` /
+  `f721fca017c247aee93765d5f11fcbc37e12fcfc`
+- Formal run:
+  `D:\CyberControlAcceptance\phase7\gate-c\gate-c-20260823T144052Z-5fcb917b6388`
+- Immutable failure Release:
+  [375257600](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-eleventh-remediation-failed-20260823-5fcb917-evidence-v1),
+  5,655,671 bytes, SHA256
+  `205517caae21e184d079219454e9e66903083839b9af87c6cc1d45b2bc604ab8`
+- Frozen threshold/workload SHA256:
+  `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855` /
+  `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`
 
 - Gate B replay archive baseline:
   `a6024716ebbe2311daf73b9409fd84e9ed512f59`
@@ -990,3 +1019,33 @@ under `Gate-C-11-v1.0`.
 The formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Gate D-G remain
 locked. Every future preflight, diagnostic and formal run must record
 `process_version: Gate-C-11-v1.0`.
+
+## Eleventh Remediation And Formal Replay
+
+PR #81 fixed the P0 diagnostics scheduling defect and merged as
+`5fcb917b63889cb6da8dd019efdd133f4ec3fb60` after push and pull-request Runs
+`32644827393` and `32644829425` passed 8/8; protected-main Run `32645162420`
+also passed 8/8. Three independent candidate Smokes and the protected-main
+preflight passed without reusing their projects, networks or PostgreSQL
+volumes.
+
+The fresh formal attempt used Compose `gatec11formal5fcb917`, preserved volume
+`cybercontrol_gate_c_eleventh_5fcb917_20260823`, real Keycloak-issued Tokens,
+two tenants and twenty principals. It completed all frozen stages and recovery.
+At 2,000 streams delivery p95/p99 was `758/1077ms`; monitor completeness was
+`491/495`; connection/reconnect was `1.0/1.0`; loss, duplicates, tenant
+leakage, invalid-cursor acceptance, HTTP 5xx, pool timeout, Outbox `DEAD`, OOM
+and restart were zero. Outbox p95/p99 was `1879.698/2898.555ms` and terminal
+state was `PUBLISHED=226` with no open row.
+
+The run failed only memory recovery. API cgroup memory was
+262,144,000/371,510,477/436,941,619 bytes at first/final/peak, ratio
+`1.417200` against `<=1.10`. Terminal subscribers, close owners, queues,
+replay buffers/caches/tasks and checked-out pools were zero; FDs were
+29/30/2038 first/final/peak. These terminal controls do not establish the
+memory owner, so P2 must return to ownership measurement before one minimum
+change.
+
+Immutable Release `375257600` contains the 5,655,671-byte failure package with
+SHA256 `205517caae21e184d079219454e9e66903083839b9af87c6cc1d45b2bc604ab8`.
+This is M2 progress but not Gate C acceptance. Gate D-G remain locked.

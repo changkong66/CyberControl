@@ -1,0 +1,54 @@
+{
+  "schema_version": "cybercontrol.gate-c-environment.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "mode": "Full",
+  "smoke_scenario": "ColdDeployment",
+  "classification": "FORMAL_GATE_C_ATTEMPT",
+  "formal_gate_attempt": true,
+  "acceptance_claim": false,
+  "run_id": "gate-c-20260823T144052Z",
+  "source_commit": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "source_tree": "f721fca017c247aee93765d5f11fcbc37e12fcfc",
+  "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "engineering_baseline_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "branch": "main",
+  "clean_source": true,
+  "single_host_execution": true,
+  "production_capacity_claim_permitted": false,
+  "compose_config_sha256": "5737d4b9e8c680a8716cae4ab4790b5c969280ed5ede89b2949f25b7b1233d31",
+  "thresholds_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "docker_server_version": "29.6.1",
+  "docker_cpu_limit": 16,
+  "docker_memory_limit_bytes": 7958884352,
+  "postgres_host_port": 59038,
+  "volume": {
+    "CreatedAt": "2026-08-23T14:40:54Z",
+    "Driver": "local",
+    "Labels": {
+      "com.cybercontrol.data-class": "isolated-clean-postgres",
+      "com.cybercontrol.purpose": "phase7-gate-c"
+    },
+    "Mountpoint": "/var/lib/docker/volumes/cybercontrol_gate_c_eleventh_5fcb917_20260823/_data",
+    "Name": "cybercontrol_gate_c_eleventh_5fcb917_20260823",
+    "Options": null,
+    "Scope": "local"
+  },
+  "runtime_images": {
+    "api": "sha256:bc3387b32051dd56fc6e11abe27e096ce4d7c611561dd209855c0f2c545fea5b",
+    "postgres": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+    "keycloak": "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0"
+  },
+  "source_built_images": {
+    "api": "sha256:bc3387b32051dd56fc6e11abe27e096ce4d7c611561dd209855c0f2c545fea5b",
+    "migrate": "sha256:bc3387b32051dd56fc6e11abe27e096ce4d7c611561dd209855c0f2c545fea5b",
+    "mock_provider": "sha256:3c972f1d2484f6adb83108f2f03710d92fb80be56ad8dabab41b16af9b3ef67f",
+    "frontend": "sha256:57085d1a02d9f2b6ceb0e29cc1fea8e414121d3f65e6e8fc812c6ed01b711245",
+    "gate_c_load": "sha256:c1ed5eef1d53f4095ec2079226d6900146faa6562608307566cb2a5fec3725e8"
+  },
+  "tools": {
+    "locust": "locust 2.46.1 from C:\\Users\\wch06\\Documents\\CyberControl-gate-c-11-mainline\\.venv\\Lib\\site-packages\\locust (Python 3.11.15)",
+    "python": "Python 3.11.15",
+    "uv": "uv 0.11.28 (ebf0f43d7 2026-07-07 x86_64-pc-windows-msvc)"
+  }
+}
