@@ -529,6 +529,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             resources.push_async_callback(app.state.outbox_wake_listener.close)
         topic4_runtime.mark_ready()
         topic4_metrics.ready.set(1)
+        metrics.register_memory_checkpoint_inventory(
+            "platform",
+            metrics.diagnostic_inventory,
+        )
+        metrics.register_memory_checkpoint_inventory(
+            "sse",
+            app.state.sse_broker.diagnostic_inventory,
+        )
+        metrics.register_memory_checkpoint_inventory(
+            "cursor",
+            app.state.sse_cursor_codec.diagnostic_inventory,
+        )
         await metrics.start_memory_diagnostics()
         resources.push_async_callback(metrics.close)
         yield

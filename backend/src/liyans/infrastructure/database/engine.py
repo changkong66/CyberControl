@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import event
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -11,6 +10,37 @@ from liyans.core.settings import Settings
 from liyans.infrastructure.observability.metrics import PlatformMetrics
 
 logger = logging.getLogger(__name__)
+
+
+def _pool_inventory(engine: AsyncEngine) -> dict[str, int]:
+    pool = engine.sync_engine.pool
+    prepared_statement_cache_entries = 0
+    driver_statement_cache_entries = 0
+    queue = getattr(getattr(getattr(pool, "_pool", None), "_queue", None), "_queue", ())
+    records = tuple(queue)
+    for record in tuple(records):
+        connection = getattr(record, "dbapi_connection", None)
+        prepared_statement_cache = getattr(connection, "_prepared_statement_cache", None)
+        if prepared_statement_cache is not None:
+            prepared_statement_cache_entries += len(prepared_statement_cache)
+        driver_connection = getattr(connection, "driver_connection", None)
+        statement_cache = getattr(driver_connection, "_stmt_cache", None)
+        if statement_cache is not None:
+            driver_statement_cache_entries += len(statement_cache)
+    compiled_cache = getattr(engine.sync_engine, "_compiled_cache", None)
+    return {
+        "size": max(0, int(pool.size())),
+        "checked_in": max(0, int(pool.checkedin())),
+        "checked_out": max(0, int(pool.checkedout())),
+        "overflow": max(0, int(pool.overflow())),
+        "compiled_cache_entries": len(compiled_cache) if compiled_cache is not None else 0,
+        "connections_inspected": len(records),
+        "prepared_statement_cache_entries": prepared_statement_cache_entries,
+        "driver_statement_cache_entries": driver_statement_cache_entries,
+        "statement_cache_entries": (
+            prepared_statement_cache_entries + driver_statement_cache_entries
+        ),
+    }
 
 
 def create_database_engine(
@@ -63,13 +93,10 @@ def create_database_engine(
             pool_name,
             settings.database_pool_size + settings.database_max_overflow,
         )
-
-        @event.listens_for(engine.sync_engine, "checkout")
-        def _pool_checkout(_connection, _record, _proxy) -> None:
-            metrics.observe_database_pool_checkout(pool_name, 1)
-
-        @event.listens_for(engine.sync_engine, "checkin")
-        def _pool_checkin(_connection, _record) -> None:
-            metrics.observe_database_pool_checkout(pool_name, -1)
+        metrics.register_database_pool_checked_out_reader(
+            pool_name,
+            engine.sync_engine.pool.checkedout,
+            inventory_reader=lambda: _pool_inventory(engine),
+        )
 
     return engine

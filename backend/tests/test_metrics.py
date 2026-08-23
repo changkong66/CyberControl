@@ -15,6 +15,7 @@ from liyans.api.routes.metrics import metrics as metrics_route
 from liyans.infrastructure.observability.metrics import (
     HTTPMetricsMiddleware,
     PlatformMetrics,
+    _JemallocStatsReader,
 )
 
 
@@ -53,6 +54,53 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "liyans_jemalloc_arenas 1.0" in rendered
     assert "tenant" not in rendered
     assert "cursor" not in rendered
+
+
+def test_jemalloc_inventory_retains_active_bin_and_large_extent_counts(monkeypatch) -> None:
+    reader = _JemallocStatsReader()
+    monkeypatch.setattr(
+        reader,
+        "snapshot",
+        lambda: {"allocated": 10, "active": 20, "resident": 30, "retained": 0, "arenas": 1},
+    )
+    values = {
+        "arenas.narenas": 1,
+        "arenas.nbins": 2,
+        "arenas.nlextents": 1,
+        "arenas.bin.0.size": 16,
+        "stats.arenas.0.bins.0.curregs": 3,
+        "stats.arenas.0.bins.0.nmalloc": 7,
+        "stats.arenas.0.bins.0.nslabs": 2,
+        "stats.arenas.0.bins.0.curslabs": 1,
+        "arenas.lextent.0.size": 16_384,
+        "stats.arenas.0.lextents.0.curlextents": 2,
+        "stats.arenas.0.lextents.0.nmalloc": 4,
+    }
+    monkeypatch.setattr(reader, "_read", lambda name, _type: values.get(name, 0))
+
+    inventory = reader.allocation_inventory()
+
+    assert inventory is not None
+    assert inventory["bins"] == [
+        {
+            "arena": 0,
+            "index": 0,
+            "size_bytes": 16,
+            "allocations": 7,
+            "live_regions": 3,
+            "slab_allocations": 2,
+            "live_slabs": 1,
+        }
+    ]
+    assert inventory["large_extents"] == [
+        {
+            "arena": 0,
+            "index": 0,
+            "size_bytes": 16_384,
+            "allocations": 4,
+            "live_extents": 2,
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -109,8 +157,7 @@ def test_metrics_use_isolated_registries_and_never_label_raw_tenants() -> None:
     first.observe_database_health(healthy=True, latency_ms=1.5)
     first.set_component_ready("sse_notification_bridge", True)
     first.set_database_pool_capacity("api", 30)
-    first.observe_database_pool_checkout("api", 1)
-    first.observe_database_pool_checkout("api", -1)
+    first.register_database_pool_checked_out_reader("api", lambda: 0)
     first.observe_database_pool_acquisition_timeout("unexpected-untrusted-pool")
 
     rendered = first.render().decode("utf-8")
@@ -129,7 +176,7 @@ def test_database_pool_capacity_must_be_positive() -> None:
         PlatformMetrics().set_database_pool_capacity("api", 0)
 
 
-def test_metrics_normalize_unknown_method_and_ignore_zero_pool_delta() -> None:
+def test_metrics_normalize_unknown_method_without_creating_pool_labels() -> None:
     metrics = PlatformMetrics()
 
     metrics.observe_http(
@@ -138,11 +185,34 @@ def test_metrics_normalize_unknown_method_and_ignore_zero_pool_delta() -> None:
         status_code=200,
         duration_seconds=0,
     )
-    metrics.observe_database_pool_checkout("api", 0)
-
     rendered = metrics.render().decode("utf-8")
     assert 'method="OTHER"' in rendered
     assert 'liyans_database_pool_checked_out{pool="api"}' not in rendered
+
+
+def test_database_pool_reader_replaces_unbalanced_event_delta_accounting() -> None:
+    legacy_event_balance = 0
+    for delta in (-1, -1):
+        legacy_event_balance += delta
+    assert legacy_event_balance == -2
+
+    metrics = PlatformMetrics()
+    metrics.set_database_pool_capacity("api", 30)
+    metrics.register_database_pool_checked_out_reader("api", lambda: 0)
+
+    rendered = metrics.render().decode("utf-8")
+    assert 'liyans_database_pool_checked_out{pool="api"} 0.0' in rendered
+
+
+def test_database_pool_reader_rejects_duplicate_and_negative_sources() -> None:
+    metrics = PlatformMetrics()
+    metrics.set_database_pool_capacity("api", 30)
+    metrics.register_database_pool_checked_out_reader("api", lambda: -1)
+
+    with pytest.raises(ValueError, match="already registered"):
+        metrics.register_database_pool_checked_out_reader("api", lambda: 0)
+    with pytest.raises(RuntimeError, match="negative"):
+        metrics.render()
 
 
 @pytest.mark.asyncio
@@ -327,6 +397,42 @@ async def test_memory_diagnostics_failure_keeps_scrape_available_and_labels_boun
     assert "tenant" not in rendered
     assert "subject" not in rendered
     assert "cursor" not in rendered
+
+
+@pytest.mark.asyncio
+async def test_checkpoint_mode_never_starts_periodic_heavy_sampler(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_DIR", str(tmp_path))
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_SOURCE_SHA", "a" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_SOURCE_TREE", "b" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PRODUCT_SOURCE_SHA", "c" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_ENGINEERING_BASELINE_SHA", "d" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PROCESS_VERSION", "Gate-C-11-v1.0")
+    metrics = PlatformMetrics()
+    starts = 0
+
+    async def start_checkpoint() -> None:
+        nonlocal starts
+        starts += 1
+
+    monkeypatch.setattr(metrics.memory_checkpoints, "start", start_checkpoint)
+    await metrics.start_memory_diagnostics()
+
+    assert starts == 1
+    assert metrics.memory_diagnostics_task is None
+
+
+def test_checkpoint_and_periodic_sampler_configuration_fails_closed(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_DIR", str(tmp_path))
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        PlatformMetrics()
 
 
 @pytest.mark.asyncio
