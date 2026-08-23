@@ -1,6 +1,6 @@
 # ADR-0023: Phase 7 Gate C Eleventh P0 Remediation
 
-**Status:** Local quality gates passed; fresh candidate Smoke pending
+**Status:** Harness monitor-target defect remediated; fresh candidate Smoke restart pending
 
 **Process Version:** `Gate-C-11-v1.0`
 
@@ -291,6 +291,42 @@ volumes, and retains the explicit PostgreSQL-volume verification. Focused
 runner regressions pass 27/27. The exact interrupted-run volume was removed
 only after its project label was verified; its run directory and diagnostic
 metadata remain preserved.
+
+## Candidate Smoke Monitor-Target Abort
+
+The next cold-deployment run, `gate-c-harness-20260823T130417Z`, reached and
+completed the frozen `smoke-20` workload at committed candidate `2f529f1`.
+Every functional, security, delivery and runtime control passed, including
+delivery p95/p99 `28/122 ms`, connection and reconnect success `1.0/1.0`, and
+zero loss, duplicate final render, tenant leakage, HTTP 5xx, pool timeout and
+Outbox `DEAD`. The stage nevertheless failed correctly because monitor
+completeness was `0/36`, below the frozen `0.95` minimum.
+
+All 36 Prometheus scrapes succeeded and the API log records 36 HTTP 200
+responses. Separately, all 36 database samples failed with
+`ConnectionRefusedError`. The Compose deployment published PostgreSQL on host
+port `59032` to avoid the Windows excluded range, while `Start-GateMonitor`
+still used a hard-coded `127.0.0.1:5432` database URL. This is an execution
+harness target mismatch, not evidence that the product P0 implementation or
+database failed. It is classified `HARNESS_SMOKE_MONITOR_TARGET_ABORT`, makes
+no M1 or acceptance claim, and stops the remaining two Smoke scenarios.
+
+The immutable sanitized diagnostic package is Release ID `375216712`, tag
+`phase7-gate-c-11-p0-smoke-harness-monitor-abort-20260823-v1`, asset ID
+`526237661`, `9,436` bytes, SHA256
+`405ab328c655d549423b5c929907ef6eeccb80e7beafcce71089d129d05aab6c`.
+The server digest matches and GitHub reports `immutable: true`. Its repository
+index is
+`docs/diagnostics/phase7-gate-c-eleventh-p0/harness-monitor-abort-package-reference.json`.
+The untouched raw directory has 34 files bound by its own SHA256 manifest.
+
+The corrective change adds one validated `PostgresHostPort` runner input,
+uses it for both Compose publication and the monitor database URL, and records
+it in execution and environment metadata. The pre-fix regression fails because
+the binding is absent; it passes after the change. Product code, frozen
+aggregation and every semantic redline remain unchanged. Because the runner
+changed, the three independent Smoke observations restart from the next exact
+committed HEAD and must share its rebuilt image digests.
 
 ## Stop Conditions
 

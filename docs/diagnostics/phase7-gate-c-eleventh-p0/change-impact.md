@@ -109,3 +109,21 @@ path to include `--volumes` and verifies zero remaining project-labelled
 volumes. The exact interrupted-run volume was removed after label validation;
 the diagnostic run directory remains preserved. Ruff and all 27 focused runner
 regressions pass after the formatting-only follow-up `7e31cba`.
+
+## Monitor Target Correction
+
+The subsequent cold run reached the workload but failed only monitor
+completeness: Compose published PostgreSQL on `59032`, while the host monitor
+was hard-coded to `5432`. The raw evidence records 36/36 successful metrics
+scrapes, 36/36 refused database samples, and all non-monitor frozen Smoke
+controls passing. Remaining Smoke scenarios were not started.
+
+The corrective diff is limited to the Windows Gate C runner, one positive and
+reverse-boundary runner regression, this impact record, the ADR and the
+diagnostic package index. It adds a validated `PostgresHostPort`, binds both
+Compose and the monitor to it, and records it in execution/environment
+metadata. It does not change product images, application behavior, database
+settings, monitor timeout, sampling interval, aggregation, thresholds or
+workload. The exact Harness resources were destroyed and the non-formal abort
+package is immutable at SHA256
+`405ab328c655d549423b5c929907ef6eeccb80e7beafcce71089d129d05aab6c`.

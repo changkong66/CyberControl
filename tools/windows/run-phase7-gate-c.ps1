@@ -11,6 +11,9 @@ param(
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$')]
     [string]$PostgresVolumeName,
 
+    [ValidateRange(1, 65535)]
+    [int]$PostgresHostPort = 5432,
+
     [ValidateSet("smoke-20", "ramp-200", "ramp-500", "ramp-1000", "gate-2000")]
     [string[]]$DiagnosticStageNames = @(),
 
@@ -250,7 +253,7 @@ function Start-GateMonitor {
         "--project",
         $ProjectName,
         "--database-url",
-        "postgresql://liyans_bootstrap:liyans-bootstrap-local-only@127.0.0.1:5432/liyans",
+        "postgresql://liyans_bootstrap:liyans-bootstrap-local-only@127.0.0.1:${PostgresHostPort}/liyans",
         "--metrics-url",
         "http://127.0.0.1:8000/metrics",
         "--output",
@@ -409,6 +412,7 @@ New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $secretsDirectory -Force | Out-Null
 $env:GATE_C_RESULTS_DIR = $runDirectory
 $env:GATE_C_POSTGRES_VOLUME = $volumeName
+$env:LIYAN_POSTGRES_HOST_PORT = [string]$PostgresHostPort
 $env:PYTHONPATH = Join-Path $root "tests\load"
 $env:GATE_C_SOURCE_SHA = $sourceCommit
 $env:GATE_C_SOURCE_TREE = $sourceTree
@@ -432,6 +436,7 @@ $env:GATE_C_IMAGE_TAG = $sourceCommit
     branch = $branch
     project = $ProjectName
     postgres_volume = $volumeName
+    postgres_host_port = $PostgresHostPort
     diagnostic_stage_names = @($DiagnosticStageNames)
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
@@ -537,6 +542,7 @@ try {
         docker_server_version = (& docker version --format "{{.Server.Version}}").Trim()
         docker_cpu_limit = [int](& docker info --format "{{.NCPU}}")
         docker_memory_limit_bytes = [int64](& docker info --format "{{.MemTotal}}")
+        postgres_host_port = $PostgresHostPort
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()

@@ -393,6 +393,18 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert "cybercontrol/gate-c-load:${GATE_C_IMAGE_TAG:-unknown}" in compose
 
 
+def test_gate_c_monitor_uses_the_compose_postgres_host_port() -> None:
+    runner = (
+        Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-phase7-gate-c.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "[int]$PostgresHostPort" in runner
+    assert "$env:LIYAN_POSTGRES_HOST_PORT = [string]$PostgresHostPort" in runner
+    assert "@127.0.0.1:${PostgresHostPort}/liyans" in runner
+    assert "postgres_host_port = $PostgresHostPort" in runner
+    assert "@127.0.0.1:5432/liyans" not in runner
+
+
 def test_gate_c_worker_credentials_are_disjoint_and_complete() -> None:
     credentials = tuple(
         Credential(
