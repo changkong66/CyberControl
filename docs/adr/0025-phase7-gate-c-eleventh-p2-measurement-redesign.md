@@ -2,7 +2,7 @@
 
 Process Version: `Gate-C-11-v1.0`
 
-- Status: Proposed for measurement-design review
+- Status: Rejected after A/measurement/A' diagnostic execution
 - Product source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Product tree: `f721fca017c247aee93765d5f11fcbc37e12fcfc`
 - Engineering parent: `3e4410667dcc20a8c413d1188c38dfe2edf5f11b`
@@ -206,3 +206,37 @@ rejects the measurement branch. If the A/measurement/A' controls show material
 profiler interference or fail to identify one bounded owner, archive the real
 diagnostic result and keep P2 frozen. Do not start another candidate, formal
 Gate C replay or Gate D work.
+
+## Diagnostic Outcome
+
+The design was executed against protected main
+`a57d0ce57427804ede3f3c620fda2a93b3a300ff` and tree
+`963fcf73113e39a1e5868fae3957f4adfc102a4c`. The first A attempt was
+`INFRA_ABORTED` before load because the isolated virtual environment lacked the
+locked load extra. After dependency synchronization, independent A2 and A'
+controls both passed the real 200-stream stage and fixed 600-second recovery.
+
+The measurement arm is rejected. Its connection p95 was `17,989ms`, compared
+with the `673ms` control median, and its delivery p95 was `1,175ms`, compared
+with the `45.5ms` control median. Both exceed the permitted `+10%` interference
+limit by orders of magnitude. The synchronized pre-capture RSS delta was
+`59,334,656` bytes, `28,721,152` bytes above the `30,613,504`-byte control
+median; the permitted difference was `8,388,608` bytes. API CPU p95 was
+`101.98` one-core units versus a `25.165` control median. The measurement arm
+also lost five monitor samples and did not sustain the required 304 seconds.
+
+The checkpoints themselves completed in `5.649232/7.326742` seconds and the
+complete traceback diff was generated, but the profiler materially changed
+the workload and residual it was intended to explain. Its ownership data is
+therefore not admissible for selecting a product behavior change. Terminal SSE
+inventories were zero and the functional/security zero-tolerance controls
+remained intact in all completed arms.
+
+P2 product-code changes remain frozen. This result does not authorize another
+candidate, a formal Gate C replay, Gate C acceptance or Gate D work. The
+structured comparison, root-cause report and immutable package reference are
+stored under `docs/diagnostics/phase7-gate-c-eleventh-p2/`.
+
+The immutable diagnostic package SHA256 is
+`10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`:
+https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-adr0025-measurement-rejected-20260824-v1

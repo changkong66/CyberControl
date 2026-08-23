@@ -1,0 +1,112 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-package-reference.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "DIAGNOSTIC_MEASUREMENT_DESIGN_REJECTION",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "root_cause_domain": "P2",
+  "root_cause_round": 3,
+  "result": "MEASUREMENT_DESIGN_REJECTED_PROFILER_INTERFERENCE",
+  "raw_root": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p2-adr0025-aba-20260824",
+  "local_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/gate-c-11-p2-adr0025-measurement-rejected-20260824-v1.zip",
+  "bytes": 5676313,
+  "sha256": "10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b",
+  "manifest_sha256": "5765eee12c0faba7fbb8e5cfdbfcefae7764f488820b710896531226581e776f",
+  "raw_source_manifest_sha256": "2f84a2cb56cfb68359dd38ea70abe51335dc58aab90ce0599f323df15a2b1f70",
+  "redaction_scan_sha256": "d4a3f197656cb949eb8f8aaeae330f6a6ee146861cc5d89d7bd5846c619b13f7",
+  "resource_closure_sha256": "9df2ebb13370b34d5d32a40891900895fc97d3dddfbdf96e7e91d89f6da144d6",
+  "source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "source_tree_sha": "963fcf73113e39a1e5868fae3957f4adfc102a4c",
+  "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "engineering_baseline_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "protected_main_ci": {
+    "run_id": 32667597681,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/32667597681",
+    "passed_jobs": 8,
+    "total_jobs": 8
+  },
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "runs": {
+    "infra_aborted_a": {
+      "run_id": "gate-c-diagnostic-20260823T213855Z",
+      "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p2-adr0025-aba-20260824/A/gate-c-diagnostic-20260823T213855Z-a57d0ce57427",
+      "abort_record_sha256": "ba3fca12c5ac5d0facda83578fc23910fcd106f7654513751de179402845ec96",
+      "load_started": false
+    },
+    "a2_control": {
+      "run_id": "gate-c-diagnostic-20260823T214537Z",
+      "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p2-adr0025-aba-20260824/A2/gate-c-diagnostic-20260823T214537Z-a57d0ce57427"
+    },
+    "measurement": {
+      "run_id": "gate-c-diagnostic-20260823T220844Z",
+      "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p2-adr0025-aba-20260824/measurement/gate-c-diagnostic-20260823T220844Z-a57d0ce57427"
+    },
+    "a_prime_control": {
+      "run_id": "gate-c-diagnostic-20260823T223248Z",
+      "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p2-adr0025-aba-20260824/A-prime/gate-c-diagnostic-20260823T223248Z-a57d0ce57427"
+    }
+  },
+  "environment": {
+    "docker_server_version": "29.6.1",
+    "docker_cpu_limit": 16,
+    "docker_memory_limit_bytes": 7958884352,
+    "postgres_volumes": [
+      "cybercontrol_gate_c_11_p2_adr0025_a_20260824",
+      "cybercontrol_gate_c_11_p2_adr0025_a2_20260824",
+      "cybercontrol_gate_c_11_p2_adr0025_measurement_20260824",
+      "cybercontrol_gate_c_11_p2_adr0025_aprime_20260824"
+    ],
+    "all_postgres_volumes_preserved": true,
+    "all_compose_containers_removed": true,
+    "all_compose_networks_removed": true,
+    "temporary_credentials_removed": true
+  },
+  "package_verification": {
+    "content_manifest_files": 104,
+    "zip_entries": 105,
+    "missing_files": 0,
+    "hash_or_size_mismatches": 0,
+    "unexpected_files": 0,
+    "raw_source_files": 97,
+    "raw_source_hash_or_size_mismatches": 0,
+    "json_files_validated": 48,
+    "jsonl_files_validated": 22,
+    "jsonl_records_validated": 12622,
+    "passed": true
+  },
+  "redaction_scan": {
+    "passed": true,
+    "raw_run_preserved_unchanged": true,
+    "package_copy_host_paths_redacted": true,
+    "jwt_hits": 0,
+    "authorization_bearer_hits": 0,
+    "private_key_hits": 0,
+    "credential_assignment_hits": 0,
+    "email_hits": 0,
+    "phone_field_hits": 0,
+    "subject_ref_hits": 0,
+    "keycloak_username_hits": 0,
+    "workspace_user_path_hits": 0,
+    "gitleaks_version": "8.30.1",
+    "gitleaks_actionable_findings": 0,
+    "gitleaks_non_secret_sha256_findings": 3
+  },
+  "external_package": {
+    "status": "VERIFIED_IMMUTABLE_RELEASE",
+    "release_id": 375351507,
+    "release_tag": "phase7-gate-c-11-p2-adr0025-measurement-rejected-20260824-v1",
+    "release_uri": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-adr0025-measurement-rejected-20260824-v1",
+    "release_immutable": true,
+    "release_prerelease": true,
+    "release_target": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "published_at": "2026-08-23T23:10:35Z",
+    "asset_id": 526751673,
+    "asset_name": "gate-c-11-p2-adr0025-measurement-rejected-20260824-v1.zip",
+    "asset_uri": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-11-p2-adr0025-measurement-rejected-20260824-v1/gate-c-11-p2-adr0025-measurement-rejected-20260824-v1.zip",
+    "asset_state": "uploaded",
+    "verified_bytes": 5676313,
+    "verified_sha256": "10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b",
+    "server_digest": "sha256:10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b"
+  }
+}
