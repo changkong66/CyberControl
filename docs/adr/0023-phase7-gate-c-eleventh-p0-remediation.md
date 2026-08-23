@@ -273,6 +273,25 @@ The three Smoke arms must use one image digest while retaining unique projects,
 run directories and volumes. This contract has deterministic tests, but no
 candidate Smoke result is claimed here. M1 remains pending.
 
+## Candidate Smoke Infrastructure Interruption
+
+The first cold-deployment attempt, run
+`gate-c-harness-20260823T122253Z` at candidate `a7e1a5e529b0`, did not start
+the API or any load stage. Docker rejected the PostgreSQL host binding because
+the Windows excluded TCP range `5385-5484` contained the default port `5432`.
+Its execution metadata records `classification: HARNESS_SMOKE`,
+`formal_gate_attempt: false` and `acceptance_claim: false`; it is neither a
+formal Gate C attempt nor an M1 result.
+
+The failed startup exposed that `docker compose down` retained the internal
+`liyans-runtime` named volume even though containers, network and the explicit
+PostgreSQL volume were removed. Commit `f27cc03` changes ephemeral Harness and
+Preflight cleanup to `down --volumes`, verifies zero project-labelled Compose
+volumes, and retains the explicit PostgreSQL-volume verification. Focused
+runner regressions pass 27/27. The exact interrupted-run volume was removed
+only after its project label was verified; its run directory and diagnostic
+metadata remain preserved.
+
 ## Stop Conditions
 
 - Any semantic, security, functional or zero-tolerance regression rejects the

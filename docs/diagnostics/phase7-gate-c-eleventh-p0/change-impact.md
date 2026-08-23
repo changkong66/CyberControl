@@ -94,3 +94,18 @@ therefore measured on temporary port 5275; the configuration was restored and
 no port change is committed. Neither local quality nor runner-contract tests
 are M1 or formal Gate C acceptance. Three real candidate Smoke runs remain
 mandatory.
+
+## Smoke Infrastructure Interruption
+
+Cold-deployment run `gate-c-harness-20260823T122253Z` stopped before API
+startup because the host excluded TCP range `5385-5484` contained PostgreSQL
+port 5432. The preserved metadata classifies it as non-formal Harness Smoke and
+makes no acceptance claim. No workload or product control was evaluated.
+
+That failed startup revealed one project-labelled `liyans-runtime` volume left
+by Compose after containers, network and the explicit PostgreSQL volume were
+removed. Commit `f27cc03` changes only the ephemeral Harness/Preflight cleanup
+path to include `--volumes` and verifies zero remaining project-labelled
+volumes. The exact interrupted-run volume was removed after label validation;
+the diagnostic run directory remains preserved. Ruff and all 27 focused runner
+regressions pass after the formatting-only follow-up `7e31cba`.
