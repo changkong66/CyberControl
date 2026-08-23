@@ -1,31 +1,30 @@
 # CyberControl Project Stage Audit
 
+Process Version: `Gate-C-11-v1.0`
+
 ## 1. Precise Stage Position
 
 CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
-protected main. The current protected-main source is
-`0c35364d79cd89d149190c02557d2c352643300e`, tree
-`284df2edd208daf2379f5e1827bad18f92e303c8`. Protected-main Release Quality
-Gates Run 31798607779 completed 8/8 jobs successfully. The latest product-code
-commit remains `c826b508ee5b094532a13bbe88d68e66948ed84c`; PR #70 changed evidence and
-current-state documentation only. The eighth Gate C replay
-itself remains bound to evaluated source
-`4f0a7670782c5002a2da6e429c0428d8fef29153`, tree
-`d79b15fce52b8a8b9afe4be361cfbcbba4c7ddc9`.
+protected main. The evaluated protected-main source is
+`5fcb917b63889cb6da8dd019efdd133f4ec3fb60`, tree
+`f721fca017c247aee93765d5f11fcbc37e12fcfc`. Protected-main Release Quality
+Gates Run `32645162420` completed 8/8 jobs successfully. PR #81 is the latest
+product-code change; the eleventh formal Gate C replay is bound to that exact
+source and tree.
 
 The formal state remains:
 
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
-Gate A and Gate B are accepted. Gate C is not accepted. The eighth formal
+Gate A and Gate B are accepted. Gate C is not accepted. The eleventh formal
 Gate C replay completed the entire frozen workload, including 2,000
 authenticated SSE streams for 1,804 seconds and the fixed ten-minute recovery
-observation. Every stage-local control passed, but the final aggregate failed
-the frozen Outbox p95 and memory-recovery controls. The final 30 recovery
-samples also retained one LIVE subscriber, violating the required lifecycle
-boundary. A partial or near-threshold pass cannot advance the release state.
+observation. Every stage-local control passed and Outbox p95/p99 passed, but
+the final aggregate failed the frozen memory-recovery ratio at `1.417200`
+against `<=1.10`. All terminal lifecycle gauges were zero. A stage-local or
+near-threshold pass cannot advance the release state.
 Gate D through Gate G and unrelated product work remain locked.
 
 | Area | Current maturity | Evidence-based judgment |
@@ -35,7 +34,7 @@ Gate D through Gate G and unrelated product work remain locked.
 | Identity and account backend | complete for current scope | Keycloak authority, registration, projection, administration and recovery are integrated |
 | Three-language frontend | complete for current scope | business, account and locale surfaces are merged and tested |
 | Gate B business replay | accepted | clean PostgreSQL replay and evidence dataset controls passed from protected main |
-| Gate C authenticated SSE | failed | all stages passed locally, but final Outbox p95 and RSS recovery controls failed; one LIVE subscriber remained in recovery |
+| Gate C authenticated SSE | failed | all stages and Outbox passed, but final RSS recovery ratio 1.417200 exceeded 1.10 |
 | Production operations | locked | soak, DR, Provider and deployment acceptance cannot start before Gate C success |
 
 Feature completeness is not production acceptance. The remaining feature count
@@ -416,3 +415,36 @@ This baseline-closure PR is documentation-only. It does not alter deployable
 behavior or the frozen acceptance semantics. The formal state remains
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`; M1 has not been
 claimed, and Gate D-G remain locked.
+
+## 9. Eleventh Remediation And M2 Failure Audit
+
+PR #81 head `af10947bf05b40a5759f40973770f3aaef561f89` passed push Run
+`32644827393` and pull-request Run `32644829425`, Squash Merged as
+`5fcb917b63889cb6da8dd019efdd133f4ec3fb60`, and passed protected-main Run
+`32645162420`; all three Release Quality Gate runs were 8/8. The source tree is
+`f721fca017c247aee93765d5f11fcbc37e12fcfc`.
+
+P0 closed with three independent Smoke passes and a clean protected-main
+preflight. Their Compose projects, networks and PostgreSQL volumes were removed
+and were not reused. The formal attempt then used a new Compose project and the
+new preserved volume `cybercontrol_gate_c_eleventh_5fcb917_20260823`.
+
+All five formal stages and recovery completed. At 2,000 streams delivery was
+`758/1077ms` p95/p99, monitor completeness was `491/495`, and Outbox was
+`1879.698/2898.555ms` p95/p99 with `PUBLISHED=226` and no open or dead row.
+Connection and replay success remained 1.0; loss, duplicates, leakage, invalid
+cursor acceptance, HTTP 5xx, pool timeout, OOM and restart remained zero.
+Terminal subscriber, queue, replay, cache, task and pool gauges were zero.
+
+The sole failed final control was recovery memory. API cgroup memory was
+262,144,000 bytes first, 371,510,477 bytes final and 436,941,619 bytes peak,
+producing `1.417200 > 1.10`. Process RSS/USS/PSS also remained elevated after
+the ten-minute recovery. This proves a P2 defect remains but does not prove its
+owner. P1 is closed by the current Outbox evidence; P2 may open only after this
+failure archive closes and receives separate authorization.
+
+Release `375257600` is immutable and its asset digest matches package SHA256
+`205517caae21e184d079219454e9e66903083839b9af87c6cc1d45b2bc604ab8`.
+The formal run and volume remain preserved. This is milestone M2, while the
+formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED` and Gate D-G remain
+locked.

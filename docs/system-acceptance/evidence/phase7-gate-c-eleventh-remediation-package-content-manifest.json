@@ -1,0 +1,596 @@
+{
+  "schema_version": "cybercontrol.gate-c-package-content-manifest.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "FORMAL_GATE_C_ATTEMPT",
+  "result": "FAILED",
+  "formal_state": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "run_id": "gate-c-20260823T144052Z",
+  "source_commit": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "source_tree": "f721fca017c247aee93765d5f11fcbc37e12fcfc",
+  "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "engineering_baseline_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "files": [
+    {
+      "path": "database-evidence.json",
+      "bytes": 1056,
+      "sha256": "5ba482fa33100f3b2b84e93c327771f1a1350045a7f5e2347330072be4a97282"
+    },
+    {
+      "path": "environment.json",
+      "bytes": 2627,
+      "sha256": "39208a18d7e2462422575c1892a56c96a5cae2cd862d289b8660831f9c900e65"
+    },
+    {
+      "path": "execution-metadata.json",
+      "bytes": 964,
+      "sha256": "308d881bc735d0e516df0ceaaf82b2989a9c93caec367de85da3fd9a692abe1e"
+    },
+    {
+      "path": "failure-analysis.md",
+      "bytes": 3580,
+      "sha256": "4db287655dc7f396baf85719cdb8bed14403c13f59216bc188fc365b6a5e35f1"
+    },
+    {
+      "path": "formal-report.md",
+      "bytes": 2189,
+      "sha256": "f6d25d5bf2fb6fb94dad51bbc79e8d34442edd1ff8952bdace39bfe063f70975"
+    },
+    {
+      "path": "gate-c-evidence-manifest.json",
+      "bytes": 19988,
+      "sha256": "9f15e70fe08c20df2a5caff9949964048d2c93d2b24d6e60d5f39246ba6b75dd"
+    },
+    {
+      "path": "gate-c-report.md",
+      "bytes": 464,
+      "sha256": "df880f84d69160f7f75fe7146b1647c6ba06142faa47c43de1a88af7f6daff65"
+    },
+    {
+      "path": "gate-c-summary.json",
+      "bytes": 18921,
+      "sha256": "5b67985d2b6a3cd2c95e27d55885ae717aabfad8b67afb7e1916248ec4219ecb"
+    },
+    {
+      "path": "redaction-scan.json",
+      "bytes": 1147,
+      "sha256": "a65319be89d0faf2d9287b791b0bed1823ec5b58cdccbe6bc24dbe71f49316de"
+    },
+    {
+      "path": "repository-manifest.json",
+      "bytes": 3109,
+      "sha256": "bf4fb1e07ba9007062e2597085b03758195f62f008f3abcff81cb7af6fdb7b8d"
+    },
+    {
+      "path": "stages/gate-2000/active-streams-10.jsonl",
+      "bytes": 270005,
+      "sha256": "bc1b2b56d6716dbcf1bed8e977ee31427e3c42f9a52241c0ecd5ea91e7a0e05f"
+    },
+    {
+      "path": "stages/gate-2000/active-streams-7.jsonl",
+      "bytes": 268130,
+      "sha256": "47d59b42e652c1f21e75853d7d4b03a93d573a8edacb2106886766fc571a250e"
+    },
+    {
+      "path": "stages/gate-2000/active-streams-8.jsonl",
+      "bytes": 268136,
+      "sha256": "853def2b959e597eea6dd3b9d07972797baafcfabbce65bb52282fd03002de61"
+    },
+    {
+      "path": "stages/gate-2000/active-streams-9.jsonl",
+      "bytes": 268136,
+      "sha256": "59115f0d01200eb0f296812038b8cb663229c798eb0784472e45416a43ff83ef"
+    },
+    {
+      "path": "stages/gate-2000/api-runtime.log",
+      "bytes": 1047360,
+      "sha256": "657918f80eb639f4797444f24191b11ef524251b280e9f024713b0bd0a1b1a9f"
+    },
+    {
+      "path": "stages/gate-2000/baseline-cursors.json",
+      "bytes": 503,
+      "sha256": "6a31196a49e34d3ea7b903f7d42f27881ac13d1446298118dba0ca805c0bcec8"
+    },
+    {
+      "path": "stages/gate-2000/locust_exceptions.csv",
+      "bytes": 31,
+      "sha256": "3e73e8f665731ee4e45a6a91202a31b06999f2c53240f14aee2532e0e0b42b09"
+    },
+    {
+      "path": "stages/gate-2000/locust_failures.csv",
+      "bytes": 52,
+      "sha256": "51ba68968b591276c95496a6a9624797491ce4eb934b1f6392f44b95148fbb93"
+    },
+    {
+      "path": "stages/gate-2000/locust_stats_history.csv",
+      "bytes": 578049,
+      "sha256": "607ddc33dafa56905448d6eccbcc6228064948cd790c4d96e04154281a913629"
+    },
+    {
+      "path": "stages/gate-2000/locust_stats.csv",
+      "bytes": 577,
+      "sha256": "3b9794c7f5734a12a5310dc36d1dfe752e4ae80f88ff70af7853ba89c906c7e1"
+    },
+    {
+      "path": "stages/gate-2000/monitor.jsonl",
+      "bytes": 28726728,
+      "sha256": "64de236530fd9ba8e0ddaef6fe3170d0d93fc6f79922b309bd5f42f3d5ca6a5a"
+    },
+    {
+      "path": "stages/gate-2000/monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/gate-2000/monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/gate-2000/publisher-events.jsonl",
+      "bytes": 1313113,
+      "sha256": "368ec7d69adb7863a5d0b6d24badc8ce1877c79b7d869e15dd46ba3357360f5a"
+    },
+    {
+      "path": "stages/gate-2000/publisher-result.json",
+      "bytes": 591,
+      "sha256": "b85926088b43920df485a22f782637e1968c07e44fde254b0343a8a1caa21f63"
+    },
+    {
+      "path": "stages/gate-2000/runtime-controls.json",
+      "bytes": 311,
+      "sha256": "1cc7e2b4ca2679382b71d694217c2d9cc9ca04b6c700070b70905d2b6f78a503"
+    },
+    {
+      "path": "stages/gate-2000/stage-summary.json",
+      "bytes": 3002,
+      "sha256": "a39c5396d96c8b41a2339a03547f4f9b7ab9b1096d242a614a02451ffd3eba38"
+    },
+    {
+      "path": "stages/gate-2000/worker-result-10.json",
+      "bytes": 462363,
+      "sha256": "d468a1c7a9b80200afe78c62fa121cbf4d2a4a5913b95244eaed59b38b43ec8c"
+    },
+    {
+      "path": "stages/gate-2000/worker-result-7.json",
+      "bytes": 460979,
+      "sha256": "0dfcadd3d606e2cbe04103e5cc1d694e18514bb2a2997e78b5b07d4b1703cb85"
+    },
+    {
+      "path": "stages/gate-2000/worker-result-8.json",
+      "bytes": 441805,
+      "sha256": "de434df2b084fa095743e05aaa742b574d1fc154ea756a2a5afdc2d71dacb2c1"
+    },
+    {
+      "path": "stages/gate-2000/worker-result-9.json",
+      "bytes": 441077,
+      "sha256": "420d9b66896a4fb8d3f21c55bebc682065ab1e766c19668fd553a9a541c004da"
+    },
+    {
+      "path": "stages/ramp-1000/active-streams-10.jsonl",
+      "bytes": 96461,
+      "sha256": "8294966b9c558f439a7af6d41ba65e55274b1fa05f5c960ef13644fb15f915e1"
+    },
+    {
+      "path": "stages/ramp-1000/active-streams-7.jsonl",
+      "bytes": 95790,
+      "sha256": "30342a209b6efc9387aa2c7f538343cfa581891d49d8b3b77fc560992cb2e875"
+    },
+    {
+      "path": "stages/ramp-1000/active-streams-8.jsonl",
+      "bytes": 95788,
+      "sha256": "068cec375806482aab93e97a7938f86e9828b146f111437208837f33d5af2b51"
+    },
+    {
+      "path": "stages/ramp-1000/active-streams-9.jsonl",
+      "bytes": 95788,
+      "sha256": "8188f8a5b1d62abe44811e386f412727add7d736b225d72df2b4125a2f47b9a3"
+    },
+    {
+      "path": "stages/ramp-1000/api-runtime.log",
+      "bytes": 463251,
+      "sha256": "0264296dc8f156f653ffcdbf528e2b982d7dbd5baba0516e5e4aa758cf6f3617"
+    },
+    {
+      "path": "stages/ramp-1000/baseline-cursors.json",
+      "bytes": 503,
+      "sha256": "b19b0f79802e1c78a625ea3eb7b7e7395045fa1e94f249e53c383ad2f511c13a"
+    },
+    {
+      "path": "stages/ramp-1000/locust_exceptions.csv",
+      "bytes": 31,
+      "sha256": "3e73e8f665731ee4e45a6a91202a31b06999f2c53240f14aee2532e0e0b42b09"
+    },
+    {
+      "path": "stages/ramp-1000/locust_failures.csv",
+      "bytes": 52,
+      "sha256": "51ba68968b591276c95496a6a9624797491ce4eb934b1f6392f44b95148fbb93"
+    },
+    {
+      "path": "stages/ramp-1000/locust_stats_history.csv",
+      "bytes": 203680,
+      "sha256": "18021cdf549189555e82a6625095defc42912772b519fb5c51ceace5ff75f518"
+    },
+    {
+      "path": "stages/ramp-1000/locust_stats.csv",
+      "bytes": 555,
+      "sha256": "4ed8c8f9a36e6bde707c8eeff6fd2c5da479cb40ae4c7c5b87c4c59b91b54453"
+    },
+    {
+      "path": "stages/ramp-1000/monitor.jsonl",
+      "bytes": 7808439,
+      "sha256": "068a945df1cabddec4d12ee5bae6f35d3f8811e5642154549fb8c6b93af006ff"
+    },
+    {
+      "path": "stages/ramp-1000/monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/ramp-1000/monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/ramp-1000/publisher-events.jsonl",
+      "bytes": 540197,
+      "sha256": "2d582238c646c4ea83249eab1dc4d20a7dcd640b99a07da57026d7241ba428e9"
+    },
+    {
+      "path": "stages/ramp-1000/publisher-result.json",
+      "bytes": 587,
+      "sha256": "e0dcf757be974f4a3d7b675045068a4c7f07620d736e4e1374082a802a2799be"
+    },
+    {
+      "path": "stages/ramp-1000/runtime-controls.json",
+      "bytes": 310,
+      "sha256": "07cc8f2b5f08ded5d9b5652a1a54a43f07901bff21fab235dd976427982226f5"
+    },
+    {
+      "path": "stages/ramp-1000/stage-summary.json",
+      "bytes": 2991,
+      "sha256": "745d805bff488686155ffe35926f22ad94a367f695d9711147ce9100a16a4ea7"
+    },
+    {
+      "path": "stages/ramp-1000/worker-result-10.json",
+      "bytes": 198576,
+      "sha256": "15b32751b3558474ac994b1e05d7e333608029ddf58d1c53bb3f7f4300b638b5"
+    },
+    {
+      "path": "stages/ramp-1000/worker-result-7.json",
+      "bytes": 203165,
+      "sha256": "2261f8da7119621e4cb40c8576cc4967fd31288d0f1426d44a5ee0b443642ff6"
+    },
+    {
+      "path": "stages/ramp-1000/worker-result-8.json",
+      "bytes": 202490,
+      "sha256": "b632f11b8fdb0283caa89812323cd5ce15c3fa376f94bccd787dcd7889b8683f"
+    },
+    {
+      "path": "stages/ramp-1000/worker-result-9.json",
+      "bytes": 198272,
+      "sha256": "3a0fdcc019b9b2e482a08b7fb30fa9deee991705b60d68bde514c499b7cea9cb"
+    },
+    {
+      "path": "stages/ramp-200/active-streams-10.jsonl",
+      "bytes": 51880,
+      "sha256": "cb04aaadda5cb28f84f010e74d2a0a8e2f9c43ca9f084c99e5bafbd86fb8c3df"
+    },
+    {
+      "path": "stages/ramp-200/active-streams-7.jsonl",
+      "bytes": 51515,
+      "sha256": "d34695e6323c4fcbb61227e2a7c45910cccf671e65cb703e3786dabe59a8cf74"
+    },
+    {
+      "path": "stages/ramp-200/active-streams-8.jsonl",
+      "bytes": 51515,
+      "sha256": "dc8886c748af7f255e772cfa375205c8990d085f1315d9c3d30635df5a5a6e16"
+    },
+    {
+      "path": "stages/ramp-200/active-streams-9.jsonl",
+      "bytes": 51515,
+      "sha256": "21b39de8ba6bc24dca11322a265996ca661755ec87efe6d88bc6f548a74bec73"
+    },
+    {
+      "path": "stages/ramp-200/api-runtime.log",
+      "bytes": 169656,
+      "sha256": "23d420c0875c731c942c00ca2d550129b1980dc50f8f83341a91d4967e62d63b"
+    },
+    {
+      "path": "stages/ramp-200/baseline-cursors.json",
+      "bytes": 496,
+      "sha256": "794fd4647ec2ef1c60e1f497598370ee6925ceeaf53b5b618f0d7a59f0ae5646"
+    },
+    {
+      "path": "stages/ramp-200/locust_exceptions.csv",
+      "bytes": 31,
+      "sha256": "3e73e8f665731ee4e45a6a91202a31b06999f2c53240f14aee2532e0e0b42b09"
+    },
+    {
+      "path": "stages/ramp-200/locust_failures.csv",
+      "bytes": 52,
+      "sha256": "51ba68968b591276c95496a6a9624797491ce4eb934b1f6392f44b95148fbb93"
+    },
+    {
+      "path": "stages/ramp-200/locust_stats_history.csv",
+      "bytes": 109625,
+      "sha256": "35a8ef7b6410dd9c5f04a1558764cbd5fa9614fd287db28785ae12132fdc758a"
+    },
+    {
+      "path": "stages/ramp-200/locust_stats.csv",
+      "bytes": 545,
+      "sha256": "f5662b63fc3778749ac4076d6de814e89682d7bd29061e913ac74c29e69dba0b"
+    },
+    {
+      "path": "stages/ramp-200/monitor.jsonl",
+      "bytes": 4248966,
+      "sha256": "b153cfdc1cb47fb99aa7f6058384067790d7d11ea73d8994380055de0a4c18b0"
+    },
+    {
+      "path": "stages/ramp-200/monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/ramp-200/monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/ramp-200/publisher-events.jsonl",
+      "bytes": 293966,
+      "sha256": "404841a775f9d8a6a7bd1b1990cf2f3c16e4edbbafa3e45562c757ed4b6afe41"
+    },
+    {
+      "path": "stages/ramp-200/publisher-result.json",
+      "bytes": 583,
+      "sha256": "ed6660ceba548fb5b8033757ec9fa531c68570f3a2107fb937fbc29858e51f69"
+    },
+    {
+      "path": "stages/ramp-200/runtime-controls.json",
+      "bytes": 310,
+      "sha256": "d0b5aeba0adf16a1939bfb8cb56bc2b112b049b79cf6fd5aeb7a9488d7af7b14"
+    },
+    {
+      "path": "stages/ramp-200/stage-summary.json",
+      "bytes": 2968,
+      "sha256": "d89cbda4dcbf6cfab9093ac929c1d69991cd31d9f03d0721776495dbe7e9a134"
+    },
+    {
+      "path": "stages/ramp-200/worker-result-10.json",
+      "bytes": 38826,
+      "sha256": "a73150fb12a377b4eb6b6b48752019808323f8fa25ac9dad7c24392181302ff4"
+    },
+    {
+      "path": "stages/ramp-200/worker-result-7.json",
+      "bytes": 38959,
+      "sha256": "9bdda2b2e6e46ef016844659c7acb9827c1a8ae0afd376cb40164524b5b135e0"
+    },
+    {
+      "path": "stages/ramp-200/worker-result-8.json",
+      "bytes": 38734,
+      "sha256": "c68ec7a0ccf2b4b4520c76b042a7522edb54431880250cfdbb62825dd48d7bce"
+    },
+    {
+      "path": "stages/ramp-200/worker-result-9.json",
+      "bytes": 38861,
+      "sha256": "72479c8a13e629ec4ad0aff81e03a3066311fbca1e095567836092b340c0b666"
+    },
+    {
+      "path": "stages/ramp-500/active-streams-10.jsonl",
+      "bytes": 52682,
+      "sha256": "d294af156a14b74e9318b9c831e646776a314a35826bb74ad1594fba83174a8e"
+    },
+    {
+      "path": "stages/ramp-500/active-streams-7.jsonl",
+      "bytes": 52318,
+      "sha256": "580300a213777bf2127dae4b89410a77c395f18cc80d5653ddf5ee8ec245d2fe"
+    },
+    {
+      "path": "stages/ramp-500/active-streams-8.jsonl",
+      "bytes": 52319,
+      "sha256": "9c259afb56edb51e09c86b7d86ce66c15520f9e81093a912d417b9b4a3ed5e21"
+    },
+    {
+      "path": "stages/ramp-500/active-streams-9.jsonl",
+      "bytes": 52318,
+      "sha256": "9ef64f1e79c96dfe5edd560837b2a3869141865ba0f71eafe3605f5ab6786f69"
+    },
+    {
+      "path": "stages/ramp-500/api-runtime.log",
+      "bytes": 241306,
+      "sha256": "18a2e6e6e5d470cd975793c29c69aa08fe213884eab3e7a2cf2596cf1758d07f"
+    },
+    {
+      "path": "stages/ramp-500/baseline-cursors.json",
+      "bytes": 496,
+      "sha256": "a2013e56a006374a96658056df6b9f4009bcd5b3da1e8c3500c6bae6255863a8"
+    },
+    {
+      "path": "stages/ramp-500/locust_exceptions.csv",
+      "bytes": 31,
+      "sha256": "3e73e8f665731ee4e45a6a91202a31b06999f2c53240f14aee2532e0e0b42b09"
+    },
+    {
+      "path": "stages/ramp-500/locust_failures.csv",
+      "bytes": 52,
+      "sha256": "51ba68968b591276c95496a6a9624797491ce4eb934b1f6392f44b95148fbb93"
+    },
+    {
+      "path": "stages/ramp-500/locust_stats_history.csv",
+      "bytes": 112622,
+      "sha256": "bf3d9366eb8db86157053ebbfa41ecc24badb6f70f0899145a8733c76f7f1c89"
+    },
+    {
+      "path": "stages/ramp-500/locust_stats.csv",
+      "bytes": 553,
+      "sha256": "3ec14a5912cc35c0b14a0ae1307ddae5e575f1e361743f9c10001cdd62ef51ba"
+    },
+    {
+      "path": "stages/ramp-500/monitor.jsonl",
+      "bytes": 4280093,
+      "sha256": "208e71330e1b384c91827a63ad5a8e2a65f8953a7bf8dd262a7832ec22e81dd7"
+    },
+    {
+      "path": "stages/ramp-500/monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/ramp-500/monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/ramp-500/publisher-events.jsonl",
+      "bytes": 291546,
+      "sha256": "5edfcff569ef87730fac7a31e96f04db986f43a101ef4dce29e1437873f8c7a1"
+    },
+    {
+      "path": "stages/ramp-500/publisher-result.json",
+      "bytes": 583,
+      "sha256": "8ccdbdb4d86f217f804b5ae4451ea342ee5ad1ca08a00fb3e10bbd781ee04c2a"
+    },
+    {
+      "path": "stages/ramp-500/runtime-controls.json",
+      "bytes": 310,
+      "sha256": "9ea59165fe029603a2b97bff523c0114f8705527b53db0b9066b7f91c2cd90ac"
+    },
+    {
+      "path": "stages/ramp-500/stage-summary.json",
+      "bytes": 2970,
+      "sha256": "449232110662c362df071d5cda3dfb956d7a72e26c2ce119acda1944fcaac14a"
+    },
+    {
+      "path": "stages/ramp-500/worker-result-10.json",
+      "bytes": 96362,
+      "sha256": "f800afe6f8e52960b243575e7ff16ad17098afe681028f65eb7dc2a911833a94"
+    },
+    {
+      "path": "stages/ramp-500/worker-result-7.json",
+      "bytes": 95976,
+      "sha256": "0233e1e50df18deed0b3c6d392c4d2bdc91ef615576edaafd2c0cdc8217bef84"
+    },
+    {
+      "path": "stages/ramp-500/worker-result-8.json",
+      "bytes": 95869,
+      "sha256": "fb171cd70fac2298e40089b3aaefc2acebc209bed907e33b3830fbc208218f23"
+    },
+    {
+      "path": "stages/ramp-500/worker-result-9.json",
+      "bytes": 96448,
+      "sha256": "9e2a48a1cc3785a1906a5e9bac4cf13a996925e4301ab75037504269525eae30"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-10.jsonl",
+      "bytes": 25816,
+      "sha256": "238f067493f90443cbe033f15cd25ad9aa13d0b6700b0bfd3521ce57e991b308"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-7.jsonl",
+      "bytes": 25632,
+      "sha256": "909a06223e349f182dc6218eb5634ed304da364ccec3bd2f423a10883c145429"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-8.jsonl",
+      "bytes": 25632,
+      "sha256": "97a9d0fe8277e57ca011b3c0a46f80c4553c579d1896427b864dece15a7153fe"
+    },
+    {
+      "path": "stages/smoke-20/active-streams-9.jsonl",
+      "bytes": 25632,
+      "sha256": "d8c3b94748b315791e94006242d3ae7979871a141dc2857b829dbc1511679991"
+    },
+    {
+      "path": "stages/smoke-20/api-runtime.log",
+      "bytes": 71839,
+      "sha256": "e4708e69d78b50534bdd636377b0d4e65be9cdaef189f7ebddd9fa19242f9058"
+    },
+    {
+      "path": "stages/smoke-20/baseline-cursors.json",
+      "bytes": 487,
+      "sha256": "cad9540d699771f46522cda2cc25a89d309fdc64858619c3202ee507141d8ae1"
+    },
+    {
+      "path": "stages/smoke-20/locust_exceptions.csv",
+      "bytes": 31,
+      "sha256": "3e73e8f665731ee4e45a6a91202a31b06999f2c53240f14aee2532e0e0b42b09"
+    },
+    {
+      "path": "stages/smoke-20/locust_failures.csv",
+      "bytes": 52,
+      "sha256": "51ba68968b591276c95496a6a9624797491ce4eb934b1f6392f44b95148fbb93"
+    },
+    {
+      "path": "stages/smoke-20/locust_stats_history.csv",
+      "bytes": 53797,
+      "sha256": "00ca0545a3feaa4413115ea69599571e7933a45c1865b8c3a7cc6f1cf2d6d18c"
+    },
+    {
+      "path": "stages/smoke-20/locust_stats.csv",
+      "bytes": 525,
+      "sha256": "8302a23798a9069a03e94677368f727eb33b6a9688176b31ca0e8c94870fab02"
+    },
+    {
+      "path": "stages/smoke-20/monitor.jsonl",
+      "bytes": 2101627,
+      "sha256": "df921c6b6b9d5cc0aeafb2f1362b730cd0a6285ea717db958d4d05430867862e"
+    },
+    {
+      "path": "stages/smoke-20/monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/smoke-20/monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stages/smoke-20/publisher-events.jsonl",
+      "bytes": 159779,
+      "sha256": "a34c93f0691909e6fca95184c71743551dda65b828978c9fc311bda947f516c6"
+    },
+    {
+      "path": "stages/smoke-20/publisher-result.json",
+      "bytes": 583,
+      "sha256": "8febd1830de6cfc5edf0e642e0c8ad3c7a389756f7b7b3430ea48e25d425ad20"
+    },
+    {
+      "path": "stages/smoke-20/runtime-controls.json",
+      "bytes": 309,
+      "sha256": "d588d014adac54bfae5279044c88522322e579e765b23c68e61523692006a923"
+    },
+    {
+      "path": "stages/smoke-20/security-controls.json",
+      "bytes": 283,
+      "sha256": "41a9f680032dd505cef23e49ab8e2cef603f906b91d7b8429bc31ad1fa69eb28"
+    },
+    {
+      "path": "stages/smoke-20/stage-summary.json",
+      "bytes": 2971,
+      "sha256": "4ab8f88552f0443630aca2c959a2a469aff27f3ae886809f3fa503a22115a8f0"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-10.json",
+      "bytes": 5299,
+      "sha256": "35d777616e02af841309d30e1d34afc5fa1d29c240f795f405a9068a9430b490"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-7.json",
+      "bytes": 5146,
+      "sha256": "1e1fbe883d2ce44a2d8cc03d9aebfb4374d583bbf88fc7ddfe954e94f11f455b"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-8.json",
+      "bytes": 5203,
+      "sha256": "dde302dedbd3a95fc6def0cf33149b60b446e92fefc74704acc6b6f2807c4469"
+    },
+    {
+      "path": "stages/smoke-20/worker-result-9.json",
+      "bytes": 5128,
+      "sha256": "f3444459bc4583da5ab2234d21c06960cbb7073f02ee553ed8b703ecf20bd536"
+    }
+  ]
+}

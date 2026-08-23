@@ -1,0 +1,32 @@
+{
+  "schema_version": "cybercontrol.gate-c-redaction-scan.v2",
+  "process_version": "Gate-C-11-v1.0",
+  "scanned_at_utc": "2026-08-23T16:03:14.8581827Z",
+  "scanner": "gitleaks 8.30.1 plus repository evidence regex policy",
+  "scanned_file_count": 115,
+  "credentials_directory_removed_before_scan": true,
+  "jwt_hits": 0,
+  "authorization_bearer_hits": 0,
+  "credential_assignment_hits": 0,
+  "email_hits": 0,
+  "subject_ref_hits": 0,
+  "keycloak_username_hits": 0,
+  "gitleaks_raw_candidate_hits": 5,
+  "gitleaks_adjudicated_non_secret_hits": 5,
+  "gitleaks_actionable_hits": 0,
+  "adjudications": [
+    {
+      "rule_id": "generic-api-key",
+      "paths": [
+        "stages/smoke-20/runtime-controls.json",
+        "stages/ramp-200/runtime-controls.json",
+        "stages/ramp-500/runtime-controls.json",
+        "stages/ramp-1000/runtime-controls.json",
+        "stages/gate-2000/runtime-controls.json"
+      ],
+      "field": "api_log_sha256",
+      "reason": "Each candidate is a recorded SHA256 evidence fingerprint and exactly matches the corresponding api-runtime.log bytes."
+    }
+  ],
+  "passed": true
+}
