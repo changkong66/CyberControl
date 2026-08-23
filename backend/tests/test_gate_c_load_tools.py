@@ -117,7 +117,7 @@ def test_backend_runtime_uses_process_start_allocator_configuration() -> None:
     )
 
     assert "jemalloc=5.3.0-r6" in dockerfile
-    assert "PYTHONMALLOC=" not in dockerfile
+    assert "PYTHONMALLOC=malloc" in dockerfile
     assert "LD_PRELOAD=/usr/lib/libjemalloc.so.2" in dockerfile
     assert "dirty_decay_ms:1000" in dockerfile
     assert "muzzy_decay_ms:1000" in dockerfile

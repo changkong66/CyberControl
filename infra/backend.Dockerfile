@@ -47,7 +47,8 @@ RUN apk add --no-cache "jemalloc=5.3.0-r6" \
         /var/lib/liyans/artifacts /var/lib/liyans/audit \
     && chown -R liyans:liyans /app /var/lib/liyans
 
-ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2 \
+ENV PYTHONMALLOC=malloc \
+    LD_PRELOAD=/usr/lib/libjemalloc.so.2 \
     MALLOC_CONF=background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:1,retain:false
 
 COPY --from=builder --chown=liyans:liyans /app/.venv /app/.venv
