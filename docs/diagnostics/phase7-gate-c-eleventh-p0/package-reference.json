@@ -1,0 +1,52 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-package-reference.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "run_id": "gate-c-11-p0-aba-20260823T091302Z-v3",
+  "classification": "DIAGNOSTIC_ABA_PRIME",
+  "formal_gate_attempt": false,
+  "local_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p0-aba-20260823T091302Z-v3.zip",
+  "bytes": 21939,
+  "sha256": "761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef",
+  "manifest_sha256": "a241aaa379cf9f9ff25d345ce762d85dbb58b77820bf170ea8093e7e954aa68a",
+  "source_sha": "ea5ce1bd6c915a6488df62f65aeacad75ba8aa79",
+  "tree_sha": "f3bf70824f880b8f6a1d3040d579a5f802727c2f",
+  "product_source_sha": "108e8aa0b6e85c304c9bcf4aa3a5c30ec6b5df1a",
+  "engineering_baseline_sha": "16bab5d90f9a054b5c04f2399248e5b56603185d",
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "environment_fingerprint": {
+    "os": "Microsoft Windows 11 Home Chinese 10.0.26200",
+    "python": "3.11.15",
+    "uv": "0.11.28",
+    "uv_lock_sha256": "5810a1c964382ad664e0df1533daebbc54e8756967ad40d7e2963d960c9a0d3e"
+  },
+  "redaction_scan": {
+    "passed": true,
+    "jwt_hits": 0,
+    "authorization_bearer_hits": 0,
+    "private_key_hits": 0,
+    "credential_assignment_hits": 0,
+    "email_hits": 0,
+    "phone_hits": 0,
+    "workspace_user_path_hits": 0
+  },
+  "external_package": {
+    "status": "VERIFIED_IMMUTABLE_RELEASE",
+    "release_id": 375173557,
+    "release_tag": "phase7-gate-c-11-p0-aba-20260823-v3",
+    "release_uri": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p0-aba-20260823-v3",
+    "release_immutable": true,
+    "release_prerelease": true,
+    "release_target": "92bcfd7be6a45ff97b03bad6afc53dac5c7e58c9",
+    "published_at": "2026-08-23T09:58:48Z",
+    "asset_id": 526077962,
+    "asset_name": "gate-c-11-p0-aba-20260823T091302Z-v3.zip",
+    "asset_uri": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-11-p0-aba-20260823-v3/gate-c-11-p0-aba-20260823T091302Z-v3.zip",
+    "asset_state": "uploaded",
+    "verified_bytes": 21939,
+    "verified_sha256": "761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef",
+    "server_digest": "sha256:761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef"
+  },
+  "merge_blocked_until_external_package_verified": false,
+  "acceptance_claim": false
+}

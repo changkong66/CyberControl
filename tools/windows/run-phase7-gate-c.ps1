@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("HarnessSmoke", "Full")]
+    [ValidateSet("HarnessSmoke", "DiagnosticStages", "PreflightSmoke", "Full")]
     [string]$Mode = "Full",
 
     [ValidatePattern('^[a-z0-9][a-z0-9_-]{2,62}$')]
@@ -10,6 +10,21 @@ param(
 
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$')]
     [string]$PostgresVolumeName,
+
+    [ValidateRange(1, 65535)]
+    [int]$PostgresHostPort = 5432,
+
+    [ValidateSet("smoke-20", "ramp-200", "ramp-500", "ramp-1000", "gate-2000")]
+    [string[]]$DiagnosticStageNames = @(),
+
+    [ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]
+    [string]$SmokeScenario = "ColdDeployment",
+
+    [ValidatePattern('^[0-9a-f]{40}$')]
+    [string]$ProductSourceSha,
+
+    [ValidatePattern('^[0-9a-f]{40}$')]
+    [string]$EngineeringBaselineSha,
 
     [switch]$SkipBuild,
 
@@ -26,11 +41,36 @@ $thresholdPath = Join-Path $root "tests\load\gate-c-thresholds.v1.json"
 $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
 $monitorPath = Join-Path $root "tests\load\gate_c\monitor.py"
 $runtimeControlsPath = Join-Path $root "tests\load\gate_c\runtime_controls.py"
-$runId = "gate-c-$((Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ'))"
+$processVersion = "Gate-C-11-v1.0"
+$executionClassification = switch ($Mode) {
+    "DiagnosticStages" { "DIAGNOSTIC" }
+    "PreflightSmoke" { "PREFLIGHT_CHECK" }
+    "Full" { "FORMAL_GATE_C_ATTEMPT" }
+    default { "HARNESS_SMOKE" }
+}
+$runIdPrefix = switch ($Mode) {
+    "DiagnosticStages" { "gate-c-diagnostic" }
+    "PreflightSmoke" { "gate-c-preflight" }
+    "HarnessSmoke" { "gate-c-harness" }
+    default { "gate-c" }
+}
+$runId = "$runIdPrefix-$((Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ'))"
 $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 $sourceTree = (& git -C $root rev-parse "HEAD^{tree}").Trim()
 $branch = (& git -C $root branch --show-current).Trim()
 $status = @(& git -C $root status --porcelain=v1 --untracked-files=all)
+$resolvedProductSourceSha = if ([string]::IsNullOrWhiteSpace($ProductSourceSha)) {
+    $sourceCommit
+}
+else {
+    $ProductSourceSha
+}
+$resolvedEngineeringBaselineSha = if ([string]::IsNullOrWhiteSpace($EngineeringBaselineSha)) {
+    $sourceCommit
+}
+else {
+    $EngineeringBaselineSha
+}
 $volumeName = if (-not [string]::IsNullOrWhiteSpace($PostgresVolumeName)) {
     $PostgresVolumeName
 }
@@ -41,7 +81,12 @@ $runDirectory = Join-Path $ResultsRoot "$runId-$($sourceCommit.Substring(0, 12))
 $runDirectory = [IO.Path]::GetFullPath($runDirectory)
 $secretsDirectory = Join-Path $runDirectory "secrets"
 $credentialsPath = Join-Path $secretsDirectory "credentials.json"
-$composeArguments = @("-p", $ProjectName, "-f", $baseCompose, "-f", $gateCompose)
+$composeArguments = @(
+    "-p", $ProjectName,
+    "-f", $baseCompose,
+    "-f", $gateCompose,
+    "--profile", "gate-c-load"
+)
 $monitorProcesses = @()
 
 function Invoke-Compose {
@@ -72,6 +117,123 @@ function Get-TextSha256 {
     }
 }
 
+function Test-GateVolumeExists {
+    $volumes = @(& docker volume ls --filter "name=^${volumeName}$" --format "{{.Name}}")
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to enumerate Docker volumes during Gate C cleanup."
+    }
+    return $volumes -contains $volumeName
+}
+
+function Remove-EphemeralResources {
+    Invoke-Compose @("down", "--remove-orphans", "--volumes")
+
+    $containers = @(& docker ps --all `
+        --filter "label=com.docker.compose.project=$ProjectName" --format "{{.ID}}")
+    if ($LASTEXITCODE -ne 0 -or $containers.Count -ne 0) {
+        throw "Ephemeral cleanup left Compose containers for project $ProjectName behind."
+    }
+    $networks = @(& docker network ls `
+        --filter "label=com.docker.compose.project=$ProjectName" --format "{{.ID}}")
+    if ($LASTEXITCODE -ne 0 -or $networks.Count -ne 0) {
+        throw "Ephemeral cleanup left Compose networks for project $ProjectName behind."
+    }
+    $projectVolumes = @(& docker volume ls `
+        --filter "label=com.docker.compose.project=$ProjectName" --format "{{.Name}}")
+    if ($LASTEXITCODE -ne 0 -or $projectVolumes.Count -ne 0) {
+        throw "Ephemeral cleanup left Compose volumes for project $ProjectName behind."
+    }
+    if (Test-GateVolumeExists) {
+        & docker volume rm $volumeName | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to remove ephemeral PostgreSQL volume $volumeName."
+        }
+    }
+    if (Test-GateVolumeExists) {
+        throw "Ephemeral cleanup left PostgreSQL volume $volumeName behind."
+    }
+}
+
+function Get-ComposeImageReference {
+    param([Parameter(Mandatory = $true)][string]$Service)
+
+    $composeDocument = & docker compose @composeArguments config --format json |
+        ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to resolve the Compose model for Gate C service $Service."
+    }
+    $serviceProperty = $composeDocument.services.PSObject.Properties[$Service]
+    if ($null -eq $serviceProperty -or [string]::IsNullOrWhiteSpace($serviceProperty.Value.image)) {
+        throw "Gate C service $Service does not define a stable image reference."
+    }
+    return [string]$serviceProperty.Value.image
+}
+
+function Get-ComposeImageId {
+    param([Parameter(Mandatory = $true)][string]$Service)
+
+    $imageReference = Get-ComposeImageReference -Service $Service
+    $imageId = (& docker image inspect --format "{{.Id}}" $imageReference).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($imageId)) {
+        throw "Unable to resolve image $imageReference for Gate C service $Service."
+    }
+    return $imageId
+}
+
+function Wait-ComposeServiceHealthy {
+    param(
+        [Parameter(Mandatory = $true)][string]$Service,
+        [int]$TimeoutSeconds = 180
+    )
+
+    $containerId = (& docker compose @composeArguments ps --quiet $Service).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($containerId)) {
+        throw "Unable to resolve Gate C container for service $Service."
+    }
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        $state = & docker inspect --format "{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{end}}" `
+            $containerId
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect Gate C service $Service after restart."
+        }
+        if ($state.Trim() -eq "running|healthy") {
+            return
+        }
+        if ($state -match "^(exited|dead)\|") {
+            throw "Gate C service $Service stopped while waiting for health."
+        }
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $deadline)
+    throw "Gate C service $Service did not become healthy within $TimeoutSeconds seconds."
+}
+
+function Assert-ImageProvenance {
+    param(
+        [Parameter(Mandatory = $true)][string]$Service,
+        [Parameter(Mandatory = $true)][string]$ImageId
+    )
+
+    $labels = & docker image inspect --format "{{json .Config.Labels}}" $ImageId |
+        ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or $null -eq $labels) {
+        throw "Unable to inspect provenance labels for Gate C service $Service."
+    }
+    $expected = [ordered]@{
+        "org.opencontainers.image.revision" = $sourceCommit
+        "com.cybercontrol.source-tree" = $sourceTree
+        "com.cybercontrol.product-source" = $resolvedProductSourceSha
+        "com.cybercontrol.engineering-baseline" = $resolvedEngineeringBaselineSha
+        "com.cybercontrol.process-version" = $processVersion
+    }
+    foreach ($item in $expected.GetEnumerator()) {
+        $property = $labels.PSObject.Properties[$item.Key]
+        if ($null -eq $property -or [string]$property.Value -ne [string]$item.Value) {
+            throw "Gate C image provenance mismatch for $Service label $($item.Key)."
+        }
+    }
+}
+
 function Start-GateMonitor {
     param(
         [Parameter(Mandatory = $true)][string]$StageDirectory,
@@ -91,7 +253,7 @@ function Start-GateMonitor {
         "--project",
         $ProjectName,
         "--database-url",
-        "postgresql://liyans_bootstrap:liyans-bootstrap-local-only@127.0.0.1:5432/liyans",
+        "postgresql://liyans_bootstrap:liyans-bootstrap-local-only@127.0.0.1:${PostgresHostPort}/liyans",
         "--metrics-url",
         "http://127.0.0.1:8000/metrics",
         "--output",
@@ -160,8 +322,14 @@ function Save-ComposeDiagnostics {
         captured_at = (Get-Date).ToUniversalTime().ToString("o")
         reason = $Reason
         project = $ProjectName
+        process_version = $processVersion
+        classification = $executionClassification
+        formal_gate_attempt = ($Mode -eq "Full")
+        acceptance_claim = $false
         source_commit = $sourceCommit
         source_tree = $sourceTree
+        product_source_sha = $resolvedProductSourceSha
+        engineering_baseline_sha = $resolvedEngineeringBaselineSha
     } | ConvertTo-Json -Depth 4 |
         Set-Content -LiteralPath (Join-Path $diagnosticsDirectory "failure.json") -Encoding UTF8
 
@@ -193,30 +361,88 @@ function Save-ComposeDiagnostics {
     }
 }
 
-if ($Mode -eq "Full") {
-    if ([string]::IsNullOrWhiteSpace($PostgresVolumeName)) {
-        throw "Full Gate C acceptance requires an explicit fresh -PostgresVolumeName."
-    }
+if ($Mode -eq "Full" -and [string]::IsNullOrWhiteSpace($PostgresVolumeName)) {
+    throw "Full Gate C acceptance requires an explicit fresh -PostgresVolumeName."
+}
+if ($Mode -notin @("HarnessSmoke", "Full") -and [string]::IsNullOrWhiteSpace($PostgresVolumeName)) {
+    throw "$Mode requires an explicit fresh -PostgresVolumeName."
+}
+if ($Mode -eq "DiagnosticStages" -and $DiagnosticStageNames.Count -eq 0) {
+    throw "DiagnosticStages requires explicit -DiagnosticStageNames."
+}
+if (
+    $Mode -in @("DiagnosticStages", "HarnessSmoke") -and
+    ([string]::IsNullOrWhiteSpace($ProductSourceSha) -or
+        [string]::IsNullOrWhiteSpace($EngineeringBaselineSha))
+) {
+    throw "$Mode requires explicit product and engineering baseline SHAs."
+}
+if ($Mode -ne "DiagnosticStages" -and $DiagnosticStageNames.Count -ne 0) {
+    throw "-DiagnosticStageNames is valid only with -Mode DiagnosticStages."
+}
+if ($Mode -ne "HarnessSmoke" -and $SmokeScenario -ne "ColdDeployment") {
+    throw "-SmokeScenario is valid only with -Mode HarnessSmoke."
+}
+if ($Mode -eq "PreflightSmoke" -and $KeepEnvironment) {
+    throw "PreflightSmoke cannot retain its environment."
+}
+if ($Mode -eq "Full" -and $SkipBuild) {
+    throw "Full Gate C acceptance prohibits -SkipBuild."
+}
+if ($Mode -in @("Full", "PreflightSmoke")) {
     if ($branch -ne "main") {
-        throw "Full Gate C acceptance must run from main; current branch is $branch."
+        throw "$Mode must run from main; current branch is $branch."
     }
     if ($status.Count -ne 0) {
-        throw "Full Gate C acceptance requires a clean source tree."
+        throw "$Mode requires a clean source tree."
     }
     $remoteMain = (Invoke-RestMethod `
         -Headers @{ Accept = "application/vnd.github+json"; "User-Agent" = "CyberControl-Gate-C" } `
         -Uri "https://api.github.com/repos/changkong66/CyberControl/branches/main" `
         -TimeoutSec 30).commit.sha
     if ($sourceCommit -ne $remoteMain) {
-        throw "Local main does not match the protected remote main."
+        throw "Local main does not match protected origin/main for $Mode."
     }
+}
+elseif ($Mode -in @("DiagnosticStages", "HarnessSmoke") -and $status.Count -ne 0) {
+    throw "$Mode requires a clean committed candidate tree."
 }
 
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $secretsDirectory -Force | Out-Null
 $env:GATE_C_RESULTS_DIR = $runDirectory
 $env:GATE_C_POSTGRES_VOLUME = $volumeName
+$env:LIYAN_POSTGRES_HOST_PORT = [string]$PostgresHostPort
 $env:PYTHONPATH = Join-Path $root "tests\load"
+$env:GATE_C_SOURCE_SHA = $sourceCommit
+$env:GATE_C_SOURCE_TREE = $sourceTree
+$env:GATE_C_PRODUCT_SOURCE_SHA = $resolvedProductSourceSha
+$env:GATE_C_ENGINEERING_BASELINE_SHA = $resolvedEngineeringBaselineSha
+$env:GATE_C_PROCESS_VERSION = $processVersion
+$env:GATE_C_IMAGE_TAG = $sourceCommit
+
+[ordered]@{
+    schema_version = "cybercontrol.gate-c-execution-metadata.v1"
+    process_version = $processVersion
+    mode = $Mode
+    classification = $executionClassification
+    formal_gate_attempt = ($Mode -eq "Full")
+    acceptance_claim = $false
+    run_id = $runId
+    source_commit = $sourceCommit
+    source_tree = $sourceTree
+    product_source_sha = $resolvedProductSourceSha
+    engineering_baseline_sha = $resolvedEngineeringBaselineSha
+    branch = $branch
+    project = $ProjectName
+    postgres_volume = $volumeName
+    postgres_host_port = $PostgresHostPort
+    diagnostic_stage_names = @($DiagnosticStageNames)
+    smoke_scenario = $SmokeScenario
+    thresholds_sha256 = Get-FileSha256 $thresholdPath
+    workload_sha256 = Get-FileSha256 $workloadPath
+} | ConvertTo-Json -Depth 6 |
+    Set-Content -LiteralPath (Join-Path $runDirectory "execution-metadata.json") -Encoding UTF8
 
 $existingVolume = @(& docker volume ls --filter "name=^${volumeName}$" --format "{{.Name}}")
 if ($existingVolume -contains $volumeName) {
@@ -232,11 +458,23 @@ if ($LASTEXITCODE -ne 0) {
 
 $thresholds = Get-Content -LiteralPath $thresholdPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $workload = Get-Content -LiteralPath $workloadPath -Raw -Encoding UTF8 | ConvertFrom-Json
-$selectedStages = if ($Mode -eq "Full") {
-    @($thresholds.stages)
-}
-else {
-    @($thresholds.stages | Select-Object -First 1)
+$selectedStages = switch ($Mode) {
+    "Full" { @($thresholds.stages) }
+    "DiagnosticStages" {
+        @(
+            foreach ($diagnosticStageName in $DiagnosticStageNames) {
+                $selected = @(
+                    $thresholds.stages |
+                        Where-Object { [string]$_.name -eq $diagnosticStageName }
+                )
+                if ($selected.Count -ne 1) {
+                    throw "Frozen thresholds do not define diagnostic stage $diagnosticStageName."
+                }
+                $selected[0]
+            }
+        )
+    }
+    default { @($thresholds.stages | Select-Object -First 1) }
 }
 
 try {
@@ -245,14 +483,37 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to render the Gate C Compose configuration."
     }
-    $upArguments = @("up", "--detach", "--wait")
     if (-not $SkipBuild) {
-        $upArguments += "--build"
+        Invoke-Compose @(
+            "build",
+            "api",
+            "migrate",
+            "mock-provider",
+            "frontend",
+            "gate-c-load"
+        )
     }
-    $upArguments += "api"
-    Invoke-Compose $upArguments
-    if (-not $SkipBuild) {
-        Invoke-Compose @("build", "gate-c-load")
+    Invoke-Compose @("up", "--detach", "--wait", "api")
+
+    $builtImages = [ordered]@{
+        api = Get-ComposeImageId "api"
+        migrate = Get-ComposeImageId "migrate"
+        mock_provider = Get-ComposeImageId "mock-provider"
+        frontend = Get-ComposeImageId "frontend"
+        gate_c_load = Get-ComposeImageId "gate-c-load"
+    }
+    foreach ($image in $builtImages.GetEnumerator()) {
+        Assert-ImageProvenance -Service $image.Key -ImageId $image.Value
+    }
+
+    switch ($SmokeScenario) {
+        "ControlledApiRestart" {
+            Invoke-Compose @("restart", "api")
+            Wait-ComposeServiceHealthy -Service "api"
+        }
+        "StableIdle" {
+            Start-Sleep -Seconds 300
+        }
     }
 
     $apiContainer = (& docker compose @composeArguments ps -q api).Trim()
@@ -260,10 +521,17 @@ try {
     $keycloakContainer = (& docker compose @composeArguments ps -q keycloak).Trim()
     $environmentEvidence = [ordered]@{
         schema_version = "cybercontrol.gate-c-environment.v1"
+        process_version = $processVersion
         mode = $Mode
+        smoke_scenario = $SmokeScenario
+        classification = $executionClassification
+        formal_gate_attempt = ($Mode -eq "Full")
+        acceptance_claim = $false
         run_id = $runId
         source_commit = $sourceCommit
         source_tree = $sourceTree
+        product_source_sha = $resolvedProductSourceSha
+        engineering_baseline_sha = $resolvedEngineeringBaselineSha
         branch = $branch
         clean_source = ($status.Count -eq 0)
         single_host_execution = $true
@@ -274,12 +542,14 @@ try {
         docker_server_version = (& docker version --format "{{.Server.Version}}").Trim()
         docker_cpu_limit = [int](& docker info --format "{{.NCPU}}")
         docker_memory_limit_bytes = [int64](& docker info --format "{{.MemTotal}}")
+        postgres_host_port = $PostgresHostPort
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()
             postgres = (& docker inspect --format "{{.Image}}" $postgresContainer).Trim()
             keycloak = (& docker inspect --format "{{.Image}}" $keycloakContainer).Trim()
         }
+        source_built_images = $builtImages
         tools = [ordered]@{
             locust = (& uv run --frozen locust --version | Out-String).Trim()
             python = (& uv run --frozen python --version | Out-String).Trim()
@@ -366,13 +636,31 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "Gate C runtime control evidence failed for stage $stageName."
         }
+        $stageSummaryPath = Join-Path $stageDirectory "stage-summary.json"
         & uv run --frozen python tests/load/gate_c/summarize.py `
             --stage $stageName `
             --stage-dir $stageDirectory `
             --thresholds $thresholdPath `
             --workload $workloadPath `
-            --output (Join-Path $stageDirectory "stage-summary.json")
-        if ($LASTEXITCODE -ne 0) {
+            --output $stageSummaryPath
+        $stageSummaryExitCode = $LASTEXITCODE
+        if (
+            $stageSummaryExitCode -ne 0 -and
+            $Mode -eq "DiagnosticStages" -and
+            (Test-Path -LiteralPath $stageSummaryPath)
+        ) {
+            $diagnosticSummary = Get-Content -LiteralPath $stageSummaryPath -Raw -Encoding UTF8 |
+                ConvertFrom-Json
+            if (
+                $diagnosticSummary.schema_version -ne "cybercontrol.gate-c-stage-summary.v1" -or
+                $diagnosticSummary.stage -ne $stageName -or
+                $diagnosticSummary.passed -ne $false
+            ) {
+                throw "Diagnostic stage $stageName returned an invalid threshold summary."
+            }
+            Write-Warning "Diagnostic stage $stageName retained a non-passing threshold summary."
+        }
+        elseif ($stageSummaryExitCode -ne 0) {
             throw "Gate C stage $stageName failed its frozen thresholds."
         }
     }
@@ -403,13 +691,17 @@ finally {
             }
         }
     }
-    if (-not $KeepEnvironment) {
-        try {
+    $cleanupFailure = $null
+    try {
+        if ($Mode -in @("PreflightSmoke", "HarnessSmoke")) {
+            Remove-EphemeralResources
+        }
+        elseif (-not $KeepEnvironment) {
             Invoke-Compose @("down", "--remove-orphans")
         }
-        catch {
-            Write-Warning $_
-        }
+    }
+    catch {
+        $cleanupFailure = $_
     }
     $resolvedSecrets = [IO.Path]::GetFullPath($secretsDirectory)
     if (-not $resolvedSecrets.StartsWith($runDirectory, [StringComparison]::OrdinalIgnoreCase)) {
@@ -417,6 +709,9 @@ finally {
     }
     if (Test-Path -LiteralPath $resolvedSecrets) {
         Remove-Item -LiteralPath $resolvedSecrets -Recurse -Force
+    }
+    if ($null -ne $cleanupFailure) {
+        throw $cleanupFailure
     }
 }
 
@@ -431,7 +726,12 @@ if ($Mode -eq "Full") {
 }
 
 [pscustomobject]@{
+    process_version = $processVersion
     mode = $Mode
+    smoke_scenario = $SmokeScenario
+    classification = $executionClassification
+    formal_gate_attempt = ($Mode -eq "Full")
+    acceptance_claim = $false
     run_id = $runId
     source_commit = $sourceCommit
     result_directory = $runDirectory

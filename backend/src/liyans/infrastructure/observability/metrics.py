@@ -10,11 +10,11 @@ import sys
 import tracemalloc
 from bisect import bisect_left
 from collections import Counter as CollectionCounter
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from threading import Lock
 from time import perf_counter, time
-from typing import Final
+from typing import Final, TypedDict
 
 from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, Counter, Gauge, Histogram
 from prometheus_client.core import Metric
@@ -78,6 +78,61 @@ APPROVED_HTTP_METHODS: Final = frozenset(
 APPROVED_DATABASE_POOL_NAMES: Final = frozenset(
     {"api", "identity-reconciler", "outbox-dispatcher", "other"}
 )
+MEMORY_DIAGNOSTIC_STAGES: Final = (
+    "task_inventory",
+    "traced_memory",
+    "object_inventory",
+    "tracemalloc_snapshot",
+    "process_memory",
+    "total",
+)
+METRICS_RENDER_STAGES: Final = ("allocator_refresh", "registry_render", "total")
+MEMORY_DIAGNOSTIC_VALUE_NAMES: Final = frozenset(
+    {
+        "gc_generation_0",
+        "gc_generation_1",
+        "gc_generation_2",
+        "memory_map_count",
+        "rssanon_bytes",
+        "rssfile_bytes",
+        "rssshmem_bytes",
+        "sample_running",
+        "sample_stale",
+        "sample_success",
+        "sampler_schedule_lag_seconds",
+        "smaps_anonymous_bytes",
+        "smaps_private_clean_bytes",
+        "smaps_private_dirty_bytes",
+        "smaps_pss_bytes",
+        "smaps_rss_bytes",
+        "smaps_swap_bytes",
+        "task_frames",
+        "tasks",
+        "tracemalloc_current_bytes",
+        "tracemalloc_peak_bytes",
+        "tracked_objects",
+        "worker_event_loop_lag_seconds",
+        "vmdata_bytes",
+        "vmpeak_bytes",
+        "vmrss_bytes",
+        "vmsize_bytes",
+    }
+)
+
+
+class _TaskDiagnostics(TypedDict):
+    task_names: tuple[tuple[str, int], ...]
+    tasks: int
+    task_frames: int
+    duration_seconds: float
+
+
+class _MemoryDiagnosticsResult(TypedDict):
+    values: dict[str, int | float]
+    task_names: tuple[tuple[str, int], ...]
+    object_types: tuple[tuple[str, int], ...]
+    top_allocations: tuple[dict[str, int | str], ...]
+    stage_durations: tuple[tuple[str, float], ...]
 
 
 class _JemallocStatsReader:
@@ -243,7 +298,11 @@ class PlatformMetrics:
             5.0,
             float(os.getenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "30")),
         )
-        self._next_memory_diagnostics_at = 0.0
+        self._memory_diagnostics_task: asyncio.Task[None] | None = None
+        self._memory_diagnostics_sample_lock = asyncio.Lock()
+        self._memory_diagnostics_lifecycle_lock = asyncio.Lock()
+        self._last_memory_diagnostics_success_at: float | None = None
+        self._last_memory_diagnostics_attempt_succeeded = False
         if self._memory_diagnostics_enabled and not tracemalloc.is_tracing():
             tracemalloc.start(
                 max(
@@ -358,15 +417,50 @@ class PlatformMetrics:
             ("metric",),
             registry=self.registry,
         )
+        self._memory_diagnostics_duration = Histogram(
+            "liyans_memory_diagnostics_duration_seconds",
+            "Memory diagnostic collection duration by fixed processing stage.",
+            ("stage",),
+            buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30),
+            registry=self.registry,
+        )
+        self._memory_diagnostics_samples = Counter(
+            "liyans_memory_diagnostics_samples_total",
+            "Memory diagnostic sample outcomes.",
+            ("outcome",),
+            registry=self.registry,
+        )
+        self._metrics_render_duration = Histogram(
+            "liyans_metrics_render_duration_seconds",
+            "Metrics scrape render duration by fixed processing stage.",
+            ("stage",),
+            buckets=(0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1),
+            registry=self.registry,
+        )
+        if self._memory_diagnostics_enabled:
+            self._set_memory_diagnostic_value("sample_running", 0)
+            self._set_memory_diagnostic_value("sample_stale", 1)
+            self._set_memory_diagnostic_value("sample_success", 0)
 
     @property
     def content_type(self) -> str:
         return CONTENT_TYPE_LATEST
 
     def render(self) -> bytes:
+        total_started = perf_counter()
+        stage_started = perf_counter()
         self._refresh_jemalloc_metrics()
-        self._refresh_memory_diagnostics()
-        return generate_latest(self.registry)
+        self._metrics_render_duration.labels("allocator_refresh").observe(
+            perf_counter() - stage_started
+        )
+        self._refresh_memory_diagnostics_staleness()
+        stage_started = perf_counter()
+        rendered = generate_latest(self.registry)
+        self._metrics_render_duration.labels("registry_render").observe(
+            perf_counter() - stage_started
+        )
+        self._metrics_render_duration.labels("total").observe(perf_counter() - total_started)
+        return rendered
 
     def _refresh_jemalloc_metrics(self) -> None:
         stats = self._jemalloc_stats.snapshot()
@@ -381,26 +475,125 @@ class PlatformMetrics:
             self._allocator_bytes.labels(metric).set(stats[metric])
         self._allocator_arenas.set(stats["arenas"])
 
-    def _refresh_memory_diagnostics(self) -> None:
+    @property
+    def memory_diagnostics_task(self) -> asyncio.Task[None] | None:
+        return self._memory_diagnostics_task
+
+    async def start_memory_diagnostics(self) -> None:
         if not self._memory_diagnostics_enabled:
             return
-        now = perf_counter()
-        if now < self._next_memory_diagnostics_at:
+        async with self._memory_diagnostics_lifecycle_lock:
+            if self._memory_diagnostics_task is not None:
+                return
+            self._memory_diagnostics_task = asyncio.create_task(
+                self._run_memory_diagnostics(),
+                name="metrics:memory-diagnostics",
+            )
+
+    async def close(self) -> None:
+        async with self._memory_diagnostics_lifecycle_lock:
+            task = self._memory_diagnostics_task
+            if task is None:
+                return
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self._memory_diagnostics_task = None
+                self._set_memory_diagnostic_value("sample_running", 0)
+
+    async def run_memory_diagnostics_once(self) -> None:
+        if not self._memory_diagnostics_enabled:
             return
-        self._next_memory_diagnostics_at = now + self._memory_diagnostics_interval
-        current, peak = tracemalloc.get_traced_memory()
+        async with self._memory_diagnostics_sample_lock:
+            self._set_memory_diagnostic_value("sample_running", 1)
+            worker: asyncio.Task[_MemoryDiagnosticsResult] | None = None
+            event_loop_probe: asyncio.Task[float] | None = None
+            try:
+                task_diagnostics = await self._capture_task_diagnostics()
+                worker = asyncio.create_task(
+                    asyncio.to_thread(self._collect_memory_diagnostics, task_diagnostics),
+                    name="metrics:memory-diagnostics-worker",
+                )
+                event_loop_probe = asyncio.create_task(
+                    self._measure_event_loop_lag(worker),
+                    name="metrics:memory-diagnostics-event-loop-probe",
+                )
+                try:
+                    result = await asyncio.shield(worker)
+                except asyncio.CancelledError:
+                    try:
+                        await worker
+                    except Exception:
+                        logger.exception("Memory diagnostics worker failed during shutdown")
+                    raise
+                event_loop_lag = await event_loop_probe
+                self._apply_memory_diagnostics(result, event_loop_lag=event_loop_lag)
+            except Exception:
+                self._last_memory_diagnostics_attempt_succeeded = False
+                self._memory_diagnostics_samples.labels("failure").inc()
+                self._set_memory_diagnostic_value("sample_success", 0)
+                self._set_memory_diagnostic_value("sample_stale", 1)
+                logger.exception("Memory diagnostics sample failed")
+            finally:
+                if event_loop_probe is not None:
+                    if not event_loop_probe.done():
+                        event_loop_probe.cancel()
+                    try:
+                        await event_loop_probe
+                    except asyncio.CancelledError:
+                        pass
+                self._set_memory_diagnostic_value("sample_running", 0)
+
+    async def _run_memory_diagnostics(self) -> None:
+        loop = asyncio.get_running_loop()
+        next_sample_at = loop.time()
+        while True:
+            now = loop.time()
+            self._set_memory_diagnostic_value(
+                "sampler_schedule_lag_seconds",
+                max(0.0, now - next_sample_at),
+            )
+            await self.run_memory_diagnostics_once()
+            next_sample_at = loop.time() + self._memory_diagnostics_interval
+            await asyncio.sleep(self._memory_diagnostics_interval)
+
+    async def _capture_task_diagnostics(self) -> _TaskDiagnostics:
+        started = perf_counter()
         task_names: CollectionCounter[str] = CollectionCounter()
         task_frames = 0
-        task_count = 0
-        try:
-            tasks = list(asyncio.all_tasks())
-        except RuntimeError:
-            tasks = []
-        for task in tasks:
-            task_count += 1
-            task_kind = task.get_name().split(":", 1)[0][:64]
+        tasks = list(asyncio.all_tasks())
+        for index, task in enumerate(tasks, start=1):
+            coroutine = task.get_coro()
+            coroutine_type = type(coroutine)
+            task_kind = f"{coroutine_type.__module__}.{coroutine_type.__qualname__}"[:128]
             task_names[task_kind] += 1
             task_frames += len(task.get_stack(limit=8))
+            if index % 64 == 0:
+                await asyncio.sleep(0)
+        return {
+            "task_names": tuple(task_names.most_common(20)),
+            "tasks": len(tasks),
+            "task_frames": task_frames,
+            "duration_seconds": perf_counter() - started,
+        }
+
+    @staticmethod
+    def _collect_memory_diagnostics(
+        task_diagnostics: _TaskDiagnostics,
+    ) -> _MemoryDiagnosticsResult:
+        total_started = perf_counter()
+        stage_durations: list[tuple[str, float]] = [
+            ("task_inventory", task_diagnostics["duration_seconds"])
+        ]
+
+        started = perf_counter()
+        current, peak = tracemalloc.get_traced_memory()
+        stage_durations.append(("traced_memory", perf_counter() - started))
+
+        started = perf_counter()
         object_counts: CollectionCounter[str] = CollectionCounter()
         tracked_objects = 0
         for value in gc.get_objects():
@@ -411,39 +604,107 @@ class PlatformMetrics:
                 ("liyans", "asyncio", "starlette", "uvicorn")
             ):
                 object_counts[f"{module}.{value_type.__qualname__}"] += 1
+        stage_durations.append(("object_inventory", perf_counter() - started))
+
+        started = perf_counter()
         snapshot = tracemalloc.take_snapshot()
-        top_allocations = [
+        top_allocations = tuple(
             {
                 "count": statistic.count,
                 "size_bytes": statistic.size,
                 "trace": str(statistic.traceback[0]),
             }
             for statistic in snapshot.statistics("traceback")[:8]
-        ]
-        diagnostics = {
+        )
+        stage_durations.append(("tracemalloc_snapshot", perf_counter() - started))
+
+        started = perf_counter()
+        process_memory = _read_process_memory()
+        stage_durations.append(("process_memory", perf_counter() - started))
+        values: dict[str, int | float] = {
             "tracemalloc_current_bytes": current,
             "tracemalloc_peak_bytes": peak,
-            "tasks": task_count,
-            "task_frames": task_frames,
+            "tasks": task_diagnostics["tasks"],
+            "task_frames": task_diagnostics["task_frames"],
             "tracked_objects": tracked_objects,
             "gc_generation_0": gc.get_count()[0],
             "gc_generation_1": gc.get_count()[1],
             "gc_generation_2": gc.get_count()[2],
         }
-        diagnostics.update(_read_process_memory())
-        for metric, value in diagnostics.items():
-            self._memory_diagnostics.labels(metric).set(value)
+        values.update(process_memory)
+        stage_durations.append(("total", perf_counter() - total_started))
+        return {
+            "values": values,
+            "task_names": task_diagnostics["task_names"],
+            "object_types": tuple(object_counts.most_common(20)),
+            "top_allocations": top_allocations,
+            "stage_durations": tuple(stage_durations),
+        }
+
+    async def _measure_event_loop_lag(self, worker: asyncio.Task[object]) -> float:
+        loop = asyncio.get_running_loop()
+        maximum_lag = 0.0
+        while not worker.done():
+            expected = loop.time() + 0.01
+            await asyncio.sleep(0.01)
+            maximum_lag = max(maximum_lag, loop.time() - expected)
+        return maximum_lag
+
+    def _apply_memory_diagnostics(
+        self,
+        result: Mapping[str, object],
+        *,
+        event_loop_lag: float,
+    ) -> None:
+        values = result.get("values", {})
+        if isinstance(values, Mapping):
+            for metric, value in values.items():
+                if isinstance(metric, str) and isinstance(value, int | float):
+                    self._set_memory_diagnostic_value(metric, value)
+        stage_durations = result.get("stage_durations", ())
+        if isinstance(stage_durations, Iterable):
+            for stage_duration in stage_durations:
+                if not isinstance(stage_duration, tuple) or len(stage_duration) != 2:
+                    continue
+                stage, duration = stage_duration
+                if stage in MEMORY_DIAGNOSTIC_STAGES and isinstance(duration, int | float):
+                    self._memory_diagnostics_duration.labels(str(stage)).observe(
+                        max(0.0, float(duration))
+                    )
+        self._set_memory_diagnostic_value("worker_event_loop_lag_seconds", event_loop_lag)
+        self._set_memory_diagnostic_value("sample_success", 1)
+        self._set_memory_diagnostic_value("sample_stale", 0)
+        self._last_memory_diagnostics_success_at = perf_counter()
+        self._last_memory_diagnostics_attempt_succeeded = True
+        self._memory_diagnostics_samples.labels("success").inc()
         logger.info(
             "Memory diagnostics snapshot %s",
             json.dumps(
                 {
-                    "tasks": task_names.most_common(20),
-                    "object_types": object_counts.most_common(20),
-                    "top_allocations": top_allocations,
+                    "event_loop_lag_seconds": event_loop_lag,
+                    "stage_durations": result.get("stage_durations", ()),
+                    "tasks": result.get("task_names", ()),
+                    "object_types": result.get("object_types", ()),
+                    "top_allocations": result.get("top_allocations", ()),
                 },
                 sort_keys=True,
             ),
         )
+
+    def _set_memory_diagnostic_value(self, metric: str, value: int | float) -> None:
+        if metric in MEMORY_DIAGNOSTIC_VALUE_NAMES:
+            self._memory_diagnostics.labels(metric).set(value)
+
+    def _refresh_memory_diagnostics_staleness(self) -> None:
+        if not self._memory_diagnostics_enabled:
+            return
+        last_success = self._last_memory_diagnostics_success_at
+        stale = (
+            not self._last_memory_diagnostics_attempt_succeeded
+            or last_success is None
+            or perf_counter() - last_success > (self._memory_diagnostics_interval * 2)
+        )
+        self._set_memory_diagnostic_value("sample_stale", 1 if stale else 0)
 
     def observe_http(
         self,

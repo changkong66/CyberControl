@@ -21,6 +21,7 @@ from gate_c.config import (  # noqa: E402
     is_duplicate_replay_client,
     is_slow_consumer,
 )
+from gate_c.finalize import _formal_execution_metadata  # noqa: E402
 from gate_c.monitor import (  # noqa: E402
     _process_memory_metrics,
     _size_bytes,
@@ -278,6 +279,130 @@ def test_gate_c_runner_preserves_volume_and_identity_boundaries() -> None:
     assert "Full Gate C acceptance requires an explicit fresh -PostgresVolumeName" in runner
     assert "$env:GATE_C_POSTGRES_VOLUME = $volumeName" in runner
     assert '"cybercontrol_gate_c_postgres"' not in runner
+
+
+def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None:
+    runner = (
+        Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-phase7-gate-c.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert '[ValidateSet("HarnessSmoke", "DiagnosticStages", "PreflightSmoke", "Full")]' in runner
+    assert '$processVersion = "Gate-C-11-v1.0"' in runner
+    assert "classification = $executionClassification" in runner
+    assert "process_version = $processVersion" in runner
+    assert 'formal_gate_attempt = ($Mode -eq "Full")' in runner
+    assert "acceptance_claim = $false" in runner
+    assert "diagnostic_stage_names = @($DiagnosticStageNames)" in runner
+    assert 'if ($Mode -in @("Full", "PreflightSmoke"))' in runner
+    assert "Full Gate C acceptance prohibits -SkipBuild." in runner
+    assert "DiagnosticStages requires explicit -DiagnosticStageNames." in runner
+    assert "PreflightSmoke cannot retain its environment." in runner
+    assert "Remove-EphemeralResources" in runner
+    assert "& docker volume rm $volumeName" in runner
+    assert "Ephemeral cleanup left PostgreSQL volume $volumeName behind." in runner
+    assert '$Mode -eq "DiagnosticStages"' in runner
+    assert "(Test-Path -LiteralPath $stageSummaryPath)" in runner
+    assert "Diagnostic stage $stageName retained a non-passing threshold summary." in runner
+
+    finalizer = (LOAD_ROOT / "gate_c" / "finalize.py").read_text(encoding="utf-8")
+    assert "execution = _formal_execution_metadata(args.run_dir)" in finalizer
+    assert '"process_version": execution["process_version"]' in finalizer
+    assert '"classification": execution["classification"]' in finalizer
+
+
+def test_gate_c_finalizer_requires_bound_formal_process_metadata(tmp_path: Path) -> None:
+    execution = {
+        "process_version": "Gate-C-11-v1.0",
+        "classification": "FORMAL_GATE_C_ATTEMPT",
+        "formal_gate_attempt": True,
+        "run_id": "gate-c-run",
+        "source_commit": "a" * 40,
+        "source_tree": "b" * 40,
+        "product_source_sha": "a" * 40,
+        "engineering_baseline_sha": "a" * 40,
+    }
+    (tmp_path / "execution-metadata.json").write_text(
+        json.dumps(execution),
+        encoding="utf-8",
+    )
+
+    assert _formal_execution_metadata(tmp_path) == execution
+
+    execution["classification"] = "PREFLIGHT_CHECK"
+    (tmp_path / "execution-metadata.json").write_text(
+        json.dumps(execution),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="non-formal"):
+        _formal_execution_metadata(tmp_path)
+
+
+def test_gate_c_source_built_images_have_bound_provenance_contract() -> None:
+    root = Path(__file__).resolve().parents[2]
+    dockerfiles = (
+        root / "infra" / "backend.Dockerfile",
+        root / "infra" / "frontend.Dockerfile",
+        root / "infra" / "mock-provider.Dockerfile",
+        root / "tests" / "load" / "Dockerfile",
+    )
+    expected_labels = (
+        "org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA}",
+        "com.cybercontrol.source-tree=${CYBERCONTROL_SOURCE_TREE}",
+        "com.cybercontrol.product-source=${CYBERCONTROL_PRODUCT_SOURCE_SHA}",
+        "com.cybercontrol.engineering-baseline=${CYBERCONTROL_ENGINEERING_BASELINE_SHA}",
+        "com.cybercontrol.process-version=${CYBERCONTROL_PROCESS_VERSION}",
+    )
+    for path in dockerfiles:
+        source = path.read_text(encoding="utf-8")
+        assert all(label in source for label in expected_labels), path
+
+    runner = (root / "tools" / "windows" / "run-phase7-gate-c.ps1").read_text(encoding="utf-8")
+    assert "$env:GATE_C_SOURCE_SHA = $sourceCommit" in runner
+    assert "$env:GATE_C_SOURCE_TREE = $sourceTree" in runner
+    assert "Assert-ImageProvenance" in runner
+    assert '"frontend",' in runner
+    assert '"gate-c-load"' in runner
+
+
+def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> None:
+    root = Path(__file__).resolve().parents[2]
+    runner = (root / "tools" / "windows" / "run-phase7-gate-c.ps1").read_text(encoding="utf-8")
+    compose = (root / "tests" / "load" / "docker-compose.gate-c.yml").read_text(encoding="utf-8")
+
+    assert '[ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]' in runner
+    assert '[string]$SmokeScenario = "ColdDeployment"' in runner
+    assert "$env:GATE_C_IMAGE_TAG = $sourceCommit" in runner
+    assert '"--profile", "gate-c-load"' in runner
+    assert "smoke_scenario = $SmokeScenario" in runner
+    assert '$Mode -in @("DiagnosticStages", "HarnessSmoke")' in runner
+    assert '$Mode -in @("PreflightSmoke", "HarnessSmoke")' in runner
+    assert 'Invoke-Compose @("down", "--remove-orphans", "--volumes")' in runner
+    assert "label=com.docker.compose.project=$ProjectName" in runner
+    assert "Ephemeral cleanup left Compose volumes" in runner
+    assert '"ControlledApiRestart" {' in runner
+    assert 'Invoke-Compose @("restart", "api")' in runner
+    assert 'Wait-ComposeServiceHealthy -Service "api"' in runner
+    assert '"StableIdle" {' in runner
+    assert "Start-Sleep -Seconds 300" in runner
+    assert "Get-ComposeImageReference" in runner
+    assert 'docker image inspect --format "{{.Id}}" $imageReference' in runner
+
+    assert compose.count("cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}") == 2
+    assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
+    assert "cybercontrol/gate-c-frontend:${GATE_C_IMAGE_TAG:-unknown}" in compose
+    assert "cybercontrol/gate-c-load:${GATE_C_IMAGE_TAG:-unknown}" in compose
+
+
+def test_gate_c_monitor_uses_the_compose_postgres_host_port() -> None:
+    runner = (
+        Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-phase7-gate-c.ps1"
+    ).read_text(encoding="utf-8")
+
+    assert "[int]$PostgresHostPort" in runner
+    assert "$env:LIYAN_POSTGRES_HOST_PORT = [string]$PostgresHostPort" in runner
+    assert "@127.0.0.1:${PostgresHostPort}/liyans" in runner
+    assert "postgres_host_port = $PostgresHostPort" in runner
+    assert "@127.0.0.1:5432/liyans" not in runner
 
 
 def test_gate_c_worker_credentials_are_disjoint_and_complete() -> None:

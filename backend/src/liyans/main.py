@@ -529,6 +529,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             resources.push_async_callback(app.state.outbox_wake_listener.close)
         topic4_runtime.mark_ready()
         topic4_metrics.ready.set(1)
+        await metrics.start_memory_diagnostics()
+        resources.push_async_callback(metrics.close)
         yield
 
 

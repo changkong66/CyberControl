@@ -31,6 +31,18 @@ RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend run build
 
 FROM ${NGINX_IMAGE} AS runtime
 
+ARG CYBERCONTROL_SOURCE_SHA=unknown
+ARG CYBERCONTROL_SOURCE_TREE=unknown
+ARG CYBERCONTROL_PRODUCT_SOURCE_SHA=unknown
+ARG CYBERCONTROL_ENGINEERING_BASELINE_SHA=unknown
+ARG CYBERCONTROL_PROCESS_VERSION=unknown
+
+LABEL org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA} \
+    com.cybercontrol.source-tree=${CYBERCONTROL_SOURCE_TREE} \
+    com.cybercontrol.product-source=${CYBERCONTROL_PRODUCT_SOURCE_SHA} \
+    com.cybercontrol.engineering-baseline=${CYBERCONTROL_ENGINEERING_BASELINE_SHA} \
+    com.cybercontrol.process-version=${CYBERCONTROL_PROCESS_VERSION}
+
 COPY --chown=65532:65532 infra/nginx/frontend.conf /etc/nginx/conf.d/nginx.default.conf
 COPY --chown=65532:65532 infra/nginx/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=builder --chown=65532:65532 /workspace/frontend/dist /usr/share/nginx/html

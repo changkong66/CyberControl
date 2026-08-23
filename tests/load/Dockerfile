@@ -13,6 +13,18 @@ RUN uv sync --frozen --no-dev --all-packages --no-editable --extra load
 
 FROM ${PYTHON_IMAGE} AS runtime
 
+ARG CYBERCONTROL_SOURCE_SHA=unknown
+ARG CYBERCONTROL_SOURCE_TREE=unknown
+ARG CYBERCONTROL_PRODUCT_SOURCE_SHA=unknown
+ARG CYBERCONTROL_ENGINEERING_BASELINE_SHA=unknown
+ARG CYBERCONTROL_PROCESS_VERSION=unknown
+
+LABEL org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA} \
+    com.cybercontrol.source-tree=${CYBERCONTROL_SOURCE_TREE} \
+    com.cybercontrol.product-source=${CYBERCONTROL_PRODUCT_SOURCE_SHA} \
+    com.cybercontrol.engineering-baseline=${CYBERCONTROL_ENGINEERING_BASELINE_SHA} \
+    com.cybercontrol.process-version=${CYBERCONTROL_PROCESS_VERSION}
+
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONPATH=/app/tests/load \
     PYTHONDONTWRITEBYTECODE=1 \

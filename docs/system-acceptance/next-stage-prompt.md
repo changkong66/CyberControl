@@ -139,7 +139,9 @@ docs/evidence merges verify the existing product-source image binding.
 - After two failed root-cause rounds in one problem domain, freeze code changes
   in that domain and return to measurement with a new root-cause report and
   explicit review. Counts are isolated by P0/P1/P2; one domain does not consume
-  another domain's count.
+  another domain's count. Freezing one domain does not by itself prevent another
+  domain from opening later, but every domain must still satisfy its own evidence
+  freshness and opening gates.
 
 ## P0: Eleventh Remediation
 

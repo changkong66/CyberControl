@@ -1,0 +1,50 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-summary.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "problem_domain": "P0",
+  "formal_gate_state": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "formal_gate_attempt": false,
+  "product_source_sha": "108e8aa0b6e85c304c9bcf4aa3a5c30ec6b5df1a",
+  "engineering_baseline_sha": "16bab5d90f9a054b5c04f2399248e5b56603185d",
+  "candidate_sha": "ea5ce1bd6c915a6488df62f65aeacad75ba8aa79",
+  "candidate_tree_sha": "f3bf70824f880b8f6a1d3040d579a5f802727c2f",
+  "test_harness_commit": "4ffe48efac3448e81e02759ec6aa14a0ad097818",
+  "test_harness_blob_sha": "98797e4daba3427dc9a1d1eebdd6b19aa41f2fa3",
+  "result": "A_FAILED_B_PASSED_A_PRIME_FAILED",
+  "identical_harness": {
+    "tests": 14,
+    "a": { "passed": 9, "failed": 5, "exit_code": 1 },
+    "b": { "passed": 14, "failed": 0, "exit_code": 0 },
+    "a_prime": { "passed": 9, "failed": 5, "exit_code": 1 }
+  },
+  "expanded_candidate": {
+    "tests": 24,
+    "passed": 24,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "collector_measurement": {
+    "claim_boundary": "diagnostic operation only; not a Gate C load or client-scale claim",
+    "synthetic_retained_object_count": 200000,
+    "tracemalloc_current_bytes": 44929512,
+    "collection_total_seconds": 4.358101200000192,
+    "tracemalloc_snapshot_seconds": 4.207204500000216,
+    "object_inventory_seconds": 0.1498890999998821,
+    "heartbeat_interval_seconds": 0.005,
+    "heartbeat_max_lag_seconds": 0.22900000000004184,
+    "heartbeat_samples": 209
+  },
+  "frozen_threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "frozen_workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "p0_smoke_disproof": {
+    "candidate_sha": "97e1b75fff6c21418ad939edeaa9a0676c35c043",
+    "candidate_tree_sha": "bd8a5340759585c873fa7176aa4cd26d7a66996e",
+    "scenarios_passed": 3,
+    "scenarios_required": 3,
+    "package_sha256": "d7f0ffa5f6bd31acfa541db0d58182bc1f881fab55b2c4b6251e7f2cdc6b78e1",
+    "release_id": 375228332,
+    "milestone": "M1"
+  },
+  "next_required_gate": "Require final-head push and pull-request CI 8/8, Squash Merge, protected-main CI 8/8, disposable preflight, then one fresh complete formal Gate C run.",
+  "acceptance_claim": false
+}
