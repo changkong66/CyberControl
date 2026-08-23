@@ -1,0 +1,59 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-package-reference.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "DIAGNOSTIC_ABA_PRIME",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "root_cause_domain": "P2",
+  "root_cause_round": 1,
+  "run_ids": [
+    "gate-c-diagnostic-20260823T172157Z",
+    "gate-c-diagnostic-20260823T174148Z",
+    "gate-c-diagnostic-20260823T180320Z"
+  ],
+  "local_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c-11-p2-aba-round1-20260824-v1.zip",
+  "bytes": 3409206,
+  "sha256": "24f9affca5033099bdcd8bae3622dc2ea00fef8c3bf844df6701fa1f930e2d2a",
+  "manifest_sha256": "88a3ba8e7c40b791d72f57ace43f09a4981ae308320689b21047f521478f5a0a",
+  "redaction_scan_sha256": "3027dd2048bb0f8ca1b176171c9294d59754a7ef46d03c0b5def8705bc27d838",
+  "parent_source_sha": "d5494dd1dce671c30ebfe40e046319d7572a52f5",
+  "parent_source_tree_sha": "cd328fdb84812e46178ebf204f934a371812f034",
+  "candidate_source_sha": "e8a3b5688a5aec85aa150b0b2ad962d137a4afec",
+  "candidate_source_tree_sha": "f429be9339d579b1f8861e8df2f8de74f5d2da9a",
+  "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "engineering_baseline_sha": "d5494dd1dce671c30ebfe40e046319d7572a52f5",
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "postgres_volumes_preserved": [
+    "cybercontrol_gate_c_11_p2_a_20260824",
+    "cybercontrol_gate_c_11_p2_b_20260824",
+    "cybercontrol_gate_c_11_p2_a_prime_20260824"
+  ],
+  "redaction_scan": {
+    "passed": true,
+    "jwt_hits": 0,
+    "authorization_bearer_hits": 0,
+    "private_key_hits": 0,
+    "credential_assignment_hits": 0,
+    "email_hits": 0,
+    "phone_hits": 0,
+    "workspace_user_path_hits": 0
+  },
+  "external_package": {
+    "status": "VERIFIED_IMMUTABLE_RELEASE",
+    "release_id": 375290835,
+    "release_tag": "phase7-gate-c-11-p2-aba-round1-20260824-v1",
+    "release_uri": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-aba-round1-20260824-v1",
+    "release_immutable": true,
+    "release_prerelease": true,
+    "release_target": "d5494dd1dce671c30ebfe40e046319d7572a52f5",
+    "published_at": "2026-08-23T18:27:02Z",
+    "asset_id": 526503439,
+    "asset_name": "gate-c-11-p2-aba-round1-20260824-v1.zip",
+    "asset_uri": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-11-p2-aba-round1-20260824-v1/gate-c-11-p2-aba-round1-20260824-v1.zip",
+    "asset_state": "uploaded",
+    "verified_bytes": 3409206,
+    "verified_sha256": "24f9affca5033099bdcd8bae3622dc2ea00fef8c3bf844df6701fa1f930e2d2a",
+    "server_digest": "sha256:24f9affca5033099bdcd8bae3622dc2ea00fef8c3bf844df6701fa1f930e2d2a"
+  }
+}

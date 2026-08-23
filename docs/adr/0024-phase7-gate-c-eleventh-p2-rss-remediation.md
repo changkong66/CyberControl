@@ -2,7 +2,7 @@
 
 Process Version: `Gate-C-11-v1.0`
 
-- Status: Proposed, root-cause round 1
+- Status: Root-cause round 1 rejected; round 2 measurement in progress
 - Product source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Product tree: `f721fca017c247aee93765d5f11fcbc37e12fcfc`
 - Engineering baseline: `d5494dd1dce671c30ebfe40e046319d7572a52f5`
@@ -136,6 +136,35 @@ mandatory.
 
 Diagnostic package references and final A/B/A' results must be appended here
 before a behavior commit is eligible for review.
+
+### Root-Cause Round 1 Result
+
+The A/B/A' comparison rejected the proposed allocator-domain change. A and A'
+were independent parent images; A' was rebuilt with `--no-cache`. B removed
+only `PYTHONMALLOC=malloc`. All three real 200-stream stages passed, but B's
+cgroup recovery ratio was `1.213483` versus `1.195388/1.185319` in A/A', and
+its RSS ratio was only marginally lower at `1.126844` versus
+`1.143331/1.137403`. B reduced jemalloc active-minus-allocated growth to
+`1,287,688` bytes from `9,214,816/7,641,872`, while anonymous RSS still grew
+`28,217,344` bytes. This proves allocation accounting moved outside jemalloc
+without materially solving total retention. B also exposed API pool gauge `-1`
+throughout recovery. The candidate was reverted and was not escalated to a
+2,000-stream diagnostic.
+
+- Comparison: `docs/diagnostics/phase7-gate-c-eleventh-p2/round1-comparison.json`
+- Root-cause record:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round1-root-cause.md`
+- Package reference:
+  `docs/diagnostics/phase7-gate-c-eleventh-p2/round1-package-reference.json`
+- Immutable package SHA256:
+  `24f9affca5033099bdcd8bae3622dc2ea00fef8c3bf844df6701fa1f930e2d2a`
+- Immutable Release:
+  https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-aba-round1-20260824-v1
+
+Round 2 retains the parent allocator and enables the existing opt-in bounded
+diagnostic sampler from process start. It must identify whether live allocated
+bytes remain reachable from Python objects/tasks/frames or are native
+high-water state before another behavior candidate is permitted.
 
 ## Stop Conditions
 
