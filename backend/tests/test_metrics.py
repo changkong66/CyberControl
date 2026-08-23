@@ -327,3 +327,92 @@ async def test_memory_diagnostics_failure_keeps_scrape_available_and_labels_boun
     assert "tenant" not in rendered
     assert "subject" not in rendered
     assert "cursor" not in rendered
+
+
+@pytest.mark.asyncio
+async def test_memory_diagnostics_discard_unapproved_metric_and_stage_labels(monkeypatch) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+    result = {
+        "values": {
+            "tasks": 3,
+            "tenant-secret-value": 99,
+        },
+        "task_names": (),
+        "object_types": (),
+        "top_allocations": (),
+        "stage_durations": (
+            ("total", 0.01),
+            ("subject-secret-value", 4.0),
+        ),
+    }
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", lambda _tasks: result)
+
+    await metrics.run_memory_diagnostics_once()
+    rendered = metrics.render().decode("utf-8")
+
+    assert 'metric="tasks"} 3.0' in rendered
+    assert 'stage="total"} 0.01' in rendered
+    assert "tenant-secret-value" not in rendered
+    assert "subject-secret-value" not in rendered
+
+
+@pytest.mark.asyncio
+async def test_memory_diagnostics_failure_retains_last_completed_sample(monkeypatch) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+    result = {
+        "values": {"tracemalloc_current_bytes": 123},
+        "task_names": (),
+        "object_types": (),
+        "top_allocations": (),
+        "stage_durations": (("total", 0.01),),
+    }
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", lambda _tasks: result)
+    await metrics.run_memory_diagnostics_once()
+
+    def failing_collector(_tasks):
+        raise RuntimeError("controlled diagnostic failure")
+
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", failing_collector)
+    await metrics.run_memory_diagnostics_once()
+    rendered = metrics.render().decode("utf-8")
+
+    assert 'metric="tracemalloc_current_bytes"} 123.0' in rendered
+    assert 'metric="sample_success"} 0.0' in rendered
+    assert 'metric="sample_stale"} 1.0' in rendered
+    assert 'stage="total"} 0.01' in rendered
+
+
+@pytest.mark.asyncio
+async def test_memory_diagnostics_close_waits_for_inflight_worker(monkeypatch) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    metrics = PlatformMetrics()
+    started = threading.Event()
+    release = threading.Event()
+
+    def controlled_collector(_tasks):
+        started.set()
+        assert release.wait(1.0)
+        return {
+            "values": {},
+            "task_names": (),
+            "object_types": (),
+            "top_allocations": (),
+            "stage_durations": (),
+        }
+
+    monkeypatch.setattr(metrics, "_collect_memory_diagnostics", controlled_collector)
+    await metrics.start_memory_diagnostics()
+    assert await asyncio.to_thread(started.wait, 0.5)
+
+    close_task = asyncio.create_task(metrics.close())
+    await asyncio.sleep(0.01)
+    assert close_task.done() is False
+
+    release.set()
+    await asyncio.wait_for(close_task, timeout=0.5)
+    rendered = metrics.render().decode("utf-8")
+
+    assert metrics.memory_diagnostics_task is None
+    assert 'metric="sample_running"} 0.0' in rendered

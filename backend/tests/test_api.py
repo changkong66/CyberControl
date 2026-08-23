@@ -231,3 +231,30 @@ async def test_internal_api_enforces_route_scopes(monkeypatch, tmp_path: Path) -
     assert response.status_code == 403
     assert response.json()["error"]["error_code"] == "LIYAN-AUTH-FORBIDDEN"
     get_settings.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_lifespan_owns_and_closes_memory_diagnostics_sampler(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("LIYAN_AUDIT_LOG_PATH", str(tmp_path / "audit.jsonl"))
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+    get_settings.cache_clear()
+    app = create_app()
+    app.state.metrics._collect_memory_diagnostics = lambda _tasks: {
+        "values": {},
+        "task_names": (),
+        "object_types": (),
+        "top_allocations": (),
+        "stage_durations": (),
+    }
+
+    async with app.router.lifespan_context(app):
+        sampler = app.state.metrics.memory_diagnostics_task
+        assert sampler is not None
+        assert sampler.done() is False
+
+    assert sampler.done()
+    assert app.state.metrics.memory_diagnostics_task is None
+    get_settings.cache_clear()
