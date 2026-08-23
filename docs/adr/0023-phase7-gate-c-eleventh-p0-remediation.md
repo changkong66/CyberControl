@@ -1,6 +1,6 @@
 # ADR-0023: Phase 7 Gate C Eleventh P0 Remediation
 
-**Status:** Proposed before behavior changes
+**Status:** Accepted for candidate validation; fresh Smoke pending
 
 **Process Version:** `Gate-C-11-v1.0`
 
@@ -41,6 +41,24 @@ above 1.10.
 - immutable Release tag:
   `phase7-gate-c-tenth-remediation-failed-20260815-64792b0-evidence-v1`;
 - failure archive PR: #76.
+
+Candidate diagnostic evidence:
+
+- A run: `gate-c-11-p0-a-20260821T214559Z-16bab5d`;
+- B comparator run: `gate-c-11-p0-b-comparator-20260823T091130Z-ea5ce1b`;
+- A' run: `gate-c-11-p0-a-prime-20260823T090935Z-16bab5d`;
+- expanded B run: `gate-c-11-p0-b-20260823T090815Z-ea5ce1b`;
+- repository summary:
+  `docs/diagnostics/phase7-gate-c-eleventh-p0/summary.json`;
+- root-cause record:
+  `docs/diagnostics/phase7-gate-c-eleventh-p0/root-cause.md`;
+- raw package SHA256:
+  `761df19ef74b9307d120e04562acaadc0b4016553d0045405c74147176e67aef`;
+- package reference:
+  `docs/diagnostics/phase7-gate-c-eleventh-p0/package-reference.json`.
+
+The immutable external package upload remains a merge blocker until the package
+reference records and verifies its Release and asset URI.
 
 The historical run predates this process version and remains recorded with
 `process_version: null`. This ADR applies `Gate-C-11-v1.0` only to new
@@ -167,6 +185,15 @@ This logical ownership defect uses the low-cost deterministic layer:
 Only after deterministic A/B/A', focused integration coverage and the full
 Release Quality Gates pass may candidate Smoke begin. Full Gate C is not an
 A/B/A' test tool.
+
+The identical 14-test blob produced A `9 passed / 5 failed`, B `14 passed`,
+and A' `9 passed / 5 failed`. The expanded B regression set produced `24/24`
+passes. An operation-level collector measurement with 200,000 retained local
+objects recorded `4.3581012s` total collection, `4.2072045s` tracemalloc
+snapshot time, and `0.2290000s` maximum event-loop heartbeat lag. This is not
+a Gate C client-scale claim; it proves that worker duration and residual GIL
+delay are separately measurable and leaves fresh Smoke as the required P0
+disproof.
 
 ## Change Impact And Semantic Redlines
 

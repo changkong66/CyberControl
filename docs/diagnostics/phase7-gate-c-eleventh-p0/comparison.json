@@ -1,0 +1,44 @@
+{
+  "schema_version": "cybercontrol.gate-c-p0-aba-comparison.v2",
+  "process_version": "Gate-C-11-v1.0",
+  "test_file": "backend/tests/test_metrics.py",
+  "test_harness_blob_sha": "98797e4daba3427dc9a1d1eebdd6b19aa41f2fa3",
+  "test_count": 14,
+  "arms": [
+    {
+      "arm": "A",
+      "run_id": "gate-c-11-p0-a-20260821T214559Z-16bab5d",
+      "worktree_head_sha": "4ffe48efac3448e81e02759ec6aa14a0ad097818",
+      "implementation_source_sha": "16bab5d90f9a054b5c04f2399248e5b56603185d",
+      "implementation_tree_sha": "e8a8e5e4a9c062bb74e0d6db1d206cf287f1bf3d",
+      "test_harness_overlay": false,
+      "passed": 9,
+      "failed": 5,
+      "exit_code": 1
+    },
+    {
+      "arm": "B",
+      "run_id": "gate-c-11-p0-b-comparator-20260823T091130Z-ea5ce1b",
+      "worktree_head_sha": "ea5ce1bd6c915a6488df62f65aeacad75ba8aa79",
+      "implementation_source_sha": "ea5ce1bd6c915a6488df62f65aeacad75ba8aa79",
+      "implementation_tree_sha": "f3bf70824f880b8f6a1d3040d579a5f802727c2f",
+      "test_harness_overlay": true,
+      "passed": 14,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "arm": "A_prime",
+      "run_id": "gate-c-11-p0-a-prime-20260823T090935Z-16bab5d",
+      "worktree_head_sha": "16bab5d90f9a054b5c04f2399248e5b56603185d",
+      "implementation_source_sha": "16bab5d90f9a054b5c04f2399248e5b56603185d",
+      "implementation_tree_sha": "e8a8e5e4a9c062bb74e0d6db1d206cf287f1bf3d",
+      "test_harness_overlay": true,
+      "passed": 9,
+      "failed": 5,
+      "exit_code": 1
+    }
+  ],
+  "conclusion": "The exact parent implementation fails, the candidate passes, and an independent exact-parent worktree fails with the identical test blob.",
+  "acceptance_claim": false
+}
