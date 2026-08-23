@@ -44,8 +44,9 @@ The mandatory full semantic regression set remains a pre-merge requirement.
 
 ## Execution Contract
 
-Commits `6465519` and `4e22371` add the process-level regression and runner
-implementation required by `Gate-C-11-v1.0`:
+Commits `6465519`, `4e22371`, `34a8841`, `dac33b4` and `f2b5769` add the
+process-level regression and runner implementation required by
+`Gate-C-11-v1.0`:
 
 - `DiagnosticStages` records selected stages and non-passing diagnostic
   summaries without invoking the formal finalizer or making an acceptance
@@ -58,9 +59,38 @@ implementation required by `Gate-C-11-v1.0`:
   finalizer;
 - source-built images carry and are checked against source/tree, product source,
   engineering baseline and process-version labels before any workload starts;
+- candidate Smoke exposes independent `ColdDeployment`,
+  `ControlledApiRestart` and five-minute `StableIdle` scenarios, all using
+  unique disposable projects, networks and PostgreSQL volumes;
+- stable source-SHA image references let those independent projects use one
+  verified candidate image digest without inheriting runtime state;
 - formal summaries and manifests reject non-formal or unknown-process execution
   metadata and preserve both baseline SHAs.
 
 These are execution provenance and isolation controls. They do not alter
 application runtime settings, frozen workload/threshold aggregation, client
 timeouts, database configuration, identity authority or acceptance semantics.
+
+## Local Quality Evidence
+
+The complete local suite passed at committed candidate
+`f2b5769065bb56932ddd6d43a8d70a937414a170`: deterministic Python
+`665 passed, 1 skipped, 86 deselected`; real PostgreSQL/Keycloak `751 passed,
+1 environment skip`; Python coverage 91.91%; frontend 72 tests with 92.38%
+line coverage; Playwright 8/8; and all Ruff, contract, migration, Go,
+frontend build/typecheck, audit, SBOM/license, production-container, Trivy and
+Gitleaks controls passed. Trivy and Gitleaks reported zero findings.
+
+An earlier fresh integration environment omitted the real `keycloak-config`
+bootstrap and correctly produced two fail-closed identity-test failures from
+empty server-derived Keycloak attributes. After the bootstrap was run, those
+same tests passed 2/2. The authoritative complete suite ran in a separate,
+fully configured environment named
+`cybercontrol-gate-c-11-quality-final2-20260823` with fresh PostgreSQL volume
+`cybercontrol-gate-c-11-quality-final2-20260823_liyans-postgres`.
+
+Windows reserved ports `5113-5212` after the Docker restart. Playwright was
+therefore measured on temporary port 5275; the configuration was restored and
+no port change is committed. Neither local quality nor runner-contract tests
+are M1 or formal Gate C acceptance. Three real candidate Smoke runs remain
+mandatory.

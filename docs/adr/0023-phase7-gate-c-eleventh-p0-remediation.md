@@ -1,6 +1,6 @@
 # ADR-0023: Phase 7 Gate C Eleventh P0 Remediation
 
-**Status:** Accepted for candidate validation; fresh Smoke pending
+**Status:** Local quality gates passed; fresh candidate Smoke pending
 
 **Process Version:** `Gate-C-11-v1.0`
 
@@ -219,6 +219,59 @@ sampler readiness, timeout/failure isolation, cancellation and double-stop,
 fixed label cardinality and unchanged scrape output. The mandatory core
 semantic regression set remains required even though this P0 change does not
 modify those modules.
+
+## Local Release Quality Gate Result
+
+The complete local Release Quality Gate suite passed on committed candidate
+`f2b5769065bb56932ddd6d43a8d70a937414a170`. The observed results were:
+
+- conventional commit subjects: 11 validated;
+- Ruff and frozen contract regeneration/drift: passed;
+- Go fmt, vet, race, test and build: passed;
+- frontend typecheck, build, audit, SBOM and license checks: passed;
+- Python audit, SBOM and license checks: passed;
+- deterministic Python: `665 passed, 1 skipped, 86 deselected`;
+- real PostgreSQL/Keycloak: `751 passed, 1 environment skip`;
+- Python coverage: `91.91%`;
+- migrations `0001 -> 0010 -> base -> 0010` and schema drift: passed;
+- production container, non-root and minimal-runtime checks: passed;
+- Trivy: zero vulnerabilities;
+- Gitleaks history and worktree scans: zero leaks.
+
+The separately executed frontend coverage suite reported 72 tests across 14
+files and 92.38% line coverage. Playwright passed 8/8. Windows reserved the
+configured `5113-5212` port interval after a Docker restart, so the browser
+suite used temporary port 5275; its configuration was restored and is absent
+from the committed diff.
+
+The first fresh integration environment omitted the real `keycloak-config`
+bootstrap service. Two identity tests then failed closed because Keycloak
+returned empty server-side user attributes. Running `keycloak-config` made
+those same tests pass 2/2. The final quality suite used a new fully configured
+environment, `cybercontrol-gate-c-11-quality-final2-20260823`, with fresh
+PostgreSQL volume
+`cybercontrol-gate-c-11-quality-final2-20260823_liyans-postgres`. This is an
+environment-bootstrap diagnosis, not a product pass or failure reinterpretation.
+
+## Candidate Smoke Execution Contract
+
+Commits `34a8841`, `dac33b4` and `f2b5769` make the three candidate Smoke arms
+explicit and independently disposable:
+
+- `ColdDeployment` starts from newly created project, network and PostgreSQL
+  volume resources;
+- `ControlledApiRestart` performs a controlled API restart and waits for the
+  service to return healthy before starting the frozen Smoke stage;
+- `StableIdle` holds the fresh deployment idle for five minutes before the
+  frozen Smoke stage;
+- all source-built service images use stable source-SHA references, and their
+  OCI provenance labels are checked before load begins;
+- every candidate Smoke removes and verifies removal of its exact Compose
+  containers, network and PostgreSQL volume on exit.
+
+The three Smoke arms must use one image digest while retaining unique projects,
+run directories and volumes. This contract has deterministic tests, but no
+candidate Smoke result is claimed here. M1 remains pending.
 
 ## Stop Conditions
 
