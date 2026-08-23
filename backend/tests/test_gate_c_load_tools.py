@@ -372,6 +372,7 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert '[ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]' in runner
     assert '[string]$SmokeScenario = "ColdDeployment"' in runner
     assert "$env:GATE_C_IMAGE_TAG = $sourceCommit" in runner
+    assert '"--profile", "gate-c-load"' in runner
     assert "smoke_scenario = $SmokeScenario" in runner
     assert '"ControlledApiRestart" {' in runner
     assert 'Invoke-Compose @("restart", "api")' in runner
