@@ -1,0 +1,63 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-capability-validation.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "LOCAL_CAPABILITY_TEST",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "source": {
+    "source_sha": "f8ee3fd32ce11190bf658091b90eea510491a2bd",
+    "source_tree": "34fa87f25c86d8da4e21b677f104957ab0129c59",
+    "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+    "engineering_baseline_sha": "cca2194382d8e2730fc32cf4341589acf11f1c53"
+  },
+  "image": {
+    "reference": "cybercontrol/gate-c-11-p2-checkpoint-runtime:f8ee3fd",
+    "digest": "sha256:51c5bead7d83ad4aa6c00663b83dca90e22ed1113b019add37b6a2fbe85a5222",
+    "runtime": "Alpine Linux / jemalloc 5.3.0-r6",
+    "source_labels_verified": true
+  },
+  "checkpoint_results": {
+    "baseline": {
+      "host_wall_seconds": 1.342,
+      "capture_seconds": 0.85293,
+      "rss_bytes": 66146304,
+      "jemalloc_allocated_bytes": 45063832,
+      "active_bin_count": 36,
+      "active_large_extent_count": 23,
+      "manifest_sha256": "3c27843c18cce584000b49c4130082af42fe56faab64ef32e9aca9bcbabcd36d"
+    },
+    "recovery": {
+      "host_wall_seconds": 1.17,
+      "capture_seconds": 0.853796,
+      "rss_bytes": 69029888,
+      "jemalloc_allocated_bytes": 44528352,
+      "active_bin_count": 36,
+      "active_large_extent_count": 24,
+      "manifest_sha256": "22f0cfa7921b5f9209611432c915ad18472eb6c198b3b60503ba383b76643377"
+    },
+    "comparison": {
+      "complete_traceback_group_count": 102,
+      "tracemalloc_size_diff_bytes": 42076,
+      "rss_delta_bytes": 2883584,
+      "manifest_sha256": "f88d50eabc9957507f09414218e6136071702cb96d161cf15265b51071009c8b"
+    }
+  },
+  "tests": {
+    "python_non_integration": {
+      "passed": 676,
+      "skipped": 2,
+      "deselected": 88
+    },
+    "real_postgresql_pool_cancellation_timeout": {
+      "postgresql": "16-alpine",
+      "migration_head": "20260720_0010",
+      "passed": 3
+    },
+    "focused_instrumentation": {
+      "passed": 64,
+      "skipped": 1
+    }
+  },
+  "artifact_location": "C:/Users/wch06/AppData/Local/Temp/cybercontrol-gate-c-11-p2-checkpoint-runtime-f8ee3fd",
+  "boundary": "This capability check used no Gate C workload and proves no RSS owner or acceptance control. P2 product changes remain frozen."
+}
