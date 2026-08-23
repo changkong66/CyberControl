@@ -12,6 +12,27 @@ from liyans.infrastructure.observability.metrics import PlatformMetrics
 logger = logging.getLogger(__name__)
 
 
+def _pool_inventory(engine: AsyncEngine) -> dict[str, int]:
+    pool = engine.sync_engine.pool
+    statement_cache_entries = 0
+    records = getattr(getattr(pool, "_pool", None), "queue", ())
+    for record in tuple(records):
+        connection = getattr(record, "dbapi_connection", None)
+        driver_connection = getattr(connection, "driver_connection", None)
+        statement_cache = getattr(driver_connection, "_stmt_cache", None)
+        if statement_cache is not None:
+            statement_cache_entries += len(statement_cache)
+    compiled_cache = getattr(engine.sync_engine, "_compiled_cache", None)
+    return {
+        "size": max(0, int(pool.size())),
+        "checked_in": max(0, int(pool.checkedin())),
+        "checked_out": max(0, int(pool.checkedout())),
+        "overflow": max(0, int(pool.overflow())),
+        "compiled_cache_entries": len(compiled_cache) if compiled_cache is not None else 0,
+        "statement_cache_entries": statement_cache_entries,
+    }
+
+
 def create_database_engine(
     settings: Settings,
     *,
@@ -65,6 +86,7 @@ def create_database_engine(
         metrics.register_database_pool_checked_out_reader(
             pool_name,
             engine.sync_engine.pool.checkedout,
+            inventory_reader=lambda: _pool_inventory(engine),
         )
 
     return engine

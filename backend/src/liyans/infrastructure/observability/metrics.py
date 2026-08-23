@@ -21,6 +21,8 @@ from prometheus_client.core import Metric
 from prometheus_client.exposition import generate_latest
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from liyans.infrastructure.observability.memory_checkpoints import MemoryCheckpointManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -198,6 +200,73 @@ class _JemallocStatsReader:
             return None
         return {name: int(value) for name, value in values.items()}
 
+    def allocation_inventory(self) -> dict[str, object] | None:
+        summary = self.snapshot()
+        if summary is None:
+            return None
+        arena_count = self._read("arenas.narenas", ctypes.c_uint)
+        bin_count = self._read("arenas.nbins", ctypes.c_uint)
+        large_extent_count = self._read("arenas.nlextents", ctypes.c_uint)
+        if arena_count is None or bin_count is None or large_extent_count is None:
+            return None
+        bins: list[dict[str, int]] = []
+        large_extents: list[dict[str, int]] = []
+        for arena in range(arena_count):
+            for index in range(bin_count):
+                size = self._read(f"arenas.bin.{index}.size", ctypes.c_size_t)
+                live_regions = self._read(
+                    f"stats.arenas.{arena}.bins.{index}.curregs",
+                    ctypes.c_size_t,
+                )
+                allocations = self._read(
+                    f"stats.arenas.{arena}.bins.{index}.nmalloc",
+                    ctypes.c_uint64,
+                )
+                slabs = self._read(
+                    f"stats.arenas.{arena}.bins.{index}.nslabs",
+                    ctypes.c_uint64,
+                )
+                if None in {size, live_regions, allocations, slabs}:
+                    continue
+                if live_regions or allocations or slabs:
+                    bins.append(
+                        {
+                            "arena": arena,
+                            "index": index,
+                            "size_bytes": int(size),
+                            "allocations": int(allocations),
+                            "live_regions": int(live_regions),
+                            "slabs": int(slabs),
+                        }
+                    )
+            for index in range(large_extent_count):
+                size = self._read(f"arenas.lextent.{index}.size", ctypes.c_size_t)
+                live_extents = self._read(
+                    f"stats.arenas.{arena}.lextents.{index}.curlextents",
+                    ctypes.c_size_t,
+                )
+                allocations = self._read(
+                    f"stats.arenas.{arena}.lextents.{index}.nmalloc",
+                    ctypes.c_uint64,
+                )
+                if None in {size, live_extents, allocations}:
+                    continue
+                if live_extents or allocations:
+                    large_extents.append(
+                        {
+                            "arena": arena,
+                            "index": index,
+                            "size_bytes": int(size),
+                            "allocations": int(allocations),
+                            "live_extents": int(live_extents),
+                        }
+                    )
+        return {
+            "summary": summary,
+            "bins": bins,
+            "large_extents": large_extents,
+        }
+
 
 class _BatchedHistogramChild:
     def __init__(self, histogram: _BatchedHistogram, label_values: tuple[str, ...]) -> None:
@@ -294,6 +363,16 @@ class PlatformMetrics:
             "LIYAN_MEMORY_DIAGNOSTICS",
             "",
         ).strip().lower() in {"1", "true", "yes", "on"}
+        if (
+            self._memory_diagnostics_enabled
+            and os.getenv("LIYAN_MEMORY_CHECKPOINT_DIR", "").strip()
+        ):
+            raise ValueError(
+                "periodic memory diagnostics and checkpoint mode are mutually exclusive"
+            )
+        self._memory_checkpoints = MemoryCheckpointManager.from_environment(
+            allocator_reader=self.allocator_inventory,
+        )
         self._memory_diagnostics_interval = max(
             5.0,
             float(os.getenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "30")),
@@ -384,6 +463,7 @@ class PlatformMetrics:
             registry=self.registry,
         )
         self._database_pool_checked_out_readers: dict[str, Callable[[], int]] = {}
+        self._database_pool_inventory_readers: dict[str, Callable[[], Mapping[str, int]]] = {}
         self._database_pool_capacity = Gauge(
             "liyans_database_pool_capacity",
             "Configured maximum size of a named SQLAlchemy pool.",
@@ -480,7 +560,19 @@ class PlatformMetrics:
     def memory_diagnostics_task(self) -> asyncio.Task[None] | None:
         return self._memory_diagnostics_task
 
+    @property
+    def memory_checkpoints(self) -> MemoryCheckpointManager:
+        return self._memory_checkpoints
+
+    def register_memory_checkpoint_inventory(
+        self,
+        name: str,
+        reader: Callable[[], Mapping[str, object]],
+    ) -> None:
+        self._memory_checkpoints.register_inventory(name, reader)
+
     async def start_memory_diagnostics(self) -> None:
+        await self._memory_checkpoints.start()
         if not self._memory_diagnostics_enabled:
             return
         async with self._memory_diagnostics_lifecycle_lock:
@@ -492,6 +584,7 @@ class PlatformMetrics:
             )
 
     async def close(self) -> None:
+        await self._memory_checkpoints.close()
         async with self._memory_diagnostics_lifecycle_lock:
             task = self._memory_diagnostics_task
             if task is None:
@@ -773,11 +866,15 @@ class PlatformMetrics:
         self,
         pool_name: str,
         reader: Callable[[], int],
+        *,
+        inventory_reader: Callable[[], Mapping[str, int]] | None = None,
     ) -> None:
         label = self._database_pool_label(pool_name)
         if label in self._database_pool_checked_out_readers:
             raise ValueError(f"database pool reader already registered for {label}")
         self._database_pool_checked_out_readers[label] = reader
+        if inventory_reader is not None:
+            self._database_pool_inventory_readers[label] = inventory_reader
 
         def read_absolute_checked_out() -> int:
             value = int(reader())
@@ -786,6 +883,37 @@ class PlatformMetrics:
             return value
 
         self._database_pool_checked_out.labels(label).set_function(read_absolute_checked_out)
+
+    def diagnostic_inventory(self) -> dict[str, object]:
+        pools: dict[str, dict[str, int]] = {}
+        for label, reader in self._database_pool_checked_out_readers.items():
+            checked_out = int(reader())
+            if checked_out < 0:
+                raise RuntimeError("database pool checked-out reader returned a negative value")
+            values = {"checked_out": checked_out}
+            inventory_reader = self._database_pool_inventory_readers.get(label)
+            if inventory_reader is not None:
+                values.update(
+                    {
+                        str(name)[:64]: int(value)
+                        for name, value in inventory_reader().items()
+                        if isinstance(value, int) and value >= 0
+                    }
+                )
+            pools[label] = values
+
+        metric_families: dict[str, int] = {}
+        for family in self.registry.collect():
+            metric_families[family.name[:128]] = len(
+                {(sample.name, tuple(sorted(sample.labels.items()))) for sample in family.samples}
+            )
+        return {
+            "database_pools": pools,
+            "prometheus_label_states": metric_families,
+        }
+
+    def allocator_inventory(self) -> dict[str, object] | None:
+        return self._jemalloc_stats.allocation_inventory()
 
     def observe_database_pool_acquisition_timeout(self, pool_name: str) -> None:
         self._database_pool_acquisition_timeouts.labels(self._database_pool_label(pool_name)).inc()

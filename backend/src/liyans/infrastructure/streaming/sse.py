@@ -373,6 +373,9 @@ class ReplayCursorCodec:
                 status_code=400,
             ) from exc
 
+    def diagnostic_inventory(self) -> dict[str, int]:
+        return {"entries": len(self._encoded), "capacity": self._cache_size}
+
 
 class InMemorySSEReplayLog:
     def __init__(
@@ -756,6 +759,31 @@ class SSEBroker:
             for tenant_id, subscribers in self._subscribers.items()
             if any(not subscriber.closed for subscriber in subscribers)
         )
+
+    def diagnostic_inventory(self) -> dict[str, int]:
+        subscribers = [
+            subscriber
+            for items in self._subscribers.values()
+            for subscriber in items
+            if not subscriber.closed
+        ]
+        return {
+            "subscribers": len(subscribers),
+            "subscribers_live": sum(item.state == "LIVE" for item in subscribers),
+            "subscribers_replaying": sum(item.state == "REPLAYING" for item in subscribers),
+            "subscribers_draining": sum(item.state == "DRAINING" for item in subscribers),
+            "closing_subscriptions": self._closing_subscriptions,
+            "queued_events": self._queued_events,
+            "queued_bytes": self._queued_bytes,
+            "replay_buffer_events": self._replay_buffer_events,
+            "replay_buffer_bytes": self._replay_buffer_bytes,
+            "replay_cache_tenants": len(self._replay_cache),
+            "replay_cache_events": self._replay_cache_events,
+            "replay_cache_bytes": self._replay_cache_bytes,
+            "replay_tasks": len(self._replay_tasks) + len(self._latest_tasks),
+            "tenant_locks": len(self._tenant_locks),
+            "synchronize_locks": len(self._synchronize_locks),
+        }
 
     def subscribe(
         self,

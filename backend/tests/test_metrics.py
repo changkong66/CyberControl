@@ -352,6 +352,42 @@ async def test_memory_diagnostics_failure_keeps_scrape_available_and_labels_boun
 
 
 @pytest.mark.asyncio
+async def test_checkpoint_mode_never_starts_periodic_heavy_sampler(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_DIR", str(tmp_path))
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_SOURCE_SHA", "a" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_SOURCE_TREE", "b" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PRODUCT_SOURCE_SHA", "c" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_ENGINEERING_BASELINE_SHA", "d" * 40)
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PROCESS_VERSION", "Gate-C-11-v1.0")
+    metrics = PlatformMetrics()
+    starts = 0
+
+    async def start_checkpoint() -> None:
+        nonlocal starts
+        starts += 1
+
+    monkeypatch.setattr(metrics.memory_checkpoints, "start", start_checkpoint)
+    await metrics.start_memory_diagnostics()
+
+    assert starts == 1
+    assert metrics.memory_diagnostics_task is None
+
+
+def test_checkpoint_and_periodic_sampler_configuration_fails_closed(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_DIR", str(tmp_path))
+    monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        PlatformMetrics()
+
+
+@pytest.mark.asyncio
 async def test_memory_diagnostics_discard_unapproved_metric_and_stage_labels(monkeypatch) -> None:
     monkeypatch.setenv("LIYAN_MEMORY_DIAGNOSTICS", "true")
     metrics = PlatformMetrics()
