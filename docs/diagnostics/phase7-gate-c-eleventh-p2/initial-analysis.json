@@ -1,0 +1,116 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-analysis.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "DIAGNOSTIC_ANALYSIS",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "root_cause_domain": "P2",
+  "root_cause_round": 1,
+  "product_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+  "product_source_tree_sha": "f721fca017c247aee93765d5f11fcbc37e12fcfc",
+  "engineering_baseline_sha": "d5494dd1dce671c30ebfe40e046319d7572a52f5",
+  "engineering_baseline_tree_sha": "cd328fdb84812e46178ebf204f934a371812f034",
+  "formal_run_id": "gate-c-20260823T144052Z-5fcb917b6388",
+  "formal_monitor_path": "D:/CyberControlAcceptance/phase7/gate-c/gate-c-20260823T144052Z-5fcb917b6388/stages/gate-2000/monitor.jsonl",
+  "formal_monitor_samples": 495,
+  "formal_complete_process_memory_samples": 494,
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "immutable_package_sha256": "205517caae21e184d079219454e9e66903083839b9af87c6cc1d45b2bc604ab8",
+  "measurements": {
+    "cgroup_memory_bytes": {
+      "first": 262144000,
+      "final": 371510477,
+      "peak": 436941619,
+      "final_ratio": 1.4172
+    },
+    "process_rss_bytes": {
+      "first": 307265536,
+      "final": 416342016,
+      "peak": 481173504,
+      "delta": 109076480
+    },
+    "process_uss_bytes": {
+      "first": 295247872,
+      "final": 405143552,
+      "peak": 468893696,
+      "delta": 109895680
+    },
+    "process_pss_bytes": {
+      "first": 298700800,
+      "final": 409633792,
+      "peak": 472241152,
+      "delta": 110932992
+    },
+    "anonymous_rss_bytes": {
+      "first": 256933888,
+      "final": 366927872,
+      "delta": 109993984
+    },
+    "file_rss_bytes": {
+      "first": 50331648,
+      "final": 49414144,
+      "delta": -917504
+    },
+    "jemalloc_allocated_bytes": {
+      "first": 208856952,
+      "final": 248922368,
+      "peak": 421354000,
+      "delta": 40065416
+    },
+    "jemalloc_active_bytes": {
+      "first": 248397824,
+      "final": 355414016,
+      "peak": 423555072,
+      "delta": 107016192
+    },
+    "jemalloc_resident_bytes": {
+      "first": 258908160,
+      "final": 367968256,
+      "peak": 438177792,
+      "delta": 109060096
+    },
+    "jemalloc_retained_bytes": {
+      "first": 0,
+      "final": 0
+    },
+    "active_minus_allocated_bytes": {
+      "first": 39540872,
+      "final": 106491648,
+      "delta": 66950776
+    },
+    "memory_map_count": {
+      "first": 2259,
+      "final": 4237,
+      "peak": 4684,
+      "delta": 1978
+    },
+    "file_descriptors": {
+      "first": 29,
+      "final": 30,
+      "peak": 2039
+    }
+  },
+  "terminal_controls": {
+    "subscribers": 0,
+    "close_owners": 0,
+    "queued_events": 0,
+    "queued_bytes": 0,
+    "replay_buffers": 0,
+    "replay_caches": 0,
+    "replay_tasks": 0,
+    "database_pool_checked_out": 0,
+    "outbox_pending": 0,
+    "outbox_claimed": 0,
+    "outbox_dead": 0,
+    "oom": 0,
+    "unplanned_restart": 0
+  },
+  "disproved_owner": {
+    "owner": "opt-in in-process tracemalloc/object diagnostic sampler",
+    "reason": "No liyans_memory_diagnostics metric sample or Memory diagnostics snapshot log exists in the formal run."
+  },
+  "hypothesis": "PYTHONMALLOC=malloc mixes high-churn Python small objects with longer-lived allocations in one jemalloc arena, leaving partially occupied active pages after stream teardown.",
+  "formal_disproof_metric": "post-recovery API cgroup memory ratio <= 1.10 with terminal lifecycle gauges zero, FDs near baseline, and no OOM/restart",
+  "formal_state": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
+}
