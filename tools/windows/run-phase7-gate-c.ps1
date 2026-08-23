@@ -14,6 +14,9 @@ param(
     [ValidateSet("smoke-20", "ramp-200", "ramp-500", "ramp-1000", "gate-2000")]
     [string[]]$DiagnosticStageNames = @(),
 
+    [ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]
+    [string]$SmokeScenario = "ColdDeployment",
+
     [ValidatePattern('^[0-9a-f]{40}$')]
     [string]$ProductSourceSha,
 
@@ -75,7 +78,12 @@ $runDirectory = Join-Path $ResultsRoot "$runId-$($sourceCommit.Substring(0, 12))
 $runDirectory = [IO.Path]::GetFullPath($runDirectory)
 $secretsDirectory = Join-Path $runDirectory "secrets"
 $credentialsPath = Join-Path $secretsDirectory "credentials.json"
-$composeArguments = @("-p", $ProjectName, "-f", $baseCompose, "-f", $gateCompose)
+$composeArguments = @(
+    "-p", $ProjectName,
+    "-f", $baseCompose,
+    "-f", $gateCompose,
+    "--profile", "gate-c-load"
+)
 $monitorProcesses = @()
 
 function Invoke-Compose {
@@ -114,38 +122,82 @@ function Test-GateVolumeExists {
     return $volumes -contains $volumeName
 }
 
-function Remove-PreflightResources {
+function Remove-EphemeralResources {
     Invoke-Compose @("down", "--remove-orphans")
 
     $containers = @(& docker ps --all `
         --filter "label=com.docker.compose.project=$ProjectName" --format "{{.ID}}")
     if ($LASTEXITCODE -ne 0 -or $containers.Count -ne 0) {
-        throw "Preflight cleanup left Compose containers for project $ProjectName behind."
+        throw "Ephemeral cleanup left Compose containers for project $ProjectName behind."
     }
     $networks = @(& docker network ls `
         --filter "label=com.docker.compose.project=$ProjectName" --format "{{.ID}}")
     if ($LASTEXITCODE -ne 0 -or $networks.Count -ne 0) {
-        throw "Preflight cleanup left Compose networks for project $ProjectName behind."
+        throw "Ephemeral cleanup left Compose networks for project $ProjectName behind."
     }
     if (Test-GateVolumeExists) {
         & docker volume rm $volumeName | Out-Null
         if ($LASTEXITCODE -ne 0) {
-            throw "Unable to remove Preflight PostgreSQL volume $volumeName."
+            throw "Unable to remove ephemeral PostgreSQL volume $volumeName."
         }
     }
     if (Test-GateVolumeExists) {
-        throw "Preflight cleanup left PostgreSQL volume $volumeName behind."
+        throw "Ephemeral cleanup left PostgreSQL volume $volumeName behind."
     }
+}
+
+function Get-ComposeImageReference {
+    param([Parameter(Mandatory = $true)][string]$Service)
+
+    $composeDocument = & docker compose @composeArguments config --format json |
+        ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to resolve the Compose model for Gate C service $Service."
+    }
+    $serviceProperty = $composeDocument.services.PSObject.Properties[$Service]
+    if ($null -eq $serviceProperty -or [string]::IsNullOrWhiteSpace($serviceProperty.Value.image)) {
+        throw "Gate C service $Service does not define a stable image reference."
+    }
+    return [string]$serviceProperty.Value.image
 }
 
 function Get-ComposeImageId {
     param([Parameter(Mandatory = $true)][string]$Service)
 
-    $imageId = (& docker compose @composeArguments images --quiet $Service).Trim()
+    $imageReference = Get-ComposeImageReference -Service $Service
+    $imageId = (& docker image inspect --format "{{.Id}}" $imageReference).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($imageId)) {
-        throw "Unable to resolve the built image for Gate C service $Service."
+        throw "Unable to resolve image $imageReference for Gate C service $Service."
     }
     return $imageId
+}
+
+function Wait-ComposeServiceHealthy {
+    param(
+        [Parameter(Mandatory = $true)][string]$Service,
+        [int]$TimeoutSeconds = 180
+    )
+
+    $containerId = (& docker compose @composeArguments ps --quiet $Service).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($containerId)) {
+        throw "Unable to resolve Gate C container for service $Service."
+    }
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        $state = & docker inspect --format "{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{end}}" `
+            $containerId
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to inspect Gate C service $Service after restart."
+        }
+        if ($state.Trim() -eq "running|healthy") {
+            return
+        }
+        if ($state -match "^(exited|dead)\|") {
+            throw "Gate C service $Service stopped while waiting for health."
+        }
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $deadline)
+    throw "Gate C service $Service did not become healthy within $TimeoutSeconds seconds."
 }
 
 function Assert-ImageProvenance {
@@ -311,14 +363,17 @@ if ($Mode -eq "DiagnosticStages" -and $DiagnosticStageNames.Count -eq 0) {
     throw "DiagnosticStages requires explicit -DiagnosticStageNames."
 }
 if (
-    $Mode -eq "DiagnosticStages" -and
+    $Mode -in @("DiagnosticStages", "HarnessSmoke") -and
     ([string]::IsNullOrWhiteSpace($ProductSourceSha) -or
         [string]::IsNullOrWhiteSpace($EngineeringBaselineSha))
 ) {
-    throw "DiagnosticStages requires explicit product and engineering baseline SHAs."
+    throw "$Mode requires explicit product and engineering baseline SHAs."
 }
 if ($Mode -ne "DiagnosticStages" -and $DiagnosticStageNames.Count -ne 0) {
     throw "-DiagnosticStageNames is valid only with -Mode DiagnosticStages."
+}
+if ($Mode -ne "HarnessSmoke" -and $SmokeScenario -ne "ColdDeployment") {
+    throw "-SmokeScenario is valid only with -Mode HarnessSmoke."
 }
 if ($Mode -eq "PreflightSmoke" -and $KeepEnvironment) {
     throw "PreflightSmoke cannot retain its environment."
@@ -341,8 +396,8 @@ if ($Mode -in @("Full", "PreflightSmoke")) {
         throw "Local main does not match protected origin/main for $Mode."
     }
 }
-elseif ($Mode -eq "DiagnosticStages" -and $status.Count -ne 0) {
-    throw "DiagnosticStages requires a clean committed candidate tree."
+elseif ($Mode -in @("DiagnosticStages", "HarnessSmoke") -and $status.Count -ne 0) {
+    throw "$Mode requires a clean committed candidate tree."
 }
 
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
@@ -355,6 +410,7 @@ $env:GATE_C_SOURCE_TREE = $sourceTree
 $env:GATE_C_PRODUCT_SOURCE_SHA = $resolvedProductSourceSha
 $env:GATE_C_ENGINEERING_BASELINE_SHA = $resolvedEngineeringBaselineSha
 $env:GATE_C_PROCESS_VERSION = $processVersion
+$env:GATE_C_IMAGE_TAG = $sourceCommit
 
 [ordered]@{
     schema_version = "cybercontrol.gate-c-execution-metadata.v1"
@@ -372,6 +428,7 @@ $env:GATE_C_PROCESS_VERSION = $processVersion
     project = $ProjectName
     postgres_volume = $volumeName
     diagnostic_stage_names = @($DiagnosticStageNames)
+    smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
     workload_sha256 = Get-FileSha256 $workloadPath
 } | ConvertTo-Json -Depth 6 |
@@ -439,6 +496,16 @@ try {
         Assert-ImageProvenance -Service $image.Key -ImageId $image.Value
     }
 
+    switch ($SmokeScenario) {
+        "ControlledApiRestart" {
+            Invoke-Compose @("restart", "api")
+            Wait-ComposeServiceHealthy -Service "api"
+        }
+        "StableIdle" {
+            Start-Sleep -Seconds 300
+        }
+    }
+
     $apiContainer = (& docker compose @composeArguments ps -q api).Trim()
     $postgresContainer = (& docker compose @composeArguments ps -q postgres).Trim()
     $keycloakContainer = (& docker compose @composeArguments ps -q keycloak).Trim()
@@ -446,6 +513,7 @@ try {
         schema_version = "cybercontrol.gate-c-environment.v1"
         process_version = $processVersion
         mode = $Mode
+        smoke_scenario = $SmokeScenario
         classification = $executionClassification
         formal_gate_attempt = ($Mode -eq "Full")
         acceptance_claim = $false
@@ -614,8 +682,8 @@ finally {
     }
     $cleanupFailure = $null
     try {
-        if ($Mode -eq "PreflightSmoke") {
-            Remove-PreflightResources
+        if ($Mode -in @("PreflightSmoke", "HarnessSmoke")) {
+            Remove-EphemeralResources
         }
         elseif (-not $KeepEnvironment) {
             Invoke-Compose @("down", "--remove-orphans")
@@ -649,6 +717,7 @@ if ($Mode -eq "Full") {
 [pscustomobject]@{
     process_version = $processVersion
     mode = $Mode
+    smoke_scenario = $SmokeScenario
     classification = $executionClassification
     formal_gate_attempt = ($Mode -eq "Full")
     acceptance_claim = $false

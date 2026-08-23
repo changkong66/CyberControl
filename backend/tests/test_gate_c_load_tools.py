@@ -297,9 +297,9 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "Full Gate C acceptance prohibits -SkipBuild." in runner
     assert "DiagnosticStages requires explicit -DiagnosticStageNames." in runner
     assert "PreflightSmoke cannot retain its environment." in runner
-    assert "Remove-PreflightResources" in runner
+    assert "Remove-EphemeralResources" in runner
     assert "& docker volume rm $volumeName" in runner
-    assert "Preflight cleanup left PostgreSQL volume $volumeName behind." in runner
+    assert "Ephemeral cleanup left PostgreSQL volume $volumeName behind." in runner
     assert '$Mode -eq "DiagnosticStages"' in runner
     assert "(Test-Path -LiteralPath $stageSummaryPath)" in runner
     assert "Diagnostic stage $stageName retained a non-passing threshold summary." in runner
@@ -374,6 +374,8 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert "$env:GATE_C_IMAGE_TAG = $sourceCommit" in runner
     assert '"--profile", "gate-c-load"' in runner
     assert "smoke_scenario = $SmokeScenario" in runner
+    assert '$Mode -in @("DiagnosticStages", "HarnessSmoke")' in runner
+    assert '$Mode -in @("PreflightSmoke", "HarnessSmoke")' in runner
     assert '"ControlledApiRestart" {' in runner
     assert 'Invoke-Compose @("restart", "api")' in runner
     assert 'Wait-ComposeServiceHealthy -Service "api"' in runner
