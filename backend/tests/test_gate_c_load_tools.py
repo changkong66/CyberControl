@@ -364,6 +364,29 @@ def test_gate_c_source_built_images_have_bound_provenance_contract() -> None:
     assert '"gate-c-load"' in runner
 
 
+def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> None:
+    root = Path(__file__).resolve().parents[2]
+    runner = (root / "tools" / "windows" / "run-phase7-gate-c.ps1").read_text(encoding="utf-8")
+    compose = (root / "tests" / "load" / "docker-compose.gate-c.yml").read_text(encoding="utf-8")
+
+    assert '[ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]' in runner
+    assert '[string]$SmokeScenario = "ColdDeployment"' in runner
+    assert "$env:GATE_C_IMAGE_TAG = $sourceCommit" in runner
+    assert "smoke_scenario = $SmokeScenario" in runner
+    assert '"ControlledApiRestart" {' in runner
+    assert 'Invoke-Compose @("restart", "api")' in runner
+    assert 'Wait-ComposeServiceHealthy -Service "api"' in runner
+    assert '"StableIdle" {' in runner
+    assert "Start-Sleep -Seconds 300" in runner
+    assert "Get-ComposeImageReference" in runner
+    assert 'docker image inspect --format "{{.Id}}" $imageReference' in runner
+
+    assert compose.count("cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}") == 2
+    assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
+    assert "cybercontrol/gate-c-frontend:${GATE_C_IMAGE_TAG:-unknown}" in compose
+    assert "cybercontrol/gate-c-load:${GATE_C_IMAGE_TAG:-unknown}" in compose
+
+
 def test_gate_c_worker_credentials_are_disjoint_and_complete() -> None:
     credentials = tuple(
         Credential(
