@@ -1,6 +1,6 @@
 # ADR-0023: Phase 7 Gate C Eleventh P0 Remediation
 
-**Status:** Harness monitor-target defect remediated; fresh candidate Smoke restart pending
+**Status:** P0 M1 passed; remediation merge and protected-main verification pending
 
 **Process Version:** `Gate-C-11-v1.0`
 
@@ -327,6 +327,40 @@ the binding is absent; it passes after the change. Product code, frozen
 aggregation and every semantic redline remain unchanged. Because the runner
 changed, the three independent Smoke observations restart from the next exact
 committed HEAD and must share its rebuilt image digests.
+
+## Candidate Smoke P0 Disproof
+
+The corrected committed candidate `97e1b75fff6c21418ad939edeaa9a0676c35c043`
+with tree `bd8a5340759585c873fa7176aa4cd26d7a66996e` completed the three
+required fresh-resource Smoke scenarios:
+
+| Scenario | Monitor | Delivery p95/p99 | Connection p95/p99 | Result |
+| --- | ---: | ---: | ---: | --- |
+| ColdDeployment | `37/38` | `27/122 ms` | `174/206 ms` | pass |
+| ControlledApiRestart | `37/38` | `24/53 ms` | `239/250 ms` | pass |
+| StableIdle | `37/38` | `22/41 ms` | `182/193 ms` | pass |
+
+Each run used a distinct Compose project, network, run directory and fresh
+PostgreSQL volume. The three runs shared the same source-built image digests,
+including API/migrate
+`sha256:55f8f7bd17aba0a1cc41b882201b3d64e1274655a2ac5a41f119e4ae8c93fb27`.
+Every project container, network, project volume and explicit PostgreSQL volume
+was absent after cleanup.
+
+Connection and reconnect/replay success were `1.0/1.0` in every run. Event
+loss, duplicate final render, cross-tenant leakage, HTTP 5xx and Outbox `DEAD`
+were all zero. The frozen threshold and workload hashes matched the baseline.
+The immutable sanitized package is Release ID `375228332`, asset ID
+`526280986`, `23,322` bytes, SHA256
+`d7f0ffa5f6bd31acfa541db0d58182bc1f881fab55b2c4b6251e7f2cdc6b78e1`.
+GitHub reports the Release immutable and its server digest matches. The package
+index is
+`docs/diagnostics/phase7-gate-c-eleventh-p0/three-smoke-package-reference.json`.
+
+This closes the P0 disproof target and records M1 progress. It is not a formal
+Gate C run or acceptance claim. P1 and P2 remain unopened until a fresh complete
+protected-main run supplies current evidence; the formal state remains
+`PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
 
 ## Stop Conditions
 

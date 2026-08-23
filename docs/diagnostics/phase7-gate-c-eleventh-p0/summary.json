@@ -36,6 +36,15 @@
   },
   "frozen_threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
   "frozen_workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
-  "next_required_gate": "Complete local quality gates and three independent fresh-resource Smoke runs before PR merge.",
+  "p0_smoke_disproof": {
+    "candidate_sha": "97e1b75fff6c21418ad939edeaa9a0676c35c043",
+    "candidate_tree_sha": "bd8a5340759585c873fa7176aa4cd26d7a66996e",
+    "scenarios_passed": 3,
+    "scenarios_required": 3,
+    "package_sha256": "d7f0ffa5f6bd31acfa541db0d58182bc1f881fab55b2c4b6251e7f2cdc6b78e1",
+    "release_id": 375228332,
+    "milestone": "M1"
+  },
+  "next_required_gate": "Require final-head push and pull-request CI 8/8, Squash Merge, protected-main CI 8/8, disposable preflight, then one fresh complete formal Gate C run.",
   "acceptance_claim": false
 }

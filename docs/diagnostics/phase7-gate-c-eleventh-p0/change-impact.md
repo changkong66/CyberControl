@@ -92,8 +92,8 @@ fully configured environment named
 Windows reserved ports `5113-5212` after the Docker restart. Playwright was
 therefore measured on temporary port 5275; the configuration was restored and
 no port change is committed. Neither local quality nor runner-contract tests
-are M1 or formal Gate C acceptance. Three real candidate Smoke runs remain
-mandatory.
+were M1 or formal Gate C acceptance at that checkpoint. The later three-Smoke
+result is recorded below and remains distinct from formal Gate C acceptance.
 
 ## Smoke Infrastructure Interruption
 
@@ -127,3 +127,21 @@ settings, monitor timeout, sampling interval, aggregation, thresholds or
 workload. The exact Harness resources were destroyed and the non-formal abort
 package is immutable at SHA256
 `405ab328c655d549423b5c929907ef6eeccb80e7beafcce71089d129d05aab6c`.
+
+## Three-Smoke Verification
+
+After the monitor target correction, candidate
+`97e1b75fff6c21418ad939edeaa9a0676c35c043` passed independent
+`ColdDeployment`, `ControlledApiRestart` and five-minute `StableIdle` Smoke
+runs. Monitor completeness was `37/38` in each run. Delivery p95/p99 was
+`27/122`, `24/53` and `22/41 ms`; connection p95/p99 was `174/206`,
+`239/250` and `182/193 ms`, respectively. Every frozen functional, security,
+delivery and runtime check passed.
+
+All three runs used the same verified source-built image digests and separate
+projects, networks, directories and fresh PostgreSQL volumes. Independent
+post-run inspection found zero remaining project containers, networks or
+volumes and no explicit PostgreSQL volume. The immutable sanitized package is
+Release `375228332`, asset `526280986`, SHA256
+`d7f0ffa5f6bd31acfa541db0d58182bc1f881fab55b2c4b6251e7f2cdc6b78e1`.
+This is M1 evidence only; it does not change the formal Gate C state.

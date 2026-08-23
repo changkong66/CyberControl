@@ -64,8 +64,10 @@ must still disprove delivery and monitor regressions under the real service heap
 
 ## Stop Boundary
 
-Deterministic A/B/A' proves the ownership defect and candidate behavior only.
-It is not M1 and is not Gate C acceptance. The candidate must still pass the
-complete local quality suite and three independent fresh-resource Smoke runs.
-Any semantic, security, zero-tolerance, monitor, or delivery failure rejects
-the candidate. Gate D-G remain locked.
+Deterministic A/B/A' proved the ownership defect, and the complete local quality
+suite plus three independent fresh-resource Smoke scenarios subsequently
+passed at candidate `97e1b75fff6c21418ad939edeaa9a0676c35c043`. This closes
+M1 only and is not Gate C acceptance. Protected-main merge, post-merge CI,
+disposable preflight and a fresh complete formal run remain required. Any
+semantic, security, zero-tolerance, monitor, or delivery failure rejects the
+formal run. Gate D-G remain locked.
