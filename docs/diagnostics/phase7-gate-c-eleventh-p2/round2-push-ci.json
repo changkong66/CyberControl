@@ -1,0 +1,81 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-push-ci.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "DIAGNOSTIC_BRANCH_CI",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "branch": "codex/phase7-gate-c-eleventh-p2-rss-remediation-round2",
+  "head_sha": "3b9898a3bf111ff03be6c0b4e023c87f8986a81c",
+  "run_id": 32660350906,
+  "run_uri": "https://github.com/changkong66/CyberControl/actions/runs/32660350906",
+  "workflow": "Release Quality Gates",
+  "event": "push",
+  "conclusion": "failure",
+  "passed_jobs": 6,
+  "failed_jobs": 2,
+  "jobs": [
+    {
+      "id": 97245455499,
+      "name": "PostgreSQL 16 integration and coverage",
+      "conclusion": "success"
+    },
+    {
+      "id": 97245455633,
+      "name": "Vue, TypeScript, pnpm audit, and Node SBOM",
+      "conclusion": "success"
+    },
+    {
+      "id": 97245455669,
+      "name": "Python audit and SBOM",
+      "conclusion": "success"
+    },
+    {
+      "id": 97245455674,
+      "name": "Python, contracts, and unit tests",
+      "conclusion": "failure"
+    },
+    {
+      "id": 97245455686,
+      "name": "Go contract compiler gate",
+      "conclusion": "success"
+    },
+    {
+      "id": 97245455703,
+      "name": "Full Git history secret scan",
+      "conclusion": "success"
+    },
+    {
+      "id": 97245455784,
+      "name": "Container build, runtime, SBOM, and vulnerability scan",
+      "conclusion": "success"
+    },
+    {
+      "id": 97246146752,
+      "name": "Release quality redline",
+      "conclusion": "failure"
+    }
+  ],
+  "failure": {
+    "step": "Enforce Conventional Commit subjects",
+    "commit_base": "0000000000000000000000000000000000000000",
+    "mechanism": "The first push that created the remote branch supplied an all-zero github.event.before, so the validator scanned all reachable history instead of the four new branch commits.",
+    "legacy_commit": "5ab6644edb28",
+    "legacy_subject": "[codex] close tenth Gate C archive status (#77)",
+    "branch_commits_validated_locally": true,
+    "product_test_failure": false,
+    "diagnostic_result_changed": false,
+    "formal_state_changed": false
+  },
+  "follow_up_push": {
+    "head_sha": "e5d2e2c0ae6c11f18870834c131e06a45f423cfd",
+    "run_id": 32660759095,
+    "run_uri": "https://github.com/changkong66/CyberControl/actions/runs/32660759095",
+    "workflow": "Release Quality Gates",
+    "event": "push",
+    "conclusion": "success",
+    "passed_jobs": 8,
+    "failed_jobs": 0,
+    "purpose": "A documentation-only follow-up commit supplied a non-zero before SHA and preserved the initial failed run while validating the complete branch head."
+  },
+  "preservation": "This failed run remains authoritative and is not rerun, deleted, amended or replaced. A later push uses this head as its non-zero before SHA and is recorded separately by GitHub."
+}

@@ -293,6 +293,10 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert 'formal_gate_attempt = ($Mode -eq "Full")' in runner
     assert "acceptance_claim = $false" in runner
     assert "diagnostic_stage_names = @($DiagnosticStageNames)" in runner
+    assert "[int]$DiagnosticIdleSeconds = 0" in runner
+    assert 'if ($Mode -ne "DiagnosticStages" -and $DiagnosticIdleSeconds -ne 0)' in runner
+    assert 'Join-Path $runDirectory "diagnostic-baseline"' in runner
+    assert "Start-Sleep -Seconds $DiagnosticIdleSeconds" in runner
     assert 'if ($Mode -in @("Full", "PreflightSmoke"))' in runner
     assert "Full Gate C acceptance prohibits -SkipBuild." in runner
     assert "DiagnosticStages requires explicit -DiagnosticStageNames." in runner
