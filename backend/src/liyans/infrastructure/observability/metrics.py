@@ -222,13 +222,17 @@ class _JemallocStatsReader:
                     f"stats.arenas.{arena}.bins.{index}.nmalloc",
                     ctypes.c_uint64,
                 )
-                slabs = self._read(
+                slab_allocations = self._read(
                     f"stats.arenas.{arena}.bins.{index}.nslabs",
                     ctypes.c_uint64,
                 )
-                if None in {size, live_regions, allocations, slabs}:
+                live_slabs = self._read(
+                    f"stats.arenas.{arena}.bins.{index}.curslabs",
+                    ctypes.c_size_t,
+                )
+                if None in {size, live_regions, allocations, slab_allocations, live_slabs}:
                     continue
-                if live_regions or allocations or slabs:
+                if live_regions or allocations or slab_allocations or live_slabs:
                     bins.append(
                         {
                             "arena": arena,
@@ -236,7 +240,8 @@ class _JemallocStatsReader:
                             "size_bytes": int(size),
                             "allocations": int(allocations),
                             "live_regions": int(live_regions),
-                            "slabs": int(slabs),
+                            "slab_allocations": int(slab_allocations),
+                            "live_slabs": int(live_slabs),
                         }
                     )
             for index in range(large_extent_count):

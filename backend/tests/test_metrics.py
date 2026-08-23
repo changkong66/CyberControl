@@ -15,6 +15,7 @@ from liyans.api.routes.metrics import metrics as metrics_route
 from liyans.infrastructure.observability.metrics import (
     HTTPMetricsMiddleware,
     PlatformMetrics,
+    _JemallocStatsReader,
 )
 
 
@@ -53,6 +54,53 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "liyans_jemalloc_arenas 1.0" in rendered
     assert "tenant" not in rendered
     assert "cursor" not in rendered
+
+
+def test_jemalloc_inventory_retains_active_bin_and_large_extent_counts(monkeypatch) -> None:
+    reader = _JemallocStatsReader()
+    monkeypatch.setattr(
+        reader,
+        "snapshot",
+        lambda: {"allocated": 10, "active": 20, "resident": 30, "retained": 0, "arenas": 1},
+    )
+    values = {
+        "arenas.narenas": 1,
+        "arenas.nbins": 2,
+        "arenas.nlextents": 1,
+        "arenas.bin.0.size": 16,
+        "stats.arenas.0.bins.0.curregs": 3,
+        "stats.arenas.0.bins.0.nmalloc": 7,
+        "stats.arenas.0.bins.0.nslabs": 2,
+        "stats.arenas.0.bins.0.curslabs": 1,
+        "arenas.lextent.0.size": 16_384,
+        "stats.arenas.0.lextents.0.curlextents": 2,
+        "stats.arenas.0.lextents.0.nmalloc": 4,
+    }
+    monkeypatch.setattr(reader, "_read", lambda name, _type: values.get(name, 0))
+
+    inventory = reader.allocation_inventory()
+
+    assert inventory is not None
+    assert inventory["bins"] == [
+        {
+            "arena": 0,
+            "index": 0,
+            "size_bytes": 16,
+            "allocations": 7,
+            "live_regions": 3,
+            "slab_allocations": 2,
+            "live_slabs": 1,
+        }
+    ]
+    assert inventory["large_extents"] == [
+        {
+            "arena": 0,
+            "index": 0,
+            "size_bytes": 16_384,
+            "allocations": 4,
+            "live_extents": 2,
+        }
+    ]
 
 
 @pytest.mark.asyncio

@@ -20,6 +20,11 @@ param(
     [ValidateRange(0, 900)]
     [int]$DiagnosticIdleSeconds = 0,
 
+    [ValidateRange(0, 900)]
+    [int]$DiagnosticRecoverySeconds = 0,
+
+    [switch]$MemoryCheckpoints,
+
     [ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]
     [string]$SmokeScenario = "ColdDeployment",
 
@@ -40,6 +45,7 @@ Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $baseCompose = Join-Path $root "infra\docker-compose.yml"
 $gateCompose = Join-Path $root "tests\load\docker-compose.gate-c.yml"
+$memoryCheckpointCompose = Join-Path $root "tests\load\docker-compose.gate-c-memory-checkpoints.yml"
 $thresholdPath = Join-Path $root "tests\load\gate-c-thresholds.v1.json"
 $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
 $monitorPath = Join-Path $root "tests\load\gate_c\monitor.py"
@@ -90,6 +96,9 @@ $composeArguments = @(
     "-f", $gateCompose,
     "--profile", "gate-c-load"
 )
+if ($MemoryCheckpoints) {
+    $composeArguments = @($composeArguments + @("-f", $memoryCheckpointCompose))
+}
 $monitorProcesses = @()
 
 function Invoke-Compose {
@@ -118,6 +127,57 @@ function Get-TextSha256 {
     finally {
         $algorithm.Dispose()
     }
+}
+
+function Invoke-MemoryCheckpoint {
+    param(
+        [Parameter(Mandatory = $true)][string]$ContainerId,
+        [Parameter(Mandatory = $true)][ValidateSet("baseline", "recovery")][string]$Label
+    )
+
+    $checkpointDirectory = Join-Path $runDirectory "memory-checkpoints"
+    $manifestPath = Join-Path $checkpointDirectory "$Label.manifest.json"
+    if (Test-Path -LiteralPath $manifestPath) {
+        throw "Memory checkpoint $Label already exists."
+    }
+    & docker kill --signal USR1 $ContainerId | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to signal API memory checkpoint $Label."
+    }
+    $deadline = (Get-Date).AddSeconds(45)
+    do {
+        if (Test-Path -LiteralPath $manifestPath) {
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 |
+                ConvertFrom-Json
+            if (
+                $manifest.schema_version -ne "cybercontrol.memory-checkpoint-manifest.v1" -or
+                $manifest.label -ne $Label -or
+                $manifest.source.source_sha -ne $sourceCommit -or
+                $manifest.source.source_tree -ne $sourceTree -or
+                $manifest.source.product_source_sha -ne $resolvedProductSourceSha -or
+                $manifest.source.engineering_baseline_sha -ne $resolvedEngineeringBaselineSha -or
+                $manifest.source.process_version -ne $processVersion
+            ) {
+                throw "Memory checkpoint $Label has invalid source binding."
+            }
+            $metadataPath = Join-Path $checkpointDirectory "$Label.json"
+            if (-not (Test-Path -LiteralPath $metadataPath)) {
+                throw "Memory checkpoint $Label metadata is missing."
+            }
+            $metadata = Get-Content -LiteralPath $metadataPath -Raw -Encoding UTF8 |
+                ConvertFrom-Json
+            if (
+                $metadata.schema_version -ne "cybercontrol.memory-checkpoint.v1" -or
+                $metadata.label -ne $Label -or
+                [double]$metadata.duration_seconds -gt 30.0
+            ) {
+                throw "Memory checkpoint $Label exceeded its integrity limits."
+            }
+            return
+        }
+        Start-Sleep -Seconds 1
+    } while ((Get-Date) -lt $deadline)
+    throw "Memory checkpoint $Label did not complete within 45 seconds."
 }
 
 function Test-GateVolumeExists {
@@ -386,6 +446,22 @@ if ($Mode -ne "DiagnosticStages" -and $DiagnosticStageNames.Count -ne 0) {
 if ($Mode -ne "DiagnosticStages" -and $DiagnosticIdleSeconds -ne 0) {
     throw "-DiagnosticIdleSeconds is valid only with -Mode DiagnosticStages."
 }
+if ($Mode -ne "DiagnosticStages" -and $DiagnosticRecoverySeconds -ne 0) {
+    throw "-DiagnosticRecoverySeconds is valid only with -Mode DiagnosticStages."
+}
+if ($Mode -ne "DiagnosticStages" -and $MemoryCheckpoints) {
+    throw "-MemoryCheckpoints is valid only with -Mode DiagnosticStages."
+}
+if ($MemoryCheckpoints) {
+    if (
+        $DiagnosticStageNames.Count -ne 1 -or
+        $DiagnosticStageNames[0] -ne "ramp-200" -or
+        $DiagnosticIdleSeconds -ne 300 -or
+        $DiagnosticRecoverySeconds -ne 600
+    ) {
+        throw "Memory checkpoints require only ramp-200, 300 idle seconds and 600 recovery seconds."
+    }
+}
 if ($Mode -ne "HarnessSmoke" -and $SmokeScenario -ne "ColdDeployment") {
     throw "-SmokeScenario is valid only with -Mode HarnessSmoke."
 }
@@ -416,6 +492,10 @@ elseif ($Mode -in @("DiagnosticStages", "HarnessSmoke") -and $status.Count -ne 0
 
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $secretsDirectory -Force | Out-Null
+if ($MemoryCheckpoints) {
+    New-Item -ItemType Directory -Path (Join-Path $runDirectory "memory-checkpoints") -Force |
+        Out-Null
+}
 $env:GATE_C_RESULTS_DIR = $runDirectory
 $env:GATE_C_POSTGRES_VOLUME = $volumeName
 $env:LIYAN_POSTGRES_HOST_PORT = [string]$PostgresHostPort
@@ -445,6 +525,8 @@ $env:GATE_C_IMAGE_TAG = $sourceCommit
     postgres_host_port = $PostgresHostPort
     diagnostic_stage_names = @($DiagnosticStageNames)
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
+    diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
+    memory_checkpoints = [bool]$MemoryCheckpoints
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
     workload_sha256 = Get-FileSha256 $workloadPath
@@ -551,6 +633,8 @@ try {
         docker_memory_limit_bytes = [int64](& docker info --format "{{.MemTotal}}")
         postgres_host_port = $PostgresHostPort
         diagnostic_idle_seconds = $DiagnosticIdleSeconds
+        diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
+        memory_checkpoints = [bool]$MemoryCheckpoints
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()
@@ -579,6 +663,9 @@ try {
             -StageName "diagnostic-baseline"
         try {
             Start-Sleep -Seconds $DiagnosticIdleSeconds
+            if ($MemoryCheckpoints) {
+                Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"
+            }
         }
         finally {
             Stop-GateMonitor -Process $baselineMonitor
@@ -687,6 +774,33 @@ try {
         }
     }
 
+    if ($Mode -eq "DiagnosticStages" -and $DiagnosticRecoverySeconds -gt 0) {
+        $recoveryDirectory = Join-Path $runDirectory "diagnostic-recovery"
+        New-Item -ItemType Directory -Path $recoveryDirectory -Force | Out-Null
+        $recoveryMonitor = Start-GateMonitor `
+            -StageDirectory $recoveryDirectory `
+            -StageName "diagnostic-recovery"
+        try {
+            Start-Sleep -Seconds $DiagnosticRecoverySeconds
+            if ($MemoryCheckpoints) {
+                Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"
+            }
+        }
+        finally {
+            Stop-GateMonitor -Process $recoveryMonitor
+        }
+    }
+
+    if ($MemoryCheckpoints) {
+        & uv run --frozen python tests/load/gate_c/memory_checkpoint_compare.py `
+            --baseline-manifest (Join-Path $runDirectory "memory-checkpoints\baseline.manifest.json") `
+            --recovery-manifest (Join-Path $runDirectory "memory-checkpoints\recovery.manifest.json") `
+            --output-dir (Join-Path $runDirectory "memory-comparison")
+        if ($LASTEXITCODE -ne 0) {
+            throw "Memory checkpoint comparison failed."
+        }
+    }
+
     if ($Mode -eq "Full") {
         Invoke-GateTool `
             -EnvironmentArguments @() `
@@ -758,4 +872,7 @@ if ($Mode -eq "Full") {
     source_commit = $sourceCommit
     result_directory = $runDirectory
     volume = $volumeName
+    diagnostic_idle_seconds = $DiagnosticIdleSeconds
+    diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
+    memory_checkpoints = [bool]$MemoryCheckpoints
 } | ConvertTo-Json -Depth 4

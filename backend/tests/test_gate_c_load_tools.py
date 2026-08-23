@@ -307,6 +307,23 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert '$Mode -eq "DiagnosticStages"' in runner
     assert "(Test-Path -LiteralPath $stageSummaryPath)" in runner
     assert "Diagnostic stage $stageName retained a non-passing threshold summary." in runner
+    assert "[int]$DiagnosticRecoverySeconds = 0" in runner
+    assert "[switch]$MemoryCheckpoints" in runner
+    assert 'Join-Path $runDirectory "diagnostic-recovery"' in runner
+    assert "Start-Sleep -Seconds $DiagnosticRecoverySeconds" in runner
+    assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"' in runner
+    assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"' in runner
+    assert "Memory checkpoints require only ramp-200" in runner
+    assert "memory_checkpoint_compare.py" in runner
+    assert "[double]$metadata.duration_seconds -gt 30.0" in runner
+
+    checkpoint_compose = (LOAD_ROOT / "docker-compose.gate-c-memory-checkpoints.yml").read_text(
+        encoding="utf-8"
+    )
+    assert 'LIYAN_MEMORY_DIAGNOSTICS: "false"' in checkpoint_compose
+    assert "LIYAN_MEMORY_CHECKPOINT_DIR: /gate-c-results/memory-checkpoints" in checkpoint_compose
+    assert "LIYAN_MEMORY_CHECKPOINT_SOURCE_SHA" in checkpoint_compose
+    assert "X-Tenant-ID" not in checkpoint_compose
 
     finalizer = (LOAD_ROOT / "gate_c" / "finalize.py").read_text(encoding="utf-8")
     assert "execution = _formal_execution_metadata(args.run_dir)" in finalizer
