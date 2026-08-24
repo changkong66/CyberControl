@@ -1,0 +1,106 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-package-reference.v1",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "DIAGNOSTIC_MEASUREMENT_DESIGN_REJECTION",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "root_cause_domain": "P2",
+  "root_cause_round": 4,
+  "result": "MEASUREMENT_REJECTED_PROFILER_INTERFERENCE",
+  "local_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/gate-c-11-p2-adr0026-measurement-rejected-20260824-v1.zip",
+  "bytes": 86286,
+  "sha256": "97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410",
+  "manifest_sha256": "87cd8e1a49c37ab97a57ace348ad5f147470816bbe287775c5009a8f1b2fca8f",
+  "raw_source_manifest_sha256": "6a2a50e02f14940b28aad983695fae6d4af03fd0e73dec29d83a0d248a35782c",
+  "redaction_scan_sha256": "0215f615c59b3c24cf6d1a83c23e279eb1fb271cead12a20b189f794ff23d7e6",
+  "resource_closure_sha256": "6dc3db82dc1be03e7ea6561bd58f60398b94edc0eb1e070b1349aeab5d05dff8",
+  "source_sha": "ff4f3b9d33ef608772f8c499d8e906e215bc0daf",
+  "source_tree_sha": "17cb9892a18f927f08ca3feb344b5024965eb9a0",
+  "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "engineering_baseline_sha": "ff4f3b9d33ef608772f8c499d8e906e215bc0daf",
+  "protected_main_ci": {
+    "run_id": 32692818024,
+    "url": "https://github.com/changkong66/CyberControl/actions/runs/32692818024",
+    "passed_jobs": 8,
+    "total_jobs": 8
+  },
+  "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "runs": {
+    "a2_control": {
+      "run_id": "gate-c-diagnostic-20260824T055055Z",
+      "compose_project": "gatec11p2adr26a2",
+      "postgres_volume": "cybercontrol_gate_c_11_p2_adr26_a2_20260824"
+    },
+    "measurement": {
+      "run_id": "gate-c-diagnostic-20260824T061346Z",
+      "compose_project": "gatec11p2adr26m",
+      "postgres_volume": "cybercontrol_gate_c_11_p2_adr26_measurement_20260824"
+    },
+    "a_prime_control": {
+      "run_id": "gate-c-diagnostic-20260824T071349Z",
+      "compose_project": "gatec11p2adr26ap2",
+      "postgres_volume": "cybercontrol_gate_c_11_p2_adr26_aprime2_20260824"
+    },
+    "infra_aborted_a_prime": {
+      "run_id": "gate-c-diagnostic-20260824T063641Z",
+      "classification": "INFRA_ABORTED",
+      "used_as_control": false,
+      "postgres_volume": "cybercontrol_gate_c_11_p2_adr26_aprime_20260824"
+    }
+  },
+  "profile_binding": {
+    "api_image_digest": "sha256:e7d0db88369011eb4ce181a49a7224db4b35f4c49c28f24cf492b9322b5b8d86",
+    "library_sha256": "afd6c5f12f24a4a48ef4b3cc6020a216386c84df65162f6c8f722ba1cdda1c98",
+    "library_build_id": "3fbf022c2f2c8af0f219fd0ad039b653ba27970a",
+    "binary_profile_bytes": 157364,
+    "binary_profile_sha256": "35a9c8e1d18d3223c473819c0a63785e70186195ee5d5b721c6b2e79d9bcd2eb",
+    "binary_profile_published": false,
+    "ownership_data_admissible": false
+  },
+  "package_verification": {
+    "manifest_files": 32,
+    "zip_entries": 36,
+    "missing_files": 0,
+    "hash_or_size_mismatches": 0,
+    "unexpected_files": 0,
+    "json_files_validated": 28,
+    "passed": true
+  },
+  "redaction_scan": {
+    "passed": true,
+    "raw_runs_preserved_unchanged": true,
+    "raw_credential_files_copied": 0,
+    "raw_credential_files_hashed_only": 1,
+    "jwt_hits": 0,
+    "authorization_bearer_hits": 0,
+    "private_key_hits": 0,
+    "credential_assignment_hits": 0,
+    "email_hits": 0,
+    "phone_field_hits": 0,
+    "subject_value_hits": 0,
+    "keycloak_username_hits": 0,
+    "workspace_user_path_hits": 0,
+    "gitleaks_version": "8.30.1",
+    "gitleaks_actionable_findings": 0,
+    "gitleaks_non_secret_sha256_findings": 3
+  },
+  "external_package": {
+    "status": "VERIFIED_IMMUTABLE_RELEASE",
+    "release_id": 375536270,
+    "release_tag": "phase7-gate-c-11-p2-adr0026-measurement-rejected-20260824-v1",
+    "release_uri": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-adr0026-measurement-rejected-20260824-v1",
+    "release_immutable": true,
+    "release_prerelease": true,
+    "release_target": "ff4f3b9d33ef608772f8c499d8e906e215bc0daf",
+    "published_at": "2026-08-24T08:05:57Z",
+    "asset_id": 527281489,
+    "asset_name": "gate-c-11-p2-adr0026-measurement-rejected-20260824-v1.zip",
+    "asset_uri": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c-11-p2-adr0026-measurement-rejected-20260824-v1/gate-c-11-p2-adr0026-measurement-rejected-20260824-v1.zip",
+    "asset_state": "uploaded",
+    "verified_bytes": 86286,
+    "verified_sha256": "97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410",
+    "server_digest": "sha256:97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410"
+  },
+  "conclusion": "ADR 0026 is rejected for this implementation because the measurement arm exceeded the predeclared connection, delivery, CPU and RSS interference limits. The profile cannot select a product owner. P2 behavior changes and formal Gate C replay remain frozen."
+}

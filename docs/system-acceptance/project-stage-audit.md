@@ -479,3 +479,45 @@ The immutable round-3 package SHA256 is
 `10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`.
 The next allowed work is ADR 0026 design and review for lower-interference
 ownership measurement. No new P2 candidate or formal replay is authorized.
+
+## 11. P2 Round 4 ADR 0026 Measurement Rejection Audit
+
+PR #88 closed the previous status as
+`c96a648f97c6033fd3ce027dc166942a3d48f373`; its push/PR/main Runs
+`32676245119`, `32676665813` and `32676982606` passed 8/8. PR #89 merged the
+ADR 0026 design as `d6cf032ec4cda5e2997a6da8e6ce0910d6b939fa`, and PR #90 merged the scoped
+profiling capability as `ff4f3b9d33ef608772f8c499d8e906e215bc0daf`. Their
+protected-main Runs `32683062644` and `32692818024` passed 8/8.
+
+The valid diagnostic controls were independently stable. A2 and A' connection
+p95 differed by `7.4919%`, delivery p95 by `4.5455%`, API CPU p95 by
+`0.4407%`, and RSS delta by `1,212,416` bytes, below the declared
+`8,388,608`-byte control limit. Both completed the real 200-stream stage and
+600-second recovery with monitor completeness `194/194`.
+
+The measurement arm failed the causal admission boundary: connection p95,
+delivery p95 and API CPU p95 were `1.143322x`, `1.204545x` and `1.11591x`
+their control medians; RSS delta was `32,808,960` bytes versus the
+`19,103,744`-byte control median, a `13,705,216`-byte difference. The
+measurement profile is real and source-bound, but it is inadmissible for
+selecting a cache, pool, allocator, serializer, task or SSE lifecycle owner.
+
+The first A' attempt stopped during recovery when D: free space fell to about
+`0.60 GiB`; it is separately classified `INFRA_ABORTED` and was not used as a
+control. The valid retry used a new project and PostgreSQL volume. All five
+volumes remain preserved, and all five Compose projects have zero remaining
+containers and networks.
+
+The redacted immutable package is Release `375536270`, asset `527281489`,
+86,286 bytes, SHA256
+`97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410`.
+Its package manifest contains 32 files with no missing, mismatched or
+unexpected entries; 28 JSON files parsed successfully. JWT/Bearer/private-key/
+credential/PII scans found no actionable content, and Gitleaks' three findings
+were SHA256 evidence fields.
+
+This is diagnostic evidence, not formal attempt 13. `gate_c_attempts` remains
+at 12 entries. The formal state remains
+`RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. After this archive
+and its status-only closure pass the complete CI/merge chain, work must stop
+unless a new low-interference measurement ADR receives separate authorization.
