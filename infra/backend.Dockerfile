@@ -26,6 +26,20 @@ ARG CYBERCONTROL_SOURCE_TREE=unknown
 ARG CYBERCONTROL_PRODUCT_SOURCE_SHA=unknown
 ARG CYBERCONTROL_ENGINEERING_BASELINE_SHA=unknown
 ARG CYBERCONTROL_PROCESS_VERSION=unknown
+ARG SOURCE_DATE_EPOCH=0
+
+ADD --checksum=sha256:a50305859677aa2d293a6373b5ad0beb01e75f4b438d223a455c7156b41c913c \
+    https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/APKINDEX.tar.gz \
+    /tmp/locked-apks/APKINDEX.tar.gz
+ADD --checksum=sha256:e070f30274a4048dabeffc7bd038df7467e18ff7ada2d1ff75f0da7158739e33 \
+    https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/jemalloc-5.3.0-r6.apk \
+    /tmp/locked-apks/jemalloc-5.3.0-r6.apk
+ADD --checksum=sha256:393dcd32629f06d7d85409c272d142d0c082772d10b87ef55ee82f47de3be637 \
+    https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/libgcc-15.2.0-r5.apk \
+    /tmp/locked-apks/libgcc-15.2.0-r5.apk
+ADD --checksum=sha256:14c987b556f5385a5db18376e788c75f37d85321b8dc1920d926ea7daac1d6f6 \
+    https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/libstdc++-15.2.0-r5.apk \
+    /tmp/locked-apks/libstdc++-15.2.0-r5.apk
 
 LABEL org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA} \
     com.cybercontrol.source-tree=${CYBERCONTROL_SOURCE_TREE} \
@@ -38,7 +52,20 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     LIYAN_REPOSITORY_ROOT=/app
 
-RUN apk add --no-cache "jemalloc=5.3.0-r6" \
+RUN printf '%s  %s\n' \
+        e070f30274a4048dabeffc7bd038df7467e18ff7ada2d1ff75f0da7158739e33 \
+        /tmp/locked-apks/jemalloc-5.3.0-r6.apk \
+        393dcd32629f06d7d85409c272d142d0c082772d10b87ef55ee82f47de3be637 \
+        /tmp/locked-apks/libgcc-15.2.0-r5.apk \
+        14c987b556f5385a5db18376e788c75f37d85321b8dc1920d926ea7daac1d6f6 \
+        /tmp/locked-apks/libstdc++-15.2.0-r5.apk \
+        > /tmp/locked-apks/SHA256SUMS \
+    && sha256sum -c /tmp/locked-apks/SHA256SUMS \
+    && apk add --no-network --allow-untrusted \
+        /tmp/locked-apks/libgcc-15.2.0-r5.apk \
+        /tmp/locked-apks/libstdc++-15.2.0-r5.apk \
+        /tmp/locked-apks/jemalloc-5.3.0-r6.apk \
+    && rm -rf /tmp/locked-apks \
     && python -m pip uninstall --yes setuptools wheel \
     && python -m pip uninstall --yes pip \
     && addgroup -S -g 10001 liyans \

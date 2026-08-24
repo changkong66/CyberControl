@@ -9,7 +9,10 @@ import pytest
 import requests
 from sseclient import SSEClient
 
-LOAD_ROOT = Path(__file__).resolve().parents[2] / "tests" / "load"
+ROOT = Path(__file__).resolve().parents[2]
+LOAD_ROOT = ROOT / "tests" / "load"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(LOAD_ROOT) not in sys.path:
     sys.path.insert(0, str(LOAD_ROOT))
 
@@ -39,6 +42,12 @@ from gate_c.sse_client import (  # noqa: E402
 )
 from gate_c.summarize import _outbox_dead_peak  # noqa: E402
 from gate_c.token_provider import TokenProvider  # noqa: E402
+from tools.gate_c_image_lock import (  # noqa: E402
+    BUILD_RECEIPT_SCHEMA,
+    IMAGE_LOCK_SCHEMA,
+    PROCESS_VERSION,
+    _validate_inputs,
+)
 
 
 def test_gate_c_thresholds_are_frozen_and_final_stage_is_2000() -> None:
@@ -117,7 +126,7 @@ def test_backend_runtime_uses_process_start_allocator_configuration() -> None:
         encoding="utf-8"
     )
 
-    assert "jemalloc=5.3.0-r6" in dockerfile
+    assert "jemalloc-5.3.0-r6.apk" in dockerfile
     assert "PYTHONMALLOC=malloc" in dockerfile
     assert "LD_PRELOAD=/usr/lib/libjemalloc.so.2" in dockerfile
     assert "dirty_decay_ms:1000" in dockerfile
@@ -288,7 +297,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     ).read_text(encoding="utf-8")
 
     assert '[ValidateSet("HarnessSmoke", "DiagnosticStages", "PreflightSmoke", "Full")]' in runner
-    assert '$processVersion = "Gate-C-11-v1.0"' in runner
+    assert '$processVersion = "Gate-C-12-v1.0"' in runner
     assert "classification = $executionClassification" in runner
     assert "process_version = $processVersion" in runner
     assert 'formal_gate_attempt = ($Mode -eq "Full")' in runner
@@ -299,7 +308,11 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert 'Join-Path $runDirectory "diagnostic-baseline"' in runner
     assert "Start-Sleep -Seconds $DiagnosticIdleSeconds" in runner
     assert 'if ($Mode -in @("Full", "PreflightSmoke"))' in runner
-    assert "Full Gate C acceptance prohibits -SkipBuild." in runner
+    assert '$Mode -ne "HarnessSmoke" -and -not $LockedImages' in runner
+    assert "$Mode requires a complete locked image receipt." in runner
+    assert "-LockedImages cannot be combined with -SkipBuild or -NoCacheBuild." in runner
+    assert "Gate C image lock source binding is invalid." in runner
+    assert "Assert-LockedComposeImages" in runner
     assert "DiagnosticStages requires explicit -DiagnosticStageNames." in runner
     assert "PreflightSmoke cannot retain its environment." in runner
     assert "Remove-EphemeralResources" in runner
@@ -338,7 +351,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
 
 def test_gate_c_finalizer_requires_bound_formal_process_metadata(tmp_path: Path) -> None:
     execution = {
-        "process_version": "Gate-C-11-v1.0",
+        "process_version": "Gate-C-12-v1.0",
         "classification": "FORMAL_GATE_C_ATTEMPT",
         "formal_gate_attempt": True,
         "run_id": "gate-c-run",
@@ -389,6 +402,29 @@ def test_gate_c_source_built_images_have_bound_provenance_contract() -> None:
     assert "Assert-ImageProvenance" in runner
     assert '"frontend",' in runner
     assert '"gate-c-load"' in runner
+
+
+def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None:
+    root = Path(__file__).resolve().parents[2]
+    inputs = _validate_inputs(root / "tests" / "load" / "gate-c-build-inputs.v1.json")
+    build_tool = (root / "tools" / "gate_c_image_lock.py").read_text(encoding="utf-8")
+    backend_dockerfile = (root / "infra" / "backend.Dockerfile").read_text(encoding="utf-8")
+
+    assert PROCESS_VERSION == "Gate-C-12-v1.0"
+    assert IMAGE_LOCK_SCHEMA == "cybercontrol.gate-c-image-lock.v1"
+    assert BUILD_RECEIPT_SCHEMA == "cybercontrol.gate-c-build-receipt.v1"
+    assert inputs["platform"] == "linux/amd64"
+    assert inputs["buildkit"]["image_digest"].startswith("sha256:")
+    assert inputs["buildkit"]["source_revision"] == "673b7e0196de0cac83308274b88aaed97a91af74"
+    assert len(inputs["alpine"]["backend_runtime_packages"]) == 3
+    for package in inputs["alpine"]["backend_runtime_packages"]:
+        assert package["filename"] in backend_dockerfile
+        assert package["sha256"] in backend_dockerfile
+    assert "apk add --no-network --allow-untrusted" in backend_dockerfile
+    assert '"docker", "buildx", "inspect", builder, "--bootstrap"' in build_tool
+    assert '"--no-cache"' in build_tool
+    assert "rewrite-timestamp=true" in build_tool
+    assert '"com.docker.compose.project"' in build_tool
 
 
 def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> None:
@@ -482,7 +518,7 @@ def test_gate_c_jemalloc_profile_protocol_is_fixed_and_non_formal() -> None:
     assert '[string]$JemallocProfileArm = "None"' in runner
     assert "Jemalloc profile arms are valid only with -Mode DiagnosticStages." in runner
     assert "Jemalloc profile arms require only ramp-200, 300 idle seconds" in runner
-    assert "Jemalloc profile arms must reuse the prevalidated image with -SkipBuild." in runner
+    assert "Jemalloc profile arms must reuse a prevalidated locked image receipt." in runner
     assert "Profiling image digest does not match -JemallocProfileImageDigest." in runner
     assert "docker kill --signal USR2" in runner
     assert '$JemallocProfileArm -eq "Measurement"' in runner

@@ -44,6 +44,10 @@ param(
 
     [switch]$NoCacheBuild,
 
+    [switch]$LockedImages,
+
+    [string]$ImageLockPath,
+
     [switch]$KeepEnvironment
 )
 
@@ -59,7 +63,8 @@ $thresholdPath = Join-Path $root "tests\load\gate-c-thresholds.v1.json"
 $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
 $monitorPath = Join-Path $root "tests\load\gate_c\monitor.py"
 $runtimeControlsPath = Join-Path $root "tests\load\gate_c\runtime_controls.py"
-$processVersion = "Gate-C-11-v1.0"
+$imageLockToolPath = Join-Path $root "tools\gate_c_image_lock.py"
+$processVersion = "Gate-C-12-v1.0"
 $executionClassification = switch ($Mode) {
     "DiagnosticStages" { "DIAGNOSTIC" }
     "PreflightSmoke" { "PREFLIGHT_CHECK" }
@@ -113,6 +118,9 @@ if ($JemallocProfileArm -ne "None") {
 }
 $monitorProcesses = @()
 $script:jemallocProfileBinding = $null
+$script:imageLock = $null
+$script:imageLockSha256 = $null
+$script:buildReceiptSha256 = $null
 
 function Invoke-Compose {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
@@ -139,6 +147,81 @@ function Get-TextSha256 {
     }
     finally {
         $algorithm.Dispose()
+    }
+}
+
+function Initialize-LockedImages {
+    if (-not $LockedImages) {
+        return
+    }
+    if ([string]::IsNullOrWhiteSpace($ImageLockPath)) {
+        throw "-LockedImages requires -ImageLockPath."
+    }
+    $resolvedLockPath = [IO.Path]::GetFullPath($ImageLockPath)
+    if (-not (Test-Path -LiteralPath $resolvedLockPath -PathType Leaf)) {
+        throw "Gate C image lock does not exist: $resolvedLockPath"
+    }
+    & uv run --frozen python $imageLockToolPath `
+        --root $root verify --image-lock $resolvedLockPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Gate C locked image verification failed."
+    }
+    $lock = Get-Content -LiteralPath $resolvedLockPath -Raw -Encoding UTF8 |
+        ConvertFrom-Json
+    if (
+        $lock.schema_version -ne "cybercontrol.gate-c-image-lock.v1" -or
+        $lock.process_version -ne $processVersion -or
+        $lock.source.commit -ne $sourceCommit -or
+        $lock.source.tree -ne $sourceTree -or
+        $lock.source.product_source_sha -ne $resolvedProductSourceSha -or
+        $lock.source.engineering_baseline_sha -ne $resolvedEngineeringBaselineSha
+    ) {
+        throw "Gate C image lock source binding is invalid."
+    }
+    $receiptPath = Join-Path (Split-Path -Parent $resolvedLockPath) `
+        ([string]$lock.build_receipt.path)
+    if (-not (Test-Path -LiteralPath $receiptPath -PathType Leaf)) {
+        throw "Gate C image lock build receipt is missing."
+    }
+    $script:imageLock = $lock
+    $script:imageLockSha256 = Get-FileSha256 $resolvedLockPath
+    $script:buildReceiptSha256 = Get-FileSha256 $receiptPath
+}
+
+function Assert-LockedComposeImages {
+    if (-not $LockedImages) {
+        return
+    }
+    $composeDocument = & docker compose @composeArguments config --format json |
+        ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to render Compose while validating the Gate C image lock."
+    }
+    foreach ($service in @(
+        "api",
+        "migrate",
+        "mock-provider",
+        "frontend",
+        "gate-c-load",
+        "postgres",
+        "postgres-role-bootstrap",
+        "tenant-bind",
+        "keycloak",
+        "keycloak-config"
+    )) {
+        $binding = $script:imageLock.services.PSObject.Properties[$service]
+        $composeService = $composeDocument.services.PSObject.Properties[$service]
+        if ($null -eq $binding -or $null -eq $composeService) {
+            throw "Gate C image lock or Compose model is missing service $service."
+        }
+        if ([string]$composeService.Value.image -ne [string]$binding.Value.reference) {
+            throw "Gate C Compose image reference does not match the lock for $service."
+        }
+        $actualImageId = (& docker image inspect --format "{{.Id}}" `
+            ([string]$binding.Value.reference)).Trim()
+        if ($LASTEXITCODE -ne 0 -or $actualImageId -ne [string]$binding.Value.image_id) {
+            throw "Gate C local image content does not match the lock for $service."
+        }
     }
 }
 
@@ -617,6 +700,12 @@ if ($Mode -ne "DiagnosticStages" -and $NoCacheBuild) {
 if ($SkipBuild -and $NoCacheBuild) {
     throw "-SkipBuild and -NoCacheBuild are mutually exclusive."
 }
+if ($LockedImages -and ($SkipBuild -or $NoCacheBuild)) {
+    throw "-LockedImages cannot be combined with -SkipBuild or -NoCacheBuild."
+}
+if (-not $LockedImages -and -not [string]::IsNullOrWhiteSpace($ImageLockPath)) {
+    throw "-ImageLockPath requires -LockedImages."
+}
 if ($MemoryCheckpoints) {
     if (
         $DiagnosticStageNames.Count -ne 1 -or
@@ -642,8 +731,8 @@ if ($JemallocProfileArm -ne "None") {
     if ($MemoryCheckpoints) {
         throw "Jemalloc profiling and memory checkpoints are mutually exclusive."
     }
-    if (-not $SkipBuild) {
-        throw "Jemalloc profile arms must reuse the prevalidated image with -SkipBuild."
+    if (-not $LockedImages) {
+        throw "Jemalloc profile arms must reuse a prevalidated locked image receipt."
     }
     if ([string]::IsNullOrWhiteSpace($JemallocProfileImageDigest)) {
         throw "Jemalloc profile arms require -JemallocProfileImageDigest."
@@ -658,8 +747,8 @@ if ($Mode -ne "HarnessSmoke" -and $SmokeScenario -ne "ColdDeployment") {
 if ($Mode -eq "PreflightSmoke" -and $KeepEnvironment) {
     throw "PreflightSmoke cannot retain its environment."
 }
-if ($Mode -eq "Full" -and $SkipBuild) {
-    throw "Full Gate C acceptance prohibits -SkipBuild."
+if ($Mode -ne "HarnessSmoke" -and -not $LockedImages) {
+    throw "$Mode requires a complete locked image receipt."
 }
 if ($Mode -in @("Full", "PreflightSmoke")) {
     if ($branch -ne "main") {
@@ -700,6 +789,7 @@ $env:GATE_C_PRODUCT_SOURCE_SHA = $resolvedProductSourceSha
 $env:GATE_C_ENGINEERING_BASELINE_SHA = $resolvedEngineeringBaselineSha
 $env:GATE_C_PROCESS_VERSION = $processVersion
 $env:GATE_C_IMAGE_TAG = $sourceCommit
+Initialize-LockedImages
 if ($JemallocProfileArm -ne "None") {
     $script:jemallocProfileBinding = Initialize-JemallocProfileBinding
 }
@@ -727,6 +817,9 @@ if ($JemallocProfileArm -ne "None") {
     jemalloc_profile_arm = $JemallocProfileArm
     jemalloc_profile_binding = $script:jemallocProfileBinding
     no_cache_build = [bool]$NoCacheBuild
+    locked_images = [bool]$LockedImages
+    image_lock_sha256 = $script:imageLockSha256
+    build_receipt_sha256 = $script:buildReceiptSha256
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
     workload_sha256 = Get-FileSha256 $workloadPath
@@ -772,7 +865,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to render the Gate C Compose configuration."
     }
-    if (-not $SkipBuild) {
+    if (-not $SkipBuild -and -not $LockedImages) {
         $buildArguments = @("build")
         if ($NoCacheBuild) {
             $buildArguments += "--no-cache"
@@ -786,6 +879,7 @@ try {
         )
         Invoke-Compose $buildArguments
     }
+    Assert-LockedComposeImages
     Invoke-Compose @("up", "--detach", "--wait", "api")
 
     $builtImages = [ordered]@{
@@ -842,6 +936,9 @@ try {
         jemalloc_profile_arm = $JemallocProfileArm
         jemalloc_profile_binding = $script:jemallocProfileBinding
         no_cache_build = [bool]$NoCacheBuild
+        locked_images = [bool]$LockedImages
+        image_lock_sha256 = $script:imageLockSha256
+        build_receipt_sha256 = $script:buildReceiptSha256
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()

@@ -12,7 +12,7 @@ from typing import Any
 from gate_c.config import Thresholds
 
 _JWT = re.compile(rb"eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}")
-_PROCESS_VERSION = "Gate-C-11-v1.0"
+_PROCESS_VERSION = "Gate-C-12-v1.0"
 
 
 def _parser() -> argparse.ArgumentParser:

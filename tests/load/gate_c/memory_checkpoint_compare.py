@@ -139,7 +139,7 @@ def compare_checkpoints(
     )
     summary = {
         "schema_version": "cybercontrol.memory-checkpoint-comparison.v1",
-        "process_version": "Gate-C-11-v1.0",
+        "process_version": "Gate-C-12-v1.0",
         "source": baseline_manifest["source"],
         "traceback_group_count": len(records),
         "tracemalloc_size_diff_bytes": sum(int(item["size_diff_bytes"]) for item in records),
@@ -166,7 +166,7 @@ def compare_checkpoints(
     _atomic_write(summary_path, _json_bytes(summary))
     output_manifest = {
         "schema_version": "cybercontrol.memory-checkpoint-comparison-manifest.v1",
-        "process_version": "Gate-C-11-v1.0",
+        "process_version": "Gate-C-12-v1.0",
         "source": baseline_manifest["source"],
         "files": [
             {
