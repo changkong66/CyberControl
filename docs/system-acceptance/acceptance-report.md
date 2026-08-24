@@ -15,6 +15,17 @@ against `<=1.10`. Outbox p95/p99 was `1879.698/2898.555ms` and passed.
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
+The current protected main is
+`90a8cbc0e73ae65e844177e91ac4298704040a5e`, tree
+`72882290744d6c7cab7860633c083c236a246853`, with protected-main Release
+Quality Gates [Run 32674327220](https://github.com/changkong66/CyberControl/actions/runs/32674327220)
+at 8/8. The current dual baseline is product source
+`a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
+`90a8cbc0e73ae65e844177e91ac4298704040a5e`. Product source advanced because
+PR #86 changed the deployable diagnostic-capable backend artifact. That source
+has not undergone a formal Gate C replay; the last formal evaluation remains
+bound to `5fcb917b...`.
+
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
 initial Gate C failure and all eleven remediation reruns are preserved as
 distinct evidence snapshots. The current run reached milestone M2, not M3.
@@ -1049,3 +1060,33 @@ change.
 Immutable Release `375257600` contains the 5,655,671-byte failure package with
 SHA256 `205517caae21e184d079219454e9e66903083839b9af87c6cc1d45b2bc604ab8`.
 This is M2 progress but not Gate C acceptance. Gate D-G remain locked.
+
+## P2 Diagnostic Closure Through ADR 0025
+
+PR #82 closed the eleventh formal failure archive as
+`d5494dd1dce671c30ebfe40e046319d7572a52f5`. Its push, pull-request and
+protected-main Runs `32652339505`, `32652673118` and `32652984515` were each
+8/8. The attempt index now links formal attempt 12 to PR #82 without changing
+its failed M2 result.
+
+PR #84 archived the first two P2 root-cause rounds and froze P2 product-code
+changes after neither round established an actionable owner. PR #85 defined
+ADR 0025, and PR #86 added opt-in diagnostic instrumentation. Their protected-
+main Runs `32661964184`, `32663785036` and `32667597681` were each 8/8.
+
+ADR 0025's real A/measurement/A' experiment was rejected. A2 and A' passed the
+200-stream stage and 600-second recovery, but tracemalloc changed connection
+p95 from the `673ms` control median to `17,989ms`, delivery p95 from `45.5ms`
+to `1,175ms`, API CPU p95 from `25.165` to `101.98`, and baseline-to-recovery
+RSS delta from `30,613,504` to `59,334,656` bytes. The resulting ownership data
+is not admissible for selecting a product fix.
+
+PR #87 archived that rejection as
+`90a8cbc0e73ae65e844177e91ac4298704040a5e`; push, pull-request and protected-
+main Runs `32673675887`, `32674014293` and `32674327220` were each 8/8. Its
+immutable package is 5,676,313 bytes with SHA256
+`10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`.
+
+P2 behavior changes and formal Gate C replay remain prohibited. The next
+eligible action is an independently reviewed ADR 0026 lower-interference
+measurement design. Gate C remains failed and Gate D-G remain locked.
