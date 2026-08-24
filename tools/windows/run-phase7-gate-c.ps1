@@ -214,6 +214,26 @@ function Assert-LockedComposeImages {
         if ($null -eq $binding -or $null -eq $composeService) {
             throw "Gate C image lock or Compose model is missing service $service."
         }
+        if ($service -eq "api" -and $JemallocProfileArm -ne "None") {
+            if ($null -eq $script:jemallocProfileBinding) {
+                throw "Gate C profiling API image binding is missing."
+            }
+            if (
+                [string]$composeService.Value.image -ne
+                [string]$script:jemallocProfileBinding.image_reference
+            ) {
+                throw "Gate C Compose profiling API image reference does not match its binding."
+            }
+            $actualProfileImageId = (& docker image inspect --format "{{.Id}}" `
+                ([string]$script:jemallocProfileBinding.image_reference)).Trim()
+            if (
+                $LASTEXITCODE -ne 0 -or
+                $actualProfileImageId -ne [string]$script:jemallocProfileBinding.image_id
+            ) {
+                throw "Gate C local profiling API image content does not match its binding."
+            }
+            continue
+        }
         if ([string]$composeService.Value.image -ne [string]$binding.Value.reference) {
             throw "Gate C Compose image reference does not match the lock for $service."
         }

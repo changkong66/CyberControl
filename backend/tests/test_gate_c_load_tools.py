@@ -313,6 +313,11 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "-LockedImages cannot be combined with -SkipBuild or -NoCacheBuild." in runner
     assert "Gate C image lock source binding is invalid." in runner
     assert "Assert-LockedComposeImages" in runner
+    assert '$service -eq "api" -and $JemallocProfileArm -ne "None"' in runner
+    assert "Gate C profiling API image binding is missing." in runner
+    assert "Gate C Compose profiling API image reference does not match its binding." in runner
+    assert "Gate C local profiling API image content does not match its binding." in runner
+    assert "$actualProfileImageId" in runner
     assert "DiagnosticStages requires explicit -DiagnosticStageNames." in runner
     assert "PreflightSmoke cannot retain its environment." in runner
     assert "Remove-EphemeralResources" in runner
