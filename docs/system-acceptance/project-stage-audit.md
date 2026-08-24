@@ -8,9 +8,9 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`90a8cbc0e73ae65e844177e91ac4298704040a5e`, tree
-`72882290744d6c7cab7860633c083c236a246853`. Protected-main Release Quality
-Gates Run `32674327220` completed 8/8 jobs successfully. PR #86 is the latest
+`d4b646c29bf82297332b9fdd8bc58be19744aecb`, tree
+`c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`. Protected-main Release Quality
+Gates Run `32707158181` completed 8/8 jobs successfully. PR #86 is the latest
 change to a deployable backend artifact, so the current product source is
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
 `963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
@@ -477,8 +477,9 @@ bytes. No actionable owner was proven. PR #87 archived this result as
 
 The immutable round-3 package SHA256 is
 `10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`.
-The next allowed work is ADR 0026 design and review for lower-interference
-ownership measurement. No new P2 candidate or formal replay is authorized.
+At that snapshot, the next allowed work was ADR 0026 design and review for
+lower-interference ownership measurement. No new P2 candidate or formal replay
+was authorized.
 
 ## 11. P2 Round 4 ADR 0026 Measurement Rejection Audit
 
@@ -521,3 +522,25 @@ at 12 entries. The formal state remains
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. After this archive
 and its status-only closure pass the complete CI/merge chain, work must stop
 unless a new low-interference measurement ADR receives separate authorization.
+
+## 12. P2 Round 4 Evidence Archive Closure
+
+Docs/evidence-only PR #91 head
+`cc0955523a3bf8dfa7b0cfbb05c988d38342fcca` passed push Run `32705709392` and
+pull-request Run `32706368555`, Squash Merged as
+`d4b646c29bf82297332b9fdd8bc58be19744aecb`, and passed protected-main Run
+`32707158181`. Each Release Quality Gate run completed 8/8. The merge tree is
+`c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`.
+
+PR #91 changed diagnostic evidence and current-state documents only. It did
+not change a deployable artifact, frozen acceptance semantics or any formal
+result. The dual baseline therefore records engineering baseline `d4b646c...`
+while product source remains `a57d0ce...`; the last formal Gate C evaluation
+remains `5fcb917b...`. `baseline_history` appends PR #91 as diagnostic evidence,
+while `gate_c_attempts` remains exactly 12.
+
+The round-4 archive is closed, but ADR 0026's ownership data remains
+inadmissible. No behavior candidate, diagnostic, preflight or formal replay is
+authorized. After the independent status-only closure completes push, PR,
+Squash Merge and protected-main 8/8, work stops. Gate C remains failed and Gate
+D-G remain locked.

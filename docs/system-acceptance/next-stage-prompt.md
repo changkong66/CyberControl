@@ -1,4 +1,4 @@
-# CyberControl Phase 7 Gate C P2 Round 4 Diagnostic Archive Closure
+# CyberControl Phase 7 Gate C P2 Round 4 Status Closure And Stop Boundary
 
 Process Version: `Gate-C-11-v1.0`
 
@@ -11,8 +11,8 @@ remain locked.
 ## Current Audited Boundary
 
 - Verified protected-main engineering baseline:
-  `ff4f3b9d33ef608772f8c499d8e906e215bc0daf`
-- Engineering tree: `17cb9892a18f927f08ca3feb344b5024965eb9a0`
+  `d4b646c29bf82297332b9fdd8bc58be19744aecb`
+- Engineering tree: `c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`
 - ADR 0026 product source:
   `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
 - Product tree: `963fcf73113e39a1e5868fae3957f4adfc102a4c`
@@ -21,7 +21,7 @@ remain locked.
 - Last formally evaluated tree:
   `f721fca017c247aee93765d5f11fcbc37e12fcfc`
 - Protected-main Release Quality Gates:
-  [Run 32692818024](https://github.com/changkong66/CyberControl/actions/runs/32692818024),
+  [Run 32707158181](https://github.com/changkong66/CyberControl/actions/runs/32707158181),
   8/8
 - Frozen threshold SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
@@ -31,8 +31,12 @@ remain locked.
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
 PR #88 closed round-3 status, PR #89 defined ADR 0026, and PR #90 added the
-approved profiling capability. Their push, pull-request and protected-main
-Release Quality Gate chains all passed 8/8.
+approved profiling capability. PR #91 then closed the rejected round-4
+diagnostic evidence as `d4b646c29bf82297332b9fdd8bc58be19744aecb`. Its
+push, pull-request and protected-main Runs `32705709392`, `32706368555` and
+`32707158181` each passed 8/8. PR #91 changed no deployable product artifact,
+so product source remains `a57d0ce...` while engineering baseline advances to
+`d4b646c...`.
 
 ## Proven Round 4 Boundary
 
@@ -72,51 +76,36 @@ Immutable diagnostic package:
 - GitHub server digest: exact match
 - Immutable prerelease: true
 
-## Phase 0: Close The Evidence PR
+## Current Status-Only Closure
 
-The current branch is docs/evidence-only:
-
-`codex/phase7-gate-c-eleventh-p2-round4-evidence`
-
-1. Verify that it changes only round-4 diagnostic evidence, the separately
-   preserved A' infrastructure-abort record, package reference and four
-   current-state documents.
-2. Validate every JSON file, Git diff whitespace, source/tree and frozen-hash
-   bindings, immutable Release size/digest, and credential/JWT/PII scans.
-3. Verify `gate_c_attempts` still contains exactly 12 formal attempts and has
-   no diagnostic or `INFRA_ABORTED` entry.
-4. Push the branch and require push Release Quality Gates 8/8.
-5. Create a ready pull request and require pull-request Release Quality Gates
-   8/8.
-6. Squash Merge only after green; then require the new protected-main Release
-   Quality Gates run to pass 8/8.
-7. Preserve every historical Release, image, volume, run directory and
-   snapshot. Do not reset, stash, amend, prune, delete or overwrite them.
-
-## Phase 1: Status-Only Closure
-
-After the evidence PR merges and protected main passes 8/8, fetch that exact
-main and create a docs-only branch:
+The evidence archive is closed. The only active branch authorized by this
+snapshot is docs-only:
 
 `codex/phase7-gate-c-eleventh-p2-round4-status-closure`
 
-Update only:
+It may update only:
 
 - `docs/system-acceptance/acceptance-status.json`
 - `docs/system-acceptance/acceptance-report.md`
 - `docs/system-acceptance/project-stage-audit.md`
 - `docs/system-acceptance/next-stage-prompt.md`
 
-Bind the evidence PR number, final head, Squash Merge SHA, push CI,
-pull-request CI and post-merge protected-main CI. Set the round-4 archive
-pending field to false, append the evidence merge to `baseline_history`, keep
-`product_source_sha` unchanged, and keep `gate_c_attempts` at 12. Historical
-snapshots must not be edited.
+1. Bind PR #91, head `cc0955523a3bf8dfa7b0cfbb05c988d38342fcca`, Squash
+   Merge `d4b646c29bf82297332b9fdd8bc58be19744aecb`, and Runs
+   `32705709392`, `32706368555` and `32707158181`.
+2. Set round-4 archive pending to false and append PR #91 to
+   `baseline_history` as diagnostic evidence.
+3. Keep product source `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, formal state
+   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`, and `gate_c_attempts=12` unchanged.
+4. Validate all JSON, diff whitespace, exact source/tree/CI bindings, and that
+   only the four current-state documents changed.
+5. Require push and pull-request Release Quality Gates 8/8, Squash Merge, and
+   post-merge protected-main 8/8.
+6. Preserve every historical Release, image, volume, run directory and
+   snapshot. Do not reset, stash, amend, prune, delete or overwrite them.
 
-Require the status-only PR's push and pull-request Release Quality Gates 8/8,
-Squash Merge and post-merge protected-main 8/8. A commit cannot contain its own
-future merge SHA or CI, so the final merge and protected-main run remain
-external GitHub attestations.
+A commit cannot contain its own future merge SHA or CI, so the status PR's
+eventual merge and protected-main run remain external GitHub attestations.
 
 ## Stop Rule
 
