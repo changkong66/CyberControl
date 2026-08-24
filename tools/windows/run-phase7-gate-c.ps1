@@ -25,6 +25,12 @@ param(
 
     [switch]$MemoryCheckpoints,
 
+    [ValidateSet("None", "A", "Measurement", "APrime")]
+    [string]$JemallocProfileArm = "None",
+
+    [ValidatePattern('^sha256:[0-9a-f]{64}$')]
+    [string]$JemallocProfileImageDigest,
+
     [ValidateSet("ColdDeployment", "ControlledApiRestart", "StableIdle")]
     [string]$SmokeScenario = "ColdDeployment",
 
@@ -48,6 +54,7 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $baseCompose = Join-Path $root "infra\docker-compose.yml"
 $gateCompose = Join-Path $root "tests\load\docker-compose.gate-c.yml"
 $memoryCheckpointCompose = Join-Path $root "tests\load\docker-compose.gate-c-memory-checkpoints.yml"
+$jemallocProfileCompose = Join-Path $root "tests\load\docker-compose.gate-c-jemalloc-profile.yml"
 $thresholdPath = Join-Path $root "tests\load\gate-c-thresholds.v1.json"
 $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
 $monitorPath = Join-Path $root "tests\load\gate_c\monitor.py"
@@ -101,7 +108,11 @@ $composeArguments = @(
 if ($MemoryCheckpoints) {
     $composeArguments = @($composeArguments + @("-f", $memoryCheckpointCompose))
 }
+if ($JemallocProfileArm -ne "None") {
+    $composeArguments = @($composeArguments + @("-f", $jemallocProfileCompose))
+}
 $monitorProcesses = @()
+$script:jemallocProfileBinding = $null
 
 function Invoke-Compose {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
@@ -245,6 +256,150 @@ function Get-ComposeImageId {
         throw "Unable to resolve image $imageReference for Gate C service $Service."
     }
     return $imageId
+}
+
+function Get-ImageRepoDigest {
+    param([Parameter(Mandatory = $true)][string]$ImageReference)
+
+    $repoDigests = @(& docker image inspect --format "{{range .RepoDigests}}{{println .}}{{end}}" `
+        $ImageReference)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to inspect repository digests for $ImageReference."
+    }
+    $digests = @(
+        $repoDigests |
+            ForEach-Object { ($_ -split "@")[-1].Trim() } |
+            Where-Object { $_ -match '^sha256:[0-9a-f]{64}$' } |
+            Sort-Object -Unique
+    )
+    if ($digests.Count -ne 1) {
+        throw "Image $ImageReference does not have exactly one content digest."
+    }
+    return $digests[0]
+}
+
+function Get-JemallocLibraryBinding {
+    param([Parameter(Mandatory = $true)][string]$ImageReference)
+
+    $metadata = @(& docker run --rm --entrypoint /bin/sh $ImageReference -c `
+        'set -eu; library=/opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2; sha256sum "$library" | cut -d" " -f1; readelf -n "$library" | awk ''/Build ID:/ {print $3}''')
+    if ($LASTEXITCODE -ne 0 -or $metadata.Count -ne 2) {
+        throw "Unable to read the profiling library binding from $ImageReference."
+    }
+    $librarySha256 = $metadata[0].Trim()
+    $libraryBuildId = $metadata[1].Trim()
+    if ($librarySha256 -notmatch '^[0-9a-f]{64}$') {
+        throw "Profiling library SHA256 is invalid."
+    }
+    if ($libraryBuildId -notmatch '^[0-9a-f]{40}$') {
+        throw "Profiling library build ID is invalid."
+    }
+    return [pscustomobject]@{
+        sha256 = $librarySha256
+        build_id = $libraryBuildId
+    }
+}
+
+function Initialize-JemallocProfileBinding {
+    $imageReference = Get-ComposeImageReference -Service "api"
+    $imageId = Get-ComposeImageId -Service "api"
+    $imageDigest = Get-ImageRepoDigest -ImageReference $imageReference
+    if ($imageDigest -ne $JemallocProfileImageDigest) {
+        throw "Profiling image digest does not match -JemallocProfileImageDigest."
+    }
+    $library = Get-JemallocLibraryBinding -ImageReference $imageReference
+
+    $env:GATE_C_JEMALLOC_PROFILE_LIBRARY_SHA256 = $library.sha256
+    $env:GATE_C_JEMALLOC_PROFILE_LIBRARY_BUILD_ID = $library.build_id
+    $env:GATE_C_JEMALLOC_PROFILE_IMAGE_ID = $imageId
+    $env:GATE_C_JEMALLOC_PROFILE_IMAGE_DIGEST = $imageDigest
+
+    return [pscustomobject]@{
+        arm = $JemallocProfileArm
+        image_reference = $imageReference
+        image_id = $imageId
+        image_digest = $imageDigest
+        library_sha256 = $library.sha256
+        library_build_id = $library.build_id
+    }
+}
+
+function Invoke-JemallocProfileTransition {
+    param(
+        [Parameter(Mandatory = $true)][string]$ContainerId,
+        [Parameter(Mandatory = $true)][ValidateSet("activation", "completion")][string]$Name
+    )
+
+    if ($JemallocProfileArm -ne "Measurement" -or $null -eq $script:jemallocProfileBinding) {
+        throw "Only the fixed Measurement arm may transition jemalloc profiling."
+    }
+    $manifestPath = Join-Path $runDirectory "jemalloc-profile\$Name.manifest.json"
+    if (Test-Path -LiteralPath $manifestPath) {
+        throw "Jemalloc profile $Name manifest already exists."
+    }
+    & docker kill --signal USR2 $ContainerId | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to signal the API jemalloc profile $Name transition."
+    }
+    $deadline = (Get-Date).AddSeconds(61)
+    do {
+        if (Test-Path -LiteralPath $manifestPath) {
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 |
+                ConvertFrom-Json
+            $expectedAction = if ($Name -eq "activation") { "activate" } else { "complete" }
+            $expectedPrevious = if ($Name -eq "activation") { "inactive" } else { "sampling" }
+            $expectedFinal = if ($Name -eq "activation") { "sampling" } else { "complete" }
+            if (
+                $manifest.schema_version -ne "cybercontrol.jemalloc-profile-manifest.v1" -or
+                $manifest.action -ne $expectedAction -or
+                $manifest.previous_state -ne $expectedPrevious -or
+                $manifest.final_state -ne $expectedFinal -or
+                $manifest.source.source_sha -ne $sourceCommit -or
+                $manifest.source.source_tree -ne $sourceTree -or
+                $manifest.source.product_source_sha -ne $resolvedProductSourceSha -or
+                $manifest.source.engineering_baseline_sha -ne $resolvedEngineeringBaselineSha -or
+                $manifest.source.process_version -ne $processVersion -or
+                $manifest.source.library_sha256 -ne $script:jemallocProfileBinding.library_sha256 -or
+                $manifest.source.library_build_id -ne $script:jemallocProfileBinding.library_build_id -or
+                $manifest.source.image_id -ne $script:jemallocProfileBinding.image_id -or
+                $manifest.source.image_digest -ne $script:jemallocProfileBinding.image_digest
+            ) {
+                throw "Jemalloc profile $Name manifest has invalid source or state binding."
+            }
+            if ($Name -eq "completion") {
+                $profilePath = Join-Path $runDirectory "jemalloc-profile\profile.heap"
+                if (
+                    -not (Test-Path -LiteralPath $profilePath -PathType Leaf) -or
+                    $manifest.files.Count -ne 1 -or
+                    $manifest.files[0].path -ne "profile.heap" -or
+                    [int64]$manifest.files[0].size_bytes -ne (Get-Item -LiteralPath $profilePath).Length -or
+                    $manifest.files[0].sha256 -ne (Get-FileSha256 $profilePath)
+                ) {
+                    throw "Jemalloc profile completion artifact failed integrity validation."
+                }
+            }
+            elseif ($manifest.files.Count -ne 0) {
+                throw "Jemalloc profile activation unexpectedly created an artifact."
+            }
+            return
+        }
+        Start-Sleep -Seconds 1
+    } while ((Get-Date) -lt $deadline)
+    throw "Jemalloc profile $Name transition did not complete within 60 seconds."
+}
+
+function Invoke-JemallocProfileSymbolization {
+    param([Parameter(Mandatory = $true)][string]$ContainerId)
+
+    & docker exec $ContainerId /bin/sh -ec `
+        '/opt/cybercontrol/jemalloc-prof/bin/jeprof --show_bytes --text /usr/local/bin/python /gate-c-results/jemalloc-profile/profile.heap > /gate-c-results/jemalloc-profile/symbolized.txt'
+    if ($LASTEXITCODE -ne 0) {
+        throw "Jemalloc profile symbolization failed."
+    }
+    $report = Join-Path $runDirectory "jemalloc-profile\symbolized.txt"
+    if (-not (Test-Path -LiteralPath $report -PathType Leaf) -or (Get-Item $report).Length -eq 0) {
+        throw "Jemalloc profile symbolization produced no report."
+    }
 }
 
 function Wait-ComposeServiceHealthy {
@@ -472,6 +627,31 @@ if ($MemoryCheckpoints) {
         throw "Memory checkpoints require only ramp-200, 300 idle seconds and 600 recovery seconds."
     }
 }
+if ($JemallocProfileArm -ne "None") {
+    if ($Mode -ne "DiagnosticStages") {
+        throw "Jemalloc profile arms are valid only with -Mode DiagnosticStages."
+    }
+    if (
+        $DiagnosticStageNames.Count -ne 1 -or
+        $DiagnosticStageNames[0] -ne "ramp-200" -or
+        $DiagnosticIdleSeconds -ne 300 -or
+        $DiagnosticRecoverySeconds -ne 600
+    ) {
+        throw "Jemalloc profile arms require only ramp-200, 300 idle seconds and 600 recovery seconds."
+    }
+    if ($MemoryCheckpoints) {
+        throw "Jemalloc profiling and memory checkpoints are mutually exclusive."
+    }
+    if (-not $SkipBuild) {
+        throw "Jemalloc profile arms must reuse the prevalidated image with -SkipBuild."
+    }
+    if ([string]::IsNullOrWhiteSpace($JemallocProfileImageDigest)) {
+        throw "Jemalloc profile arms require -JemallocProfileImageDigest."
+    }
+}
+elseif (-not [string]::IsNullOrWhiteSpace($JemallocProfileImageDigest)) {
+    throw "-JemallocProfileImageDigest requires a jemalloc profile arm."
+}
 if ($Mode -ne "HarnessSmoke" -and $SmokeScenario -ne "ColdDeployment") {
     throw "-SmokeScenario is valid only with -Mode HarnessSmoke."
 }
@@ -506,6 +686,10 @@ if ($MemoryCheckpoints) {
     New-Item -ItemType Directory -Path (Join-Path $runDirectory "memory-checkpoints") -Force |
         Out-Null
 }
+if ($JemallocProfileArm -ne "None") {
+    New-Item -ItemType Directory -Path (Join-Path $runDirectory "jemalloc-profile") -Force |
+        Out-Null
+}
 $env:GATE_C_RESULTS_DIR = $runDirectory
 $env:GATE_C_POSTGRES_VOLUME = $volumeName
 $env:LIYAN_POSTGRES_HOST_PORT = [string]$PostgresHostPort
@@ -516,6 +700,9 @@ $env:GATE_C_PRODUCT_SOURCE_SHA = $resolvedProductSourceSha
 $env:GATE_C_ENGINEERING_BASELINE_SHA = $resolvedEngineeringBaselineSha
 $env:GATE_C_PROCESS_VERSION = $processVersion
 $env:GATE_C_IMAGE_TAG = $sourceCommit
+if ($JemallocProfileArm -ne "None") {
+    $script:jemallocProfileBinding = Initialize-JemallocProfileBinding
+}
 
 [ordered]@{
     schema_version = "cybercontrol.gate-c-execution-metadata.v1"
@@ -537,6 +724,8 @@ $env:GATE_C_IMAGE_TAG = $sourceCommit
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
     diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
     memory_checkpoints = [bool]$MemoryCheckpoints
+    jemalloc_profile_arm = $JemallocProfileArm
+    jemalloc_profile_binding = $script:jemallocProfileBinding
     no_cache_build = [bool]$NoCacheBuild
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
@@ -650,6 +839,8 @@ try {
         diagnostic_idle_seconds = $DiagnosticIdleSeconds
         diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
         memory_checkpoints = [bool]$MemoryCheckpoints
+        jemalloc_profile_arm = $JemallocProfileArm
+        jemalloc_profile_binding = $script:jemallocProfileBinding
         no_cache_build = [bool]$NoCacheBuild
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
@@ -685,6 +876,9 @@ try {
         }
         finally {
             Stop-GateMonitor -Process $baselineMonitor
+        }
+        if ($JemallocProfileArm -eq "Measurement") {
+            Invoke-JemallocProfileTransition -ContainerId $apiContainer -Name "activation"
         }
     }
 
@@ -759,6 +953,14 @@ try {
         finally {
             Stop-GateMonitor -Process $monitor
         }
+        if (
+            $Mode -eq "DiagnosticStages" -and
+            $stageName -eq [string]$selectedStages[-1].name -and
+            $JemallocProfileArm -eq "Measurement"
+        ) {
+            Invoke-JemallocProfileTransition -ContainerId $apiContainer -Name "completion"
+            Invoke-JemallocProfileSymbolization -ContainerId $apiContainer
+        }
         $apiLogPath = Join-Path $stageDirectory "api-runtime.log"
         & docker compose @composeArguments logs --no-color --timestamps --since $stageStartedUtc api 2>&1 |
             Set-Content -LiteralPath $apiLogPath -Encoding UTF8
@@ -797,6 +999,30 @@ try {
         }
         elseif ($stageSummaryExitCode -ne 0) {
             throw "Gate C stage $stageName failed its frozen thresholds."
+        }
+    }
+
+    if ($JemallocProfileArm -in @("A", "APrime")) {
+        $profileArtifacts = @(Get-ChildItem -LiteralPath (Join-Path $runDirectory "jemalloc-profile") `
+            -Force -File)
+        if ($profileArtifacts.Count -ne 0) {
+            throw "Jemalloc control arm produced an unauthorized profile artifact."
+        }
+    }
+    elseif ($JemallocProfileArm -eq "Measurement") {
+        $profileArtifactNames = @(
+            Get-ChildItem -LiteralPath (Join-Path $runDirectory "jemalloc-profile") -Force -File |
+                Select-Object -ExpandProperty Name |
+                Sort-Object
+        )
+        $expectedProfileArtifacts = @(
+            "activation.manifest.json",
+            "completion.manifest.json",
+            "profile.heap",
+            "symbolized.txt"
+        ) | Sort-Object
+        if (($profileArtifactNames -join "|") -ne ($expectedProfileArtifacts -join "|")) {
+            throw "Jemalloc measurement arm artifacts are incomplete or unexpected."
         }
     }
 
@@ -884,5 +1110,7 @@ if ($Mode -eq "Full") {
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
     diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
     memory_checkpoints = [bool]$MemoryCheckpoints
+    jemalloc_profile_arm = $JemallocProfileArm
+    jemalloc_profile_binding = $script:jemallocProfileBinding
     no_cache_build = [bool]$NoCacheBuild
 } | ConvertTo-Json -Depth 4

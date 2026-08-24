@@ -22,6 +22,7 @@ from gate_c.config import (  # noqa: E402
     is_slow_consumer,
 )
 from gate_c.finalize import _formal_execution_metadata  # noqa: E402
+from gate_c.jemalloc_profile_capability import _verify_report  # noqa: E402
 from gate_c.monitor import (  # noqa: E402
     _process_memory_metrics,
     _size_bytes,
@@ -369,6 +370,7 @@ def test_gate_c_source_built_images_have_bound_provenance_contract() -> None:
         root / "infra" / "frontend.Dockerfile",
         root / "infra" / "mock-provider.Dockerfile",
         root / "tests" / "load" / "Dockerfile",
+        root / "tests" / "load" / "jemalloc-profile.Dockerfile",
     )
     expected_labels = (
         "org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA}",
@@ -416,6 +418,91 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
     assert "cybercontrol/gate-c-frontend:${GATE_C_IMAGE_TAG:-unknown}" in compose
     assert "cybercontrol/gate-c-load:${GATE_C_IMAGE_TAG:-unknown}" in compose
+
+
+def test_jemalloc_profile_image_is_pinned_and_diagnostic_only() -> None:
+    root = Path(__file__).resolve().parents[2]
+    normal = (root / "infra" / "backend.Dockerfile").read_text(encoding="utf-8")
+    profile = (root / "tests" / "load" / "jemalloc-profile.Dockerfile").read_text(encoding="utf-8")
+
+    assert "--enable-prof" in profile
+    assert "--enable-prof-libunwind" in profile
+    assert "make -j2 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check" in profile
+    assert "upstream-test-compiler-flags.txt" in profile
+    assert "2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa" in profile
+    assert "555b08620f00919e9b99c98a433cfcb755359395d62622cc8ae967d6717d43a0" in profile
+    assert "487908875c68b8ceb3fbd2c88f04eb2ddf8dd212272a2b3898e5e4fbd885623d" in profile
+    assert "prof:true,prof_active:false,lg_prof_sample:19" in profile
+    assert "prof_gdump:false,prof_final:false,prof_leak:false" in profile
+    assert "libprofile-cohort.so" in profile
+    assert "com.cybercontrol.diagnostic-capability=jemalloc-prof-5.3.0" in profile
+    assert "prof:true" not in normal
+
+
+def test_jemalloc_profile_symbolization_requires_resolved_native_cohort(tmp_path: Path) -> None:
+    report = tmp_path / "symbolized.txt"
+    output = tmp_path / "validation.json"
+    report.write_text(
+        "Total: 100663296 B\n"
+        " 96636764  96.0%  96.0%  96636764  96.0% cybercontrol_profile_allocate\n",
+        encoding="utf-8",
+    )
+
+    _verify_report(report, output)
+
+    validation = json.loads(output.read_text(encoding="utf-8"))
+    assert validation["passed"] is True
+    assert validation["resolved_percentage"] == 96.0
+
+    low_resolution = tmp_path / "low-resolution.txt"
+    low_resolution.write_text(
+        " 50331648  50.0%  50.0% cybercontrol_profile_allocate\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="below 90%"):
+        _verify_report(low_resolution, tmp_path / "must-not-exist.json")
+
+    misleading_cumulative = tmp_path / "misleading-cumulative.txt"
+    misleading_cumulative.write_text(
+        " 1048576  1.0% 100.0% 93323264 89.0% cybercontrol_profile_allocate\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="below 90%"):
+        _verify_report(misleading_cumulative, tmp_path / "also-must-not-exist.json")
+
+
+def test_gate_c_jemalloc_profile_protocol_is_fixed_and_non_formal() -> None:
+    root = Path(__file__).resolve().parents[2]
+    runner = (root / "tools" / "windows" / "run-phase7-gate-c.ps1").read_text(encoding="utf-8")
+    compose = (root / "tests" / "load" / "docker-compose.gate-c-jemalloc-profile.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert '[ValidateSet("None", "A", "Measurement", "APrime")]' in runner
+    assert '[string]$JemallocProfileArm = "None"' in runner
+    assert "Jemalloc profile arms are valid only with -Mode DiagnosticStages." in runner
+    assert "Jemalloc profile arms require only ramp-200, 300 idle seconds" in runner
+    assert "Jemalloc profile arms must reuse the prevalidated image with -SkipBuild." in runner
+    assert "Profiling image digest does not match -JemallocProfileImageDigest." in runner
+    assert "docker kill --signal USR2" in runner
+    assert '$JemallocProfileArm -eq "Measurement"' in runner
+    assert (
+        'Invoke-JemallocProfileTransition -ContainerId $apiContainer -Name "activation"' in runner
+    )
+    assert (
+        'Invoke-JemallocProfileTransition -ContainerId $apiContainer -Name "completion"' in runner
+    )
+    assert "Jemalloc control arm produced an unauthorized profile artifact." in runner
+    assert 'formal_gate_attempt = ($Mode -eq "Full")' in runner
+
+    assert "cybercontrol/gate-c-jemalloc-profile:${GATE_C_IMAGE_TAG:-unknown}" in compose
+    assert "dockerfile: tests/load/jemalloc-profile.Dockerfile" in compose
+    assert 'LIYAN_MEMORY_DIAGNOSTICS: "false"' in compose
+    assert 'LIYAN_MEMORY_CHECKPOINT_DIR: ""' in compose
+    assert "LIYAN_JEMALLOC_PROFILE_DIR: /gate-c-results/jemalloc-profile" in compose
+    assert "GATE_C_JEMALLOC_PROFILE_IMAGE_DIGEST" in compose
+    assert "X-Tenant-ID" not in compose
+    assert "X-Subject-Ref" not in compose
 
 
 def test_gate_c_monitor_uses_the_compose_postgres_host_port() -> None:
