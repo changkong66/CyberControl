@@ -1090,3 +1090,46 @@ immutable package is 5,676,313 bytes with SHA256
 P2 behavior changes and formal Gate C replay remain prohibited. The next
 eligible action is an independently reviewed ADR 0026 lower-interference
 measurement design. Gate C remains failed and Gate D-G remain locked.
+
+## P2 ADR 0026 Measurement Rejection
+
+Process Version: `Gate-C-11-v1.0`
+
+PR #88 closed the round-3 status through push, pull-request and protected-main
+Runs `32676245119`, `32676665813` and `32676982606`, each 8/8. PR #89 then
+defined ADR 0026, and PR #90 added its disabled-by-default profiling
+capability. Their protected-main Runs `32683062644` and `32692818024` passed
+8/8. The verified engineering baseline is
+`ff4f3b9d33ef608772f8c499d8e906e215bc0daf`, tree
+`17cb9892a18f927f08ca3feb344b5024965eb9a0`; ADR 0026 keeps product source
+`a57d0ce57427804ede3f3c620fda2a93b3a300ff` separate from that diagnostic
+capability baseline.
+
+The real A2/measurement/A' experiment used the same API image digest
+`sha256:e7d0db88369011eb4ce181a49a7224db4b35f4c49c28f24cf492b9322b5b8d86`,
+real Keycloak issuance, two tenants, twenty subjects, independent Compose
+projects and fresh PostgreSQL volumes. A2 and A' passed independently. Their
+connection p95 was `637/591ms`, delivery p95 was `45/43ms`, API CPU p95 was
+`22.64/22.74`, and RSS delta was `18,497,536/19,709,952` bytes.
+
+The measurement arm completed but failed ADR 0026's predefined interference
+limits. Against control medians of `614ms`, `44ms`, `22.69` and `19,103,744`
+bytes, it produced connection p95 `702ms` (`1.143322x`), delivery p95 `53ms`
+(`1.204545x`), API CPU p95 `25.32` (`1.11591x`) and RSS delta `32,808,960`
+bytes (`+13,705,216` bytes). The allowed ratios were `<=1.10`, and the RSS
+difference limit was `8,388,608` bytes. The profile therefore cannot support
+an ownership conclusion or product behavior change.
+
+All three completed arms had complete monitor sampling and passed their local
+functional/security controls. Final subscriber, queue, replay-task, checked-
+out pool and active application-session gauges were zero; Outbox ended
+`PUBLISHED=26` in each arm with no `DEAD`, OOM or restart. These observations
+do not turn a diagnostic into a formal Gate C attempt.
+
+Immutable Release `375536270` contains the redacted 86,286-byte round-4
+package with SHA256
+`97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410`.
+Its GitHub asset digest matches. Raw runs and all five PostgreSQL volumes are
+preserved; no prune or historical deletion occurred. This docs/evidence-only
+archive is pending CI and merge closure, so P2 behavior changes, formal Gate C
+replay and Gate D-G remain prohibited.
