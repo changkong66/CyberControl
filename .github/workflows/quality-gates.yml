@@ -408,6 +408,7 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.yml config --quiet
           source_tree="$(git rev-parse 'HEAD^{tree}')"
+          daemon_builder="$(docker context show)"
           printf 'SOURCE_TREE=%s\n' "$source_tree" >> "$GITHUB_ENV"
           build_args=(
             --build-arg "CYBERCONTROL_SOURCE_SHA=${{ github.sha }}"
@@ -435,6 +436,7 @@ jobs:
             "${build_args[@]}" \
             .
           docker buildx build \
+            --builder "$daemon_builder" \
             --no-cache \
             --file tests/load/jemalloc-profile.Dockerfile \
             --build-arg "BACKEND_IMAGE=$BACKEND_IMAGE_REF" \
