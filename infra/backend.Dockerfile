@@ -17,7 +17,11 @@ COPY pyproject.toml uv.lock .python-version /app/
 COPY backend /app/backend
 COPY packages/contracts-python /app/packages/contracts-python
 
-RUN uv sync --frozen --no-dev --all-packages --no-editable --extra retrieval
+RUN uv sync --frozen --no-dev --all-packages --no-editable --extra retrieval \
+    && find /app/.venv -path '*/site-packages/*.dist-info/uv_cache.json' \
+        -type f -delete \
+    && find /app/.venv -path '*/site-packages/*.dist-info/RECORD' \
+        -type f -exec sed -i '/\/uv_cache\.json,/d' '{}' +
 
 FROM ${PYTHON_IMAGE} AS runtime
 
@@ -65,6 +69,7 @@ RUN printf '%s  %s\n' \
         /tmp/locked-apks/libgcc-15.2.0-r5.apk \
         /tmp/locked-apks/libstdc++-15.2.0-r5.apk \
         /tmp/locked-apks/jemalloc-5.3.0-r6.apk \
+    && rm -f /var/log/apk.log \
     && rm -rf /tmp/locked-apks \
     && python -m pip uninstall --yes setuptools wheel \
     && python -m pip uninstall --yes pip \

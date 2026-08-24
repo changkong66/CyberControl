@@ -9,7 +9,11 @@ RUN python -m pip install "uv==${UV_VERSION}"
 COPY pyproject.toml uv.lock .python-version /app/
 COPY backend /app/backend
 COPY packages/contracts-python /app/packages/contracts-python
-RUN uv sync --frozen --no-dev --all-packages --no-editable --extra load
+RUN uv sync --frozen --no-dev --all-packages --no-editable --extra load \
+    && find /app/.venv -path '*/site-packages/*.dist-info/uv_cache.json' \
+        -type f -delete \
+    && find /app/.venv -path '*/site-packages/*.dist-info/RECORD' \
+        -type f -exec sed -i '/\/uv_cache\.json,/d' '{}' +
 
 FROM ${PYTHON_IMAGE} AS runtime
 

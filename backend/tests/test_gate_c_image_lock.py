@@ -89,3 +89,17 @@ def test_image_lock_rejects_service_content_mismatch(
     args = argparse.Namespace(root=ROOT, image_lock=lock_path)
     with pytest.raises(ValueError, match="service api"):
         gate_c_image_lock.verify(args)
+
+
+@pytest.mark.parametrize("dockerfile", ["infra/backend.Dockerfile", "tests/load/Dockerfile"])
+def test_python_images_remove_nondeterministic_uv_workspace_metadata(dockerfile: str) -> None:
+    source = (ROOT / dockerfile).read_text(encoding="utf-8")
+
+    assert "-path '*/site-packages/*.dist-info/uv_cache.json'" in source
+    assert "'/\\/uv_cache\\.json,/d'" in source
+
+
+def test_backend_image_removes_wall_clock_apk_log() -> None:
+    source = (ROOT / "infra/backend.Dockerfile").read_text(encoding="utf-8")
+
+    assert "rm -f /var/log/apk.log" in source
