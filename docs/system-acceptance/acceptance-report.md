@@ -16,12 +16,12 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current protected main is
-`90a8cbc0e73ae65e844177e91ac4298704040a5e`, tree
-`72882290744d6c7cab7860633c083c236a246853`, with protected-main Release
-Quality Gates [Run 32674327220](https://github.com/changkong66/CyberControl/actions/runs/32674327220)
+`d4b646c29bf82297332b9fdd8bc58be19744aecb`, tree
+`c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`, with protected-main Release
+Quality Gates [Run 32707158181](https://github.com/changkong66/CyberControl/actions/runs/32707158181)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`90a8cbc0e73ae65e844177e91ac4298704040a5e`. Product source advanced because
+`d4b646c29bf82297332b9fdd8bc58be19744aecb`. Product source advanced because
 PR #86 changed the deployable diagnostic-capable backend artifact. That source
 has not undergone a formal Gate C replay; the last formal evaluation remains
 bound to `5fcb917b...`.
@@ -1087,11 +1087,12 @@ main Runs `32673675887`, `32674014293` and `32674327220` were each 8/8. Its
 immutable package is 5,676,313 bytes with SHA256
 `10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`.
 
-P2 behavior changes and formal Gate C replay remain prohibited. The next
-eligible action is an independently reviewed ADR 0026 lower-interference
-measurement design. Gate C remains failed and Gate D-G remain locked.
+P2 behavior changes and formal Gate C replay remained prohibited. At that
+snapshot, the next eligible action was an independently reviewed ADR 0026
+lower-interference measurement design; its rejected result and archive closure
+are recorded below. Gate C remains failed and Gate D-G remain locked.
 
-## P2 ADR 0026 Measurement Rejection
+## P2 ADR 0026 Measurement Rejection And Archive Closure
 
 Process Version: `Gate-C-11-v1.0`
 
@@ -1130,6 +1131,19 @@ Immutable Release `375536270` contains the redacted 86,286-byte round-4
 package with SHA256
 `97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410`.
 Its GitHub asset digest matches. Raw runs and all five PostgreSQL volumes are
-preserved; no prune or historical deletion occurred. This docs/evidence-only
-archive is pending CI and merge closure, so P2 behavior changes, formal Gate C
-replay and Gate D-G remain prohibited.
+preserved; no prune or historical deletion occurred.
+
+Docs/evidence-only PR [#91](https://github.com/changkong66/CyberControl/pull/91)
+head `cc0955523a3bf8dfa7b0cfbb05c988d38342fcca` passed push Run
+`32705709392` and pull-request Run `32706368555`, Squash Merged as
+`d4b646c29bf82297332b9fdd8bc58be19744aecb`, and passed protected-main Run
+`32707158181`; each Release Quality Gate run completed 8/8. PR #91 changed no
+deployable product artifact, so product source remains `a57d0ce...` while the
+engineering baseline advances to `d4b646c...`. `gate_c_attempts` remains at 12
+because neither the diagnostic nor its infrastructure abort is a formal run.
+
+The round-4 evidence archive is closed, but the rejected profile still proves
+no owner. After this status-only closure completes its own CI and merge chain,
+work stops. P2 behavior changes, diagnostics, preflight, formal Gate C replay
+and Gate D-G remain prohibited unless a new measurement ADR receives separate
+explicit authorization.
