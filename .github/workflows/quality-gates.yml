@@ -679,10 +679,16 @@ jobs:
           output-file: artifacts/sbom/jemalloc-profile-container.cdx.json
           upload-artifact: false
           dependency-snapshot: false
-      - name: Validate diagnostic container license evidence
+      - name: Generate diagnostic component license SBOM
+        run: >-
+          python3 tools/generate_diagnostic_license_sbom.py
+          --provenance artifacts/container/jemalloc-build-provenance
+          --licenses artifacts/container/jemalloc-licenses
+          --output artifacts/sbom/jemalloc-profile-license-sbom.cdx.json
+      - name: Validate diagnostic component license evidence
         run: >-
           python3 tools/validate_sbom_policy.py
-          artifacts/sbom/jemalloc-profile-container.cdx.json
+          artifacts/sbom/jemalloc-profile-license-sbom.cdx.json
           --output artifacts/sbom/jemalloc-profile-license-policy.json
       - name: Record complete container vulnerability inventory
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -787,6 +793,7 @@ jobs:
             artifacts/sbom/backend-container.cdx.json
             artifacts/sbom/frontend-container.cdx.json
             artifacts/sbom/jemalloc-profile-container.cdx.json
+            artifacts/sbom/jemalloc-profile-license-sbom.cdx.json
             artifacts/sbom/jemalloc-profile-license-policy.json
             artifacts/sbom/mock-provider-container.cdx.json
           if-no-files-found: warn

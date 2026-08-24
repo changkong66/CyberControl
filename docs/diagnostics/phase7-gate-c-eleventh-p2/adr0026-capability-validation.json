@@ -1,0 +1,179 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-capability-validation.v2",
+  "process_version": "Gate-C-11-v1.0",
+  "classification": "LOCAL_CAPABILITY_TEST",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "root_cause_domain": "P2",
+  "result": "CAPABILITY_VALIDATED_NO_OWNER_SELECTED",
+  "source": {
+    "source_sha": "1379e60d2fd3859f85445f8ec2d4b10bdaadab63",
+    "source_tree": "e6110d6afeb3b13b739a3262b1f21256384cfd68",
+    "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "engineering_baseline_sha": "1379e60d2fd3859f85445f8ec2d4b10bdaadab63",
+    "parent_engineering_baseline_sha": "d6cf032ec4cda5e2997a6da8e6ce0910d6b939fa"
+  },
+  "image": {
+    "reference": "cybercontrol/adr0026-profile:1379e60d2fd3859f85445f8ec2d4b10bdaadab63",
+    "image_id": "sha256:c1394e83abac1fba346fc2a37d0a271dab98516cbed64ffb2c99cd54b4bb9e13",
+    "image_digest": "sha256:c1394e83abac1fba346fc2a37d0a271dab98516cbed64ffb2c99cd54b4bb9e13",
+    "image_size_bytes": 107083487,
+    "user": "10001:10001",
+    "normal_runtime_reference": "cybercontrol/adr0026-backend:1379e60d2fd3859f85445f8ec2d4b10bdaadab63",
+    "normal_runtime_digest": "sha256:6259bd88d5dec7b4d28b655ff3c529e09d1368fc0e3c23967f70589fd68bb030"
+  },
+  "library": {
+    "name": "jemalloc",
+    "version": "5.3.0",
+    "path": "/opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2",
+    "sha256": "afd6c5f12f24a4a48ef4b3cc6020a216386c84df65162f6c8f722ba1cdda1c98",
+    "build_id": "3fbf022c2f2c8af0f219fd0ad039b653ba27970a"
+  },
+  "upstream_tests": {
+    "command": "make -j2 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check",
+    "passed": 89,
+    "skipped": 9,
+    "failed": 0,
+    "scope_note": "The compiler flag is test-only and is not used for the production library build."
+  },
+  "capability_checks": {
+    "profiling_library_loaded_from_exact_path": true,
+    "runtime_user_non_root": true,
+    "config_prof": true,
+    "config_stats": true,
+    "opt_prof": true,
+    "startup_prof_active": false,
+    "state_sequence": ["inactive", "sampling", "complete"],
+    "profile_active_after_completion": false,
+    "cohort_block_size_bytes": 1048576,
+    "cohort_block_count": 96,
+    "cohort_allocated_bytes": 100663296,
+    "symbolization_resolved_percentage": 100.0,
+    "symbolization_minimum_percentage": 90.0,
+    "normal_image_profiling_inactive": true
+  },
+  "local_quality": {
+    "tested_worktree_parent_sha": "1379e60d2fd3859f85445f8ec2d4b10bdaadab63",
+    "tested_diff_scope": "diagnostic capability record, component license SBOM generator, its regressions, and CI license-policy wiring",
+    "python_non_integration": {
+      "passed": 696,
+      "skipped": 2,
+      "deselected": 88
+    },
+    "python_postgresql_keycloak": {
+      "passed": 784,
+      "skipped": 2,
+      "coverage_percent": 91.68,
+      "migration_head": "20260720_0010",
+      "upgrade_downgrade_upgrade": true,
+      "model_drift_detected": false,
+      "coverage_xml_sha256": "2c0b00328d512c3786f662e4bb40d38c67408175facc4abf4b59f01176e5d714",
+      "junit_sha256": "b8ed2625b72174dd196601eac6269bc8e9f79ba79f3bd954845ff3b5a10b944d"
+    },
+    "focused_capability_and_license": {
+      "passed": 48
+    },
+    "frontend": {
+      "tests_passed": 72,
+      "statement_coverage_percent": 89.12,
+      "line_coverage_percent": 92.38,
+      "typecheck_passed": true,
+      "build_passed": true
+    },
+    "playwright_real_browser": {
+      "passed": 8,
+      "browser": "Google Chrome via Playwright",
+      "local_port_note": "Used 47075 because Windows reserves the repository's fixed local port 5175; no test or application semantics changed."
+    },
+    "go": {
+      "format_passed": true,
+      "module_graph_verified": true,
+      "vet_passed": true,
+      "race_test_passed": true,
+      "build_passed": true
+    },
+    "contracts_drift": false,
+    "actionlint_passed": true,
+    "ruff_passed": true,
+    "python_dependency_audit_known_vulnerabilities": 0,
+    "node_dependency_audit_known_vulnerabilities": 0,
+    "gitleaks_repository_findings": 0
+  },
+  "supply_chain": {
+    "trivy_version": "0.72.0",
+    "complete_container_vulnerability_count": 0,
+    "fixable_high_critical_redline_passed": true,
+    "container_sbom_sha256": "100d832745753e787a3cda90d83d5c353d34f4c71bdfb8920162688a19bed6b0",
+    "container_trivy_sha256": "6792331a875aff55acf11a4b5d4d1d7c8b6ed91df13246921797bf7818523d77",
+    "diagnostic_component_license": "BSD-2-Clause",
+    "diagnostic_component_license_file_sha256": "94aa2caa98c25d942f58b956c71dba6a99ff98fc3a31cbc669fe2a4cd0268b53",
+    "diagnostic_component_license_policy_passed": true,
+    "complete_container_sbom_boundary": "The complete image SBOM is retained for inventory. The existing application-dependency prohibition policy is applied to the source-built jemalloc component supplement rather than misclassifying independent Alpine system tools."
+  },
+  "package": {
+    "classification": "LOCAL_CAPABILITY_PACKAGE",
+    "formal_gate_attempt": false,
+    "acceptance_claim": false,
+    "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/adr0026-capability-20260824T034857Z-1379e60d2fd3.zip",
+    "bytes": 99848,
+    "sha256": "2240ba3a4f7dc366a0679c1989efc649ab6a2b76c748cb9e5a59a0fbbc9bc66a",
+    "manifest_files": 27,
+    "manifest_sha256": "0fbe2ae8540dbd65bca21ba94d874745e8fcdfd628fb81f97ae3543c377599d0",
+    "verification": {
+      "recorded_files": 27,
+      "actual_files": 27,
+      "missing_files": 0,
+      "mismatched_files": 0,
+      "unexpected_files": 0,
+      "json_files_validated": 13,
+      "passed": true
+    },
+    "redaction_scan": {
+      "gitleaks_raw_candidates": 4,
+      "gitleaks_actionable_findings": 0,
+      "candidate_classification": "public Alpine base-image GPG_KEY metadata",
+      "jwt_hits": 0,
+      "authorization_bearer_hits": 0,
+      "private_key_hits": 0,
+      "credential_assignment_hits": 0,
+      "pii_hits": 0
+    }
+  },
+  "artifacts": {
+    "root": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/adr0026-capability-20260824T034857Z-1379e60d2fd3",
+    "retention": "preserve-raw-local-diagnostic-artifacts",
+    "files": [
+      {
+        "path": "activation.manifest.json",
+        "bytes": 1224,
+        "sha256": "d1571e54803ca2d381453ea096f7d798455c4f8413d9a2fd7b01525bdcde7862"
+      },
+      {
+        "path": "capability-result.json",
+        "bytes": 450,
+        "sha256": "9179f75707ea261892dda91b84846adff3a65f48d76d23508584e5c911313cb4"
+      },
+      {
+        "path": "completion.manifest.json",
+        "bytes": 1380,
+        "sha256": "1e00a06438de3b76d41f7fe3fb87323e5139b35b675a63804c93b3a33b27c6ac"
+      },
+      {
+        "path": "profile.heap",
+        "bytes": 44914,
+        "sha256": "de41bd8f428c5194d4ccf995271c3b98efba7294f864601e6aa9f476a60c9474"
+      },
+      {
+        "path": "symbolization-validation.json",
+        "bytes": 246,
+        "sha256": "c7ba4fbf4b31a8e75546a8cb2d0f164340d45073d13bc533d21653ad6f588789"
+      },
+      {
+        "path": "symbolized.txt",
+        "bytes": 1580,
+        "sha256": "051a440a6d4b42dde88221de23317c8f5f8843096746649e4855f6dac8338453"
+      }
+    ]
+  },
+  "interpretation_boundary": "This local capability test proves that the diagnostic image can load the profiled jemalloc build, activate and complete one contained profile, and resolve the deterministic native cohort. It did not run A/measurement/A', did not measure interference, did not identify an RSS owner, did not change production behavior, and did not authorize a P2 remediation or Gate C replay."
+}
