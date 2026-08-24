@@ -409,6 +409,7 @@ jobs:
           docker compose -f infra/docker-compose.yml config --quiet
           source_tree="$(git rev-parse 'HEAD^{tree}')"
           daemon_builder="$(docker context show)"
+          mkdir -p artifacts/container artifacts/security artifacts/sbom
           printf 'SOURCE_TREE=%s\n' "$source_tree" >> "$GITHUB_ENV"
           build_args=(
             --build-arg "CYBERCONTROL_SOURCE_SHA=${{ github.sha }}"
@@ -442,9 +443,9 @@ jobs:
             --build-arg "BACKEND_IMAGE=$BACKEND_IMAGE_REF" \
             --tag "$JEMALLOC_PROFILE_IMAGE_REF" \
             --load \
+            --metadata-file artifacts/container/jemalloc-profile-build-metadata.json \
             "${build_args[@]}" \
             .
-          mkdir -p artifacts/container artifacts/security artifacts/sbom
           docker image inspect "$BACKEND_IMAGE_REF" > artifacts/container/backend-image-inspect.json
           docker image inspect "$FRONTEND_IMAGE_REF" > artifacts/container/frontend-image-inspect.json
           docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" > artifacts/container/jemalloc-profile-image-inspect.json
@@ -499,8 +500,22 @@ jobs:
           test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "com.cybercontrol.process-version"}}')" = "$GATE_C_PROCESS_VERSION"
 
           profile_image_id="$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{.Id}}')"
-          profile_repo_digest="$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .RepoDigests 0}}')"
-          profile_image_digest="${profile_repo_digest#*@}"
+          profile_image_digest="$(python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          metadata = json.loads(
+              Path("artifacts/container/jemalloc-profile-build-metadata.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          digest = metadata.get("containerimage.digest")
+          if not isinstance(digest, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None:
+              raise SystemExit("Buildx metadata does not contain a valid containerimage.digest")
+          print(digest)
+          PY
+          )"
           [[ "$profile_image_id" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$profile_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
           library_sha256="$(docker run --rm --entrypoint /bin/sh "$JEMALLOC_PROFILE_IMAGE_REF" -c \
