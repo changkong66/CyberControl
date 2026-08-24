@@ -2,7 +2,7 @@
 
 Process Version: `Gate-C-11-v1.0`
 
-- Status: Proposed; design review only
+- Status: Capability implementation candidate; diagnostic execution not authorized
 - Root-cause domain: P2 RSS recovery
 - Classification: measurement design only
 - Formal Gate C attempt: no
@@ -387,6 +387,35 @@ restart recovery, cache-limit changes, extra workers, timeout/grace changes,
 lower load, changed aggregation, identity headers and broadened roles remain
 prohibited. Heap profiling must never be enabled in a formal Gate C or
 production execution.
+
+## Capability Implementation Record
+
+The capability branch is based on engineering baseline
+`d6cf032ec4cda5e2997a6da8e6ce0910d6b939fa`; its product source remains the
+previously evaluated diagnostic-instrumentation source
+`a57d0ce57427804ede3f3c620fda2a93b3a300ff`. The implementation is limited to
+the approved source-built diagnostic image, disabled-by-default process-local
+controller, fixed diagnostic runner arm controls and regressions. It does not
+change the normal image's allocator settings or any application behavior.
+
+The real Alpine `3.24.1` build uses GCC `15.2.0`. The first complete upstream
+`make -j2 check` attempt failed in all three `aligned_alloc` integration test
+modes because GCC `-O3` treated intentionally invalid `aligned_alloc`
+arguments as undefined by the C library contract and removed the calls. The
+captured failures were `0`, `9`, `17`, through `4194305` alignment cases;
+OOM, valid-alignment and zero-size cases passed. A separately compiled probe
+resolved `aligned_alloc` to the built jemalloc library and returned
+`NULL/EINVAL` for alignment `9`, proving the allocator implementation was not
+the cause. Rebuilding only the upstream test compilation with
+`EXTRA_CFLAGS=-fno-builtin-aligned_alloc` retained the calls and produced the
+real suite result `89/98 pass, 9/98 explicit skip, 0 fail`. The production
+library is still built with the approved configure flags; the narrow compiler
+flag is retained in build provenance and is not a test exclusion.
+
+The candidate's real no-cache profiling image digest, library digest, build
+ID, SBOM and capability result are intentionally absent until the exact
+committed candidate is built and tested. No local debug image or uncommitted
+working-tree result is an acceptance or diagnostic evidence claim.
 
 ## Required Tests And Quality Gates
 

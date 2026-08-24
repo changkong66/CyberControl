@@ -385,11 +385,14 @@ jobs:
   container-security:
     name: Container build, runtime, SBOM, and vulnerability scan
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       BACKEND_IMAGE_REF: liyans-backend:ci-${{ github.sha }}
       FRONTEND_IMAGE_REF: liyans-frontend:ci-${{ github.sha }}
+      JEMALLOC_PROFILE_IMAGE_REF: liyans-jemalloc-profile:ci-${{ github.sha }}
       MOCK_PROVIDER_IMAGE_REF: liyans-mock-provider:ci-${{ github.sha }}
+      GATE_C_PRODUCT_SOURCE_SHA: a57d0ce57427804ede3f3c620fda2a93b3a300ff
+      GATE_C_PROCESS_VERSION: Gate-C-11-v1.0
     steps:
       - name: Check out immutable source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -400,24 +403,45 @@ jobs:
       - name: Validate Compose and build pinned production images
         run: |
           docker compose -f infra/docker-compose.yml config --quiet
+          source_tree="$(git rev-parse 'HEAD^{tree}')"
+          printf 'SOURCE_TREE=%s\n' "$source_tree" >> "$GITHUB_ENV"
+          build_args=(
+            --build-arg "CYBERCONTROL_SOURCE_SHA=${{ github.sha }}"
+            --build-arg "CYBERCONTROL_SOURCE_TREE=$source_tree"
+            --build-arg "CYBERCONTROL_PRODUCT_SOURCE_SHA=$GATE_C_PRODUCT_SOURCE_SHA"
+            --build-arg "CYBERCONTROL_ENGINEERING_BASELINE_SHA=${{ github.sha }}"
+            --build-arg "CYBERCONTROL_PROCESS_VERSION=$GATE_C_PROCESS_VERSION"
+          )
           docker buildx build \
             --file infra/backend.Dockerfile \
             --tag "$BACKEND_IMAGE_REF" \
             --load \
+            "${build_args[@]}" \
             .
           docker buildx build \
             --file infra/frontend.Dockerfile \
             --tag "$FRONTEND_IMAGE_REF" \
             --load \
+            "${build_args[@]}" \
             .
           docker buildx build \
             --file infra/mock-provider.Dockerfile \
             --tag "$MOCK_PROVIDER_IMAGE_REF" \
             --load \
+            "${build_args[@]}" \
+            .
+          docker buildx build \
+            --no-cache \
+            --file tests/load/jemalloc-profile.Dockerfile \
+            --build-arg "BACKEND_IMAGE=$BACKEND_IMAGE_REF" \
+            --tag "$JEMALLOC_PROFILE_IMAGE_REF" \
+            --load \
+            "${build_args[@]}" \
             .
           mkdir -p artifacts/container artifacts/security artifacts/sbom
           docker image inspect "$BACKEND_IMAGE_REF" > artifacts/container/backend-image-inspect.json
           docker image inspect "$FRONTEND_IMAGE_REF" > artifacts/container/frontend-image-inspect.json
+          docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" > artifacts/container/jemalloc-profile-image-inspect.json
           docker image inspect "$MOCK_PROVIDER_IMAGE_REF" > artifacts/container/mock-provider-image-inspect.json
       - name: Enforce non-root and minimal runtime images
         run: |
@@ -457,6 +481,147 @@ jobs:
             test ! -e /usr/local/lib/python3.11/site-packages/setuptools
             test ! -e /usr/local/lib/python3.11/site-packages/wheel
           '
+      - name: Validate diagnostic jemalloc image and real profile capability
+        run: |
+          set -euo pipefail
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{.Config.User}}')" = "10001:10001"
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "com.cybercontrol.diagnostic-capability"}}')" = "jemalloc-prof-5.3.0"
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${{ github.sha }}"
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "com.cybercontrol.source-tree"}}')" = "$SOURCE_TREE"
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "com.cybercontrol.product-source"}}')" = "$GATE_C_PRODUCT_SOURCE_SHA"
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "com.cybercontrol.engineering-baseline"}}')" = "${{ github.sha }}"
+          test "$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .Config.Labels "com.cybercontrol.process-version"}}')" = "$GATE_C_PROCESS_VERSION"
+
+          profile_image_id="$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{.Id}}')"
+          profile_repo_digest="$(docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" --format '{{index .RepoDigests 0}}')"
+          profile_image_digest="${profile_repo_digest#*@}"
+          [[ "$profile_image_id" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$profile_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          library_sha256="$(docker run --rm --entrypoint /bin/sh "$JEMALLOC_PROFILE_IMAGE_REF" -c \
+            'sha256sum /opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2 | cut -d" " -f1')"
+          library_build_id="$(docker run --rm --entrypoint /bin/sh "$JEMALLOC_PROFILE_IMAGE_REF" -c \
+            'readelf -n /opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2 | awk '\''/Build ID:/ {print $3}'\''')"
+          [[ "$library_sha256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$library_build_id" =~ ^[0-9a-f]{40}$ ]]
+
+          docker run --rm --entrypoint /bin/sh "$JEMALLOC_PROFILE_IMAGE_REF" -ec '
+            grep -Fq /opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2 /proc/self/maps
+            test "${LD_PRELOAD:-}" = /opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2
+            printf "%s" "${MALLOC_CONF:-}" | grep -Fq "prof:true,prof_active:false,lg_prof_sample:19"
+            test "$(id -u)" = 10001
+            test "$(id -g)" = 10001
+          '
+          docker run --rm --entrypoint /bin/sh "$BACKEND_IMAGE_REF" -ec '
+            test "${LD_PRELOAD:-}" = /usr/lib/libjemalloc.so.2
+            ! printf "%s" "${MALLOC_CONF:-}" | grep -Fq "prof:true"
+            test ! -e /opt/cybercontrol/jemalloc-prof
+            python -c "from liyans.infrastructure.observability.metrics import PlatformMetrics; assert not PlatformMetrics().jemalloc_profiles.enabled"
+          '
+
+          capability_dir="$PWD/artifacts/container/jemalloc-capability"
+          mkdir -p "$capability_dir"
+          chmod 0777 "$capability_dir"
+          docker run --rm \
+            --read-only \
+            --tmpfs /tmp:size=64m,mode=1777 \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            --volume "$capability_dir:/profiles" \
+            --env LIYAN_JEMALLOC_PROFILE_DIR=/profiles \
+            --env LIYAN_JEMALLOC_PROFILE_SOURCE_SHA=${{ github.sha }} \
+            --env LIYAN_JEMALLOC_PROFILE_SOURCE_TREE="$SOURCE_TREE" \
+            --env LIYAN_JEMALLOC_PROFILE_PRODUCT_SOURCE_SHA="$GATE_C_PRODUCT_SOURCE_SHA" \
+            --env LIYAN_JEMALLOC_PROFILE_ENGINEERING_BASELINE_SHA=${{ github.sha }} \
+            --env LIYAN_JEMALLOC_PROFILE_PROCESS_VERSION="$GATE_C_PROCESS_VERSION" \
+            --env LIYAN_JEMALLOC_PROFILE_LIBRARY_SHA256="$library_sha256" \
+            --env LIYAN_JEMALLOC_PROFILE_LIBRARY_BUILD_ID="$library_build_id" \
+            --env LIYAN_JEMALLOC_PROFILE_IMAGE_ID="$profile_image_id" \
+            --env LIYAN_JEMALLOC_PROFILE_IMAGE_DIGEST="$profile_image_digest" \
+            "$JEMALLOC_PROFILE_IMAGE_REF" \
+            python /opt/cybercontrol/jemalloc-prof/bin/capability-check exercise
+          docker run --rm \
+            --read-only \
+            --tmpfs /tmp:size=64m,mode=1777 \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            --volume "$capability_dir:/profiles" \
+            --entrypoint /bin/sh \
+            "$JEMALLOC_PROFILE_IMAGE_REF" -ec \
+            '/opt/cybercontrol/jemalloc-prof/bin/jeprof --show_bytes --text /usr/local/bin/python /profiles/profile.heap > /profiles/symbolized.txt'
+          docker run --rm \
+            --read-only \
+            --tmpfs /tmp:size=64m,mode=1777 \
+            --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            --volume "$capability_dir:/profiles" \
+            "$JEMALLOC_PROFILE_IMAGE_REF" \
+            python /opt/cybercontrol/jemalloc-prof/bin/capability-check verify-report \
+            --report /profiles/symbolized.txt \
+            --output /profiles/symbolization-validation.json
+
+          export PROFILE_IMAGE_ID="$profile_image_id"
+          export PROFILE_IMAGE_DIGEST="$profile_image_digest"
+          export PROFILE_LIBRARY_SHA256="$library_sha256"
+          export PROFILE_LIBRARY_BUILD_ID="$library_build_id"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/container/jemalloc-capability")
+          activation = json.loads((root / "activation.manifest.json").read_text())
+          completion = json.loads((root / "completion.manifest.json").read_text())
+          result = json.loads((root / "capability-result.json").read_text())
+          symbolization = json.loads((root / "symbolization-validation.json").read_text())
+          expected_source = {
+              "source_sha": os.environ["GITHUB_SHA"],
+              "source_tree": os.environ["SOURCE_TREE"],
+              "product_source_sha": os.environ["GATE_C_PRODUCT_SOURCE_SHA"],
+              "engineering_baseline_sha": os.environ["GITHUB_SHA"],
+              "process_version": os.environ["GATE_C_PROCESS_VERSION"],
+              "library_sha256": os.environ["PROFILE_LIBRARY_SHA256"],
+              "library_build_id": os.environ["PROFILE_LIBRARY_BUILD_ID"],
+              "image_id": os.environ["PROFILE_IMAGE_ID"],
+              "image_digest": os.environ["PROFILE_IMAGE_DIGEST"],
+          }
+          assert activation["source"] == expected_source
+          assert completion["source"] == expected_source
+          assert activation["previous_state"] == "inactive"
+          assert activation["final_state"] == "sampling"
+          assert completion["previous_state"] == "sampling"
+          assert completion["final_state"] == "complete"
+          assert result["state"] == "complete"
+          assert result["profiler_active"] is False
+          assert result["cohort"]["allocated_bytes"] == 96 * 1024 * 1024
+          assert symbolization["passed"] is True
+          assert symbolization["resolved_percentage"] >= 90.0
+          profile = root / "profile.heap"
+          record = completion["files"]
+          assert len(record) == 1 and record[0]["path"] == profile.name
+          assert record[0]["size_bytes"] == profile.stat().st_size
+          assert record[0]["sha256"] == hashlib.sha256(profile.read_bytes()).hexdigest()
+          binding = {
+              "schema_version": "cybercontrol.jemalloc-profile-image-binding.v1",
+              "process_version": os.environ["GATE_C_PROCESS_VERSION"],
+              "source": expected_source,
+          }
+          (root.parent / "jemalloc-profile-binding.json").write_text(
+              json.dumps(binding, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          provenance_id="$(docker create "$JEMALLOC_PROFILE_IMAGE_REF")"
+          trap 'docker rm -f "$provenance_id" >/dev/null 2>&1 || true' EXIT
+          docker cp "$provenance_id:/opt/cybercontrol/jemalloc-prof/share/build-provenance" \
+            artifacts/container/jemalloc-build-provenance
+          docker cp "$provenance_id:/opt/cybercontrol/jemalloc-prof/share/licenses" \
+            artifacts/container/jemalloc-licenses
+          docker rm "$provenance_id" >/dev/null
+          trap - EXIT
+          grep -q "$library_sha256" \
+            artifacts/container/jemalloc-build-provenance/library-sha256.txt
       - name: Smoke-test container liveness
         run: |
           container_id="$(docker run -d \
@@ -506,6 +671,19 @@ jobs:
           output-file: artifacts/sbom/mock-provider-container.cdx.json
           upload-artifact: false
           dependency-snapshot: false
+      - name: Generate CycloneDX diagnostic jemalloc container SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ${{ env.JEMALLOC_PROFILE_IMAGE_REF }}
+          format: cyclonedx-json
+          output-file: artifacts/sbom/jemalloc-profile-container.cdx.json
+          upload-artifact: false
+          dependency-snapshot: false
+      - name: Validate diagnostic container license evidence
+        run: >-
+          python3 tools/validate_sbom_policy.py
+          artifacts/sbom/jemalloc-profile-container.cdx.json
+          --output artifacts/sbom/jemalloc-profile-license-policy.json
       - name: Record complete container vulnerability inventory
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -542,6 +720,18 @@ jobs:
           exit-code: "0"
           format: json
           output: artifacts/security/mock-provider-container-trivy.json
+      - name: Record complete diagnostic jemalloc vulnerability inventory
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.JEMALLOC_PROFILE_IMAGE_REF }}
+          scanners: vuln
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          timeout: 15m0s
+          exit-code: "0"
+          format: json
+          output: artifacts/security/jemalloc-profile-container-trivy.json
       - name: Block fixable high and critical container vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -575,6 +765,17 @@ jobs:
           timeout: 15m0s
           exit-code: "1"
           format: table
+      - name: Block fixable diagnostic jemalloc high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.JEMALLOC_PROFILE_IMAGE_REF }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          timeout: 15m0s
+          exit-code: "1"
+          format: table
       - name: Upload container security evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -585,6 +786,8 @@ jobs:
             artifacts/security
             artifacts/sbom/backend-container.cdx.json
             artifacts/sbom/frontend-container.cdx.json
+            artifacts/sbom/jemalloc-profile-container.cdx.json
+            artifacts/sbom/jemalloc-profile-license-policy.json
             artifacts/sbom/mock-provider-container.cdx.json
           if-no-files-found: warn
           retention-days: 90

@@ -21,6 +21,7 @@ from prometheus_client.core import Metric
 from prometheus_client.exposition import generate_latest
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from liyans.infrastructure.observability.jemalloc_profiles import JemallocProfileController
 from liyans.infrastructure.observability.memory_checkpoints import MemoryCheckpointManager
 
 logger = logging.getLogger(__name__)
@@ -368,16 +369,19 @@ class PlatformMetrics:
             "LIYAN_MEMORY_DIAGNOSTICS",
             "",
         ).strip().lower() in {"1", "true", "yes", "on"}
-        if (
-            self._memory_diagnostics_enabled
-            and os.getenv("LIYAN_MEMORY_CHECKPOINT_DIR", "").strip()
-        ):
+        checkpoint_enabled = bool(os.getenv("LIYAN_MEMORY_CHECKPOINT_DIR", "").strip())
+        profile_enabled = bool(os.getenv("LIYAN_JEMALLOC_PROFILE_DIR", "").strip())
+        if sum((self._memory_diagnostics_enabled, checkpoint_enabled, profile_enabled)) > 1:
             raise ValueError(
-                "periodic memory diagnostics and checkpoint mode are mutually exclusive"
+                "periodic memory diagnostics, checkpoint mode and jemalloc profiling "
+                "are mutually exclusive"
             )
         self._memory_checkpoints = MemoryCheckpointManager.from_environment(
             allocator_reader=self.allocator_inventory,
         )
+        self._jemalloc_profiles = JemallocProfileController.from_environment()
+        if self._jemalloc_profiles.enabled and tracemalloc.is_tracing():
+            raise ValueError("jemalloc profiling requires tracemalloc to remain disabled")
         self._memory_diagnostics_interval = max(
             5.0,
             float(os.getenv("LIYAN_MEMORY_DIAGNOSTICS_INTERVAL_SECONDS", "30")),
@@ -569,6 +573,10 @@ class PlatformMetrics:
     def memory_checkpoints(self) -> MemoryCheckpointManager:
         return self._memory_checkpoints
 
+    @property
+    def jemalloc_profiles(self) -> JemallocProfileController:
+        return self._jemalloc_profiles
+
     def register_memory_checkpoint_inventory(
         self,
         name: str,
@@ -578,6 +586,7 @@ class PlatformMetrics:
 
     async def start_memory_diagnostics(self) -> None:
         await self._memory_checkpoints.start()
+        await self._jemalloc_profiles.start()
         if not self._memory_diagnostics_enabled:
             return
         async with self._memory_diagnostics_lifecycle_lock:
@@ -589,6 +598,7 @@ class PlatformMetrics:
             )
 
     async def close(self) -> None:
+        await self._jemalloc_profiles.close()
         await self._memory_checkpoints.close()
         async with self._memory_diagnostics_lifecycle_lock:
             task = self._memory_diagnostics_task
