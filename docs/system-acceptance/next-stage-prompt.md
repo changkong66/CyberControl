@@ -1,9 +1,10 @@
-# CyberControl Phase 7 Gate C P2 RSS Single-Variable Remediation And Rerun
+# CyberControl Phase 7 Gate C P2 ADR 0026 Low-Interference Measurement Redesign
 
 Process Version: `Gate-C-11-v1.0`
 
-Record this process version in every new diagnostic, preflight and formal-run
-metadata record. Do not relabel historical runs.
+Record `process_version: Gate-C-11-v1.0` in every new diagnostic, preflight,
+formal-run, manifest and package-reference record. Do not relabel or rewrite
+historical evidence.
 
 Work only from real protected-main, GitHub Actions, Docker, PostgreSQL,
 Keycloak-issued Tokens and immutable evidence in
@@ -11,191 +12,193 @@ Keycloak-issued Tokens and immutable evidence in
 Tokens, images, volumes, metrics, packages or acceptance decisions. Gate D-G
 remain locked.
 
-## Evaluated M2 Baseline
+## Current Audited Boundary
 
-- Evaluated protected main/product source/engineering baseline:
+- Current protected-main engineering baseline:
+  `90a8cbc0e73ae65e844177e91ac4298704040a5e`
+- Engineering tree: `72882290744d6c7cab7860633c083c236a246853`
+- Current product source:
+  `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
+- Product tree: `963fcf73113e39a1e5868fae3957f4adfc102a4c`
+- Last formally evaluated Gate C source:
   `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
-- Source tree: `f721fca017c247aee93765d5f11fcbc37e12fcfc`
-- Eleventh remediation PR:
-  [#81](https://github.com/changkong66/CyberControl/pull/81)
-- Remediation head: `af10947bf05b40a5759f40973770f3aaef561f89`
-- Push/PR/main CI:
-  [32644827393](https://github.com/changkong66/CyberControl/actions/runs/32644827393) /
-  [32644829425](https://github.com/changkong66/CyberControl/actions/runs/32644829425) /
-  [32645162420](https://github.com/changkong66/CyberControl/actions/runs/32645162420), each 8/8
-- Formal run:
-  `D:/CyberControlAcceptance/phase7/gate-c/gate-c-20260823T144052Z-5fcb917b6388`
-- Preserved PostgreSQL volume:
-  `cybercontrol_gate_c_eleventh_5fcb917_20260823`
-- Immutable package SHA256:
-  `205517caae21e184d079219454e9e66903083839b9af87c6cc1d45b2bc604ab8`
-- Immutable Release:
-  [375257600](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-eleventh-remediation-failed-20260823-5fcb917-evidence-v1)
-- Threshold SHA256:
+- Last formally evaluated tree:
+  `f721fca017c247aee93765d5f11fcbc37e12fcfc`
+- Current protected-main CI:
+  [Run 32674327220](https://github.com/changkong66/CyberControl/actions/runs/32674327220),
+  8/8
+- Frozen threshold SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
-- Workload SHA256:
+- Frozen workload SHA256:
   `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
-The run reached M2, not M3. All 20/200/500/1000/2000 stages and the fixed
-ten-minute recovery completed. Delivery p95/p99 at 2,000 was `758/1077ms`,
-monitor completeness was `491/495`, and Outbox p95/p99 was
-`1879.698/2898.555ms`. Loss, final duplicates, tenant leakage, invalid cursor
-acceptance, HTTP 5xx, pool timeout, Outbox `DEAD`, OOM and restart were zero.
-Terminal subscriber, close, queue, replay/cache/task and pool gauges were zero.
+PR #82 closed the eleventh formal failure archive. PR #84 froze P2 behavior
+changes after two root-cause rounds failed to prove an actionable owner. PR
+#87 archived ADR 0025's rejected measurement experiment. Its immutable package
+is 5,676,313 bytes with SHA256
+`10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`:
 
-The only failed frozen control was API cgroup recovery memory ratio `1.417200`
-against `<=1.10`. Cgroup memory first/final/peak was
-262,144,000/371,510,477/436,941,619 bytes. Process RSS was
-307,265,536/416,342,016/481,173,504 bytes; USS was
-295,247,872/405,143,552/468,893,696 bytes; PSS was
-298,700,800/409,633,792/472,241,152 bytes. Mapping count was 2,259 first,
-4,237 final and 4,684 peak. These observations prove retention, not ownership.
+https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-adr0025-measurement-rejected-20260824-v1
 
-## Phase 0: Close This Failure Archive
+ADR 0025 was rejected because tracemalloc materially changed the workload:
+connection p95 was `17,989ms` versus the `673ms` control median, delivery p95
+was `1,175ms` versus `45.5ms`, API CPU p95 was `101.98` versus `25.165`, and
+baseline-to-recovery RSS delta was `59,334,656` versus `30,613,504` bytes.
+No actionable RSS owner was proved. These results do not authorize a P2
+behavior change or a formal Gate C replay.
 
-Before any P2 branch or behavior change:
+## Phase 0: Close The Current Status PR
 
-1. Require the independent eleventh failure-evidence PR to pass push and
-   pull-request Release Quality Gates 8/8, Squash Merge and protected-main 8/8.
-2. Fetch `origin/main` and record the exact evidence merge SHA/tree and CI URL.
-   Preserve `product_source_sha=5fcb917b...`; the evidence merge changes only
-   `engineering_baseline_sha`.
-3. Verify the immutable Release asset size/digest and local package hash again.
-4. Preserve the formal run, volume, images, Release and all historical evidence.
-   Do not reset, stash, prune, delete, overwrite or reuse them.
-5. Use a new isolated worktree from exact current `origin/main`. Do not use the
-   dirty primary workspace as a build context.
-6. Revalidate hard environment controls, image provenance, Compose/lock and
-   frozen hashes. Hard differences block execution; reference differences are
-   documented.
+The current branch
+`codex/phase7-gate-c-eleventh-p2-round3-status-closure` is docs-only. Before
+creating ADR 0026:
 
-Only after that closure may a separately authorized branch be created:
+1. Verify it changes only the four current-state documents and does not alter
+   historical snapshots, source, contracts, tests, build files or evidence.
+2. Require push and pull-request Release Quality Gates 8/8, ready review,
+   Squash Merge and post-merge protected-main 8/8.
+3. Fetch `origin/main` and record that exact merge SHA/tree and CI URL. The
+   merge advances only `engineering_baseline_sha`; `product_source_sha`
+   remains `a57d0ce...`.
+4. Revalidate the frozen hashes, clean isolated worktree, Docker hard controls,
+   disk capacity and preservation of all historical evidence, Releases,
+   images and volumes. Do not reset, stash, prune, delete or overwrite them.
 
-`codex/phase7-gate-c-eleventh-p2-rss-remediation`
+Only after this closure may a new exact-main branch be created:
 
-## P2 Scope And ADR
+`codex/phase7-gate-c-eleventh-p2-adr0026-design`
 
-P2 may change only the concrete owner of the proven RSS retention. Before a
-behavior change, add an ADR with:
+## ADR 0026 Scope: Design Only
 
-- product and engineering baseline SHA/tree and process version;
-- the formal run ID, package SHA/URI and exact evidence paths;
-- one measurable ownership hypothesis;
-- A/B/A' reproduction method and quantitative disproof metric;
-- affected modules/interfaces and semantic-redline impact assessment;
-- positive and negative/boundary regression coverage;
-- stop conditions and the P2 root-cause round count.
+ADR 0026 is a docs-only, independently reviewed measurement design. It must
+not add a profiler, change a Dockerfile, alter runtime behavior, start a
+diagnostic, unfreeze P2 product changes or claim Gate C progress.
 
-One PR may contain one root cause and the minimum corresponding change. No
-unrelated refactoring, formatting, Outbox optimization, P0 rework or feature
-change is permitted.
+The ADR must bind the then-current product and engineering SHA/tree, parent
+main CI, process version, ADR 0025 run IDs, comparison/root-cause paths,
+immutable package URI/size/SHA256, environment fingerprint and frozen hashes.
+It must include one falsifiable ownership hypothesis, an impact assessment,
+quantitative interference limits, stop conditions and a complete evidence
+index.
 
-## Ownership Measurement Before Fix
+The proposed hypothesis is sampled jemalloc heap profiling, compiled into a
+profiling-capable diagnostic image but inactive by default, can identify a
+repeatable allocation call-stack owner without materially changing workload
+or RSS behavior. This is a hypothesis, not an approved implementation or root-
+cause conclusion.
 
-Measure synchronized snapshots at system idle, the frozen first 2,000-stage
-sample, the 2,000-stage final minute, forced client disconnect, and throughout
-the unchanged ten-minute recovery. Correlate:
+Before the design can be approved, it must specify and checksum:
 
-- cgroup RSS, process RSS/USS/PSS, anonymous/file RSS and `/proc` maps;
-- Python traced current/peak allocations and bounded object-type deltas;
-- GC generation counters without calling `gc.collect()`;
-- live tasks, completed task exceptions and retained coroutine/frame chains;
-- metric family, label and sample cardinality;
-- HTTP/DB pools, sessions, transactions and checked-out connections;
-- SSE serialization buffers, queues, replay buffers/caches and subscribers;
-- client/request/response lifecycle objects and socket buffers;
-- allocator arena/mmap statistics available without recovery-only mutation.
+- exact upstream jemalloc source URI, version and source archive SHA256;
+- reproducible build toolchain/base image digests and every configure/build
+  flag, including profiling and statistics support;
+- installed library path, library SHA256, exported build/configuration output
+  and immutable image build ID/digest;
+- exact process-start allocator configuration, profiling sample rate, dump
+  controls, activation/deactivation mechanism and output path containment;
+- profiler artifact schema, symbolization method, redaction rules and offline
+  comparator version/hash.
 
-Trace suspected objects from creation through cancellation/close/shutdown to
-the concrete retaining reference. Distinguish reachable Python memory, native
-allocator high-water state, mappings, legitimate bounded pools and abnormal
-references. A correlation or object count alone is not a root-cause proof.
+No floating package source, unpinned compiler, mutable image tag or unrecorded
+build option is admissible.
 
-Do not use forced GC, process restart, recovery-only `malloc_trim`, a changed
-RSS baseline, lower cache limits without ownership evidence, increased timeout
-or grace period, reduced load/events, extra workers or changed aggregation.
+## Controlled A / Measurement / A' Protocol
 
-## Layered Causal Validation
+Use one profiling-capable image digest for A, measurement and A'. Do not
+compare different allocator builds or let a candidate image masquerade as a
+protected-main formal image. Each arm uses a unique Compose project, run
+directory, network and fresh PostgreSQL volume, with real Keycloak issuance,
+two tenants and twenty provisioned subjects.
 
-1. Reproduce a deterministic lifecycle defect in unit or real-PostgreSQL
-   integration tests whenever possible. Prove A fails, B passes and an
-   independent clean A' fails; do not use `git revert` on B as A'.
-2. For native allocator or concurrency behavior unavailable at test level, run
-   the smallest diagnostic gradient that demonstrates the ownership trend.
-   A 2,000-stage diagnostic is allowed only when lower gradients cannot
-   discriminate the hypothesis, and it must use a new project/volume and the
-   unchanged ten-minute recovery.
-3. Diagnostics are not formal attempts and must not create
-   `gate-c-summary.json` or update `gate_c_attempts`. Archive cited raw data as
-   an immutable package and bind it from the ADR.
-4. After two failed P2 root-cause rounds, freeze P2 code changes and return to
-   measurement with a new root-cause report. A performance-only near miss
-   within 10% may receive one separate same-root-cause micro-adjustment; safety
-   failures never receive this allowance.
+All arms start the same image with jemalloc `config.prof=true` and runtime
+`prof.active=false`. Hold the frozen 300-second idle baseline before any
+activation or load:
 
-The defect disproof metric is API cgroup memory `<=1.10` of the unchanged
-first 2,000-stage sample after the full recovery. Terminal lifecycle gauges
-must remain zero, FDs must return near baseline, and no OOM/restart may occur.
+1. **A control:** keep `prof.active=false` throughout the real frozen
+   200-stream stage and 600-second recovery.
+2. **Measurement:** only after the idle baseline completes, atomically activate
+   sampling, reset/mark the profile epoch as defined by the ADR, run the same
+   200-stream stage and recovery, capture only the predeclared profile dumps,
+   then deactivate after the final synchronized endpoint.
+3. **A' control:** independently repeat A with fresh resources and
+   `prof.active=false` throughout.
 
-## Required Regression And Gates
+The arm order, host fingerprint, image digest, environment controls, monitor
+cadence, stage duration and recovery duration must be recorded. A and A' are
+independent controls, not a candidate-branch revert. Do not run 2,000 streams
+or the formal Gate C workload for measurement causality.
 
-Add focused positive and negative/boundary tests for the proven owner plus:
+The design must explicitly prohibit tracemalloc, `gc.get_objects()`,
+`asyncio.all_tasks()`, task-stack/frame enumeration, periodic object scans,
+forced GC, allocator purge, `malloc_trim`, process restart, cache-limit changes
+or any recovery-only mutation. Sampling must not expose an HTTP diagnostic
+route or accept identity headers.
 
-- subscriber close ownership, cancellation, timeout and double-close;
-- ContextVar restoration, transaction rollback and session/pool return;
-- task/frame/exception release and coordinated shutdown;
-- queue, replay, metric-label and FD cardinality bounds;
-- signed cursor tamper/cross-tenant rejection and concurrent tenant isolation;
-- Outbox wake/claim/lease/retry/partition order, idempotent durable acceptance
-  and terminal `PENDING/CLAIMED/DEAD` behavior.
+## Admission And Disproof Limits
 
-Preserve the complete RLS, tenant isolation, atomic publication, ordering,
-idempotency, signed cursor and fail-closed regression set. Keep Python coverage
-at least 90% with no exclusions, empty assertions, forced GC or fake scale
-claims.
+Use the median of A and A' as the control. Reject the measurement design if any
+condition is true:
 
-Run Python unit and real PostgreSQL integration, frontend typecheck/build/unit/
-coverage, Playwright, Go fmt/vet/race/test/build, contract drift, SBOM/license,
-dependency audit, Trivy and Gitleaks. Require push and pull-request 8/8, Squash
-Merge, then protected-main 8/8.
+- delivery p95, connection p95, API CPU p95 or event-loop lag p95 in the
+  measurement arm is more than `10%` above control;
+- baseline-to-recovery RSS delta differs from control by more than
+  `max(8 MiB, 10% of the control delta)`;
+- monitor completeness is below `0.95`, any required sample is missing, or a
+  profile dump overlaps an unapproved lifecycle point;
+- any zero-tolerance, security, ordering, pool/session, FD or terminal
+  lifecycle control regresses;
+- the profile cannot be correlated with synchronized RSS/USS/PSS, cgroup
+  memory, `/proc` maps, jemalloc allocated/active/resident/retained values and
+  bounded pool/cache/SSE inventories;
+- no repeatable bounded allocation stack explains an actionable portion of
+  the control-adjusted residual.
 
-## Fresh Formal Replay
+Passing these limits only makes the measurement admissible for a new root-
+cause report. It does not prove the `<=1.10` formal recovery control and does
+not authorize a product fix, PreflightSmoke or formal Gate C replay.
 
-Only after the P2 remediation merges and protected main passes 8/8:
+## Separate Capability PR
 
-1. Build all source images once from exact clean main without `-SkipBuild` and
-   verify source/tree/dual-baseline/process-version labels.
-2. Run `PreflightSmoke` with a unique project and volume. Destroy its project,
-   network and volume after capture; never reuse preflight state.
-3. Use the same verified image digests with a different unique formal project,
-   run directory and fresh PostgreSQL volume.
-4. Use real Keycloak-issued Tokens, two tenants and at least ten subjects per
-   tenant. Never send tenant/subject/role/scope identity headers.
-5. Execute unchanged: 20 smoke, 200/five minutes, 500/five minutes,
-   1,000/ten minutes, 2,000/thirty minutes and ten-minute recovery.
-6. Preserve and bind all source, image, config, Token issuance, delivery,
-   Outbox, CPU, memory, FD, restart, PostgreSQL, RLS, terminal lifecycle,
-   redacted-log and SHA256 evidence.
+Only after the ADR 0026 design PR passes push/PR 8/8, Squash Merges and the new
+protected-main run passes 8/8 may an implementation branch be created from
+that exact main:
 
-If every frozen control passes in one run, create an independent immutable
-success-evidence PR and mark
-`PHASE7_GATE_C_MAINLINE_ACCEPTED_GATE_D_READY`. If any control fails, archive a
-new immutable failure package/PR and retain
-`PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Both paths require push/PR/main 8/8 and
-Squash Merge.
+`codex/phase7-gate-c-eleventh-p2-adr0026-capability`
+
+That PR may implement only the approved, disabled-by-default profiling
+capability, runner support, offline analysis and focused tests. It must include
+positive and negative/boundary tests for disabled mode, activation ownership,
+duplicate/invalid activation rejection, atomic dumps, path containment,
+shutdown waiting, redaction and absence of formal-finalizer/state mutation.
+It must preserve the full RLS, tenant isolation, signed cursor, ordering,
+idempotency, Outbox atomicity and fail-closed regression set, Python coverage
+`>=90%`, all Release Quality Gates, push/PR 8/8, Squash Merge and protected-
+main 8/8.
+
+Only after that closure may the real A/measurement/A' diagnostic execute. Each
+arm must be archived with `process_version`, source/tree, image digest,
+environment fingerprint, frozen hashes, raw package SHA256 and redaction scan.
+Diagnostics must not create a formal summary, append `gate_c_attempts`, update
+acceptance state or be represented as formal Gate C evidence.
 
 ## Permanent Redlines And Stop Rule
 
-Do not modify migrations 0001-0010, frozen contracts, RLS, TenantContext,
-SERIALIZABLE transactions, C12, thresholds, workload or Outbox atomicity.
-Preserve `FOR UPDATE SKIP LOCKED`, claim token, lease, retry, partition order,
-idempotency, durable acceptance, published cursor, signed tenant-bound
-Last-Event-ID, strict replay order, duplicate suppression and fail-closed
-authorization/cursor validation.
+Do not modify migrations 0001-0010, frozen contracts, RLS, `TenantContext`,
+SERIALIZABLE transactions, C12, thresholds, workload, timeouts, aggregation or
+Outbox atomicity. Preserve `FOR UPDATE SKIP LOCKED`, claim token, lease, retry,
+partition order, idempotent durable acceptance, published cursor, signed
+tenant-bound `Last-Event-ID`, strict replay order, duplicate suppression and
+fail-closed authorization/cursor validation. Do not fabricate JWTs or send
+tenant, subject, role or scope identity headers.
 
-After the independent Gate C evidence PR merges and protected-main CI is
-verified, stop. Do not start Gate D soak, DR, Provider acceptance, production
-deployment, accessibility/privacy closure or new product work. Gate D requires
-separate explicit authorization even if it later becomes eligible.
+If ADR 0026 is not independently approved, if capability gates fail, if the
+diagnostic exceeds any interference/redline limit or if it still proves no
+actionable owner, archive the real result and keep P2 behavior changes frozen.
+Do not start another product candidate or formal replay.
+
+Gate C remains failed and Gate D-G remain locked. Do not start Gate D soak,
+DR, Provider acceptance, production deployment, accessibility/privacy closure
+or new product work. Gate D requires separate explicit authorization even if
+it later becomes eligible.

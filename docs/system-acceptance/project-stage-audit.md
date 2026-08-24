@@ -7,12 +7,15 @@ Process Version: `Gate-C-11-v1.0`
 CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
-protected main. The evaluated protected-main source is
-`5fcb917b63889cb6da8dd019efdd133f4ec3fb60`, tree
-`f721fca017c247aee93765d5f11fcbc37e12fcfc`. Protected-main Release Quality
-Gates Run `32645162420` completed 8/8 jobs successfully. PR #81 is the latest
-product-code change; the eleventh formal Gate C replay is bound to that exact
-source and tree.
+protected main. The current protected-main engineering baseline is
+`90a8cbc0e73ae65e844177e91ac4298704040a5e`, tree
+`72882290744d6c7cab7860633c083c236a246853`. Protected-main Release Quality
+Gates Run `32674327220` completed 8/8 jobs successfully. PR #86 is the latest
+change to a deployable backend artifact, so the current product source is
+`a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
+`963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
+predates that diagnostic instrumentation and remains bound to
+`5fcb917b63889cb6da8dd019efdd133f4ec3fb60` / `f721fca...`.
 
 The formal state remains:
 
@@ -448,3 +451,31 @@ Release `375257600` is immutable and its asset digest matches package SHA256
 The formal run and volume remain preserved. This is milestone M2, while the
 formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED` and Gate D-G remain
 locked.
+
+## 10. P2 Round 3 Measurement Rejection And Status Closure
+
+The formal failure archive is closed by PR #82, merge
+`d5494dd1dce671c30ebfe40e046319d7572a52f5`, after push/PR/main Runs
+`32652339505`, `32652673118` and `32652984515` each passed 8/8. P2 root-cause
+rounds 1 and 2 were archived by PR #84 and triggered the process-level freeze
+on further P2 behavior changes.
+
+ADR 0025 then tested a new measurement design rather than a behavior fix.
+PR #85 merged the design and PR #86 merged opt-in checkpoint instrumentation;
+their protected-main Runs `32663785036` and `32667597681` passed 8/8. Because
+PR #86 changes the deployable artifact, the dual-baseline audit records it as
+the current product source even though the instrumentation is disabled by
+default and has not been formally evaluated.
+
+The real A2 and A' controls passed at 200 streams, while the measurement arm
+failed ADR 0025's predeclared interference limits: connection p95
+`17,989ms` versus `673ms`, delivery p95 `1,175ms` versus `45.5ms`, API CPU p95
+`101.98` versus `25.165`, and RSS delta `59,334,656` versus `30,613,504`
+bytes. No actionable owner was proven. PR #87 archived this result as
+`90a8cbc0e73ae65e844177e91ac4298704040a5e`; Runs `32673675887`,
+`32674014293` and `32674327220` each passed 8/8.
+
+The immutable round-3 package SHA256 is
+`10fb9477558ad203e1163198d8e28a941d16d922b6919d2711fdf6f69e22d92b`.
+The next allowed work is ADR 0026 design and review for lower-interference
+ownership measurement. No new P2 candidate or formal replay is authorized.
