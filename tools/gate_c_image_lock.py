@@ -105,6 +105,13 @@ def _validate_inputs(path: Path) -> dict[str, Any]:
         or SHA256.fullmatch(str(buildkit.get("image_digest"))) is None
     ):
         raise ValueError("Gate C BuildKit image digest is missing or invalid")
+    python_image = inputs.get("python_base_image")
+    if (
+        not isinstance(python_image, dict)
+        or SHA256.fullmatch(str(python_image.get("digest"))) is None
+        or set(python_image.get("builder_mirrors", {})) != {"a", "b"}
+    ):
+        raise ValueError("Gate C Python base image mirror binding is invalid")
     alpine = inputs.get("alpine")
     if (
         not isinstance(alpine, dict)
@@ -196,6 +203,7 @@ def _build_target(
     builder: str,
     arm: str,
     source: SourceBinding,
+    inputs: dict[str, Any],
 ) -> dict[str, str]:
     reference = f"{target.repository}:{source.commit}-{arm}"
     arguments = [
@@ -223,6 +231,12 @@ def _build_target(
         "CYBERCONTROL_ENGINEERING_BASELINE_SHA": source.engineering_baseline_sha,
         "CYBERCONTROL_PROCESS_VERSION": PROCESS_VERSION,
     }
+    if target.name in {"backend", "mock-provider", "gate-c-load"}:
+        python_image = inputs["python_base_image"]
+        mirror = python_image["builder_mirrors"][arm]
+        build_arguments["PYTHON_IMAGE"] = (
+            f"{mirror}/library/python:{python_image['tag']}@{python_image['digest']}"
+        )
     for name, value in build_arguments.items():
         arguments.extend(("--build-arg", f"{name}={value}"))
     arguments.append(".")
@@ -256,7 +270,8 @@ def build(args: argparse.Namespace) -> None:
     arms: dict[str, dict[str, dict[str, str]]] = {}
     for arm, builder in (("a", args.builder_a), ("b", args.builder_b)):
         arms[arm] = {
-            target.name: _build_target(root, target, builder, arm, source) for target in TARGETS
+            target.name: _build_target(root, target, builder, arm, source, inputs)
+            for target in TARGETS
         }
     for target in TARGETS:
         first = arms["a"][target.name]["image_id"]
