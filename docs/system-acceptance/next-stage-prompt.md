@@ -1,121 +1,186 @@
-# CyberControl Phase 7 Gate C Twelfth Phase 0 Status Closure And Stop Boundary
+# CyberControl Gate C Twelfth ADR 0032 D0 Closure And Diagnostic Boundary
 
 Process Version: `Gate-C-12-v1.0`
 
-Work only from real protected main, GitHub Actions, Docker, PostgreSQL,
-Keycloak-issued Tokens and immutable evidence in
-`C:/Users/wch06/Documents/CyberControl`. Do not fabricate source, tests, CI,
-Tokens, images, volumes, metrics, packages or acceptance decisions. Gate D-G
-remain locked.
+Use only the real protected repository, GitHub Actions, locked images, Docker,
+PostgreSQL, Keycloak-issued tokens and immutable evidence. Do not fabricate a
+source, CI run, image, token, volume, metric, package, owner or decision. Gate
+D-G remain locked.
 
-## Current Audited Boundary
+## Audited Parent Boundary
 
-- Protected-main engineering baseline:
-  `cd93b8438408a381b27275165b5650c8ce447ecb`
-- Engineering tree: `e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`
+- Protected main: `5ae8637c46c741c8b6f079e22af3e2517bac7bb9`
+- Tree: `9c478ed3c22debf65fe3eb4fef92ee58982f233f`
+- Protected-main CI: Run `32834020352`, 8/8
 - Product source: `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
-- Product tree: `963fcf73113e39a1e5868fae3957f4adfc102a4c`
-- Last formally evaluated Gate C source:
-  `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
-- Last formally evaluated tree:
-  `f721fca017c247aee93765d5f11fcbc37e12fcfc`
-- Protected-main Release Quality Gates:
-  [Run 32829926696](https://github.com/changkong66/CyberControl/actions/runs/32829926696),
-  8/8
+- Last formal Gate C source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Frozen threshold SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
 - Frozen workload SHA256:
   `38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea`
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
+- Formal attempts: 12
+- `baseline_history`: 17 entries, ending at status-only PR #94
 
-The eleventh formal replay remains milestone M2. Every stage and Outbox
-control passed, but recovery RSS ratio was `1.417200 > 1.10`. It remains the
-last formal attempt and `gate_c_attempts` remains exactly 12.
+PR #94 head `6d9bba6c77ac0af103e9c2add10dcd426bec380d` passed push and PR
+Runs `32832723708` and `32833344654`, Squash Merged as the protected main
+above, and passed main Run `32834020352`. It did not change product source or
+formal evidence.
 
-## Proven Gate-C-12 Phase 0 Boundary
+The eleventh formal run remains M2. All workload stages, Outbox and
+zero-tolerance controls passed; the only failed control was API cgroup recovery
+ratio `1.417200 > 1.10`, from baseline/recovery/peak
+`262144000/371510477/436941619` bytes. No accepted owner exists.
 
-PR [#93](https://github.com/changkong66/CyberControl/pull/93) head
-`bfe89390f281e1229b46b4e86dd60012a4543416` passed push Run `32828446684` and
-pull-request Run `32829198360`, Squash Merged as `cd93b843...`, and passed
-protected-main Run `32829926696`; each Release Quality Gate run completed 8/8.
-
-The all-service image lock SHA256 is
-`7fd28b88fed9bfa6edab48b8568be29e06087c307a037db4fa1f880e7c43cc3f` and
-the build-receipt SHA256 is
-`c2ca64f04450e8802ec8d3931f839051699008b4cc2ab53c9d65b43f645efa6a`.
-Only images that verify against that exact receipt may be used by a future
-authorized diagnostic, preflight or formal run.
-
-Capacity policy is fixed at:
-
-- admission: `15 GiB`;
-- warning and non-destructive temporary cleanup: `<8 GiB`;
-- graceful `INFRA_ABORTED` stop: `<5 GiB`.
-
-At status capture D: had `19.237309 GiB` free. Docker Server 29.6.1 reported
-16 CPUs, 7,958,888,448 bytes of memory and zero running containers. No prune,
-historical volume deletion or evidence rewrite occurred.
-
-The authoritative Phase 0 quality package is 237,689 bytes, SHA256
-`bcda2bc3af873cbc47f1722e16df6c5c8039c9c8604568b41e64253988d669da`.
-Its 23-file manifest SHA256 is
-`b094738da6a43b85c55deac4786fb139443eb8b7f41fa86ad75d6de0a753f2ff`.
-
-## Rejected Calibration Boundary
-
-The Gate-C-12 jemalloc A/Measurement/A' calibration is rejected. A passed,
-Measurement returned one HTTP 500 after profiling activation, and the zero-
-tolerance rule prohibited A'. The immutable local package is 2,050,113 bytes,
-SHA256
+ADR 0030 rejected the first Gate-C-12 profiling protocol after Measurement
+returned HTTP 500. Package SHA256 is
 `99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423`.
+Do not derive an owner from it.
 
-Do not infer a Python object, task, frame, metric state, connection pool,
-serialization buffer, native allocator, subscriber, queue, replay cache or SSE
-owner from this run. It is `NON_ACCEPTANCE_DIAGNOSTIC_REJECTED`, not formal
-attempt 13.
+## Current D0 Candidate
 
-## Authorized Status-Only Closure
+The active branch is:
 
-The only active branch authorized by this snapshot is:
+`codex/phase7-gate-c-twelfth-p2-adr0032-design`
 
-`codex/phase7-gate-c-twelfth-phase0-status-closure`
+It may change only ADR, diagnostics-design metadata and the four current-state
+documents. It contains no product or diagnostic implementation. D0 requires:
 
-It may update only:
+1. S/R/P/F and A/M/A' variable matrix.
+2. Exact interference formulas and zero-tolerance controls.
+3. Mutually exclusive physical memory ledger and non-additive owner overlays.
+4. Strong/weak attribution rules and multi-owner cutoff.
+5. `DESIGN_REJECTED`, `OWNER_UNRESOLVED` and `INFRA_ABORTED` exits.
+6. Evidence/package, dual image-lock and mandatory cleanup contract.
 
-- `docs/system-acceptance/acceptance-status.json`;
-- `docs/system-acceptance/acceptance-report.md`;
-- `docs/system-acceptance/project-stage-audit.md`;
-- `docs/system-acceptance/next-stage-prompt.md`.
+The candidate must pass push and pull-request Release Quality Gates 8/8,
+Squash Merge only, then protected-main 8/8. A commit cannot attest its own
+future PR number, merge SHA or protected-main run. Record those only in a
+later append-only closure. Before that external closure, do not execute any
+ADR 0032 probe or diagnostic.
 
-It must:
+## Exact Post-D0 Diagnostic Scope
 
-1. Declare `Gate-C-12-v1.0` without relabeling historical runs.
-2. Bind PR #93, its exact head/merge/tree and Runs `32828446684`,
-   `32829198360` and `32829926696`.
-3. Record the `15/8/5 GiB` policy, image lock, build receipt, quality package
-   and rejected calibration package.
-4. Append only PR #93 as `baseline_history` sequence 16. Do not repeat PR #92
-   and do not append `gate_c_attempts`.
-5. Preserve product source `a57d0ce...`, formal source `5fcb917b...`, M2 and
-   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
-6. Pass push and pull-request CI 8/8, Squash Merge, and protected-main CI 8/8.
+Only after the D0 merge and protected-main 8/8, fetch current origin/main and
+create a new exact-main isolated worktree for implementation and calibration
+of ADR 0032. Do not reuse this docs branch for code or runtime work.
 
-A commit cannot contain its own future merge SHA or protected-main run, so
-this status PR's eventual merge and final CI remain external GitHub
-attestations.
+The connection-churn harness uses 2,000 real TLS PostgreSQL connections per
+arm, maximum concurrency 200 and fixed admission rate 50/s. Each variable uses
+fresh matched A/M/A' resources:
 
-## Stop Rule
+- `S`: signal/event-loop delivery with verified mallctl no-op.
+- `R`: `prof.reset` only.
+- `P`: `prof.active=true` only, without reset.
+- `F`: reset plus activation, only after S/R/P independently pass and evidence
+  requires the combination.
 
-After this status closure, stop. A new low-interference RSS ownership design
-requires ADR 0032 or later, independent review and separate explicit
-authorization. Do not execute A', another diagnostic, P2 behavior changes,
-PreflightSmoke or formal Gate C replay from the rejected calibration.
+Implement L0 passive ledger first. L1 bounded inventory and L2 sampled
+profiling are separate probe levels; both require a 200-connection A/M/A'
+interference pass before escalation. L1, L2, tracemalloc, GC object scans,
+task/frame stacks and heavy checkpoints are pairwise exclusive. L0 alone may
+accompany one active probe.
 
-Do not modify migrations 0001-0010, frozen contracts, RLS, `TenantContext`,
-SERIALIZABLE transactions, C12, thresholds, workload, timeout, grace period,
-aggregation or Outbox atomicity. Do not fabricate JWTs or send tenant, subject,
-role or scope identity headers. Do not start Gate D soak, DR, Provider
-acceptance, production deployment, accessibility/privacy closure or new
-product work. Gate D requires separate explicit authorization even if it later
-becomes eligible.
+Every valid calibration requires:
+
+- A/A' drift no more than 10% for connection p95, delivery p95, CPU p95 and
+  event-loop lag p95;
+- M/control median no more than 1.10 for the same metrics;
+- RSS interference no more than `max(8 MiB, 10% of control RSS delta)`;
+- completeness 1.0 for the micro harness and at least 0.95 for real API/L1;
+- two independent matched passes before attribution use;
+- zero HTTP 5xx, Bad address, loss, duplicates, leakage, invalid cursors,
+  Outbox DEAD, pool timeout, OOM, restart or terminal lifecycle ownership.
+
+Check zero-tolerance controls before performance. Any zero-tolerance failure
+stops interpretation and A'.
+
+## Attribution Boundary
+
+Use the physical partition:
+
+```text
+RssAnon = jemalloc_allocated
+        + (jemalloc_active - jemalloc_allocated)
+        + (jemalloc_resident - jemalloc_active)
+        + (RssAnon - jemalloc_resident)
+```
+
+Report `RssFile` and `RssShmem` separately and bridge process RSS, other
+processes, file cache and kernel memory to cgroup `memory.current`. Python,
+pool, cache, task, subscriber and replay ownership are overlays and must not be
+added to the physical partition.
+
+Strong admission requires at least 90% explanation, unknown bytes no more than
+`min(10%, 8 MiB)`, two independent reproductions and the ADR 0032 sampled-stack
+conditions when L2 is used.
+
+Weak admission requires one owner at least 70%, category-known residual, no
+lifecycle anomaly and conservative compliance using the lower of two measured
+improvements minus noise. It also requires a new numbered append-only
+ADR-0032 weak-admission addendum. That separate docs/evidence PR must include
+residual classes/ratios, full calculation and two run IDs, summary paths and
+package SHA256 values; only explicit `WEAK_ADMISSION_APPROVED`, Squash Merge
+and protected-main 8/8 authorize remediation. Do not edit accepted ADR 0032.
+
+If multiple owners exist, remediate the largest first and remeasure. Stop when
+the conservative residual meets 1.10; do not change secondary owners merely
+to increase explanatory completeness.
+
+## Stops, Capacity And Evidence
+
+- `DESIGN_REJECTED` means probe design/calibration cannot produce trustworthy
+  data. ADR 0030 is design failure one; ADR 0032 failure is the second and
+  final design failure under this process.
+- `OWNER_UNRESOLVED` means data is trustworthy but no owner meets strong or
+  weak admission. It is not design failure, but it stops product modification.
+- `INFRA_ABORTED` means independently proven image, environment, Docker, disk
+  or network failure. Retry the interrupted level for the same cause at most
+  twice; a third abort requires an infrastructure report. It never appends
+  design-failure count or `gate_c_attempts`.
+
+Capacity remains 15/8/5 GiB. Before every round require at least 15 GiB free.
+After every round, archive and verify the package, then mandatorily remove only
+that round's temporary containers, network, PostgreSQL volume and archived
+intermediate logs. Confirm zero project resources and restored admission
+space before continuing. Below 8 GiB only manifest-proven unreferenced
+temporary cleanup is allowed; below 5 GiB stop gracefully. Never prune or
+delete historical formal volumes, core images or immutable evidence.
+
+Normal image lock covers backend, frontend, migrate, provider, load generator
+and supporting services. Diagnostic API uses a separate image role and digest.
+Any normal service digest mismatch is `INFRA_ABORTED`. Diagnostic images may
+not impersonate formal protected-main images.
+
+Every diagnostic package records process version, dual baseline, source tree,
+frozen hashes, environment, image locks, run ID, variable, samples, ledger,
+controls, decision, redaction, manifest, package SHA256/reference and cleanup
+receipt. Diagnostics, preflight, rollback and infrastructure aborts do not
+append `gate_c_attempts`.
+
+## Remediation And Formal Boundary
+
+No remediation is allowed without strong admission or the merged weak
+addendum. A future remediation uses a new exact-main
+`codex/phase7-gate-c-twelfth-p2-<owner>-remediation` branch, one owner and one
+ownership mechanism per PR, a behavior ADR, test-layer A/B/A' and all semantic
+and quality gates.
+
+Fresh validation is PreflightSmoke 20, then independent 200/500/1,000. Stop
+before escalation if a zero-tolerance item fails, peak RSS exceeds matched
+control by 10%, recovery residual exceeds control by 15%, or actual residual
+exceeds 130% of the remediation ADR's conservative prediction. Do not run a
+non-formal 2,000 diagnostic before Full.
+
+Only after remediation, three CI chains 8/8 and fresh gradients pass may one
+formal Full run execute 20/200/500/1000/2000 plus recovery. Only that Full may
+append attempt 13. M3 and Gate D readiness require every frozen control in the
+same run, immutable Release evidence, evidence PR merge and protected-main
+8/8.
+
+Do not modify migrations 0001-0010, RLS, `TenantContext`, SERIALIZABLE, C12,
+identity derivation, Outbox atomicity, idempotency, partition order, threshold,
+workload, timeout, grace period or aggregation. Force GC, restart, allocator
+purge, pool disposal, periodic clearing, background janitors and inflated
+baselines are prohibited. Gate D-G remain locked.

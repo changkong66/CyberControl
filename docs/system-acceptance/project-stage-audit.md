@@ -8,11 +8,12 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`cd93b8438408a381b27275165b5650c8ce447ecb`, tree
-`e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`. Protected-main Release Quality
-Gates Run `32829926696` completed 8/8 jobs successfully. PR #93 changed build,
-capacity and diagnostic infrastructure without changing core product behavior,
-so the current product source remains
+`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`, tree
+`9c478ed3c22debf65fe3eb4fef92ee58982f233f`. Protected-main Release Quality
+Gates Run `32834020352` completed 8/8 jobs successfully. PR #93 changed build,
+capacity and diagnostic infrastructure and PR #94 changed status documents
+only; neither changed core product behavior, so the current product source
+remains
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
 `963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
 predates that diagnostic instrumentation and remains bound to
@@ -596,3 +597,47 @@ advances to `cd93b843...`, and the formal Gate C source remains `5fcb917b...`.
 This closes Phase 0 infrastructure only. P2 behavior work, diagnostics,
 PreflightSmoke, formal Gate C and Gate D-G remain locked until a new reviewed
 diagnostic ADR receives explicit authorization.
+
+## 14. Phase 0 Status Closure And ADR 0032 D0 Audit
+
+PR #94 head `6d9bba6c77ac0af103e9c2add10dcd426bec380d` passed push Run
+`32832723708` and pull-request Run `32833344654`, Squash Merged as
+`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`, and passed protected-main Run
+`32834020352`; each chain completed 8/8. Its tree is
+`9c478ed3c22debf65fe3eb4fef92ee58982f233f`. It is status documentation only,
+so `baseline_history` advances to sequence 17 while product source
+`a57d0ce...`, the last formal source `5fcb917b...`, M2 and twelve formal
+attempts remain unchanged.
+
+ADR 0032 is now present as the candidate final diagnostic design allowed by
+the Gate-C-12 process. It separates signal delivery (`S`), profiler reset
+(`R`), activation (`P`) and combined reset/activation (`F`) into matched
+A/M/A' experiments. L1 bounded inventory and L2 sampled profiling each have
+their own 200-connection interference boundary, and mutually intrusive probes
+cannot be combined. This removes the ambiguity that invalidated earlier
+ownership conclusions.
+
+D0 completion requires all six reviewed artifacts: variable matrix,
+interference formulas and zero-tolerance controls, mutually exclusive ledger,
+strong/weak admission and multi-owner cutoff, failure exits, and the complete
+evidence/image/cleanup contract. The structured record marks every artifact
+present but correctly leaves D0 pending this candidate's future Squash Merge
+and protected-main 8/8. It contains no fabricated run, owner, PR number, merge
+SHA or future CI result.
+
+Strong admission requires at least 90% reconciliation. Weak admission requires
+a dominant owner of at least 70%, category-known residual, a conservative
+passing prediction and a separate numbered append-only addendum with two
+independent evidence packages and explicit `WEAK_ADMISSION_APPROVED`. This
+preserves the repository rule that accepted ADRs are immutable.
+
+`DESIGN_REJECTED` consumes the second and final design-failure slot;
+`OWNER_UNRESOLVED` uses trusted but inconclusive data and does not consume that
+slot; `INFRA_ABORTED` is limited to two same-cause retries of the interrupted
+level. Actual recovery residual above 130% of the remediation ADR's
+conservative prediction stops load escalation. Every round must archive,
+verify and clean its own temporary resources before another round can start.
+
+This record does not itself authorize execution. Only after its external D0
+closure may the exact ADR 0032 instrumentation and calibration begin. Product
+behavior, PreflightSmoke, formal Gate C and Gate D-G remain locked.
