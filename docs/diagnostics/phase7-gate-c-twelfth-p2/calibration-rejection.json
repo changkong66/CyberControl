@@ -1,0 +1,79 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-rejection.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "NON_ACCEPTANCE_DIAGNOSTIC_REJECTED",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "gate_c_attempts_appended": false,
+  "decision": "REJECTED_ZERO_TOLERANCE_HTTP_500",
+  "source": {
+    "engineering_baseline_sha": "d0c6e0c4097e3410e1b6a53c7ca679770b67bc77",
+    "source_tree": "c6813510c4031f314145adf2f23d812521c88ce2",
+    "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "image_lock_sha256": "7fd28b88fed9bfa6edab48b8568be29e06087c307a037db4fa1f880e7c43cc3f",
+    "build_receipt_sha256": "c2ca64f04450e8802ec8d3931f839051699008b4cc2ab53c9d65b43f645efa6a",
+    "jemalloc_image_digest": "sha256:60ca42674fdbdd66c774ec777756cd630682877342787ab3412197a83079b824"
+  },
+  "frozen_inputs": {
+    "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea"
+  },
+  "arms": {
+    "A": {
+      "run_id": "gate-c-diagnostic-20260825T070253Z",
+      "result": "PASS",
+      "requests": 400,
+      "request_failures": 0,
+      "sustained_streams": 200,
+      "sustain_seconds": 304,
+      "monitor_completeness": 1.0,
+      "connection_p95_ms": 665,
+      "connection_p99_ms": 703,
+      "delivery_p95_ms": 45,
+      "delivery_p99_ms": 191,
+      "zero_tolerance_failures": 0,
+      "package_sha256": "ff328e7bce3e86255a730cb9129068e335a276d60f13d4afb854eb418cd9c212"
+    },
+    "Measurement": {
+      "run_id": "gate-c-diagnostic-20260825T072739Z",
+      "result": "REJECTED",
+      "requests": 401,
+      "request_failures": 1,
+      "http_500": 1,
+      "profiling_activated_at_utc": "2026-08-25T07:33:42.444042Z",
+      "failure_at_utc": "2026-08-25T07:33:52.675092Z",
+      "seconds_after_activation": 10.23105,
+      "exception_type": "OSError",
+      "exception_message": "[Errno 14] Bad address",
+      "exception_boundary": "asyncpg connect -> ssl.load_cert_chain",
+      "recovery_executed": false,
+      "profile_completed": false,
+      "heap_profile_created": false,
+      "package_sha256": "8fd910637bd650f2f4fc5b70f92c2f2cb696d90510591db35de987ccd34b313c"
+    },
+    "APrime": {
+      "result": "PROHIBITED_AFTER_ZERO_TOLERANCE_FAILURE",
+      "executed": false
+    }
+  },
+  "ownership_conclusion": null,
+  "interference_conclusion": "CURRENT_SAMPLING_PROTOCOL_IS_INADMISSIBLE",
+  "capacity": {
+    "admission_gib": 15.0,
+    "warning_gib": 8.0,
+    "stop_gib": 5.0,
+    "measurement_failure_free_gib": 19.271,
+    "state": "NORMAL"
+  },
+  "resource_cleanup": {
+    "temporary_volumes_removed": 4,
+    "running_containers_after": 0,
+    "project_containers_after": 0,
+    "project_networks_after": 0,
+    "prune_used": false,
+    "historical_resources_touched": false,
+    "evidence_sha256": "eaab5fd6d3e94c2dadb23812d06807e97bdfd28dd0396a892d48d0f1043aa57e"
+  },
+  "formal_state_unchanged": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "gate_d_through_g_locked": true
+}

@@ -19,3 +19,4 @@ Current records:
 - ADR-0027: Phase 7 Gate C twelfth capacity policy revision
 - ADR-0028: Phase 7 Gate C twelfth Alpine package lock reproducibility repair
 - ADR-0029: Phase 7 Gate C twelfth capacity monitor startup race repair
+- ADR-0030: Phase 7 Gate C twelfth jemalloc calibration rejection
