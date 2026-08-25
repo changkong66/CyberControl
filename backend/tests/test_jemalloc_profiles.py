@@ -18,7 +18,7 @@ SOURCE = {
     "source_tree": "b" * 40,
     "product_source_sha": "c" * 40,
     "engineering_baseline_sha": "d" * 40,
-    "process_version": "Gate-C-11-v1.0",
+    "process_version": "Gate-C-12-v1.0",
     "library_sha256": "e" * 64,
     "library_build_id": "f" * 40,
     "image_id": "sha256:" + "1" * 64,

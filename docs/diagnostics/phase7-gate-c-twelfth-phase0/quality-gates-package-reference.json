@@ -1,0 +1,84 @@
+{
+  "schema_version": "cybercontrol.gate-c-quality-package-reference.v2",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "NON_ACCEPTANCE_QUALITY_GATES",
+  "authoritative": true,
+  "acceptance_claim": false,
+  "formal_gate_attempt": false,
+  "gate_c_attempts_appended": false,
+  "source": {
+    "commit": "c3d45b3922eeed922f46d57c5fb1d041e6a94d5f",
+    "tree": "3b893f70d6863d4864246597fe26ceee907c01ce",
+    "parent_main": "01ddf2137cc96a9208712e4869cab9e131ff8c01",
+    "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "engineering_baseline_sha": "c3d45b3922eeed922f46d57c5fb1d041e6a94d5f"
+  },
+  "package_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/gate-c12-phase0-quality-gates-c3d45b3-20260825T081800Z-v3.zip",
+  "package_bytes": 237689,
+  "package_sha256": "bcda2bc3af873cbc47f1722e16df6c5c8039c9c8604568b41e64253988d669da",
+  "content_manifest_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/gate-c12-phase0-quality-gates-c3d45b3-20260825T081800Z-v3-content-manifest.json",
+  "content_manifest_sha256": "b094738da6a43b85c55deac4786fb139443eb8b7f41fa86ad75d6de0a753f2ff",
+  "manifest_excludes_itself": true,
+  "file_count": 23,
+  "total_uncompressed_bytes": 2325408,
+  "archive_verification": {
+    "passed": true,
+    "verified_file_count": 23,
+    "verified_total_bytes": 2325408
+  },
+  "redaction_scan_sha256": "b4a0e547be6f363ccb94ea4f61621531712bff97e0bce27187727391f9569c34",
+  "tests": {
+    "python_unit": {
+      "passed": 704,
+      "skipped": 2,
+      "deselected": 88
+    },
+    "python_postgresql_keycloak_full": {
+      "passed": 792,
+      "skipped": 2,
+      "coverage_percent": 91.7,
+      "coverage_floor_percent": 90
+    },
+    "frontend_unit_integration": {
+      "files_passed": 14,
+      "tests_passed": 72,
+      "statements_percent": 89.12,
+      "branches_percent": 81.79,
+      "functions_percent": 83.79,
+      "lines_percent": 92.38
+    },
+    "playwright_chromium": {
+      "passed": 8,
+      "failed": 0
+    },
+    "go_format_vet_race_test_build": "PASSED",
+    "contract_drift": "PASSED",
+    "sbom_license_and_dependency_audits": "PASSED",
+    "container_runtime_and_trivy": "PASSED",
+    "gitleaks_history_and_worktree": "PASSED"
+  },
+  "environment": {
+    "compose_project": "cybercontrol-gate-c-12-quality-20260825",
+    "postgres_image_id": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+    "keycloak_image_id": "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+    "postgres_restart_count": 0,
+    "keycloak_restart_count": 0,
+    "real_keycloak_integration": true,
+    "disposable_containers_after_cleanup": 0,
+    "disposable_volumes_after_cleanup": 0,
+    "disposable_networks_after_cleanup": 0,
+    "free_space_gib_after_cleanup": 19.235,
+    "capacity_admission_gib": 15,
+    "capacity_warning_gib": 8,
+    "capacity_graceful_stop_gib": 5
+  },
+  "non_authoritative_predecessor": {
+    "package_sha256": "861d08f37a95073fff6609af0193d0b209008a8925622f10059f57bbb38924e5",
+    "reason": "The v2 aggregate total_bytes value was null. Its files and hashes remain preserved, but only v3 is authoritative."
+  },
+  "frozen": {
+    "thresholds_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea"
+  },
+  "formal_state_unchanged": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
+}

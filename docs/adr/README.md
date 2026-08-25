@@ -16,3 +16,8 @@ Current records:
 - ADR-0009: Topic 3 Envelope runtime semantics
 - ADR-0010: Topic 4 trusted evidence and server-derived release boundary
 - ADR-0011: Keycloak registration and account projection
+- ADR-0027: Phase 7 Gate C twelfth capacity policy revision
+- ADR-0028: Phase 7 Gate C twelfth Alpine package lock reproducibility repair
+- ADR-0029: Phase 7 Gate C twelfth capacity monitor startup race repair
+- ADR-0030: Phase 7 Gate C twelfth jemalloc calibration rejection
+- ADR-0031: Phase 7 Gate C twelfth capacity probe temp portability

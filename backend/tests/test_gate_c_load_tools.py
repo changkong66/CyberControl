@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import ast
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -9,7 +11,10 @@ import pytest
 import requests
 from sseclient import SSEClient
 
-LOAD_ROOT = Path(__file__).resolve().parents[2] / "tests" / "load"
+ROOT = Path(__file__).resolve().parents[2]
+LOAD_ROOT = ROOT / "tests" / "load"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(LOAD_ROOT) not in sys.path:
     sys.path.insert(0, str(LOAD_ROOT))
 
@@ -39,6 +44,12 @@ from gate_c.sse_client import (  # noqa: E402
 )
 from gate_c.summarize import _outbox_dead_peak  # noqa: E402
 from gate_c.token_provider import TokenProvider  # noqa: E402
+from tools.gate_c_image_lock import (  # noqa: E402
+    BUILD_RECEIPT_SCHEMA,
+    IMAGE_LOCK_SCHEMA,
+    PROCESS_VERSION,
+    _validate_inputs,
+)
 
 
 def test_gate_c_thresholds_are_frozen_and_final_stage_is_2000() -> None:
@@ -117,7 +128,7 @@ def test_backend_runtime_uses_process_start_allocator_configuration() -> None:
         encoding="utf-8"
     )
 
-    assert "jemalloc=5.3.0-r6" in dockerfile
+    assert "jemalloc-5.3.0-r6.apk" in dockerfile
     assert "PYTHONMALLOC=malloc" in dockerfile
     assert "LD_PRELOAD=/usr/lib/libjemalloc.so.2" in dockerfile
     assert "dirty_decay_ms:1000" in dockerfile
@@ -288,7 +299,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     ).read_text(encoding="utf-8")
 
     assert '[ValidateSet("HarnessSmoke", "DiagnosticStages", "PreflightSmoke", "Full")]' in runner
-    assert '$processVersion = "Gate-C-11-v1.0"' in runner
+    assert '$processVersion = "Gate-C-12-v1.0"' in runner
     assert "classification = $executionClassification" in runner
     assert "process_version = $processVersion" in runner
     assert 'formal_gate_attempt = ($Mode -eq "Full")' in runner
@@ -297,9 +308,18 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "[int]$DiagnosticIdleSeconds = 0" in runner
     assert 'if ($Mode -ne "DiagnosticStages" -and $DiagnosticIdleSeconds -ne 0)' in runner
     assert 'Join-Path $runDirectory "diagnostic-baseline"' in runner
-    assert "Start-Sleep -Seconds $DiagnosticIdleSeconds" in runner
+    assert "Wait-WithCapacityGuard -Seconds $DiagnosticIdleSeconds" in runner
     assert 'if ($Mode -in @("Full", "PreflightSmoke"))' in runner
-    assert "Full Gate C acceptance prohibits -SkipBuild." in runner
+    assert '$Mode -ne "HarnessSmoke" -and -not $LockedImages' in runner
+    assert "$Mode requires a complete locked image receipt." in runner
+    assert "-LockedImages cannot be combined with -SkipBuild or -NoCacheBuild." in runner
+    assert "Gate C image lock source binding is invalid." in runner
+    assert "Assert-LockedComposeImages" in runner
+    assert '$service -eq "api" -and $JemallocProfileArm -ne "None"' in runner
+    assert "Gate C profiling API image binding is missing." in runner
+    assert "Gate C Compose profiling API image reference does not match its binding." in runner
+    assert "Gate C local profiling API image content does not match its binding." in runner
+    assert "$actualProfileImageId" in runner
     assert "DiagnosticStages requires explicit -DiagnosticStageNames." in runner
     assert "PreflightSmoke cannot retain its environment." in runner
     assert "Remove-EphemeralResources" in runner
@@ -313,7 +333,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "[switch]$NoCacheBuild" in runner
     assert "if ($NoCacheBuild) {" in runner
     assert '$buildArguments += "--no-cache"' in runner
-    assert "Start-Sleep -Seconds $DiagnosticRecoverySeconds" in runner
+    assert "Wait-WithCapacityGuard -Seconds $DiagnosticRecoverySeconds" in runner
     assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"' in runner
     assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"' in runner
     assert "Memory checkpoints require only ramp-200" in runner
@@ -338,7 +358,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
 
 def test_gate_c_finalizer_requires_bound_formal_process_metadata(tmp_path: Path) -> None:
     execution = {
-        "process_version": "Gate-C-11-v1.0",
+        "process_version": "Gate-C-12-v1.0",
         "classification": "FORMAL_GATE_C_ATTEMPT",
         "formal_gate_attempt": True,
         "run_id": "gate-c-run",
@@ -391,6 +411,32 @@ def test_gate_c_source_built_images_have_bound_provenance_contract() -> None:
     assert '"gate-c-load"' in runner
 
 
+def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None:
+    root = Path(__file__).resolve().parents[2]
+    inputs = _validate_inputs(root / "tests" / "load" / "gate-c-build-inputs.v1.json")
+    build_tool = (root / "tools" / "gate_c_image_lock.py").read_text(encoding="utf-8")
+    backend_dockerfile = (root / "infra" / "backend.Dockerfile").read_text(encoding="utf-8")
+
+    assert PROCESS_VERSION == "Gate-C-12-v1.0"
+    assert IMAGE_LOCK_SCHEMA == "cybercontrol.gate-c-image-lock.v1"
+    assert BUILD_RECEIPT_SCHEMA == "cybercontrol.gate-c-build-receipt.v1"
+    assert inputs["platform"] == "linux/amd64"
+    assert inputs["buildkit"]["image_digest"].startswith("sha256:")
+    assert inputs["buildkit"]["source_revision"] == "673b7e0196de0cac83308274b88aaed97a91af74"
+    assert len(inputs["alpine"]["backend_runtime_packages"]) == 3
+    assert "apkindex_sha256" not in inputs["alpine"]
+    assert set(inputs["python_base_image"]["builder_mirrors"]) == {"a", "b"}
+    for package in inputs["alpine"]["backend_runtime_packages"]:
+        assert package["filename"] in backend_dockerfile
+        assert package["sha256"] in backend_dockerfile
+    assert "APKINDEX.tar.gz" not in backend_dockerfile
+    assert "apk add --no-network --allow-untrusted" in backend_dockerfile
+    assert '"docker", "buildx", "inspect", builder, "--bootstrap"' in build_tool
+    assert '"--no-cache"' in build_tool
+    assert "rewrite-timestamp=true" in build_tool
+    assert '"com.docker.compose.project"' in build_tool
+
+
 def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> None:
     root = Path(__file__).resolve().parents[2]
     runner = (root / "tools" / "windows" / "run-phase7-gate-c.ps1").read_text(encoding="utf-8")
@@ -410,14 +456,125 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert 'Invoke-Compose @("restart", "api")' in runner
     assert 'Wait-ComposeServiceHealthy -Service "api"' in runner
     assert '"StableIdle" {' in runner
-    assert "Start-Sleep -Seconds 300" in runner
+    assert "Wait-WithCapacityGuard -Seconds 300" in runner
     assert "Get-ComposeImageReference" in runner
     assert 'docker image inspect --format "{{.Id}}" $imageReference' in runner
+    assert '$capacityPolicyRevision = "Gate-C-12-capacity-v1.1"' in runner
+    assert "[double]$capacityAdmissionGiB = 15.0" in runner
+    assert "[double]$capacityWarningGiB = 8.0" in runner
+    assert "[double]$capacityStopGiB = 5.0" in runner
+    assert "function Assert-CapacityAdmission" in runner
+    assert "function Assert-CapacityReserve" in runner
+    assert "$capacitySnapshot = Assert-CapacityAdmission" in runner
+    assert '$capacityAbort = $Reason.StartsWith("Gate C capacity"' in runner
+    assert 'if ($capacityAbort) { "INFRA_ABORTED" }' in runner
+    assert "capacity_policy_revision = $capacityPolicyRevision" in runner
+    assert "capacity_at_start = $script:capacityAtStart" in runner
+    assert "capacity_latest = $script:lastCapacitySnapshot" in runner
+    assert "Start-CapacityMonitor" in runner
+    assert "Wait-WithCapacityGuard -Seconds 300" in runner
+
+    capacity_monitor = (root / "tools" / "windows" / "watch-gate-c-capacity.ps1").read_text(
+        encoding="utf-8"
+    )
+    assert '"INFRA_CAPACITY_WARNING"' in capacity_monitor
+    assert '"INFRA_ABORTED"' in capacity_monitor
+    assert '"label=com.docker.compose.project=$ProjectName"' in capacity_monitor
+    assert '"label=com.docker.compose.oneoff=True"' in capacity_monitor
+    assert "docker stop --time 30" in capacity_monitor
+    assert "docker volume rm" not in capacity_monitor
+    assert "docker system prune" not in capacity_monitor
 
     assert compose.count("cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}") == 2
     assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
     assert "cybercontrol/gate-c-frontend:${GATE_C_IMAGE_TAG:-unknown}" in compose
     assert "cybercontrol/gate-c-load:${GATE_C_IMAGE_TAG:-unknown}" in compose
+
+
+def test_gate_c_capacity_startup_snapshot_closes_monitor_race(tmp_path: Path) -> None:
+    runner = Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-phase7-gate-c.ps1"
+    probe = tmp_path / "capacity-startup-race.ps1"
+    escaped_runner = str(runner).replace("'", "''")
+    probe.write_text(
+        f"""\
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+$tokens = $null
+$parseErrors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile(
+    '{escaped_runner}', [ref]$tokens, [ref]$parseErrors
+)
+if ($parseErrors.Count -ne 0) {{ throw "Runner parse failed." }}
+$required = @(
+    "Get-HostCapacitySnapshot",
+    "Get-CapacitySnapshotState",
+    "Update-LatestCapacitySnapshot",
+    "Assert-CapacityMonitorHealthy"
+)
+foreach ($name in $required) {{
+    $definition = @($ast.FindAll({{
+        param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq $name
+    }}, $true))
+    if ($definition.Count -ne 1) {{ throw "Expected one function named $name." }}
+    Invoke-Expression $definition[0].Extent.Text
+}}
+function Get-PSDrive {{
+    [CmdletBinding()]
+    param([string]$Name)
+    return [pscustomobject]@{{ Free = $script:testFreeBytes }}
+}}
+$probeTempRoot = [IO.Path]::GetTempPath()
+if ([string]::IsNullOrWhiteSpace($probeTempRoot)) {{
+    throw "PowerShell did not provide a platform temp directory."
+}}
+$ResultsRoot = $probeTempRoot
+$capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
+[double]$capacityWarningGiB = 8.0
+[double]$capacityStopGiB = 5.0
+$states = foreach ($freeGiB in @(16.0, 7.0, 4.0)) {{
+    $script:testFreeBytes = [int64]($freeGiB * 1GB)
+    (Get-HostCapacitySnapshot).state
+}}
+$script:testFreeBytes = [int64](16.0 * 1GB)
+$script:lastCapacitySnapshot = Get-HostCapacitySnapshot
+$runDirectory = Join-Path $probeTempRoot "gate-c-capacity-race-not-created"
+$script:capacityMonitorProcess = [pscustomobject]@{{ HasExited = $false }}
+$script:capacityMonitorProcess | Add-Member -MemberType ScriptMethod -Name Refresh -Value {{}}
+Assert-CapacityMonitorHealthy
+$missingStateError = $null
+try {{
+    Get-CapacitySnapshotState -Snapshot ([pscustomobject]@{{ free_bytes = 1 }}) | Out-Null
+}}
+catch {{
+    $missingStateError = $_.Exception.Message
+}}
+[ordered]@{{
+    states = @($states)
+    startup_guard_passed = $true
+    missing_state_error = $missingStateError
+}} | ConvertTo-Json -Compress
+""",
+        encoding="utf-8",
+    )
+
+    probe_environment = os.environ.copy()
+    probe_environment.pop("TEMP", None)
+    probe_environment.pop("TMP", None)
+    completed = subprocess.run(
+        ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(probe)],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=probe_environment,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["states"] == ["NORMAL", "WARNING", "HARD_STOP"]
+    assert result["startup_guard_passed"] is True
+    assert result["missing_state_error"] == "Gate C capacity snapshot is missing required state."
 
 
 def test_jemalloc_profile_image_is_pinned_and_diagnostic_only() -> None:
@@ -482,7 +639,7 @@ def test_gate_c_jemalloc_profile_protocol_is_fixed_and_non_formal() -> None:
     assert '[string]$JemallocProfileArm = "None"' in runner
     assert "Jemalloc profile arms are valid only with -Mode DiagnosticStages." in runner
     assert "Jemalloc profile arms require only ramp-200, 300 idle seconds" in runner
-    assert "Jemalloc profile arms must reuse the prevalidated image with -SkipBuild." in runner
+    assert "Jemalloc profile arms must reuse a prevalidated locked image receipt." in runner
     assert "Profiling image digest does not match -JemallocProfileImageDigest." in runner
     assert "docker kill --signal USR2" in runner
     assert '$JemallocProfileArm -eq "Measurement"' in runner

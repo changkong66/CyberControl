@@ -1,0 +1,31 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-package-reference.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "NON_ACCEPTANCE_DIAGNOSTIC_REJECTED",
+  "acceptance_claim": false,
+  "source_directory": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c12-phase1-jemalloc-calibration-d0c6e0c-20260825T070253Z",
+  "package_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/gate-c12-phase1-jemalloc-calibration-rejected-d0c6e0c-20260825-v1.zip",
+  "package_bytes": 2050113,
+  "package_sha256": "99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423",
+  "content_manifest_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/packages/gate-c12-phase1-jemalloc-calibration-rejected-d0c6e0c-20260825-v1-content-manifest.json",
+  "content_manifest_sha256": "c6506e3eabe4e1e82d1a544e9f03aaa2d1834342bcd20b596e187d5be0ef5bc5",
+  "file_count": 81,
+  "total_uncompressed_bytes": 21846556,
+  "redaction_scan_sha256": "04355a2e2156d2b437c91403ae2611e6f61afd3866566ee786d0535d2f67fc20",
+  "individual_arms": {
+    "A": {
+      "package_sha256": "ff328e7bce3e86255a730cb9129068e335a276d60f13d4afb854eb418cd9c212",
+      "content_manifest_sha256": "566ee0bc71c5d33af154e53ed49167a5142254891a6af8ae8c0cd5fe048adebd"
+    },
+    "Measurement": {
+      "package_sha256": "8fd910637bd650f2f4fc5b70f92c2f2cb696d90510591db35de987ccd34b313c",
+      "content_manifest_sha256": "5720a3760076848c255e8955eba7de8a404a7e3de1ffc10790f567f82e52eb2f"
+    },
+    "APrime": {
+      "executed": false,
+      "reason": "Prohibited by zero-tolerance stop rule after Measurement HTTP 500"
+    }
+  },
+  "formal_gate_attempt": false,
+  "gate_c_attempts_appended": false
+}

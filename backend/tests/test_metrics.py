@@ -409,7 +409,7 @@ async def test_checkpoint_mode_never_starts_periodic_heavy_sampler(
     monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_SOURCE_TREE", "b" * 40)
     monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PRODUCT_SOURCE_SHA", "c" * 40)
     monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_ENGINEERING_BASELINE_SHA", "d" * 40)
-    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PROCESS_VERSION", "Gate-C-11-v1.0")
+    monkeypatch.setenv("LIYAN_MEMORY_CHECKPOINT_PROCESS_VERSION", "Gate-C-12-v1.0")
     metrics = PlatformMetrics()
     starts = 0
 

@@ -1,0 +1,42 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-infra-abort-reference.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "capacity_policy_revision": "Gate-C-12-capacity-v1.1",
+  "classification": "INFRA_ABORTED",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "gate_c_attempts_appended": false,
+  "run_id": "gate-c-diagnostic-20260825T042339Z",
+  "root_cause_domain": "PHASE0_CAPACITY_MONITOR",
+  "source_commit": "9380e84eaeb5d77d692e35fca4db31dc0cf52a1f",
+  "source_tree": "c1078f9b1d1f70d6eec70ee4d401427ee908bab1",
+  "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "engineering_baseline_sha": "9380e84eaeb5d77d692e35fca4db31dc0cf52a1f",
+  "compose_project": "gatec12p0probea9380e84",
+  "postgres_volume": "cybercontrol_gate_c12_phase0_probe_a_9380e84_20260825",
+  "temporary_volume_removed_after_archive": true,
+  "observed": {
+    "free_gib_at_start": 19.298,
+    "capacity_admission_gib": 15.0,
+    "service_start_attempted": false,
+    "load_started": false,
+    "formal_result_produced": false,
+    "reason": "The startup capacity snapshot had no state property and the monitor had not yet published capacity-latest.json."
+  },
+  "raw_evidence": {
+    "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c12-phase0-probe-calibration-9380e84-20260825/A/gate-c-diagnostic-20260825T042339Z-9380e84eaeb5",
+    "file_count": 9,
+    "total_bytes": 4697,
+    "manifest_v2_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c12-phase0-probe-calibration-9380e84-20260825/A/infra-abort-archive-v2/raw-manifest-v2.json",
+    "manifest_v2_sha256": "337bfa712a03ac860566cf72d45fd2fb202996b6a107286b9f740e1261d67257",
+    "summary_v2_sha256": "4f3ab13b782b3c4cc0a475f12d65eebb04472019a6d76de95118a0732d77f57d",
+    "package_path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c12-phase0-probe-calibration-9380e84-20260825/A/infra-abort-archive/gate-c12-phase0-capacity-monitor-race-infra-aborted-9380e84.zip",
+    "package_bytes": 4606,
+    "package_sha256": "f0f234952c84dc8794e7ddf916ed9232770cffc1289ac4979654075d32530db6",
+    "v1_aggregate_valid": false,
+    "v1_individual_file_hashes_valid": true
+  },
+  "thresholds_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+  "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+  "formal_state_unchanged": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
+}

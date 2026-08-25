@@ -221,7 +221,7 @@ class MemoryCheckpointManager:
         ):
             if not SHA_PATTERN.fullmatch(self._source_metadata.get(name, "")):
                 raise ValueError(f"memory checkpoint {name} must be a lowercase Git SHA")
-        if self._source_metadata.get("process_version") != "Gate-C-11-v1.0":
+        if self._source_metadata.get("process_version") != "Gate-C-12-v1.0":
             raise ValueError("memory checkpoint process version is not approved")
 
     def register_inventory(
@@ -326,7 +326,7 @@ class MemoryCheckpointManager:
             inventories[name] = inventory
         metadata = {
             "schema_version": "cybercontrol.memory-checkpoint.v1",
-            "process_version": "Gate-C-11-v1.0",
+            "process_version": "Gate-C-12-v1.0",
             "label": label,
             "started_at_utc": started_at,
             "completed_at_utc": datetime.now(UTC).isoformat(),

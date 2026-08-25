@@ -19,7 +19,7 @@ from uuid import uuid4
 logger = logging.getLogger(__name__)
 
 PROFILE_SIGNAL: Final = getattr(signal, "SIGUSR2", None)
-PROFILE_PROCESS_VERSION: Final = "Gate-C-11-v1.0"
+PROFILE_PROCESS_VERSION: Final = "Gate-C-12-v1.0"
 SHA_PATTERN: Final = re.compile(r"^[0-9a-f]{40}$")
 SHA256_PATTERN: Final = re.compile(r"^[0-9a-f]{64}$")
 BUILD_ID_PATTERN: Final = re.compile(r"^[0-9a-f]{40}$")
