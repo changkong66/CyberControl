@@ -8,11 +8,12 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`, tree
-`9c478ed3c22debf65fe3eb4fef92ee58982f233f`. Protected-main Release Quality
-Gates Run `32834020352` completed 8/8 jobs successfully. PR #93 changed build,
-capacity and diagnostic infrastructure and PR #94 changed status documents
-only; neither changed core product behavior, so the current product source
+`d2bee3861adf1129f80aae9b10d4709610a69251`, tree
+`69eed0310296f95718660dfd798ea6262bbac291`. Protected-main Release Quality
+Gates Run `32875417540` completed 8/8 jobs successfully. PR #93 changed build,
+capacity and diagnostic infrastructure, PR #94 changed status documents, PR
+#95 accepted the measurement design and PR #96 added default-off diagnostic
+capability. None changed core product behavior, so the current product source
 remains
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
 `963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
@@ -641,3 +642,61 @@ verify and clean its own temporary resources before another round can start.
 This record does not itself authorize execution. Only after its external D0
 closure may the exact ADR 0032 instrumentation and calibration begin. Product
 behavior, PreflightSmoke, formal Gate C and Gate D-G remain locked.
+
+## 15. ADR 0032 D0 External Closure Audit
+
+ADR 0032 design PR #95 head
+`8076c4d0f313f094d5d71e844c6144d46076818a` passed push Run `32858328460`
+attempt 2 and pull-request Run `32859688307`, Squash Merged as
+`2c9d7debb2ba176f0688138d9519dca8805b5a6c`, and passed protected-main Run
+`32860487073`; every chain completed 8/8. Its tree is
+`d4b7e6542f34c3b43b80932a43fcfd52df228a47`.
+
+This externally closes all six D0 artifacts required by `Gate-C-12-v1.0`:
+the S/R/P/F variable matrix, exact interference and zero-tolerance formulas,
+mutually exclusive physical ledger, strong/weak admission and multi-owner
+cutoff, failure exits, and the evidence/image/cleanup contract. The accepted
+ADR remains immutable. Any future weak admission requires a separate numbered,
+evidence-bound addendum and its own protected-main closure.
+
+The change is `DIAGNOSTIC_DESIGN`, so `baseline_history` appends sequence 18.
+Product source remains `a57d0ce...`, the last formal source remains
+`5fcb917b...`, M2 remains current and `gate_c_attempts` remains 12. D0 permits
+only implementation and calibration of the exact design; it does not authorize
+product remediation, PreflightSmoke or formal Gate C.
+
+## 16. Diagnostic Capability And D1 Readiness Audit
+
+Diagnostic-capability PR #96 head
+`fb9dc93937c2a8c0b5dda314b55a0f5cc44710d7` passed push and pull-request Runs
+`32874073910` and `32874795456`, Squash Merged as
+`d2bee3861adf1129f80aae9b10d4709610a69251`, and passed protected-main Run
+`32875417540`; every chain completed 8/8. Its protected-main tree is
+`69eed0310296f95718660dfd798ea6262bbac291`.
+
+PR #96 implements the bounded L1 inventory, mutually exclusive RSS ledger,
+S/R/P/F and L1 A/M/A' runners, real TLS PostgreSQL churn, evidence packaging,
+exact cleanup receipts, diagnostic image separation and default-off event-loop
+heartbeat authorized by ADR 0032. It does not establish an RSS owner and does
+not alter default product behavior or frozen Gate C semantics.
+
+The change is `DIAGNOSTIC_CAPABILITY`, so `baseline_history` appends sequence
+19. The engineering baseline advances to `d2bee386...`; product source remains
+`a57d0ce...`, the last formal source remains `5fcb917b...`, M2 and all twelve
+formal attempts remain unchanged.
+
+Before D1, a manifest-driven cleanup removed only proven unreferenced temporary
+diagnostic resources. The receipt is
+`D:\CyberControlAcceptance\phase7\gate-c\diagnostics\gate-c12-capacity-cleanup-20260825T171029Z\cleanup-receipt.json`,
+SHA256 `cb28d0eedaf1987329469edbb5e8395ef3ed7dedba8d4e78e21382260f3317ed`;
+the pre-cleanup manifest SHA256 is
+`eff7be833b5e4c0efca35598c48c0b4b687a5ad89262495f27d55c24c12d0029`.
+Evidence-anchor mismatches and remaining candidate resources are zero. No
+prune, formal-volume deletion, evidence-image deletion or development-
+container stop occurred.
+
+Post-cleanup D: free space is `10.823 GiB`, below the `15 GiB` admission floor.
+D1 runtime is classified `INFRA_ABORTED_CAPACITY`. No image build, calibration
+or diagnostic run is permitted until free space is restored and reverified.
+This stop consumes neither a design-failure slot nor a formal attempt. Product
+remediation, PreflightSmoke, formal Gate C and Gate D-G remain locked.

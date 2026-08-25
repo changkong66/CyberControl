@@ -16,17 +16,17 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current protected main is
-`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`, tree
-`9c478ed3c22debf65fe3eb4fef92ee58982f233f`, with protected-main Release
-Quality Gates [Run 32834020352](https://github.com/changkong66/CyberControl/actions/runs/32834020352)
+`d2bee3861adf1129f80aae9b10d4709610a69251`, tree
+`69eed0310296f95718660dfd798ea6262bbac291`, with protected-main Release
+Quality Gates [Run 32875417540](https://github.com/changkong66/CyberControl/actions/runs/32875417540)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`. Product source remains bound to
+`d2bee3861adf1129f80aae9b10d4709610a69251`. Product source remains bound to
 the last core product-behavior change; PR #93 changed reproducible build,
-capacity, diagnostic and test infrastructure and PR #94 changed status
-documents only. Neither changed frozen product semantics or underwent a new
-formal Gate C replay; the last formal evaluation remains bound to
-`5fcb917b...`.
+capacity, diagnostic and test infrastructure, PR #94 changed status documents,
+PR #95 accepted ADR 0032, and PR #96 added only default-off diagnostic
+capability. None changed frozen product semantics or underwent a new formal
+Gate C replay; the last formal evaluation remains bound to `5fcb917b...`.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
 initial Gate C failure and all eleven remediation reruns are preserved as
@@ -1226,8 +1226,51 @@ and conservative-reduction calculation, explicit
 `WEAK_ADMISSION_APPROVED`, Squash Merge and protected-main 8/8. The accepted
 ADR 0032 file is not rewritten.
 
-This branch is a design candidate, not completed D0. Its future PR number,
-merge SHA and protected-main run are intentionally absent. No diagnostic may
-start until those external attestations close D0. Even then, the authorization
-is limited to implementation and calibration of this exact design; product
-remediation, PreflightSmoke, formal Gate C and Gate D-G remain locked.
+At the PR #94 snapshot this branch was a design candidate, not completed D0.
+Its future PR number, merge SHA and protected-main run were intentionally
+absent, and no diagnostic was allowed before those external attestations. The
+following append-only closure records the later facts. Product remediation,
+PreflightSmoke, formal Gate C and Gate D-G remain locked.
+
+## ADR 0032 D0 And Diagnostic Capability Closure
+
+ADR 0032 design PR [#95](https://github.com/changkong66/CyberControl/pull/95)
+head `8076c4d0f313f094d5d71e844c6144d46076818a` passed push Run
+`32858328460` attempt 2 and pull-request Run `32859688307`, Squash Merged as
+`2c9d7debb2ba176f0688138d9519dca8805b5a6c`, and passed protected-main Run
+`32860487073`; all three chains completed 8/8. Its tree is
+`d4b7e6542f34c3b43b80932a43fcfd52df228a47`. The six D0 artifacts are
+externally closed: variable matrix, interference formulas, mutually exclusive
+ledger, attribution admission, failure exits, and evidence/image/cleanup
+contract.
+
+Diagnostic-capability PR
+[#96](https://github.com/changkong66/CyberControl/pull/96) head
+`fb9dc93937c2a8c0b5dda314b55a0f5cc44710d7` passed push and pull-request Runs
+`32874073910` and `32874795456`, Squash Merged as
+`d2bee3861adf1129f80aae9b10d4709610a69251`, and passed protected-main Run
+`32875417540`; all three chains completed 8/8. Its tree is
+`69eed0310296f95718660dfd798ea6262bbac291`. This closes only the bounded L1,
+S/R/P/F calibration, evidence packaging, exact cleanup and diagnostic image
+roles authorized by ADR 0032. Default product operation and frozen acceptance
+semantics remain unchanged.
+
+`baseline_history` appends PR #95 as sequence 18 `DIAGNOSTIC_DESIGN` and PR
+#96 as sequence 19 `DIAGNOSTIC_CAPABILITY`. Product source remains
+`a57d0ce...`, the last formal source remains `5fcb917b...`, M2 remains current,
+and `gate_c_attempts` remains exactly 12.
+
+The manifest-driven capacity cleanup is recorded at
+`D:\CyberControlAcceptance\phase7\gate-c\diagnostics\gate-c12-capacity-cleanup-20260825T171029Z\cleanup-receipt.json`,
+SHA256 `cb28d0eedaf1987329469edbb5e8395ef3ed7dedba8d4e78e21382260f3317ed`.
+Its pre-cleanup manifest SHA256 is
+`eff7be833b5e4c0efca35598c48c0b4b687a5ad89262495f27d55c24c12d0029`.
+No prune, formal-volume deletion, evidence-image deletion or development-
+container stop occurred.
+
+D: currently has `10.823 GiB` free, below the `15 GiB` admission floor. D1 is
+therefore `INFRA_ABORTED_CAPACITY`: no protected-main image build, calibration
+or diagnostic run may start until capacity is restored and reverified. This
+infrastructure stop is not a design failure, does not append `gate_c_attempts`,
+and authorizes no owner or remediation conclusion. PreflightSmoke, formal Gate
+C and Gate D-G remain locked.
