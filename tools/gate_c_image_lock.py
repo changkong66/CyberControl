@@ -113,11 +113,8 @@ def _validate_inputs(path: Path) -> dict[str, Any]:
     ):
         raise ValueError("Gate C Python base image mirror binding is invalid")
     alpine = inputs.get("alpine")
-    if (
-        not isinstance(alpine, dict)
-        or re.fullmatch(r"[0-9a-f]{64}", str(alpine.get("apkindex_sha256"))) is None
-    ):
-        raise ValueError("Gate C APKINDEX content hash is missing or invalid")
+    if not isinstance(alpine, dict):
+        raise ValueError("Gate C Alpine runtime package lock is missing")
     packages = alpine.get("backend_runtime_packages")
     if not isinstance(packages, list) or not packages:
         raise ValueError("Gate C backend package lock is empty")

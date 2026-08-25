@@ -422,10 +422,12 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     assert inputs["buildkit"]["image_digest"].startswith("sha256:")
     assert inputs["buildkit"]["source_revision"] == "673b7e0196de0cac83308274b88aaed97a91af74"
     assert len(inputs["alpine"]["backend_runtime_packages"]) == 3
+    assert "apkindex_sha256" not in inputs["alpine"]
     assert set(inputs["python_base_image"]["builder_mirrors"]) == {"a", "b"}
     for package in inputs["alpine"]["backend_runtime_packages"]:
         assert package["filename"] in backend_dockerfile
         assert package["sha256"] in backend_dockerfile
+    assert "APKINDEX.tar.gz" not in backend_dockerfile
     assert "apk add --no-network --allow-untrusted" in backend_dockerfile
     assert '"docker", "buildx", "inspect", builder, "--bootstrap"' in build_tool
     assert '"--no-cache"' in build_tool
