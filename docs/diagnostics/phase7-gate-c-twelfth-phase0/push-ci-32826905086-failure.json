@@ -1,0 +1,39 @@
+{
+  "schema_version": "cybercontrol.gate-c-ci-failure.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "PUSH_CI_FAILED",
+  "acceptance_claim": false,
+  "formal_gate_attempt": false,
+  "gate_c_attempts_appended": false,
+  "run_id": 32826905086,
+  "run_url": "https://github.com/changkong66/CyberControl/actions/runs/32826905086",
+  "source_commit": "305d490561a98d115ca58d73d9711cf05f047097",
+  "source_tree": "0866eb41ac0679400f2e3b14a8ecdfe65928e2af",
+  "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "failed_jobs": [
+    {
+      "name": "Python, contracts, and unit tests",
+      "job_id": 97736819296,
+      "failure": "The capacity startup probe passed an empty ResultsRoot because PowerShell TEMP was empty."
+    },
+    {
+      "name": "PostgreSQL 16 integration and coverage",
+      "job_id": 97736819466,
+      "failure": "The same non-integration capacity probe failed; 793 other tests passed and coverage was 91.81%."
+    },
+    {
+      "name": "Release quality redline",
+      "job_id": 97738420277,
+      "failure": "The aggregate redline correctly rejected failed prerequisites."
+    }
+  ],
+  "passed_jobs": [
+    "Container build, runtime, SBOM, and vulnerability scan",
+    "Python audit and SBOM",
+    "Full Git history secret scan",
+    "Vue, TypeScript, pnpm audit, and Node SBOM",
+    "Go contract compiler gate"
+  ],
+  "root_cause": "The generated cross-platform PowerShell test probe relied on the optional TEMP environment variable instead of the platform temp-directory API.",
+  "formal_state_unchanged": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
+}

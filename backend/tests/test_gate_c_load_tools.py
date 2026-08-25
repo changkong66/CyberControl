@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -524,7 +525,11 @@ function Get-PSDrive {{
     param([string]$Name)
     return [pscustomobject]@{{ Free = $script:testFreeBytes }}
 }}
-$ResultsRoot = $env:TEMP
+$probeTempRoot = [IO.Path]::GetTempPath()
+if ([string]::IsNullOrWhiteSpace($probeTempRoot)) {{
+    throw "PowerShell did not provide a platform temp directory."
+}}
+$ResultsRoot = $probeTempRoot
 $capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
 [double]$capacityWarningGiB = 8.0
 [double]$capacityStopGiB = 5.0
@@ -534,7 +539,7 @@ $states = foreach ($freeGiB in @(16.0, 7.0, 4.0)) {{
 }}
 $script:testFreeBytes = [int64](16.0 * 1GB)
 $script:lastCapacitySnapshot = Get-HostCapacitySnapshot
-$runDirectory = Join-Path $env:TEMP "gate-c-capacity-race-not-created"
+$runDirectory = Join-Path $probeTempRoot "gate-c-capacity-race-not-created"
 $script:capacityMonitorProcess = [pscustomobject]@{{ HasExited = $false }}
 $script:capacityMonitorProcess | Add-Member -MemberType ScriptMethod -Name Refresh -Value {{}}
 Assert-CapacityMonitorHealthy
@@ -554,11 +559,15 @@ catch {{
         encoding="utf-8",
     )
 
+    probe_environment = os.environ.copy()
+    probe_environment.pop("TEMP", None)
+    probe_environment.pop("TMP", None)
     completed = subprocess.run(
         ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(probe)],
         check=False,
         capture_output=True,
         text=True,
+        env=probe_environment,
     )
 
     assert completed.returncode == 0, completed.stderr
