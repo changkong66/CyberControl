@@ -440,7 +440,7 @@ jobs:
             --builder "$daemon_builder" \
             --no-cache \
             --file tests/load/jemalloc-profile.Dockerfile \
-            --build-arg "BACKEND_IMAGE=$BACKEND_IMAGE_REF" \
+            --build-context "backend_image=docker-image://$BACKEND_IMAGE_REF" \
             --tag "$JEMALLOC_PROFILE_IMAGE_REF" \
             --load \
             --metadata-file artifacts/container/jemalloc-profile-build-metadata.json \

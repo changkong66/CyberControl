@@ -138,3 +138,10 @@ def test_diagnostic_build_consumes_each_independent_backend_as_an_oci_context() 
     assert "backend_image=oci-layout://" in tool
     assert "backend_contexts[arm]" in tool
     assert "shutil.rmtree(backend_context_root)" in tool
+
+
+def test_ci_diagnostic_build_binds_the_local_backend_as_a_named_context() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "quality-gates.yml").read_text(encoding="utf-8")
+
+    assert '--build-context "backend_image=docker-image://$BACKEND_IMAGE_REF"' in workflow
+    assert '--build-arg "BACKEND_IMAGE=$BACKEND_IMAGE_REF"' not in workflow
