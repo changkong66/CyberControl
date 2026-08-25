@@ -21,3 +21,4 @@ Current records:
 - ADR-0029: Phase 7 Gate C twelfth capacity monitor startup race repair
 - ADR-0030: Phase 7 Gate C twelfth jemalloc calibration rejection
 - ADR-0031: Phase 7 Gate C twelfth capacity probe temp portability
+- ADR-0032: Phase 7 Gate C twelfth low-interference RSS attribution

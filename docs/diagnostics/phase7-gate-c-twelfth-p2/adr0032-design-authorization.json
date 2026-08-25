@@ -1,0 +1,290 @@
+{
+  "schema_version": "cybercontrol.gate-c-p2-diagnostic-design.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "NON_ACCEPTANCE_DIAGNOSTIC_DESIGN",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "gate_c_attempts_appended": false,
+  "design_adr": 32,
+  "design_status": "CANDIDATE_PENDING_SQUASH_MERGE_AND_PROTECTED_MAIN_8_OF_8",
+  "d0_complete_only_after_external_closure": true,
+  "source": {
+    "engineering_parent_sha": "5ae8637c46c741c8b6f079e22af3e2517bac7bb9",
+    "engineering_parent_tree_sha": "9c478ed3c22debf65fe3eb4fef92ee58982f233f",
+    "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "product_source_tree_sha": "963fcf73113e39a1e5868fae3957f4adfc102a4c",
+    "last_formal_source_sha": "5fcb917b63889cb6da8dd019efdd133f4ec3fb60",
+    "last_formal_source_tree_sha": "f721fca017c247aee93765d5f11fcbc37e12fcfc",
+    "parent_protected_main_ci_run": 32834020352,
+    "parent_protected_main_ci_jobs": "8/8"
+  },
+  "frozen_inputs": {
+    "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+    "formal_memory_metric": "api_cgroup_memory_current",
+    "formal_recovery_ratio_limit": 1.1,
+    "formal_reference_baseline_bytes": 262144000,
+    "formal_reference_recovery_bytes": 371510477,
+    "formal_reference_peak_bytes": 436941619,
+    "formal_reference_ratio": 1.4172,
+    "reference_required_reduction_bytes": 83152077
+  },
+  "d0_deliverables": {
+    "variable_matrix": "PRESENT",
+    "interference_formulas_and_zero_tolerance": "PRESENT",
+    "mutually_exclusive_memory_ledger": "PRESENT",
+    "attribution_admission_and_multi_owner_cutoff": "PRESENT",
+    "failure_exit_paths": "PRESENT",
+    "evidence_image_lock_and_cleanup_contract": "PRESENT"
+  },
+  "variable_matrix": {
+    "harness": {
+      "connection_type": "real_tls_postgresql",
+      "connections_per_arm": 2000,
+      "maximum_concurrency": 200,
+      "admission_rate_per_second": 50,
+      "fresh_compose_network_run_directory_and_postgres_volume_per_arm": true
+    },
+    "matched_sequence": [
+      "A",
+      "M",
+      "A_PRIME"
+    ],
+    "variables": {
+      "S": {
+        "measurement_change": "signal_and_event_loop_delivery_with_verified_mallctl_noop",
+        "entry": "FIRST"
+      },
+      "R": {
+        "measurement_change": "prof_reset_only",
+        "entry": "AFTER_S_PASS"
+      },
+      "P": {
+        "measurement_change": "prof_active_true_only_without_reset",
+        "entry": "AFTER_S_PASS"
+      },
+      "F": {
+        "measurement_change": "prof_reset_then_prof_active_true",
+        "entry": "ONLY_AFTER_S_R_P_PASS_AND_EVIDENCE_REQUIRES_COMBINATION"
+      }
+    },
+    "levels": {
+      "L0": "passive_cgroup_proc_fd_existing_lifecycle_and_pool_counters",
+      "L1": "bounded_jemalloc_bin_extent_pool_cache_and_lifecycle_inventory",
+      "L2": "sampled_jemalloc_live_allocation_stacks"
+    },
+    "probe_mutex": {
+      "always_permitted_companion": "L0",
+      "pairwise_exclusive": [
+        "L1_bounded_inventory",
+        "L2_sampled_profile",
+        "tracemalloc",
+        "gc_object_scan",
+        "task_frame_stack_capture",
+        "heavy_checkpoint"
+      ]
+    }
+  },
+  "interference_gate": {
+    "control_median_formula": "median(A(x), A_PRIME(x))",
+    "control_drift_formula": "abs(A(x)-A_PRIME(x))/max(abs(control_median(x)),epsilon(x))",
+    "measurement_ratio_formula": "M(x)/max(control_median(x),epsilon(x))",
+    "rss_interference_formula": "abs(M(rss_delta)-control_median(rss_delta))",
+    "rss_limit_formula": "max(8388608,0.10*abs(control_median(rss_delta)))",
+    "epsilon": {
+      "latency_and_event_loop_lag_ms": 1,
+      "cpu_one_core_units": 0.01
+    },
+    "maximum_control_drift_ratio": 0.1,
+    "maximum_measurement_to_control_ratio": 1.1,
+    "maximum_zero_control_event_loop_lag_increment_ms": 1,
+    "micro_harness_completeness_minimum": 1.0,
+    "real_api_and_l1_completeness_minimum": 0.95,
+    "independent_passes_required": 2,
+    "l1_requires_200_connection_calibration": true,
+    "zero_tolerance": [
+      "http_5xx",
+      "bad_address",
+      "committed_event_loss",
+      "duplicate_final_render",
+      "cross_tenant_leakage",
+      "invalid_cursor_acceptance",
+      "outbox_dead",
+      "pool_timeout",
+      "oom",
+      "unplanned_restart",
+      "semantic_regression",
+      "nonzero_terminal_lifecycle_ownership",
+      "evidence_integrity_failure"
+    ]
+  },
+  "memory_ledger": {
+    "physical_partition": {
+      "allocator_payload": "jemalloc_allocated",
+      "allocator_slack": "jemalloc_active-jemalloc_allocated",
+      "allocator_resident_gap": "jemalloc_resident-jemalloc_active",
+      "non_jemalloc_anon": "RssAnon-jemalloc_resident",
+      "identity": "RssAnon=allocator_payload+allocator_slack+allocator_resident_gap+non_jemalloc_anon"
+    },
+    "reported_separately": [
+      "RssFile",
+      "RssShmem"
+    ],
+    "cgroup_bridge": [
+      "api_process_rss",
+      "other_process_rss",
+      "cgroup_file_cache",
+      "kernel_memory",
+      "signed_reconciliation_residual"
+    ],
+    "ownership_overlays_not_additive": [
+      "python_objects",
+      "tasks_and_frames",
+      "http_and_db_pools",
+      "metric_state",
+      "legal_caches",
+      "subscriber_queues",
+      "replay_buffers"
+    ],
+    "sample_windows": {
+      "stable_idle_seconds": 300,
+      "load_tail_seconds": 60,
+      "recovery_seconds": 600
+    },
+    "invalid_snapshot_conditions": [
+      "scope_mismatch",
+      "counter_reset",
+      "negative_partition",
+      "missing_required_input"
+    ]
+  },
+  "attribution_admission": {
+    "strong": {
+      "minimum_explained_ratio": 0.9,
+      "maximum_unknown_bytes_formula": "min(0.10*recovery_residual_bytes,8388608)",
+      "independent_matched_runs": 2,
+      "minimum_resolved_sampled_bytes_ratio": 0.9,
+      "minimum_candidate_stack_samples": 10,
+      "minimum_candidate_stack_live_bytes_ratio": 0.2
+    },
+    "weak": {
+      "minimum_dominant_owner_ratio": 0.7,
+      "independent_matched_runs": 2,
+      "residual_must_be_category_known": true,
+      "lifecycle_anomalies_permitted": false,
+      "conservative_reduction_formula": "min(owner_reduction_run_1,owner_reduction_run_2)-measurement_noise_bound",
+      "approval": "NEW_NUMBERED_APPEND_ONLY_ADR_0032_WEAK_ADMISSION_ADDENDUM_WITH_WEAK_ADMISSION_APPROVED_SQUASH_MERGE_AND_MAIN_8_OF_8",
+      "required_evidence": [
+        "residual_categories_bytes_and_ratios",
+        "stable_reproduction_and_controls",
+        "full_conservative_calculation",
+        "two_run_ids",
+        "two_summary_paths",
+        "two_package_sha256_values"
+      ]
+    },
+    "multi_owner_cutoff": "REMEDIATE_LARGEST_FIRST_REMEASURE_AND_STOP_WHEN_CONSERVATIVE_RESIDUAL_MEETS_1_10"
+  },
+  "outcomes": {
+    "DESIGN_REJECTED": {
+      "definition": "probe_calibration_or_structure_cannot_produce_trustworthy_data",
+      "counts_as_design_failure": true,
+      "effect": "SECOND_AND_FINAL_DESIGN_FAILURE_STOP_NEW_DESIGNS"
+    },
+    "OWNER_UNRESOLVED": {
+      "definition": "trusted_data_but_no_actionable_owner_meets_admission",
+      "counts_as_design_failure": false,
+      "effect": "ARCHIVE_AND_STOP_PRODUCT_MODIFICATION"
+    },
+    "INFRA_ABORTED": {
+      "definition": "image_environment_docker_disk_or_network_fault_unrelated_to_product_behavior",
+      "counts_as_design_failure": false,
+      "gate_c_attempts_appended": false,
+      "same_cause_maximum_retries": 2,
+      "retry_scope": "CURRENT_LEVEL_ONLY",
+      "third_same_cause_effect": "STOP_AND_REQUIRE_INFRASTRUCTURE_REPORT"
+    }
+  },
+  "remediation_validation": {
+    "single_owner_per_pr": true,
+    "test_layer_aba_prime_required": true,
+    "fresh_levels": [
+      20,
+      200,
+      500,
+      1000
+    ],
+    "non_formal_2000_before_full_permitted": false,
+    "zero_tolerance_evaluated_first": true,
+    "peak_rss_control_increase_stop_ratio": 0.1,
+    "recovery_residual_control_increase_stop_ratio": 0.15,
+    "prediction_deviation_formula": "actual_recovery_residual_bytes/predicted_recovery_residual_bytes",
+    "prediction_deviation_stop_ratio": 1.3
+  },
+  "image_contract": {
+    "normal_lock_services": [
+      "backend",
+      "frontend",
+      "migrate",
+      "provider",
+      "load_generator",
+      "supporting_services"
+    ],
+    "diagnostic_api_separate_role_and_digest": true,
+    "binding_tuple": [
+      "source_sha",
+      "product_source_sha",
+      "image_role",
+      "build_receipt_sha256",
+      "digest"
+    ],
+    "diagnostic_image_may_impersonate_formal_image": false,
+    "preflight_and_full_require_same_normal_all_service_digests": true
+  },
+  "evidence_contract": {
+    "required": [
+      "process_version",
+      "run_id",
+      "classification",
+      "dual_baseline",
+      "source_tree",
+      "frozen_input_hashes",
+      "normal_and_diagnostic_image_locks",
+      "environment_fingerprint",
+      "variable_matrix",
+      "monotonic_timestamps",
+      "raw_samples",
+      "memory_ledger",
+      "controls",
+      "decision",
+      "redaction_result",
+      "content_manifest",
+      "package_sha256",
+      "package_reference",
+      "cleanup_receipt"
+    ],
+    "mandatory_cleanup_after_verified_archive": [
+      "temporary_containers",
+      "project_network",
+      "temporary_postgres_volume",
+      "archived_intermediate_logs"
+    ],
+    "next_round_requires_zero_project_resources_and_free_gib_at_least": 15,
+    "capacity_warning_gib": 8,
+    "capacity_graceful_stop_gib": 5,
+    "prohibited": [
+      "docker_prune",
+      "historical_formal_volume_deletion",
+      "core_image_deletion",
+      "immutable_evidence_rewrite"
+    ]
+  },
+  "authorization_boundary": {
+    "after_d0_external_closure": "IMPLEMENT_AND_CALIBRATE_THIS_EXACT_DIAGNOSTIC_DESIGN_ONLY",
+    "product_remediation_authorized": false,
+    "preflight_authorized": false,
+    "formal_gate_c_authorized": false,
+    "gate_d_through_g_locked": true,
+    "formal_state_unchanged": "RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
+  }
+}

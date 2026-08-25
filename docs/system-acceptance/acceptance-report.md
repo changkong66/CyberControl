@@ -16,16 +16,17 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current protected main is
-`cd93b8438408a381b27275165b5650c8ce447ecb`, tree
-`e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`, with protected-main Release
-Quality Gates [Run 32829926696](https://github.com/changkong66/CyberControl/actions/runs/32829926696)
+`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`, tree
+`9c478ed3c22debf65fe3eb4fef92ee58982f233f`, with protected-main Release
+Quality Gates [Run 32834020352](https://github.com/changkong66/CyberControl/actions/runs/32834020352)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`cd93b8438408a381b27275165b5650c8ce447ecb`. Product source remains bound to
+`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`. Product source remains bound to
 the last core product-behavior change; PR #93 changed reproducible build,
-capacity, diagnostic and test infrastructure without changing frozen product
-semantics. Neither source has undergone a new formal Gate C replay; the last
-formal evaluation remains bound to `5fcb917b...`.
+capacity, diagnostic and test infrastructure and PR #94 changed status
+documents only. Neither changed frozen product semantics or underwent a new
+formal Gate C replay; the last formal evaluation remains bound to
+`5fcb917b...`.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
 initial Gate C failure and all eleven remediation reruns are preserved as
@@ -1196,3 +1197,37 @@ remains `5fcb917b...`. Formal state remains
 `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. P2 remediation,
 PreflightSmoke, formal Gate C and Gate D-G remain locked pending a separately
 reviewed low-interference diagnostic design and explicit authorization.
+
+## Phase 0 Status Closure And ADR 0032 D0 Candidate
+
+Status-only PR [#94](https://github.com/changkong66/CyberControl/pull/94) head
+`6d9bba6c77ac0af103e9c2add10dcd426bec380d` passed push Run
+`32832723708` and pull-request Run `32833344654`, Squash Merged as
+`5ae8637c46c741c8b6f079e22af3e2517bac7bb9`, and passed protected-main Run
+`32834020352`; all three chains completed 8/8. The merge tree is
+`9c478ed3c22debf65fe3eb4fef92ee58982f233f`.
+
+PR #94 changed current-state documents only. `baseline_history` therefore
+appends sequence 17 as `STATUS_DOCS`; product source remains `a57d0ce...`, the
+last formal source remains `5fcb917b...`, and `gate_c_attempts` remains 12.
+This closes Phase 0 externally without repeating the eleventh formal attempt.
+
+ADR 0032 is the candidate D0 design for the final permitted low-interference
+attribution method under `Gate-C-12-v1.0`. D0 has six mandatory artifacts:
+the S/R/P/F and A/M/A' variable matrix, exact interference and zero-tolerance
+rules, mutually exclusive memory ledger, strong/weak attribution rules,
+failure state machine, and evidence/image/cleanup contract. The structured
+companion is
+`docs/diagnostics/phase7-gate-c-twelfth-p2/adr0032-design-authorization.json`.
+
+The weak path does not weaken ADR immutability. It requires a new numbered,
+evidence-bound addendum with two independent runs, full residual composition
+and conservative-reduction calculation, explicit
+`WEAK_ADMISSION_APPROVED`, Squash Merge and protected-main 8/8. The accepted
+ADR 0032 file is not rewritten.
+
+This branch is a design candidate, not completed D0. Its future PR number,
+merge SHA and protected-main run are intentionally absent. No diagnostic may
+start until those external attestations close D0. Even then, the authorization
+is limited to implementation and calibration of this exact design; product
+remediation, PreflightSmoke, formal Gate C and Gate D-G remain locked.
