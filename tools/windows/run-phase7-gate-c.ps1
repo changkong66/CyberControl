@@ -64,7 +64,12 @@ $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
 $monitorPath = Join-Path $root "tests\load\gate_c\monitor.py"
 $runtimeControlsPath = Join-Path $root "tests\load\gate_c\runtime_controls.py"
 $imageLockToolPath = Join-Path $root "tools\gate_c_image_lock.py"
+$capacityMonitorPath = Join-Path $root "tools\windows\watch-gate-c-capacity.ps1"
 $processVersion = "Gate-C-12-v1.0"
+$capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
+[double]$capacityAdmissionGiB = 15.0
+[double]$capacityWarningGiB = 8.0
+[double]$capacityStopGiB = 5.0
 $executionClassification = switch ($Mode) {
     "DiagnosticStages" { "DIAGNOSTIC" }
     "PreflightSmoke" { "PREFLIGHT_CHECK" }
@@ -121,13 +126,19 @@ $script:jemallocProfileBinding = $null
 $script:imageLock = $null
 $script:imageLockSha256 = $null
 $script:buildReceiptSha256 = $null
+$script:capacityAtStart = $null
+$script:lastCapacitySnapshot = $null
+$script:capacityMonitorProcess = $null
+$script:capacityMonitorStopFile = $null
 
 function Invoke-Compose {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
 
     & docker compose @composeArguments @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "docker compose failed with exit code ${LASTEXITCODE}: $($Arguments -join ' ')"
+    $composeExitCode = $LASTEXITCODE
+    Assert-CapacityMonitorHealthy
+    if ($composeExitCode -ne 0) {
+        throw "docker compose failed with exit code ${composeExitCode}: $($Arguments -join ' ')"
     }
 }
 
@@ -148,6 +159,154 @@ function Get-TextSha256 {
     finally {
         $algorithm.Dispose()
     }
+}
+
+function Get-HostCapacitySnapshot {
+    $resultsRootPath = [IO.Path]::GetFullPath($ResultsRoot)
+    $driveRoot = [IO.Path]::GetPathRoot($resultsRootPath)
+    if ([string]::IsNullOrWhiteSpace($driveRoot)) {
+        throw "Gate C results root has no resolvable drive: $ResultsRoot"
+    }
+    $driveName = $driveRoot.TrimEnd('\').TrimEnd(':')
+    $drive = Get-PSDrive -Name $driveName -ErrorAction Stop
+    return [pscustomobject]@{
+        policy_revision = $capacityPolicyRevision
+        drive = $driveName
+        root = $driveRoot
+        sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")
+        free_bytes = [int64]$drive.Free
+        free_gib = [math]::Round([double]$drive.Free / 1GB, 3)
+    }
+}
+
+function Assert-CapacityAdmission {
+    $snapshot = Get-HostCapacitySnapshot
+    $script:capacityAtStart = $snapshot
+    $script:lastCapacitySnapshot = $snapshot
+    if ([int64]$snapshot.free_bytes -lt [int64]($capacityAdmissionGiB * 1GB)) {
+        throw "Gate C capacity admission failed: $($snapshot.free_gib) GiB free on $($snapshot.drive): required $capacityAdmissionGiB GiB."
+    }
+    return $snapshot
+}
+
+function Assert-CapacityReserve {
+    $snapshot = Get-HostCapacitySnapshot
+    $script:lastCapacitySnapshot = $snapshot
+    if ([int64]$snapshot.free_bytes -lt [int64]($capacityStopGiB * 1GB)) {
+        throw "Gate C capacity hard stop: $($snapshot.free_gib) GiB free on $($snapshot.drive): stop threshold is $capacityStopGiB GiB."
+    }
+    if ([int64]$snapshot.free_bytes -lt [int64]($capacityWarningGiB * 1GB)) {
+        throw "Gate C capacity reserve exhausted: $($snapshot.free_gib) GiB free on $($snapshot.drive): stage escalation is blocked below $capacityWarningGiB GiB pending non-destructive cleanup."
+    }
+    return $snapshot
+}
+
+function Update-LatestCapacitySnapshot {
+    $latestPath = Join-Path $runDirectory "capacity-latest.json"
+    if (-not (Test-Path -LiteralPath $latestPath -PathType Leaf)) {
+        return
+    }
+    try {
+        $script:lastCapacitySnapshot = Get-Content -LiteralPath $latestPath -Raw -Encoding UTF8 |
+            ConvertFrom-Json
+    }
+    catch {
+        Write-Warning "Unable to parse the latest capacity snapshot: $_"
+    }
+}
+
+function Assert-CapacityMonitorHealthy {
+    if ($null -eq $script:capacityMonitorProcess) {
+        return
+    }
+    Update-LatestCapacitySnapshot
+    if ($null -ne $script:lastCapacitySnapshot -and
+        [string]$script:lastCapacitySnapshot.state -eq "HARD_STOP") {
+        throw "Gate C capacity hard stop was activated; the run is INFRA_ABORTED."
+    }
+    $script:capacityMonitorProcess.Refresh()
+    if (-not $script:capacityMonitorProcess.HasExited) {
+        return
+    }
+    $hardStopPath = Join-Path $runDirectory "capacity-hard-stop.json"
+    if (Test-Path -LiteralPath $hardStopPath -PathType Leaf) {
+        throw "Gate C capacity hard stop was activated; the run is INFRA_ABORTED."
+    }
+    if ($script:capacityMonitorProcess.ExitCode -ne 0) {
+        throw "Gate C capacity monitor exited unexpectedly with code $($script:capacityMonitorProcess.ExitCode)."
+    }
+    throw "Gate C capacity monitor stopped before run completion."
+}
+
+function Start-CapacityMonitor {
+    if ($null -ne $script:capacityMonitorProcess) {
+        throw "Gate C capacity monitor is already running."
+    }
+    $script:capacityMonitorStopFile = Join-Path $runDirectory "capacity-monitor.stop"
+    $stdout = Join-Path $runDirectory "capacity-monitor.stdout.log"
+    $stderr = Join-Path $runDirectory "capacity-monitor.stderr.log"
+    $pwsh = (Get-Command pwsh -ErrorAction Stop).Source
+    $arguments = @(
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File", $capacityMonitorPath,
+        "-ResultsRoot", $ResultsRoot,
+        "-RunDirectory", $runDirectory,
+        "-ProjectName", $ProjectName,
+        "-StopFile", $script:capacityMonitorStopFile,
+        "-ParentProcessId", [string]$PID,
+        "-PolicyRevision", $capacityPolicyRevision,
+        "-WarningGiB", [string]$capacityWarningGiB,
+        "-StopGiB", [string]$capacityStopGiB,
+        "-SampleIntervalSeconds", "5"
+    )
+    $process = Start-Process `
+        -FilePath $pwsh `
+        -ArgumentList $arguments `
+        -WorkingDirectory $root `
+        -RedirectStandardOutput $stdout `
+        -RedirectStandardError $stderr `
+        -WindowStyle Hidden `
+        -PassThru
+    $null = $process.Handle
+    $script:capacityMonitorProcess = $process
+}
+
+function Stop-CapacityMonitor {
+    if ($null -eq $script:capacityMonitorProcess) {
+        return
+    }
+    if (-not $script:capacityMonitorProcess.HasExited) {
+        New-Item -ItemType File -Path $script:capacityMonitorStopFile -Force | Out-Null
+        if (-not $script:capacityMonitorProcess.WaitForExit(30000)) {
+            $script:capacityMonitorProcess.Kill($true)
+            throw "Gate C capacity monitor did not stop cleanly."
+        }
+    }
+    $script:capacityMonitorProcess.Refresh()
+    Update-LatestCapacitySnapshot
+    [ordered]@{
+        schema_version = "cybercontrol.gate-c-capacity-monitor-exit.v1"
+        policy_revision = $capacityPolicyRevision
+        captured_at_utc = (Get-Date).ToUniversalTime().ToString("o")
+        exit_code = $script:capacityMonitorProcess.ExitCode
+        hard_stop = (Test-Path -LiteralPath (Join-Path $runDirectory "capacity-hard-stop.json"))
+    } | ConvertTo-Json -Depth 4 |
+        Set-Content -LiteralPath (Join-Path $runDirectory "capacity-monitor-exit.json") -Encoding UTF8
+    $script:capacityMonitorProcess = $null
+}
+
+function Wait-WithCapacityGuard {
+    param([Parameter(Mandatory = $true)][ValidateRange(0, 86400)][int]$Seconds)
+
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    while ($timer.Elapsed.TotalSeconds -lt $Seconds) {
+        Assert-CapacityMonitorHealthy
+        $remaining = $Seconds - [int][math]::Floor($timer.Elapsed.TotalSeconds)
+        Start-Sleep -Seconds ([math]::Min(5, [math]::Max(1, $remaining)))
+    }
+    Assert-CapacityMonitorHealthy
 }
 
 function Initialize-LockedImages {
@@ -528,6 +687,7 @@ function Wait-ComposeServiceHealthy {
         if ($state -match "^(exited|dead)\|") {
             throw "Gate C service $Service stopped while waiting for health."
         }
+        Assert-CapacityMonitorHealthy
         Start-Sleep -Seconds 2
     } while ((Get-Date) -lt $deadline)
     throw "Gate C service $Service did not become healthy within $TimeoutSeconds seconds."
@@ -642,19 +802,26 @@ function Save-ComposeDiagnostics {
 
     $diagnosticsDirectory = Join-Path $runDirectory "diagnostics"
     New-Item -ItemType Directory -Path $diagnosticsDirectory -Force | Out-Null
+    $capacityAbort = $Reason.StartsWith("Gate C capacity", [StringComparison]::Ordinal)
     [ordered]@{
         schema_version = "cybercontrol.gate-c-failure.v1"
         captured_at = (Get-Date).ToUniversalTime().ToString("o")
         reason = $Reason
         project = $ProjectName
         process_version = $processVersion
-        classification = $executionClassification
-        formal_gate_attempt = ($Mode -eq "Full")
+        classification = if ($capacityAbort) { "INFRA_ABORTED" } else { $executionClassification }
+        formal_gate_attempt = ($Mode -eq "Full" -and -not $capacityAbort)
         acceptance_claim = $false
         source_commit = $sourceCommit
         source_tree = $sourceTree
         product_source_sha = $resolvedProductSourceSha
         engineering_baseline_sha = $resolvedEngineeringBaselineSha
+        capacity_policy_revision = $capacityPolicyRevision
+        capacity_admission_gib = $capacityAdmissionGiB
+        capacity_warning_gib = $capacityWarningGiB
+        capacity_stop_gib = $capacityStopGiB
+        capacity_at_start = $script:capacityAtStart
+        capacity_at_failure = $script:lastCapacitySnapshot
     } | ConvertTo-Json -Depth 4 |
         Set-Content -LiteralPath (Join-Path $diagnosticsDirectory "failure.json") -Encoding UTF8
 
@@ -789,6 +956,7 @@ elseif ($Mode -in @("DiagnosticStages", "HarnessSmoke") -and $status.Count -ne 0
     throw "$Mode requires a clean committed candidate tree."
 }
 
+$capacitySnapshot = Assert-CapacityAdmission
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $secretsDirectory -Force | Out-Null
 if ($MemoryCheckpoints) {
@@ -840,11 +1008,19 @@ if ($JemallocProfileArm -ne "None") {
     locked_images = [bool]$LockedImages
     image_lock_sha256 = $script:imageLockSha256
     build_receipt_sha256 = $script:buildReceiptSha256
+    capacity_policy_revision = $capacityPolicyRevision
+    capacity_admission_gib = $capacityAdmissionGiB
+    capacity_warning_gib = $capacityWarningGiB
+    capacity_stop_gib = $capacityStopGiB
+    capacity_at_start = $capacitySnapshot
     smoke_scenario = $SmokeScenario
     thresholds_sha256 = Get-FileSha256 $thresholdPath
     workload_sha256 = Get-FileSha256 $workloadPath
 } | ConvertTo-Json -Depth 6 |
     Set-Content -LiteralPath (Join-Path $runDirectory "execution-metadata.json") -Encoding UTF8
+
+Set-Content -LiteralPath (Join-Path $runDirectory "capacity-start.json") `
+    -Value ($capacitySnapshot | ConvertTo-Json -Depth 4) -Encoding UTF8
 
 $existingVolume = @(& docker volume ls --filter "name=^${volumeName}$" --format "{{.Name}}")
 if ($existingVolume -contains $volumeName) {
@@ -880,6 +1056,7 @@ $selectedStages = switch ($Mode) {
 }
 
 try {
+    Start-CapacityMonitor
     Invoke-Compose @("config", "--quiet")
     $composeConfig = (& docker compose @composeArguments config | Out-String)
     if ($LASTEXITCODE -ne 0) {
@@ -919,7 +1096,7 @@ try {
             Wait-ComposeServiceHealthy -Service "api"
         }
         "StableIdle" {
-            Start-Sleep -Seconds 300
+            Wait-WithCapacityGuard -Seconds 300
         }
     }
 
@@ -959,6 +1136,11 @@ try {
         locked_images = [bool]$LockedImages
         image_lock_sha256 = $script:imageLockSha256
         build_receipt_sha256 = $script:buildReceiptSha256
+        capacity_policy_revision = $capacityPolicyRevision
+        capacity_admission_gib = $capacityAdmissionGiB
+        capacity_warning_gib = $capacityWarningGiB
+        capacity_stop_gib = $capacityStopGiB
+        capacity_at_start = $script:capacityAtStart
         volume = (& docker volume inspect $volumeName | ConvertFrom-Json)[0]
         runtime_images = [ordered]@{
             api = (& docker inspect --format "{{.Image}}" $apiContainer).Trim()
@@ -986,7 +1168,7 @@ try {
             -StageDirectory $baselineDirectory `
             -StageName "diagnostic-baseline"
         try {
-            Start-Sleep -Seconds $DiagnosticIdleSeconds
+            Wait-WithCapacityGuard -Seconds $DiagnosticIdleSeconds
             if ($MemoryCheckpoints) {
                 Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"
             }
@@ -1000,6 +1182,8 @@ try {
     }
 
     foreach ($stage in $selectedStages) {
+        Assert-CapacityReserve | ConvertTo-Json -Depth 4 |
+            Set-Content -LiteralPath (Join-Path $runDirectory "capacity-before-$([string]$stage.name).json") -Encoding UTF8
         $stageName = [string]$stage.name
         $stageDirectory = Join-Path $runDirectory "stages\$stageName"
         New-Item -ItemType Directory -Path $stageDirectory -Force | Out-Null
@@ -1054,14 +1238,14 @@ try {
                     "--only-summary"
                 )
             if ($Mode -eq "Full" -and $stageName -eq [string]$selectedStages[-1].name) {
-                Start-Sleep -Seconds ([int]$thresholds.post_ramp_recovery_seconds)
+                Wait-WithCapacityGuard -Seconds ([int]$thresholds.post_ramp_recovery_seconds)
             }
             if (
                 $Mode -eq "DiagnosticStages" -and
                 $stageName -eq [string]$selectedStages[-1].name -and
                 $DiagnosticRecoverySeconds -gt 0
             ) {
-                Start-Sleep -Seconds $DiagnosticRecoverySeconds
+                Wait-WithCapacityGuard -Seconds $DiagnosticRecoverySeconds
                 if ($MemoryCheckpoints) {
                     Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"
                 }
@@ -1117,6 +1301,8 @@ try {
         elseif ($stageSummaryExitCode -ne 0) {
             throw "Gate C stage $stageName failed its frozen thresholds."
         }
+        Assert-CapacityReserve | ConvertTo-Json -Depth 4 |
+            Set-Content -LiteralPath (Join-Path $runDirectory "capacity-after-$stageName.json") -Encoding UTF8
     }
 
     if ($JemallocProfileArm -in @("A", "APrime")) {
@@ -1179,6 +1365,13 @@ finally {
             }
         }
     }
+    $capacityMonitorFailure = $null
+    try {
+        Stop-CapacityMonitor
+    }
+    catch {
+        $capacityMonitorFailure = $_
+    }
     $cleanupFailure = $null
     try {
         if ($Mode -in @("PreflightSmoke", "HarnessSmoke")) {
@@ -1200,6 +1393,9 @@ finally {
     }
     if ($null -ne $cleanupFailure) {
         throw $cleanupFailure
+    }
+    if ($null -ne $capacityMonitorFailure) {
+        throw $capacityMonitorFailure
     }
 }
 
@@ -1230,4 +1426,10 @@ if ($Mode -eq "Full") {
     jemalloc_profile_arm = $JemallocProfileArm
     jemalloc_profile_binding = $script:jemallocProfileBinding
     no_cache_build = [bool]$NoCacheBuild
+    capacity_policy_revision = $capacityPolicyRevision
+    capacity_admission_gib = $capacityAdmissionGiB
+    capacity_warning_gib = $capacityWarningGiB
+    capacity_stop_gib = $capacityStopGiB
+    capacity_at_start = $script:capacityAtStart
+    capacity_latest = $script:lastCapacitySnapshot
 } | ConvertTo-Json -Depth 4

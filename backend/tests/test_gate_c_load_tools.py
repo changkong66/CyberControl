@@ -306,7 +306,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "[int]$DiagnosticIdleSeconds = 0" in runner
     assert 'if ($Mode -ne "DiagnosticStages" -and $DiagnosticIdleSeconds -ne 0)' in runner
     assert 'Join-Path $runDirectory "diagnostic-baseline"' in runner
-    assert "Start-Sleep -Seconds $DiagnosticIdleSeconds" in runner
+    assert "Wait-WithCapacityGuard -Seconds $DiagnosticIdleSeconds" in runner
     assert 'if ($Mode -in @("Full", "PreflightSmoke"))' in runner
     assert '$Mode -ne "HarnessSmoke" -and -not $LockedImages' in runner
     assert "$Mode requires a complete locked image receipt." in runner
@@ -331,7 +331,7 @@ def test_gate_c_runner_separates_diagnostic_preflight_and_formal_modes() -> None
     assert "[switch]$NoCacheBuild" in runner
     assert "if ($NoCacheBuild) {" in runner
     assert '$buildArguments += "--no-cache"' in runner
-    assert "Start-Sleep -Seconds $DiagnosticRecoverySeconds" in runner
+    assert "Wait-WithCapacityGuard -Seconds $DiagnosticRecoverySeconds" in runner
     assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"' in runner
     assert 'Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"' in runner
     assert "Memory checkpoints require only ramp-200" in runner
@@ -452,9 +452,34 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert 'Invoke-Compose @("restart", "api")' in runner
     assert 'Wait-ComposeServiceHealthy -Service "api"' in runner
     assert '"StableIdle" {' in runner
-    assert "Start-Sleep -Seconds 300" in runner
+    assert "Wait-WithCapacityGuard -Seconds 300" in runner
     assert "Get-ComposeImageReference" in runner
     assert 'docker image inspect --format "{{.Id}}" $imageReference' in runner
+    assert '$capacityPolicyRevision = "Gate-C-12-capacity-v1.1"' in runner
+    assert "[double]$capacityAdmissionGiB = 15.0" in runner
+    assert "[double]$capacityWarningGiB = 8.0" in runner
+    assert "[double]$capacityStopGiB = 5.0" in runner
+    assert "function Assert-CapacityAdmission" in runner
+    assert "function Assert-CapacityReserve" in runner
+    assert "$capacitySnapshot = Assert-CapacityAdmission" in runner
+    assert '$capacityAbort = $Reason.StartsWith("Gate C capacity"' in runner
+    assert 'if ($capacityAbort) { "INFRA_ABORTED" }' in runner
+    assert "capacity_policy_revision = $capacityPolicyRevision" in runner
+    assert "capacity_at_start = $script:capacityAtStart" in runner
+    assert "capacity_latest = $script:lastCapacitySnapshot" in runner
+    assert "Start-CapacityMonitor" in runner
+    assert "Wait-WithCapacityGuard -Seconds 300" in runner
+
+    capacity_monitor = (root / "tools" / "windows" / "watch-gate-c-capacity.ps1").read_text(
+        encoding="utf-8"
+    )
+    assert '"INFRA_CAPACITY_WARNING"' in capacity_monitor
+    assert '"INFRA_ABORTED"' in capacity_monitor
+    assert '"label=com.docker.compose.project=$ProjectName"' in capacity_monitor
+    assert '"label=com.docker.compose.oneoff=True"' in capacity_monitor
+    assert "docker stop --time 30" in capacity_monitor
+    assert "docker volume rm" not in capacity_monitor
+    assert "docker system prune" not in capacity_monitor
 
     assert compose.count("cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}") == 2
     assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
