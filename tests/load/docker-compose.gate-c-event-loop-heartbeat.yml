@@ -1,0 +1,4 @@
+services:
+  api:
+    environment:
+      LIYAN_EVENT_LOOP_HEARTBEAT_ENABLED: "true"

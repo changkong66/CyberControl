@@ -21,6 +21,9 @@ from prometheus_client.core import Metric
 from prometheus_client.exposition import generate_latest
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from liyans.infrastructure.observability.bounded_memory_inventory import (
+    BoundedMemoryInventoryManager,
+)
 from liyans.infrastructure.observability.jemalloc_profiles import JemallocProfileController
 from liyans.infrastructure.observability.memory_checkpoints import MemoryCheckpointManager
 
@@ -142,6 +145,9 @@ class _JemallocStatsReader:
     """Read fixed-cardinality jemalloc process statistics when available."""
 
     _BYTE_STATS = ("allocated", "active", "resident", "retained")
+    _MAX_INVENTORY_ARENAS = 16
+    _MAX_INVENTORY_BINS = 256
+    _MAX_INVENTORY_LARGE_EXTENTS = 256
 
     def __init__(self) -> None:
         self._mallctl = None
@@ -209,6 +215,12 @@ class _JemallocStatsReader:
         bin_count = self._read("arenas.nbins", ctypes.c_uint)
         large_extent_count = self._read("arenas.nlextents", ctypes.c_uint)
         if arena_count is None or bin_count is None or large_extent_count is None:
+            return None
+        if (
+            not 1 <= arena_count <= self._MAX_INVENTORY_ARENAS
+            or not 1 <= bin_count <= self._MAX_INVENTORY_BINS
+            or not 1 <= large_extent_count <= self._MAX_INVENTORY_LARGE_EXTENTS
+        ):
             return None
         bins: list[dict[str, int]] = []
         large_extents: list[dict[str, int]] = []
@@ -371,11 +383,27 @@ class PlatformMetrics:
         ).strip().lower() in {"1", "true", "yes", "on"}
         checkpoint_enabled = bool(os.getenv("LIYAN_MEMORY_CHECKPOINT_DIR", "").strip())
         profile_enabled = bool(os.getenv("LIYAN_JEMALLOC_PROFILE_DIR", "").strip())
-        if sum((self._memory_diagnostics_enabled, checkpoint_enabled, profile_enabled)) > 1:
-            raise ValueError(
-                "periodic memory diagnostics, checkpoint mode and jemalloc profiling "
-                "are mutually exclusive"
+        bounded_inventory_enabled = bool(
+            os.getenv("LIYAN_BOUNDED_MEMORY_INVENTORY_DIR", "").strip()
+        )
+        if (
+            sum(
+                (
+                    self._memory_diagnostics_enabled,
+                    checkpoint_enabled,
+                    profile_enabled,
+                    bounded_inventory_enabled,
+                )
             )
+            > 1
+        ):
+            raise ValueError(
+                "periodic memory diagnostics, checkpoint mode, bounded inventory and "
+                "jemalloc profiling are mutually exclusive"
+            )
+        self._bounded_memory_inventory = BoundedMemoryInventoryManager.from_environment(
+            allocator_reader=self.allocator_inventory,
+        )
         self._memory_checkpoints = MemoryCheckpointManager.from_environment(
             allocator_reader=self.allocator_inventory,
         )
@@ -389,6 +417,11 @@ class PlatformMetrics:
         self._memory_diagnostics_task: asyncio.Task[None] | None = None
         self._memory_diagnostics_sample_lock = asyncio.Lock()
         self._memory_diagnostics_lifecycle_lock = asyncio.Lock()
+        self._event_loop_heartbeat_enabled = os.getenv(
+            "LIYAN_EVENT_LOOP_HEARTBEAT_ENABLED", ""
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        self._event_loop_heartbeat_task: asyncio.Task[None] | None = None
+        self._event_loop_heartbeat_max_seconds = 0.0
         self._last_memory_diagnostics_success_at: float | None = None
         self._last_memory_diagnostics_attempt_succeeded = False
         if self._memory_diagnostics_enabled and not tracemalloc.is_tracing():
@@ -527,6 +560,15 @@ class PlatformMetrics:
             buckets=(0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1),
             registry=self.registry,
         )
+        self._event_loop_heartbeat_lag = (
+            Gauge(
+                "liyans_event_loop_heartbeat_lag_seconds",
+                "Maximum event-loop heartbeat lag since the previous metrics render.",
+                registry=self.registry,
+            )
+            if self._event_loop_heartbeat_enabled
+            else None
+        )
         if self._memory_diagnostics_enabled:
             self._set_memory_diagnostic_value("sample_running", 0)
             self._set_memory_diagnostic_value("sample_stale", 1)
@@ -539,6 +581,9 @@ class PlatformMetrics:
     def render(self) -> bytes:
         total_started = perf_counter()
         stage_started = perf_counter()
+        if self._event_loop_heartbeat_lag is not None:
+            self._event_loop_heartbeat_lag.set(self._event_loop_heartbeat_max_seconds)
+            self._event_loop_heartbeat_max_seconds = 0.0
         self._refresh_jemalloc_metrics()
         self._metrics_render_duration.labels("allocator_refresh").observe(
             perf_counter() - stage_started
@@ -574,6 +619,10 @@ class PlatformMetrics:
         return self._memory_checkpoints
 
     @property
+    def bounded_memory_inventory(self) -> BoundedMemoryInventoryManager:
+        return self._bounded_memory_inventory
+
+    @property
     def jemalloc_profiles(self) -> JemallocProfileController:
         return self._jemalloc_profiles
 
@@ -583,8 +632,15 @@ class PlatformMetrics:
         reader: Callable[[], Mapping[str, object]],
     ) -> None:
         self._memory_checkpoints.register_inventory(name, reader)
+        self._bounded_memory_inventory.register_inventory(name, reader)
 
     async def start_memory_diagnostics(self) -> None:
+        if self._event_loop_heartbeat_enabled and self._event_loop_heartbeat_task is None:
+            self._event_loop_heartbeat_task = asyncio.create_task(
+                self._run_event_loop_heartbeat(),
+                name="metrics:event-loop-heartbeat",
+            )
+        await self._bounded_memory_inventory.start()
         await self._memory_checkpoints.start()
         await self._jemalloc_profiles.start()
         if not self._memory_diagnostics_enabled:
@@ -600,6 +656,15 @@ class PlatformMetrics:
     async def close(self) -> None:
         await self._jemalloc_profiles.close()
         await self._memory_checkpoints.close()
+        await self._bounded_memory_inventory.close()
+        heartbeat = self._event_loop_heartbeat_task
+        if heartbeat is not None:
+            heartbeat.cancel()
+            try:
+                await heartbeat
+            except asyncio.CancelledError:
+                pass
+            self._event_loop_heartbeat_task = None
         async with self._memory_diagnostics_lifecycle_lock:
             task = self._memory_diagnostics_task
             if task is None:
@@ -612,6 +677,17 @@ class PlatformMetrics:
             finally:
                 self._memory_diagnostics_task = None
                 self._set_memory_diagnostic_value("sample_running", 0)
+
+    async def _run_event_loop_heartbeat(self) -> None:
+        loop = asyncio.get_running_loop()
+        interval = 0.1
+        while True:
+            expected = loop.time() + interval
+            await asyncio.sleep(interval)
+            self._event_loop_heartbeat_max_seconds = max(
+                self._event_loop_heartbeat_max_seconds,
+                loop.time() - expected,
+            )
 
     async def run_memory_diagnostics_once(self) -> None:
         if not self._memory_diagnostics_enabled:

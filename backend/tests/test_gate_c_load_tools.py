@@ -276,6 +276,19 @@ def test_runtime_controls_only_records_pool_timeout_fingerprints(tmp_path: Path)
     assert "QueuePool" not in json.dumps(result)
 
 
+def test_runtime_controls_fail_closed_on_bad_address_without_raw_log_leak(
+    tmp_path: Path,
+) -> None:
+    log = tmp_path / "api.log"
+    log.write_text("ssl operation failed: Bad address for internal endpoint\n", encoding="utf-8")
+
+    result = summarize_api_log(log)
+
+    assert result["bad_address_count"] == 1
+    assert result["passed"] is False
+    assert "Bad address" not in json.dumps(result)
+
+
 def test_gate_c_runner_preserves_volume_and_identity_boundaries() -> None:
     runner = (
         Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-phase7-gate-c.ps1"
@@ -653,7 +666,8 @@ def test_gate_c_jemalloc_profile_protocol_is_fixed_and_non_formal() -> None:
     assert 'formal_gate_attempt = ($Mode -eq "Full")' in runner
 
     assert "cybercontrol/gate-c-jemalloc-profile:${GATE_C_IMAGE_TAG:-unknown}" in compose
-    assert "dockerfile: tests/load/jemalloc-profile.Dockerfile" in compose
+    assert "dockerfile:" not in compose
+    assert "build:" not in compose
     assert 'LIYAN_MEMORY_DIAGNOSTICS: "false"' in compose
     assert 'LIYAN_MEMORY_CHECKPOINT_DIR: ""' in compose
     assert "LIYAN_JEMALLOC_PROFILE_DIR: /gate-c-results/jemalloc-profile" in compose

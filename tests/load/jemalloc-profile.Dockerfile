@@ -1,5 +1,4 @@
 ARG PYTHON_IMAGE=python:3.11-alpine@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
-ARG BACKEND_IMAGE=cybercontrol/gate-c-backend:unknown
 
 FROM ${PYTHON_IMAGE} AS jemalloc-compiled
 
@@ -100,7 +99,7 @@ RUN cc -shared -fPIC -g -O0 -fno-omit-frame-pointer -Wl,--build-id=sha1 \
     && sha256sum /build/jemalloc-profile-cohort.c \
       > /out/opt/cybercontrol/jemalloc-prof/share/build-provenance/cohort-source-sha256.txt
 
-FROM ${BACKEND_IMAGE} AS runtime
+FROM backend_image AS runtime
 
 ARG CYBERCONTROL_SOURCE_SHA=unknown
 ARG CYBERCONTROL_SOURCE_TREE=unknown
@@ -118,13 +117,18 @@ COPY --from=jemalloc-tested /out/opt/cybercontrol/jemalloc-prof \
     /opt/cybercontrol/jemalloc-prof
 COPY --chmod=0555 tests/load/gate_c/jemalloc_profile_capability.py \
     /opt/cybercontrol/jemalloc-prof/bin/capability-check
+COPY --chmod=0555 tests/load/gate_c/rss_calibration.py \
+    /opt/cybercontrol/jemalloc-prof/bin/rss-calibration
+COPY --chmod=0555 tests/load/gate_c/generate_calibration_tls.py \
+    /opt/cybercontrol/jemalloc-prof/bin/generate-calibration-tls
 
 LABEL org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA} \
     com.cybercontrol.source-tree=${CYBERCONTROL_SOURCE_TREE} \
     com.cybercontrol.product-source=${CYBERCONTROL_PRODUCT_SOURCE_SHA} \
     com.cybercontrol.engineering-baseline=${CYBERCONTROL_ENGINEERING_BASELINE_SHA} \
     com.cybercontrol.process-version=${CYBERCONTROL_PROCESS_VERSION} \
-    com.cybercontrol.diagnostic-capability=jemalloc-prof-5.3.0
+    com.cybercontrol.diagnostic-capability=jemalloc-prof-5.3.0 \
+    com.cybercontrol.rss-calibration=adr-0032
 
 ENV LD_PRELOAD=/opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2 \
     MALLOC_CONF=background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:1,retain:false,prof:true,prof_active:false,lg_prof_sample:19,prof_accum:false,prof_gdump:false,prof_final:false,prof_leak:false

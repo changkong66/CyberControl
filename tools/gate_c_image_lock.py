@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -42,6 +43,11 @@ TARGETS = (
         "mock-provider", "infra/mock-provider.Dockerfile", "cybercontrol/gate-c-mock-provider"
     ),
     BuildTarget("gate-c-load", "tests/load/Dockerfile", "cybercontrol/gate-c-load"),
+)
+DIAGNOSTIC_TARGET = BuildTarget(
+    "rss-calibration",
+    "tests/load/jemalloc-profile.Dockerfile",
+    "cybercontrol/gate-c-jemalloc-profile",
 )
 
 
@@ -201,6 +207,7 @@ def _build_target(
     arm: str,
     source: SourceBinding,
     inputs: dict[str, Any],
+    backend_context_output: Path | None = None,
 ) -> dict[str, str]:
     reference = f"{target.repository}:{source.commit}-{arm}"
     arguments = [
@@ -217,9 +224,15 @@ def _build_target(
         target.dockerfile,
         "--tag",
         reference,
-        "--output",
-        f"type=docker,name={reference},rewrite-timestamp=true",
     ]
+    arguments.extend(("--output", f"type=docker,name={reference},rewrite-timestamp=true"))
+    if backend_context_output is not None:
+        arguments.extend(
+            (
+                "--output",
+                f"type=oci,dest={backend_context_output},tar=false,rewrite-timestamp=true",
+            )
+        )
     build_arguments = {
         "SOURCE_DATE_EPOCH": str(source.source_date_epoch),
         "CYBERCONTROL_SOURCE_SHA": source.commit,
@@ -234,6 +247,54 @@ def _build_target(
         build_arguments["PYTHON_IMAGE"] = (
             f"{mirror}/library/python:{python_image['tag']}@{python_image['digest']}"
         )
+    for name, value in build_arguments.items():
+        arguments.extend(("--build-arg", f"{name}={value}"))
+    arguments.append(".")
+    _run(arguments, cwd=root, capture=False)
+    _assert_image_provenance(root, reference, source)
+    return {"reference": reference, "image_id": _image_id(root, reference)}
+
+
+def _build_diagnostic_target(
+    root: Path,
+    builder: str,
+    arm: str,
+    source: SourceBinding,
+    inputs: dict[str, Any],
+    backend_context: Path,
+) -> dict[str, str]:
+    target = DIAGNOSTIC_TARGET
+    reference = f"{target.repository}:{source.commit}-{arm}"
+    python_image = inputs["python_base_image"]
+    mirror = python_image["builder_mirrors"][arm]
+    arguments = [
+        "docker",
+        "buildx",
+        "build",
+        "--builder",
+        builder,
+        "--platform",
+        "linux/amd64",
+        "--no-cache",
+        "--provenance=false",
+        "--file",
+        target.dockerfile,
+        "--tag",
+        reference,
+        "--output",
+        f"type=docker,name={reference},rewrite-timestamp=true",
+        "--build-context",
+        f"backend_image=oci-layout://{backend_context}",
+    ]
+    build_arguments = {
+        "PYTHON_IMAGE": f"{mirror}/library/python:{python_image['tag']}@{python_image['digest']}",
+        "SOURCE_DATE_EPOCH": str(source.source_date_epoch),
+        "CYBERCONTROL_SOURCE_SHA": source.commit,
+        "CYBERCONTROL_SOURCE_TREE": source.tree,
+        "CYBERCONTROL_PRODUCT_SOURCE_SHA": source.product_source_sha,
+        "CYBERCONTROL_ENGINEERING_BASELINE_SHA": source.engineering_baseline_sha,
+        "CYBERCONTROL_PROCESS_VERSION": PROCESS_VERSION,
+    }
     for name, value in build_arguments.items():
         arguments.extend(("--build-arg", f"{name}={value}"))
     arguments.append(".")
@@ -264,23 +325,75 @@ def build(args: argparse.Namespace) -> None:
     if builders[0]["name"] == builders[1]["name"]:
         raise ValueError("Gate C reproducibility requires two independent builders")
 
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    backend_context_root = output / ".backend-oci-contexts"
+    if backend_context_root.exists():
+        raise ValueError("temporary backend OCI context directory already exists")
+    backend_context_root.mkdir(parents=True)
+    backend_contexts = {arm: backend_context_root / arm for arm in ("a", "b")}
     arms: dict[str, dict[str, dict[str, str]]] = {}
-    for arm, builder in (("a", args.builder_a), ("b", args.builder_b)):
-        arms[arm] = {
-            target.name: _build_target(root, target, builder, arm, source, inputs)
-            for target in TARGETS
+    try:
+        for arm, builder in (("a", args.builder_a), ("b", args.builder_b)):
+            arms[arm] = {
+                target.name: _build_target(
+                    root,
+                    target,
+                    builder,
+                    arm,
+                    source,
+                    inputs,
+                    backend_contexts[arm] if target.name == "backend" else None,
+                )
+                for target in TARGETS
+            }
+        for target in TARGETS:
+            first = arms["a"][target.name]["image_id"]
+            second = arms["b"][target.name]["image_id"]
+            if first != second:
+                raise ValueError(
+                    f"independent builds for {target.name} produced different image IDs"
+                )
+
+        diagnostic_arms = {
+            arm: _build_diagnostic_target(
+                root,
+                builder,
+                arm,
+                source,
+                inputs,
+                backend_contexts[arm],
+            )
+            for arm, builder in (("a", args.builder_a), ("b", args.builder_b))
         }
-    for target in TARGETS:
-        first = arms["a"][target.name]["image_id"]
-        second = arms["b"][target.name]["image_id"]
-        if first != second:
-            raise ValueError(f"independent builds for {target.name} produced different image IDs")
+    finally:
+        if backend_context_root.parent != output:
+            raise RuntimeError("temporary backend OCI context escaped the build output")
+        shutil.rmtree(backend_context_root)
+    if diagnostic_arms["a"]["image_id"] != diagnostic_arms["b"]["image_id"]:
+        raise ValueError("independent builds for rss-calibration produced different image IDs")
 
     canonical: dict[str, dict[str, str]] = {}
     for target in TARGETS:
         reference = f"{target.repository}:{source.commit}"
         _run(("docker", "image", "tag", arms["a"][target.name]["image_id"], reference), cwd=root)
         canonical[target.name] = {"reference": reference, "image_id": _image_id(root, reference)}
+    diagnostic_reference = f"{DIAGNOSTIC_TARGET.repository}:{source.commit}"
+    _run(
+        (
+            "docker",
+            "image",
+            "tag",
+            diagnostic_arms["a"]["image_id"],
+            diagnostic_reference,
+        ),
+        cwd=root,
+    )
+    diagnostic_image = {
+        "role": "NON_ACCEPTANCE_DIAGNOSTIC",
+        "reference": diagnostic_reference,
+        "image_id": _image_id(root, diagnostic_reference),
+    }
 
     external = inputs["external_images"]
     postgres = _external_service(root, external["postgres"])
@@ -297,7 +410,6 @@ def build(args: argparse.Namespace) -> None:
         "keycloak": keycloak,
         "keycloak-config": keycloak,
     }
-    output = args.output.resolve()
     generated = datetime.now(UTC).isoformat()
     receipt = {
         "schema_version": BUILD_RECEIPT_SCHEMA,
@@ -317,6 +429,7 @@ def build(args: argparse.Namespace) -> None:
             "document": inputs,
         },
         "independent_builds": arms,
+        "diagnostic_independent_builds": {"rss-calibration": diagnostic_arms},
         "reproducible": True,
     }
     receipt_path = output / "build-receipt.json"
@@ -335,10 +448,26 @@ def build(args: argparse.Namespace) -> None:
             "tests/load/docker-compose.gate-c.yml": _sha256(
                 root / "tests/load/docker-compose.gate-c.yml"
             ),
+            "tests/load/docker-compose.gate-c-rss-calibration.yml": _sha256(
+                root / "tests/load/docker-compose.gate-c-rss-calibration.yml"
+            ),
+            "tests/load/docker-compose.gate-c-bounded-memory-inventory.yml": _sha256(
+                root / "tests/load/docker-compose.gate-c-bounded-memory-inventory.yml"
+            ),
+            "tests/load/docker-compose.gate-c-event-loop-heartbeat.yml": _sha256(
+                root / "tests/load/docker-compose.gate-c-event-loop-heartbeat.yml"
+            ),
+            "tests/load/docker-compose.gate-c-memory-checkpoints.yml": _sha256(
+                root / "tests/load/docker-compose.gate-c-memory-checkpoints.yml"
+            ),
+            "tests/load/docker-compose.gate-c-jemalloc-profile.yml": _sha256(
+                root / "tests/load/docker-compose.gate-c-jemalloc-profile.yml"
+            ),
         },
         "threshold_sha256": _sha256(root / "tests/load/gate-c-thresholds.v1.json"),
         "workload_sha256": _sha256(root / "tests/load/gate-c-workload.v1.json"),
         "services": service_images,
+        "diagnostic_images": {"rss-calibration": diagnostic_image},
     }
     _write_json(output / "image-lock.json", lock)
 
@@ -382,9 +511,18 @@ def _validated_lock(root: Path, lock_path: Path) -> dict[str, Any]:
 def verify(args: argparse.Namespace) -> None:
     root = args.root.resolve()
     lock = _validated_lock(root, args.image_lock.resolve())
+    formal_image_ids: set[str] = set()
     for service, binding in lock["services"].items():
         if _image_id(root, binding["reference"]) != binding["image_id"]:
             raise ValueError(f"Gate C image lock mismatch for service {service}")
+        formal_image_ids.add(str(binding["image_id"]))
+    for role, binding in lock.get("diagnostic_images", {}).items():
+        if binding.get("role") != "NON_ACCEPTANCE_DIAGNOSTIC":
+            raise ValueError(f"Gate C diagnostic image {role} has an invalid role")
+        if str(binding.get("image_id")) in formal_image_ids:
+            raise ValueError(f"Gate C diagnostic image {role} impersonates a formal service")
+        if _image_id(root, binding["reference"]) != binding["image_id"]:
+            raise ValueError(f"Gate C image lock mismatch for diagnostic image {role}")
 
 
 def _parser() -> argparse.ArgumentParser:
