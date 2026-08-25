@@ -1,4 +1,4 @@
-# CyberControl Gate C Twelfth ADR 0032 D0 Closure And Diagnostic Boundary
+# CyberControl Gate C Twelfth ADR 0032 D1 Capacity Recovery And Calibration
 
 Process Version: `Gate-C-12-v1.0`
 
@@ -9,9 +9,9 @@ D-G remain locked.
 
 ## Audited Parent Boundary
 
-- Protected main: `5ae8637c46c741c8b6f079e22af3e2517bac7bb9`
-- Tree: `9c478ed3c22debf65fe3eb4fef92ee58982f233f`
-- Protected-main CI: Run `32834020352`, 8/8
+- Protected main: `d2bee3861adf1129f80aae9b10d4709610a69251`
+- Tree: `69eed0310296f95718660dfd798ea6262bbac291`
+- Protected-main CI: Run `32875417540`, 8/8
 - Product source: `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
 - Last formal Gate C source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Frozen threshold SHA256:
@@ -21,12 +21,14 @@ D-G remain locked.
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Formal attempts: 12
-- `baseline_history`: 17 entries, ending at status-only PR #94
+- `baseline_history`: 19 entries, ending at diagnostic-capability PR #96
 
-PR #94 head `6d9bba6c77ac0af103e9c2add10dcd426bec380d` passed push and PR
-Runs `32832723708` and `32833344654`, Squash Merged as the protected main
-above, and passed main Run `32834020352`. It did not change product source or
-formal evidence.
+ADR 0032 design PR #95 passed push attempt 2, pull-request and protected-main
+Runs `32858328460`, `32859688307` and `32860487073`, each 8/8, and Squash
+Merged as `2c9d7debb2ba176f0688138d9519dca8805b5a6c`. Diagnostic-capability PR #96
+passed push, pull-request and protected-main Runs `32874073910`, `32874795456`
+and `32875417540`, each 8/8, and Squash Merged as the protected main above.
+Neither changes product source or formal evidence.
 
 The eleventh formal run remains M2. All workload stages, Outbox and
 zero-tolerance controls passed; the only failed control was API cgroup recovery
@@ -38,33 +40,39 @@ returned HTTP 500. Package SHA256 is
 `99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423`.
 Do not derive an owner from it.
 
-## Current D0 Candidate
+## D0 And Capability Closure
 
-The active branch is:
+D0 is complete. All six required artifacts are accepted by PR #95: S/R/P/F
+and A/M/A' variable matrix, interference formulas and zero-tolerance controls,
+mutually exclusive ledger, strong/weak attribution rules and multi-owner
+cutoff, failure exits, and evidence/image/cleanup contract. PR #96 implements
+only that bounded diagnostic scope. Accepted ADR 0032 remains immutable.
 
-`codex/phase7-gate-c-twelfth-p2-adr0032-design`
+This closure authorizes diagnostic calibration only. Product remediation,
+PreflightSmoke, formal Gate C and Gate D-G remain locked. No owner may be
+inferred from tooling availability or the rejected ADR 0030 package.
 
-It may change only ADR, diagnostics-design metadata and the four current-state
-documents. It contains no product or diagnostic implementation. D0 requires:
+## D1 Capacity Gate
 
-1. S/R/P/F and A/M/A' variable matrix.
-2. Exact interference formulas and zero-tolerance controls.
-3. Mutually exclusive physical memory ledger and non-additive owner overlays.
-4. Strong/weak attribution rules and multi-owner cutoff.
-5. `DESIGN_REJECTED`, `OWNER_UNRESOLVED` and `INFRA_ABORTED` exits.
-6. Evidence/package, dual image-lock and mandatory cleanup contract.
+The latest manifest-driven cleanup receipt is
+`D:\CyberControlAcceptance\phase7\gate-c\diagnostics\gate-c12-capacity-cleanup-20260825T171029Z\cleanup-receipt.json`,
+SHA256 `cb28d0eedaf1987329469edbb5e8395ef3ed7dedba8d4e78e21382260f3317ed`.
+Its pre-cleanup manifest SHA256 is
+`eff7be833b5e4c0efca35598c48c0b4b687a5ad89262495f27d55c24c12d0029`.
+No prune, formal-volume deletion, evidence-image deletion or stop of the five
+development containers occurred.
 
-The candidate must pass push and pull-request Release Quality Gates 8/8,
-Squash Merge only, then protected-main 8/8. A commit cannot attest its own
-future PR number, merge SHA or protected-main run. Record those only in a
-later append-only closure. Before that external closure, do not execute any
-ADR 0032 probe or diagnostic.
+D: has `10.823 GiB` free, below the `15 GiB` admission floor. D1 is
+`INFRA_ABORTED_CAPACITY`. Do not build images or run any calibration until
+drive D has at least `15 GiB` free and the protected-main/environment checks pass
+again. The same proven infrastructure cause may be retried at most twice and
+does not consume a design-failure slot or append `gate_c_attempts`.
 
-## Exact Post-D0 Diagnostic Scope
+After capacity admission, fetch current `origin/main`, create a new exact-main
+isolated worktree, and build a source-bound all-service normal image lock plus
+the separate diagnostic image role. Verify every digest before execution.
 
-Only after the D0 merge and protected-main 8/8, fetch current origin/main and
-create a new exact-main isolated worktree for implementation and calibration
-of ADR 0032. Do not reuse this docs branch for code or runtime work.
+## Exact D1 Diagnostic Scope
 
 The connection-churn harness uses 2,000 real TLS PostgreSQL connections per
 arm, maximum concurrency 200 and fixed admission rate 50/s. Each variable uses
