@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out immutable source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -124,7 +124,7 @@ jobs:
       LIYAN_SSE_CURSOR_SECRET: ci-postgres-cursor-secret-at-least-32-bytes
     steps:
       - name: Check out immutable source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install Python
@@ -230,7 +230,7 @@ jobs:
         working-directory: packages/contracts-go
     steps:
       - name: Check out immutable source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install Go
@@ -268,7 +268,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out immutable source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install pinned pnpm
@@ -330,7 +330,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Check out immutable source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install Python
@@ -399,7 +399,7 @@ jobs:
       GATE_C_PROCESS_VERSION: Gate-C-12-v1.0
     steps:
       - name: Check out immutable source
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Configure Buildx
@@ -829,7 +829,7 @@ jobs:
       GITLEAKS_VERSION: 8.30.1
     steps:
       - name: Check out complete immutable history
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
