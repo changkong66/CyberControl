@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -487,6 +488,84 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
     assert "cybercontrol/gate-c-frontend:${GATE_C_IMAGE_TAG:-unknown}" in compose
     assert "cybercontrol/gate-c-load:${GATE_C_IMAGE_TAG:-unknown}" in compose
+
+
+def test_gate_c_capacity_startup_snapshot_closes_monitor_race(tmp_path: Path) -> None:
+    runner = Path(__file__).resolve().parents[2] / "tools" / "windows" / "run-phase7-gate-c.ps1"
+    probe = tmp_path / "capacity-startup-race.ps1"
+    escaped_runner = str(runner).replace("'", "''")
+    probe.write_text(
+        f"""\
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+$tokens = $null
+$parseErrors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile(
+    '{escaped_runner}', [ref]$tokens, [ref]$parseErrors
+)
+if ($parseErrors.Count -ne 0) {{ throw "Runner parse failed." }}
+$required = @(
+    "Get-HostCapacitySnapshot",
+    "Get-CapacitySnapshotState",
+    "Update-LatestCapacitySnapshot",
+    "Assert-CapacityMonitorHealthy"
+)
+foreach ($name in $required) {{
+    $definition = @($ast.FindAll({{
+        param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq $name
+    }}, $true))
+    if ($definition.Count -ne 1) {{ throw "Expected one function named $name." }}
+    Invoke-Expression $definition[0].Extent.Text
+}}
+function Get-PSDrive {{
+    [CmdletBinding()]
+    param([string]$Name)
+    return [pscustomobject]@{{ Free = $script:testFreeBytes }}
+}}
+$ResultsRoot = $env:TEMP
+$capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
+[double]$capacityWarningGiB = 8.0
+[double]$capacityStopGiB = 5.0
+$states = foreach ($freeGiB in @(16.0, 7.0, 4.0)) {{
+    $script:testFreeBytes = [int64]($freeGiB * 1GB)
+    (Get-HostCapacitySnapshot).state
+}}
+$script:testFreeBytes = [int64](16.0 * 1GB)
+$script:lastCapacitySnapshot = Get-HostCapacitySnapshot
+$runDirectory = Join-Path $env:TEMP "gate-c-capacity-race-not-created"
+$script:capacityMonitorProcess = [pscustomobject]@{{ HasExited = $false }}
+$script:capacityMonitorProcess | Add-Member -MemberType ScriptMethod -Name Refresh -Value {{}}
+Assert-CapacityMonitorHealthy
+$missingStateError = $null
+try {{
+    Get-CapacitySnapshotState -Snapshot ([pscustomobject]@{{ free_bytes = 1 }}) | Out-Null
+}}
+catch {{
+    $missingStateError = $_.Exception.Message
+}}
+[ordered]@{{
+    states = @($states)
+    startup_guard_passed = $true
+    missing_state_error = $missingStateError
+}} | ConvertTo-Json -Compress
+""",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", str(probe)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert result["states"] == ["NORMAL", "WARNING", "HARD_STOP"]
+    assert result["startup_guard_passed"] is True
+    assert result["missing_state_error"] == "Gate C capacity snapshot is missing required state."
 
 
 def test_jemalloc_profile_image_is_pinned_and_diagnostic_only() -> None:

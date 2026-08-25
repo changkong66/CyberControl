@@ -169,14 +169,45 @@ function Get-HostCapacitySnapshot {
     }
     $driveName = $driveRoot.TrimEnd('\').TrimEnd(':')
     $drive = Get-PSDrive -Name $driveName -ErrorAction Stop
+    $freeBytes = [int64]$drive.Free
+    $state = if ($freeBytes -lt [int64]($capacityStopGiB * 1GB)) {
+        "HARD_STOP"
+    }
+    elseif ($freeBytes -lt [int64]($capacityWarningGiB * 1GB)) {
+        "WARNING"
+    }
+    else {
+        "NORMAL"
+    }
     return [pscustomobject]@{
+        schema_version = "cybercontrol.gate-c-capacity-sample.v1"
         policy_revision = $capacityPolicyRevision
         drive = $driveName
         root = $driveRoot
         sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")
-        free_bytes = [int64]$drive.Free
-        free_gib = [math]::Round([double]$drive.Free / 1GB, 3)
+        free_bytes = $freeBytes
+        free_gib = [math]::Round([double]$freeBytes / 1GB, 3)
+        warning_gib = $capacityWarningGiB
+        stop_gib = $capacityStopGiB
+        state = $state
     }
+}
+
+function Get-CapacitySnapshotState {
+    param($Snapshot)
+
+    if ($null -eq $Snapshot) {
+        return $null
+    }
+    $stateProperty = $Snapshot.PSObject.Properties["state"]
+    if ($null -eq $stateProperty) {
+        throw "Gate C capacity snapshot is missing required state."
+    }
+    $state = [string]$stateProperty.Value
+    if ($state -notin @("NORMAL", "WARNING", "HARD_STOP")) {
+        throw "Gate C capacity snapshot has invalid state: $state"
+    }
+    return $state
 }
 
 function Assert-CapacityAdmission {
@@ -211,7 +242,7 @@ function Update-LatestCapacitySnapshot {
             ConvertFrom-Json
     }
     catch {
-        Write-Warning "Unable to parse the latest capacity snapshot: $_"
+        throw "Unable to parse the latest capacity snapshot: $_"
     }
 }
 
@@ -220,8 +251,7 @@ function Assert-CapacityMonitorHealthy {
         return
     }
     Update-LatestCapacitySnapshot
-    if ($null -ne $script:lastCapacitySnapshot -and
-        [string]$script:lastCapacitySnapshot.state -eq "HARD_STOP") {
+    if ((Get-CapacitySnapshotState -Snapshot $script:lastCapacitySnapshot) -eq "HARD_STOP") {
         throw "Gate C capacity hard stop was activated; the run is INFRA_ABORTED."
     }
     $script:capacityMonitorProcess.Refresh()
