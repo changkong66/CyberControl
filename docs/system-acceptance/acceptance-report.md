@@ -1,6 +1,6 @@
 # CyberControl System Acceptance Report
 
-Process Version: `Gate-C-11-v1.0`
+Process Version: `Gate-C-12-v1.0`
 
 ## Decision
 
@@ -16,15 +16,16 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current protected main is
-`d4b646c29bf82297332b9fdd8bc58be19744aecb`, tree
-`c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`, with protected-main Release
-Quality Gates [Run 32707158181](https://github.com/changkong66/CyberControl/actions/runs/32707158181)
+`cd93b8438408a381b27275165b5650c8ce447ecb`, tree
+`e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`, with protected-main Release
+Quality Gates [Run 32829926696](https://github.com/changkong66/CyberControl/actions/runs/32829926696)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`d4b646c29bf82297332b9fdd8bc58be19744aecb`. Product source advanced because
-PR #86 changed the deployable diagnostic-capable backend artifact. That source
-has not undergone a formal Gate C replay; the last formal evaluation remains
-bound to `5fcb917b...`.
+`cd93b8438408a381b27275165b5650c8ce447ecb`. Product source remains bound to
+the last core product-behavior change; PR #93 changed reproducible build,
+capacity, diagnostic and test infrastructure without changing frozen product
+semantics. Neither source has undergone a new formal Gate C replay; the last
+formal evaluation remains bound to `5fcb917b...`.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
 initial Gate C failure and all eleven remediation reruns are preserved as
@@ -1147,3 +1148,51 @@ no owner. After this status-only closure completes its own CI and merge chain,
 work stops. P2 behavior changes, diagnostics, preflight, formal Gate C replay
 and Gate D-G remain prohibited unless a new measurement ADR receives separate
 explicit authorization.
+
+## Gate C Twelfth Phase 0 Infrastructure Closure
+
+Process Version: `Gate-C-12-v1.0`
+
+Phase 0 build-infrastructure PR
+[#93](https://github.com/changkong66/CyberControl/pull/93) head
+`bfe89390f281e1229b46b4e86dd60012a4543416` passed push Run
+`32828446684` and pull-request Run `32829198360`, Squash Merged as
+`cd93b8438408a381b27275165b5650c8ce447ecb`, and passed protected-main Run
+`32829926696`. Every Release Quality Gate run completed 8/8. The merge tree is
+`e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`.
+
+The Phase 0 change binds reproducible image inputs, build receipts and
+all-service image IDs; closes the capacity-monitor startup race; and enforces
+the revised capacity policy. Admission is `15 GiB`, non-destructive temporary
+cleanup is allowed below `8 GiB`, and a run must stop gracefully below `5
+GiB`. At status capture D: had `19.237309 GiB` free, Docker Server 29.6.1
+reported 16 CPUs and 7,958,888,448 bytes of memory, and zero containers were
+running. No prune, historical volume deletion or evidence rewrite occurred.
+
+The locked image receipt is bound by image-lock SHA256
+`7fd28b88fed9bfa6edab48b8568be29e06087c307a037db4fa1f880e7c43cc3f`
+and build-receipt SHA256
+`c2ca64f04450e8802ec8d3931f839051699008b4cc2ab53c9d65b43f645efa6a`.
+The authoritative local Release Quality Gate package is 237,689 bytes with
+SHA256
+`bcda2bc3af873cbc47f1722e16df6c5c8039c9c8604568b41e64253988d669da`;
+its 23-file manifest SHA256 is
+`b094738da6a43b85c55deac4786fb139443eb8b7f41fa86ad75d6de0a753f2ff`.
+Python/PostgreSQL/Keycloak, frontend, Playwright, Go, contracts, audits, SBOM,
+license, Trivy and Gitleaks gates passed; measured Python coverage was 91.70%.
+
+The Gate-C-12 jemalloc calibration is rejected, not accepted diagnostic
+evidence. Its A arm passed, but the Measurement arm returned one HTTP 500
+after profiling activation. The zero-tolerance stop rule prohibited A'. The
+redacted immutable local package is 2,050,113 bytes with SHA256
+`99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423`.
+It proves no Python, native allocator, pool, cache, task, frame, serializer or
+SSE owner and authorizes no behavior change.
+
+This Phase 0 work and rejected calibration are not formal Gate C attempt 13;
+`gate_c_attempts` remains exactly 12. Product source remains `a57d0ce...`, the
+engineering baseline advances to `cd93b843...`, and the last formal evaluation
+remains `5fcb917b...`. Formal state remains
+`RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. P2 remediation,
+PreflightSmoke, formal Gate C and Gate D-G remain locked pending a separately
+reviewed low-interference diagnostic design and explicit authorization.

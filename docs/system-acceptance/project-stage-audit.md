@@ -1,6 +1,6 @@
 # CyberControl Project Stage Audit
 
-Process Version: `Gate-C-11-v1.0`
+Process Version: `Gate-C-12-v1.0`
 
 ## 1. Precise Stage Position
 
@@ -8,10 +8,11 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`d4b646c29bf82297332b9fdd8bc58be19744aecb`, tree
-`c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`. Protected-main Release Quality
-Gates Run `32707158181` completed 8/8 jobs successfully. PR #86 is the latest
-change to a deployable backend artifact, so the current product source is
+`cd93b8438408a381b27275165b5650c8ce447ecb`, tree
+`e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`. Protected-main Release Quality
+Gates Run `32829926696` completed 8/8 jobs successfully. PR #93 changed build,
+capacity and diagnostic infrastructure without changing core product behavior,
+so the current product source remains
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
 `963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
 predates that diagnostic instrumentation and remains bound to
@@ -544,3 +545,54 @@ inadmissible. No behavior candidate, diagnostic, preflight or formal replay is
 authorized. After the independent status-only closure completes push, PR,
 Squash Merge and protected-main 8/8, work stops. Gate C remains failed and Gate
 D-G remain locked.
+
+## 13. Gate C Twelfth Phase 0 Infrastructure Audit
+
+Process Version: `Gate-C-12-v1.0`
+
+PR #93 head `bfe89390f281e1229b46b4e86dd60012a4543416` passed push Run
+`32828446684` and pull-request Run `32829198360`, Squash Merged as
+`cd93b8438408a381b27275165b5650c8ce447ecb`, and passed protected-main Run
+`32829926696`. Each chain completed 8/8 and the protected-main tree is
+`e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`.
+
+The change is classified `BUILD_INFRASTRUCTURE`. It binds backend, frontend,
+migrate, provider, load and supporting service image references to one source-
+bound image lock; records a reproducible build receipt; removes mutable Alpine
+index input; and normalizes Python image metadata. The image-lock and build-
+receipt SHA256 values are respectively
+`7fd28b88fed9bfa6edab48b8568be29e06087c307a037db4fa1f880e7c43cc3f`
+and `c2ca64f04450e8802ec8d3931f839051699008b4cc2ab53c9d65b43f645efa6a`.
+No frozen threshold, workload or core trusted semantic changed.
+
+The accepted capacity policy is `15/8/5 GiB`: admission at 15 GiB, a warning
+and only non-destructive temporary-resource cleanup below 8 GiB, and graceful
+`INFRA_ABORTED` stop below 5 GiB. The startup snapshot race and missing
+`TEMP`/`TMP` portability defect are covered by regressions. At closure, D: had
+`19.237309 GiB` free; Docker Server 29.6.1 had 16 CPUs, 7,958,888,448 bytes of
+memory and zero running containers. Historical containers, images, volumes and
+evidence remain preserved; no prune occurred.
+
+The authoritative Phase 0 quality package is 237,689 bytes, SHA256
+`bcda2bc3af873cbc47f1722e16df6c5c8039c9c8604568b41e64253988d669da`.
+Its manifest SHA256 is
+`b094738da6a43b85c55deac4786fb139443eb8b7f41fa86ad75d6de0a753f2ff`,
+covering 23 files and 2,325,408 uncompressed bytes with exact archive
+verification. Local Python unit was `704 passed, 2 skipped`; real
+PostgreSQL/Keycloak was `792 passed, 2 skipped` with 91.70% coverage; frontend
+72 tests, Playwright 8/8, Go, contract, supply-chain, SBOM/license, Trivy and
+Gitleaks gates passed.
+
+The jemalloc calibration is explicitly rejected. The A arm passed, but the
+Measurement arm produced HTTP 500 after profiling activation, so A' was not
+executed. Package SHA256
+`99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423`
+preserves that stop. No RSS owner, P2 candidate or acceptance result can be
+derived from it.
+
+`baseline_history` appends PR #93 as sequence 16 while `gate_c_attempts`
+remains exactly 12. Product source remains `a57d0ce...`, engineering baseline
+advances to `cd93b843...`, and the formal Gate C source remains `5fcb917b...`.
+This closes Phase 0 infrastructure only. P2 behavior work, diagnostics,
+PreflightSmoke, formal Gate C and Gate D-G remain locked until a new reviewed
+diagnostic ADR receives explicit authorization.

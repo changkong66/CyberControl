@@ -1,8 +1,8 @@
-# CyberControl Phase 7 Gate C P2 Round 4 Status Closure And Stop Boundary
+# CyberControl Phase 7 Gate C Twelfth Phase 0 Status Closure And Stop Boundary
 
-Process Version: `Gate-C-11-v1.0`
+Process Version: `Gate-C-12-v1.0`
 
-Work only from real protected-main, GitHub Actions, Docker, PostgreSQL,
+Work only from real protected main, GitHub Actions, Docker, PostgreSQL,
 Keycloak-issued Tokens and immutable evidence in
 `C:/Users/wch06/Documents/CyberControl`. Do not fabricate source, tests, CI,
 Tokens, images, volumes, metrics, packages or acceptance decisions. Gate D-G
@@ -10,18 +10,17 @@ remain locked.
 
 ## Current Audited Boundary
 
-- Verified protected-main engineering baseline:
-  `d4b646c29bf82297332b9fdd8bc58be19744aecb`
-- Engineering tree: `c6e1009ec81fab9b28c1d6de9d2b0a0216e33b20`
-- ADR 0026 product source:
-  `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
+- Protected-main engineering baseline:
+  `cd93b8438408a381b27275165b5650c8ce447ecb`
+- Engineering tree: `e9fd1ebe3df09988bac5f82cb8cd6cb80b03ec30`
+- Product source: `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
 - Product tree: `963fcf73113e39a1e5868fae3957f4adfc102a4c`
 - Last formally evaluated Gate C source:
   `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Last formally evaluated tree:
   `f721fca017c247aee93765d5f11fcbc37e12fcfc`
 - Protected-main Release Quality Gates:
-  [Run 32707158181](https://github.com/changkong66/CyberControl/actions/runs/32707158181),
+  [Run 32829926696](https://github.com/changkong66/CyberControl/actions/runs/32829926696),
   8/8
 - Frozen threshold SHA256:
   `d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855`
@@ -30,98 +29,93 @@ remain locked.
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 
-PR #88 closed round-3 status, PR #89 defined ADR 0026, and PR #90 added the
-approved profiling capability. PR #91 then closed the rejected round-4
-diagnostic evidence as `d4b646c29bf82297332b9fdd8bc58be19744aecb`. Its
-push, pull-request and protected-main Runs `32705709392`, `32706368555` and
-`32707158181` each passed 8/8. PR #91 changed no deployable product artifact,
-so product source remains `a57d0ce...` while engineering baseline advances to
-`d4b646c...`.
+The eleventh formal replay remains milestone M2. Every stage and Outbox
+control passed, but recovery RSS ratio was `1.417200 > 1.10`. It remains the
+last formal attempt and `gate_c_attempts` remains exactly 12.
 
-## Proven Round 4 Boundary
+## Proven Gate-C-12 Phase 0 Boundary
 
-The valid real A2/measurement/A' diagnostic used one profiling image digest,
-real Keycloak issuance, two tenants, twenty subjects, independent Compose
-projects, fresh PostgreSQL volumes, the frozen 200-stream stage, a 300-second
-idle baseline and 600-second recovery.
+PR [#93](https://github.com/changkong66/CyberControl/pull/93) head
+`bfe89390f281e1229b46b4e86dd60012a4543416` passed push Run `32828446684` and
+pull-request Run `32829198360`, Squash Merged as `cd93b843...`, and passed
+protected-main Run `32829926696`; each Release Quality Gate run completed 8/8.
 
-A2 and A' were stable controls. The measurement arm exceeded the predefined
-interference limits:
+The all-service image lock SHA256 is
+`7fd28b88fed9bfa6edab48b8568be29e06087c307a037db4fa1f880e7c43cc3f` and
+the build-receipt SHA256 is
+`c2ca64f04450e8802ec8d3931f839051699008b4cc2ab53c9d65b43f645efa6a`.
+Only images that verify against that exact receipt may be used by a future
+authorized diagnostic, preflight or formal run.
 
-| Metric | Control median | Measurement | Limit | Result |
-| --- | ---: | ---: | ---: | --- |
-| Connection p95 | 614ms | 702ms | <=1.10x | 1.143322x, rejected |
-| Delivery p95 | 44ms | 53ms | <=1.10x | 1.204545x, rejected |
-| API CPU p95 | 22.69 | 25.32 | <=1.10x | 1.11591x, rejected |
-| RSS delta | 19,103,744 B | 32,808,960 B | difference <=8,388,608 B | +13,705,216 B, rejected |
+Capacity policy is fixed at:
 
-The profile is real but inadmissible for selecting a product owner. Do not
-infer a cache, pool, allocator, serializer, task, frame or SSE lifecycle cause
-from it. P2 behavior changes and formal Gate C replay remain frozen.
+- admission: `15 GiB`;
+- warning and non-destructive temporary cleanup: `<8 GiB`;
+- graceful `INFRA_ABORTED` stop: `<5 GiB`.
 
-The first A' attempt is `INFRA_ABORTED` because D: free space fell to about
-0.60 GiB during recovery. It is not a valid control or formal attempt. The
-valid retry used a new environment. All five PostgreSQL volumes remain
-preserved, all Compose projects have zero remaining containers/networks, and
-no prune or historical deletion occurred.
+At status capture D: had `19.237309 GiB` free. Docker Server 29.6.1 reported
+16 CPUs, 7,958,888,448 bytes of memory and zero running containers. No prune,
+historical volume deletion or evidence rewrite occurred.
 
-Immutable diagnostic package:
+The authoritative Phase 0 quality package is 237,689 bytes, SHA256
+`bcda2bc3af873cbc47f1722e16df6c5c8039c9c8604568b41e64253988d669da`.
+Its 23-file manifest SHA256 is
+`b094738da6a43b85c55deac4786fb139443eb8b7f41fa86ad75d6de0a753f2ff`.
 
-- Release: [phase7-gate-c-11-p2-adr0026-measurement-rejected-20260824-v1](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c-11-p2-adr0026-measurement-rejected-20260824-v1)
-- Release ID: `375536270`
-- Asset ID: `527281489`
-- Bytes: `86286`
-- SHA256:
-  `97b3203f98b3783dfdbbe7e66be64f8e05eac1c62befc567a2f0215df4b22410`
-- GitHub server digest: exact match
-- Immutable prerelease: true
+## Rejected Calibration Boundary
 
-## Current Status-Only Closure
+The Gate-C-12 jemalloc A/Measurement/A' calibration is rejected. A passed,
+Measurement returned one HTTP 500 after profiling activation, and the zero-
+tolerance rule prohibited A'. The immutable local package is 2,050,113 bytes,
+SHA256
+`99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423`.
 
-The evidence archive is closed. The only active branch authorized by this
-snapshot is docs-only:
+Do not infer a Python object, task, frame, metric state, connection pool,
+serialization buffer, native allocator, subscriber, queue, replay cache or SSE
+owner from this run. It is `NON_ACCEPTANCE_DIAGNOSTIC_REJECTED`, not formal
+attempt 13.
 
-`codex/phase7-gate-c-eleventh-p2-round4-status-closure`
+## Authorized Status-Only Closure
+
+The only active branch authorized by this snapshot is:
+
+`codex/phase7-gate-c-twelfth-phase0-status-closure`
 
 It may update only:
 
-- `docs/system-acceptance/acceptance-status.json`
-- `docs/system-acceptance/acceptance-report.md`
-- `docs/system-acceptance/project-stage-audit.md`
-- `docs/system-acceptance/next-stage-prompt.md`
+- `docs/system-acceptance/acceptance-status.json`;
+- `docs/system-acceptance/acceptance-report.md`;
+- `docs/system-acceptance/project-stage-audit.md`;
+- `docs/system-acceptance/next-stage-prompt.md`.
 
-1. Bind PR #91, head `cc0955523a3bf8dfa7b0cfbb05c988d38342fcca`, Squash
-   Merge `d4b646c29bf82297332b9fdd8bc58be19744aecb`, and Runs
-   `32705709392`, `32706368555` and `32707158181`.
-2. Set round-4 archive pending to false and append PR #91 to
-   `baseline_history` as diagnostic evidence.
-3. Keep product source `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, formal state
-   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`, and `gate_c_attempts=12` unchanged.
-4. Validate all JSON, diff whitespace, exact source/tree/CI bindings, and that
-   only the four current-state documents changed.
-5. Require push and pull-request Release Quality Gates 8/8, Squash Merge, and
-   post-merge protected-main 8/8.
-6. Preserve every historical Release, image, volume, run directory and
-   snapshot. Do not reset, stash, amend, prune, delete or overwrite them.
+It must:
 
-A commit cannot contain its own future merge SHA or CI, so the status PR's
-eventual merge and protected-main run remain external GitHub attestations.
+1. Declare `Gate-C-12-v1.0` without relabeling historical runs.
+2. Bind PR #93, its exact head/merge/tree and Runs `32828446684`,
+   `32829198360` and `32829926696`.
+3. Record the `15/8/5 GiB` policy, image lock, build receipt, quality package
+   and rejected calibration package.
+4. Append only PR #93 as `baseline_history` sequence 16. Do not repeat PR #92
+   and do not append `gate_c_attempts`.
+5. Preserve product source `a57d0ce...`, formal source `5fcb917b...`, M2 and
+   `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`.
+6. Pass push and pull-request CI 8/8, Squash Merge, and protected-main CI 8/8.
+
+A commit cannot contain its own future merge SHA or protected-main run, so
+this status PR's eventual merge and final CI remain external GitHub
+attestations.
 
 ## Stop Rule
 
-After status closure, stop P2 code modification. A new lower-interference
-measurement design requires a separately reviewed ADR and explicit
-authorization. Do not create a behavior candidate from the rejected profile,
-do not start PreflightSmoke, and do not start a formal Gate C replay.
-
-D: free space was approximately 10 GiB at package publication, below the last
-formal environment's recorded capacity. This independently prohibits a formal
-Gate C run until a non-destructive environment-capacity review passes.
+After this status closure, stop. A new low-interference RSS ownership design
+requires ADR 0032 or later, independent review and separate explicit
+authorization. Do not execute A', another diagnostic, P2 behavior changes,
+PreflightSmoke or formal Gate C replay from the rejected calibration.
 
 Do not modify migrations 0001-0010, frozen contracts, RLS, `TenantContext`,
-SERIALIZABLE transactions, C12, thresholds, workload, timeouts, aggregation or
-Outbox atomicity. Do not fabricate JWTs or send tenant, subject, role or scope
-identity headers. Do not start Gate D soak, DR, Provider acceptance,
-production deployment, accessibility/privacy closure or new product work.
-Gate D requires separate explicit authorization even if it later becomes
-eligible.
+SERIALIZABLE transactions, C12, thresholds, workload, timeout, grace period,
+aggregation or Outbox atomicity. Do not fabricate JWTs or send tenant, subject,
+role or scope identity headers. Do not start Gate D soak, DR, Provider
+acceptance, production deployment, accessibility/privacy closure or new
+product work. Gate D requires separate explicit authorization even if it later
+becomes eligible.
