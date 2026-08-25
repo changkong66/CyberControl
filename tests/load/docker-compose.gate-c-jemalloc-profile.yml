@@ -1,16 +1,6 @@
 services:
   api:
     image: cybercontrol/gate-c-jemalloc-profile:${GATE_C_IMAGE_TAG:-unknown}
-    build:
-      context: ..
-      dockerfile: tests/load/jemalloc-profile.Dockerfile
-      args:
-        BACKEND_IMAGE: cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}
-        CYBERCONTROL_SOURCE_SHA: ${GATE_C_SOURCE_SHA:-unknown}
-        CYBERCONTROL_SOURCE_TREE: ${GATE_C_SOURCE_TREE:-unknown}
-        CYBERCONTROL_PRODUCT_SOURCE_SHA: ${GATE_C_PRODUCT_SOURCE_SHA:-unknown}
-        CYBERCONTROL_ENGINEERING_BASELINE_SHA: ${GATE_C_ENGINEERING_BASELINE_SHA:-unknown}
-        CYBERCONTROL_PROCESS_VERSION: ${GATE_C_PROCESS_VERSION:-unknown}
     environment:
       LIYAN_MEMORY_DIAGNOSTICS: "false"
       LIYAN_MEMORY_CHECKPOINT_DIR: ""

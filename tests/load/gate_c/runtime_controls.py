@@ -13,6 +13,7 @@ _POOL_TIMEOUT = re.compile(
     r"(?:database|connection)\s+pool.*(?:acquisition|checkout).*timeout)",
     re.IGNORECASE,
 )
+_BAD_ADDRESS = re.compile(r"\bBad address\b", re.IGNORECASE)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -26,6 +27,7 @@ def summarize_api_log(path: Path) -> dict[str, Any]:
     content = path.read_bytes()
     lines = content.decode("utf-8", errors="replace").splitlines()
     matches = [line.strip() for line in lines if _POOL_TIMEOUT.search(line)]
+    bad_address_matches = [line.strip() for line in lines if _BAD_ADDRESS.search(line)]
     return {
         "schema_version": "cybercontrol.gate-c-runtime-controls.v1",
         "api_log_bytes": len(content),
@@ -34,7 +36,11 @@ def summarize_api_log(path: Path) -> dict[str, Any]:
         "database_pool_acquisition_timeout_line_sha256": [
             hashlib.sha256(line.encode("utf-8")).hexdigest() for line in matches
         ],
-        "passed": not matches,
+        "bad_address_count": len(bad_address_matches),
+        "bad_address_line_sha256": [
+            hashlib.sha256(line.encode("utf-8")).hexdigest() for line in bad_address_matches
+        ],
+        "passed": not matches and not bad_address_matches,
     }
 
 

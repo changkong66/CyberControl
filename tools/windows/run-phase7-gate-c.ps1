@@ -26,6 +26,9 @@ param(
     [switch]$MemoryCheckpoints,
 
     [ValidateSet("None", "A", "Measurement", "APrime")]
+    [string]$BoundedMemoryInventoryArm = "None",
+
+    [ValidateSet("None", "A", "Measurement", "APrime")]
     [string]$JemallocProfileArm = "None",
 
     [ValidatePattern('^sha256:[0-9a-f]{64}$')]
@@ -58,6 +61,8 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $baseCompose = Join-Path $root "infra\docker-compose.yml"
 $gateCompose = Join-Path $root "tests\load\docker-compose.gate-c.yml"
 $memoryCheckpointCompose = Join-Path $root "tests\load\docker-compose.gate-c-memory-checkpoints.yml"
+$boundedMemoryInventoryCompose = Join-Path $root "tests\load\docker-compose.gate-c-bounded-memory-inventory.yml"
+$eventLoopHeartbeatCompose = Join-Path $root "tests\load\docker-compose.gate-c-event-loop-heartbeat.yml"
 $jemallocProfileCompose = Join-Path $root "tests\load\docker-compose.gate-c-jemalloc-profile.yml"
 $thresholdPath = Join-Path $root "tests\load\gate-c-thresholds.v1.json"
 $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
@@ -65,13 +70,14 @@ $monitorPath = Join-Path $root "tests\load\gate_c\monitor.py"
 $runtimeControlsPath = Join-Path $root "tests\load\gate_c\runtime_controls.py"
 $imageLockToolPath = Join-Path $root "tools\gate_c_image_lock.py"
 $capacityMonitorPath = Join-Path $root "tools\windows\watch-gate-c-capacity.ps1"
+$boundedInventorySignalPath = Join-Path $root "tools\windows\invoke-gate-c-bounded-inventory-signal.ps1"
 $processVersion = "Gate-C-12-v1.0"
 $capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
 [double]$capacityAdmissionGiB = 15.0
 [double]$capacityWarningGiB = 8.0
 [double]$capacityStopGiB = 5.0
 $executionClassification = switch ($Mode) {
-    "DiagnosticStages" { "DIAGNOSTIC" }
+    "DiagnosticStages" { "NON_ACCEPTANCE_DIAGNOSTIC" }
     "PreflightSmoke" { "PREFLIGHT_CHECK" }
     "Full" { "FORMAL_GATE_C_ATTEMPT" }
     default { "HARNESS_SMOKE" }
@@ -118,6 +124,12 @@ $composeArguments = @(
 if ($MemoryCheckpoints) {
     $composeArguments = @($composeArguments + @("-f", $memoryCheckpointCompose))
 }
+if ($BoundedMemoryInventoryArm -eq "Measurement") {
+    $composeArguments = @($composeArguments + @("-f", $boundedMemoryInventoryCompose))
+}
+if ($BoundedMemoryInventoryArm -ne "None") {
+    $composeArguments = @($composeArguments + @("-f", $eventLoopHeartbeatCompose))
+}
 if ($JemallocProfileArm -ne "None") {
     $composeArguments = @($composeArguments + @("-f", $jemallocProfileCompose))
 }
@@ -130,6 +142,7 @@ $script:capacityAtStart = $null
 $script:lastCapacitySnapshot = $null
 $script:capacityMonitorProcess = $null
 $script:capacityMonitorStopFile = $null
+$script:boundedInventoryPeakProcess = $null
 
 function Invoke-Compose {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
@@ -485,6 +498,130 @@ function Invoke-MemoryCheckpoint {
         Start-Sleep -Seconds 1
     } while ((Get-Date) -lt $deadline)
     throw "Memory checkpoint $Label did not complete within 30 seconds."
+}
+
+function Assert-BoundedMemoryInventoryManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("baseline", "peak", "recovery")]
+        [string]$Label
+    )
+
+    $inventoryDirectory = Join-Path $runDirectory "bounded-memory-inventory"
+    $manifestPath = Join-Path $inventoryDirectory "$Label.manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        throw "Bounded memory inventory $Label manifest is missing."
+    }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (
+        $manifest.schema_version -ne "cybercontrol.bounded-memory-inventory-manifest.v1" -or
+        $manifest.process_version -ne $processVersion -or
+        $manifest.label -ne $Label -or
+        $manifest.source.source_sha -ne $sourceCommit -or
+        $manifest.source.source_tree -ne $sourceTree -or
+        $manifest.source.product_source_sha -ne $resolvedProductSourceSha -or
+        $manifest.source.engineering_baseline_sha -ne $resolvedEngineeringBaselineSha -or
+        $manifest.source.process_version -ne $processVersion -or
+        $manifest.files.Count -ne 2
+    ) {
+        throw "Bounded memory inventory $Label manifest has invalid metadata."
+    }
+    $expectedNames = @("$Label.json", "$Label.proc-maps.txt") | Sort-Object
+    $actualNames = @($manifest.files | Select-Object -ExpandProperty path | Sort-Object)
+    if (($actualNames -join "|") -ne ($expectedNames -join "|")) {
+        throw "Bounded memory inventory $Label has unexpected files."
+    }
+    foreach ($file in $manifest.files) {
+        $path = Join-Path $inventoryDirectory ([string]$file.path)
+        if (
+            -not (Test-Path -LiteralPath $path -PathType Leaf) -or
+            [int64]$file.size_bytes -ne (Get-Item -LiteralPath $path).Length -or
+            [string]$file.sha256 -ne (Get-FileSha256 $path)
+        ) {
+            throw "Bounded memory inventory $Label file integrity failed."
+        }
+    }
+    $metadata = Get-Content -LiteralPath (Join-Path $inventoryDirectory "$Label.json") `
+        -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (
+        $metadata.schema_version -ne "cybercontrol.bounded-memory-inventory.v1" -or
+        $metadata.classification -ne "NON_ACCEPTANCE_DIAGNOSTIC" -or
+        $metadata.label -ne $Label -or
+        [double]$metadata.duration_seconds -gt 30.0 -or
+        $metadata.probe_exclusions.tracemalloc -ne $false -or
+        $metadata.probe_exclusions.gc_object_scan -ne $false -or
+        $metadata.probe_exclusions.task_frame_scan -ne $false -or
+        $metadata.probe_exclusions.sampled_profile -ne $false
+    ) {
+        throw "Bounded memory inventory $Label violated its integrity boundary."
+    }
+}
+
+function Invoke-BoundedMemoryInventory {
+    param(
+        [Parameter(Mandatory = $true)][string]$ContainerId,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("baseline", "recovery")]
+        [string]$Label
+    )
+
+    $manifestPath = Join-Path $runDirectory "bounded-memory-inventory\$Label.manifest.json"
+    if (Test-Path -LiteralPath $manifestPath) {
+        throw "Bounded memory inventory $Label manifest already exists."
+    }
+    & docker kill --signal USR1 $ContainerId | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to signal bounded memory inventory $Label."
+    }
+    $deadline = (Get-Date).AddSeconds(31)
+    do {
+        if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+            Assert-BoundedMemoryInventoryManifest -Label $Label
+            return
+        }
+        Assert-CapacityMonitorHealthy
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+    throw "Bounded memory inventory $Label did not complete within 31 seconds."
+}
+
+function Start-BoundedMemoryInventoryPeak {
+    param(
+        [Parameter(Mandatory = $true)][string]$ContainerId,
+        [Parameter(Mandatory = $true)][ValidateRange(0, 86400)][int]$DelaySeconds
+    )
+
+    if ($null -ne $script:boundedInventoryPeakProcess) {
+        throw "A bounded inventory peak scheduler is already active."
+    }
+    $manifestPath = Join-Path $runDirectory "bounded-memory-inventory\peak.manifest.json"
+    $stdout = Join-Path $runDirectory "bounded-memory-inventory\peak-signal.stdout.log"
+    $stderr = Join-Path $runDirectory "bounded-memory-inventory\peak-signal.stderr.log"
+    $pwsh = (Get-Command pwsh -ErrorAction Stop).Source
+    $script:boundedInventoryPeakProcess = Start-Process -FilePath $pwsh -ArgumentList @(
+        "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $boundedInventorySignalPath,
+        "-ContainerId", $ContainerId,
+        "-DelaySeconds", [string]$DelaySeconds,
+        "-ManifestPath", $manifestPath
+    ) -WorkingDirectory $root -RedirectStandardOutput $stdout -RedirectStandardError $stderr `
+        -WindowStyle Hidden -PassThru
+    $null = $script:boundedInventoryPeakProcess.Handle
+}
+
+function Wait-BoundedMemoryInventoryPeak {
+    if ($null -eq $script:boundedInventoryPeakProcess) {
+        throw "The bounded inventory peak scheduler was not started."
+    }
+    if (-not $script:boundedInventoryPeakProcess.WaitForExit(30000)) {
+        $script:boundedInventoryPeakProcess.Kill($true)
+        throw "The bounded inventory peak scheduler did not finish."
+    }
+    $script:boundedInventoryPeakProcess.Refresh()
+    if ($script:boundedInventoryPeakProcess.ExitCode -ne 0) {
+        throw "The bounded inventory peak scheduler failed."
+    }
+    $script:boundedInventoryPeakProcess = $null
+    Assert-BoundedMemoryInventoryManifest -Label "peak"
 }
 
 function Test-GateVolumeExists {
@@ -911,6 +1048,9 @@ if ($Mode -ne "DiagnosticStages" -and $DiagnosticRecoverySeconds -ne 0) {
 if ($Mode -ne "DiagnosticStages" -and $MemoryCheckpoints) {
     throw "-MemoryCheckpoints is valid only with -Mode DiagnosticStages."
 }
+if ($Mode -ne "DiagnosticStages" -and $BoundedMemoryInventoryArm -ne "None") {
+    throw "-BoundedMemoryInventoryArm is valid only with -Mode DiagnosticStages."
+}
 if ($Mode -ne "DiagnosticStages" -and $NoCacheBuild) {
     throw "-NoCacheBuild is valid only with -Mode DiagnosticStages."
 }
@@ -931,6 +1071,22 @@ if ($MemoryCheckpoints) {
         $DiagnosticRecoverySeconds -ne 600
     ) {
         throw "Memory checkpoints require only ramp-200, 300 idle seconds and 600 recovery seconds."
+    }
+}
+if ($BoundedMemoryInventoryArm -ne "None") {
+    if (
+        $DiagnosticStageNames.Count -ne 1 -or
+        $DiagnosticStageNames[0] -ne "ramp-200" -or
+        $DiagnosticIdleSeconds -ne 300 -or
+        $DiagnosticRecoverySeconds -ne 600
+    ) {
+        throw "Bounded inventory calibration arms require only ramp-200, 300 idle seconds and 600 recovery seconds."
+    }
+    if ($MemoryCheckpoints -or $JemallocProfileArm -ne "None") {
+        throw "Bounded inventory, memory checkpoints and sampled profiling are mutually exclusive."
+    }
+    if (-not $LockedImages) {
+        throw "Bounded inventory arms must reuse a prevalidated locked image receipt."
     }
 }
 if ($JemallocProfileArm -ne "None") {
@@ -993,6 +1149,10 @@ if ($MemoryCheckpoints) {
     New-Item -ItemType Directory -Path (Join-Path $runDirectory "memory-checkpoints") -Force |
         Out-Null
 }
+if ($BoundedMemoryInventoryArm -ne "None") {
+    New-Item -ItemType Directory -Path (Join-Path $runDirectory "bounded-memory-inventory") `
+        -Force | Out-Null
+}
 if ($JemallocProfileArm -ne "None") {
     New-Item -ItemType Directory -Path (Join-Path $runDirectory "jemalloc-profile") -Force |
         Out-Null
@@ -1032,6 +1192,7 @@ if ($JemallocProfileArm -ne "None") {
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
     diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
     memory_checkpoints = [bool]$MemoryCheckpoints
+    bounded_memory_inventory_arm = $BoundedMemoryInventoryArm
     jemalloc_profile_arm = $JemallocProfileArm
     jemalloc_profile_binding = $script:jemallocProfileBinding
     no_cache_build = [bool]$NoCacheBuild
@@ -1202,6 +1363,9 @@ try {
             if ($MemoryCheckpoints) {
                 Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "baseline"
             }
+            if ($BoundedMemoryInventoryArm -eq "Measurement") {
+                Invoke-BoundedMemoryInventory -ContainerId $apiContainer -Label "baseline"
+            }
         }
         finally {
             Stop-GateMonitor -Process $baselineMonitor
@@ -1252,6 +1416,12 @@ try {
 
         $monitor = Start-GateMonitor -StageDirectory $stageDirectory -StageName $stageName
         try {
+            if ($BoundedMemoryInventoryArm -eq "Measurement") {
+                $peakDelaySeconds = [math]::Max(0, $totalSeconds - 60)
+                Start-BoundedMemoryInventoryPeak `
+                    -ContainerId $apiContainer `
+                    -DelaySeconds $peakDelaySeconds
+            }
             Invoke-GateTool `
                 -EnvironmentArguments $stageEnvironment `
                 -Command @(
@@ -1267,6 +1437,9 @@ try {
                     "--csv-full-history",
                     "--only-summary"
                 )
+            if ($BoundedMemoryInventoryArm -eq "Measurement") {
+                Wait-BoundedMemoryInventoryPeak
+            }
             if ($Mode -eq "Full" -and $stageName -eq [string]$selectedStages[-1].name) {
                 Wait-WithCapacityGuard -Seconds ([int]$thresholds.post_ramp_recovery_seconds)
             }
@@ -1278,6 +1451,9 @@ try {
                 Wait-WithCapacityGuard -Seconds $DiagnosticRecoverySeconds
                 if ($MemoryCheckpoints) {
                     Invoke-MemoryCheckpoint -ContainerId $apiContainer -Label "recovery"
+                }
+                if ($BoundedMemoryInventoryArm -eq "Measurement") {
+                    Invoke-BoundedMemoryInventory -ContainerId $apiContainer -Label "recovery"
                 }
             }
         }
@@ -1342,6 +1518,36 @@ try {
             throw "Jemalloc control arm produced an unauthorized profile artifact."
         }
     }
+
+    if ($BoundedMemoryInventoryArm -in @("A", "APrime")) {
+        $inventoryArtifacts = @(
+            Get-ChildItem -LiteralPath (Join-Path $runDirectory "bounded-memory-inventory") `
+                -Force -File
+        )
+        if ($inventoryArtifacts.Count -ne 0) {
+            throw "Bounded inventory control arm produced an unauthorized probe artifact."
+        }
+    }
+    elseif ($BoundedMemoryInventoryArm -eq "Measurement") {
+        foreach ($label in @("baseline", "peak", "recovery")) {
+            Assert-BoundedMemoryInventoryManifest -Label $label
+        }
+        $inventoryDirectory = Join-Path $runDirectory "bounded-memory-inventory"
+        $baselineInventory = Get-Content -LiteralPath (Join-Path $inventoryDirectory "baseline.json") `
+            -Raw -Encoding UTF8 | ConvertFrom-Json
+        $peakInventory = Get-Content -LiteralPath (Join-Path $inventoryDirectory "peak.json") `
+            -Raw -Encoding UTF8 | ConvertFrom-Json
+        $recoveryInventory = Get-Content -LiteralPath (Join-Path $inventoryDirectory "recovery.json") `
+            -Raw -Encoding UTF8 | ConvertFrom-Json
+        if (
+            [double]$baselineInventory.completed_monotonic_seconds -ge
+                [double]$peakInventory.started_monotonic_seconds -or
+            [double]$peakInventory.completed_monotonic_seconds -ge
+                [double]$recoveryInventory.started_monotonic_seconds
+        ) {
+            throw "Bounded inventory windows are missing or out of order."
+        }
+    }
     elseif ($JemallocProfileArm -eq "Measurement") {
         $profileArtifactNames = @(
             Get-ChildItem -LiteralPath (Join-Path $runDirectory "jemalloc-profile") -Force -File |
@@ -1394,6 +1600,13 @@ finally {
                 $record.Process.Kill($true)
             }
         }
+    }
+    if ($null -ne $script:boundedInventoryPeakProcess) {
+        if (-not $script:boundedInventoryPeakProcess.HasExited) {
+            $script:boundedInventoryPeakProcess.Kill($true)
+            $script:boundedInventoryPeakProcess.WaitForExit(10000) | Out-Null
+        }
+        $script:boundedInventoryPeakProcess = $null
     }
     $capacityMonitorFailure = $null
     try {
@@ -1453,6 +1666,7 @@ if ($Mode -eq "Full") {
     diagnostic_idle_seconds = $DiagnosticIdleSeconds
     diagnostic_recovery_seconds = $DiagnosticRecoverySeconds
     memory_checkpoints = [bool]$MemoryCheckpoints
+    bounded_memory_inventory_arm = $BoundedMemoryInventoryArm
     jemalloc_profile_arm = $JemallocProfileArm
     jemalloc_profile_binding = $script:jemallocProfileBinding
     no_cache_build = [bool]$NoCacheBuild

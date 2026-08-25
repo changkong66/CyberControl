@@ -56,6 +56,23 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "cursor" not in rendered
 
 
+@pytest.mark.asyncio
+async def test_event_loop_heartbeat_is_opt_in_bounded_and_closed(monkeypatch) -> None:
+    normal = PlatformMetrics()
+    assert "liyans_event_loop_heartbeat_lag_seconds" not in normal.render().decode()
+
+    monkeypatch.setenv("LIYAN_EVENT_LOOP_HEARTBEAT_ENABLED", "true")
+    diagnostic = PlatformMetrics()
+    await diagnostic.start_memory_diagnostics()
+    await asyncio.sleep(0.12)
+    rendered = diagnostic.render().decode()
+    assert "liyans_event_loop_heartbeat_lag_seconds" in rendered
+    assert diagnostic._event_loop_heartbeat_task is not None
+
+    await diagnostic.close()
+    assert diagnostic._event_loop_heartbeat_task is None
+
+
 def test_jemalloc_inventory_retains_active_bin_and_large_extent_counts(monkeypatch) -> None:
     reader = _JemallocStatsReader()
     monkeypatch.setattr(
@@ -101,6 +118,23 @@ def test_jemalloc_inventory_retains_active_bin_and_large_extent_counts(monkeypat
             "live_extents": 2,
         }
     ]
+
+
+def test_jemalloc_inventory_rejects_an_unbounded_allocator_shape(monkeypatch) -> None:
+    reader = _JemallocStatsReader()
+    monkeypatch.setattr(
+        reader,
+        "snapshot",
+        lambda: {"allocated": 10, "active": 20, "resident": 30, "retained": 0, "arenas": 1},
+    )
+    values = {
+        "arenas.narenas": reader._MAX_INVENTORY_ARENAS + 1,
+        "arenas.nbins": 2,
+        "arenas.nlextents": 1,
+    }
+    monkeypatch.setattr(reader, "_read", lambda name, _type: values.get(name, 0))
+
+    assert reader.allocation_inventory() is None
 
 
 @pytest.mark.asyncio
