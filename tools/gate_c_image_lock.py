@@ -188,10 +188,25 @@ def _supply_chain(  # noqa: C901, PLR0912
         documents[name] = document
     manifest_images = documents["manifest"].get("base_images")
     specification_images = documents["base_images"].get("base_images")
-    if manifest_images != specification_images:
-        raise ValueError("Gate C offline base image manifest and specification differ")
-    if not isinstance(specification_images, list):
+    if not isinstance(manifest_images, list) or not isinstance(specification_images, list):
         raise ValueError("Gate C offline base image specification is empty")
+    manifest_by_role = {
+        image.get("role"): image for image in manifest_images if isinstance(image, dict)
+    }
+    if len(manifest_by_role) != len(manifest_images):
+        raise ValueError("Gate C offline base image manifest roles are invalid or duplicated")
+    for specification in specification_images:
+        if not isinstance(specification, dict):
+            raise ValueError("Gate C offline base image specification entry is invalid")
+        manifest_image = manifest_by_role.get(specification.get("role"))
+        if not isinstance(manifest_image, dict) or any(
+            manifest_image.get(name) != value for name, value in specification.items()
+        ):
+            raise ValueError("Gate C offline base image manifest and specification differ")
+    if set(manifest_by_role) != {
+        image.get("role") for image in specification_images if isinstance(image, dict)
+    }:
+        raise ValueError("Gate C offline base image manifest and specification role sets differ")
     roles: dict[str, dict[str, Any]] = {}
     for image in specification_images:
         if not isinstance(image, dict) or not isinstance(image.get("role"), str):

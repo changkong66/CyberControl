@@ -136,6 +136,55 @@ def test_image_lock_rejects_tampered_build_receipt(tmp_path: Path) -> None:
         gate_c_image_lock._validated_lock(ROOT, lock_path)
 
 
+def test_supply_chain_accepts_manifest_license_evidence_enrichment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest = {
+        "schema_version": gate_c_image_lock.OFFLINE_MANIFEST_SCHEMA,
+        "process_version": gate_c_image_lock.PROCESS_VERSION,
+        "base_images": [
+            {
+                "role": "python-base",
+                "digest": "sha256:" + "a" * 64,
+                "oci_manifest_digest": "sha256:" + "b" * 64,
+                "archive_sha256": "c" * 64,
+                "license_evidence_path": "licenses/policy.json",
+                "license_evidence_sha256": "d" * 64,
+            }
+        ],
+    }
+    specification = {
+        "schema_version": gate_c_image_lock.BASE_IMAGE_SPEC_SCHEMA,
+        "process_version": gate_c_image_lock.PROCESS_VERSION,
+        "base_images": [
+            {
+                "role": "python-base",
+                "digest": "sha256:" + "a" * 64,
+                "oci_manifest_digest": "sha256:" + "b" * 64,
+                "archive_sha256": "c" * 64,
+            }
+        ],
+    }
+    manifest_path = tmp_path / "manifest.json"
+    specification_path = tmp_path / "base-images.json"
+    _write_json(manifest_path, manifest)
+    _write_json(specification_path, specification)
+    inputs = {
+        "offline_supply_chain": {
+            "manifest": {"path": "manifest.json", "sha256": _digest(manifest_path)},
+            "base_images": {
+                "path": "base-images.json",
+                "sha256": _digest(specification_path),
+            },
+        }
+    }
+    monkeypatch.setattr(gate_c_image_lock, "BASE_IMAGE_ROLES", {"python": "python-base"})
+
+    _, roles = gate_c_image_lock._supply_chain(tmp_path, inputs)
+
+    assert roles["python-base"]["digest"] == "sha256:" + "a" * 64
+
+
 def test_image_lock_rejects_tampered_offline_manifest_binding(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
