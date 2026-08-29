@@ -100,8 +100,10 @@ ARG CYBERCONTROL_PROCESS_VERSION=unknown
 
 USER root
 COPY third_party/gate-c-build/apk/binutils-2.45.1-r1.apk \
+    third_party/gate-c-build/apk/jansson-2.15.0-r0.apk \
     third_party/gate-c-build/apk/libunwind-1.8.3-r0.apk \
     third_party/gate-c-build/apk/perl-5.42.2-r0.apk \
+    third_party/gate-c-build/apk/zstd-libs-1.5.7-r2.apk \
     /tmp/diagnostic-apks/
 RUN apk add --no-network --allow-untrusted /tmp/diagnostic-apks/*.apk \
     && rm -rf /tmp/diagnostic-apks
