@@ -438,7 +438,16 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     assert inputs["buildkit"]["source_revision"] == "673b7e0196de0cac83308274b88aaed97a91af74"
     assert len(inputs["alpine"]["backend_runtime_packages"]) == 3
     assert "apkindex_sha256" not in inputs["alpine"]
-    assert set(inputs["python_base_image"]["builder_mirrors"]) == {"a", "b"}
+    assert set(inputs["base_image_roles"]) == {
+        "python",
+        "node",
+        "nginx",
+        "postgres",
+        "keycloak",
+        "buildkit",
+    }
+    assert "builder_mirrors" not in json.dumps(inputs)
+    assert set(inputs["offline_supply_chain"]) == {"manifest", "base_images"}
     for package in inputs["alpine"]["backend_runtime_packages"]:
         assert package["filename"] in backend_dockerfile
         assert package["sha256"] in backend_dockerfile
@@ -446,6 +455,12 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     assert "apk add --no-network --allow-untrusted" in backend_dockerfile
     assert '"docker", "buildx", "inspect", builder, "--bootstrap"' in build_tool
     assert '"--no-cache"' in build_tool
+    assert '"--network"' in build_tool
+    assert '"none"' in build_tool
+    assert "builder_mirrors" not in build_tool
+    assert "normal-image-lock.json" in build_tool
+    assert "diagnostic-image-lock.json" in build_tool
+    assert "all-service-digest-manifest.json" in build_tool
     assert "rewrite-timestamp=true" in build_tool
     assert '"com.docker.compose.project"' in build_tool
 

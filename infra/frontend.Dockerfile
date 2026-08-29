@@ -1,5 +1,5 @@
-ARG NODE_IMAGE=cgr.dev/chainguard/node:latest-dev@sha256:7f240e0b8a76496e6128948e4cfb0c3c145f629ac2b9d3cee3d554b746e82ca3
-ARG NGINX_IMAGE=cgr.dev/chainguard/nginx:latest@sha256:f6cbe96998972d87ebe30952ec1b6f3cff4103c33c889ffca7e13053e2036571
+ARG NODE_IMAGE=cybercontrol/gate-c-base-node:latest-dev@sha256:7f240e0b8a76496e6128948e4cfb0c3c145f629ac2b9d3cee3d554b746e82ca3
+ARG NGINX_IMAGE=cybercontrol/gate-c-base-nginx:latest@sha256:f6cbe96998972d87ebe30952ec1b6f3cff4103c33c889ffca7e13053e2036571
 
 FROM ${NODE_IMAGE} AS builder
 
@@ -17,10 +17,18 @@ ENV COREPACK_HOME=/tmp/corepack \
 
 WORKDIR /workspace
 
+COPY --chown=65532:65532 third_party/gate-c-build/sources/corepack-pnpm-11.7.0.tgz /tmp/offline/corepack-pnpm.tgz
+COPY --chown=65532:65532 third_party/gate-c-build/pnpm-store/pnpm-store-v11-linux.tgz /tmp/offline/pnpm-store.tgz
+RUN corepack install -g --cache-only /tmp/offline/corepack-pnpm.tgz \
+    && mkdir -p /tmp/pnpm-store \
+    && tar -xzf /tmp/offline/pnpm-store.tgz -C /tmp/pnpm-store \
+    && test "$(corepack pnpm@${PNPM_VERSION} --version)" = "${PNPM_VERSION}"
+
 COPY --chown=65532:65532 frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml /workspace/frontend/
 COPY --chown=65532:65532 packages/contracts-ts /workspace/packages/contracts-ts
 COPY --chown=65532:65532 schemas /workspace/schemas
-RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend install --frozen-lockfile
+RUN corepack "pnpm@${PNPM_VERSION}" --dir frontend install \
+      --frozen-lockfile --offline --trust-lockfile --store-dir /tmp/pnpm-store
 
 COPY --chown=65532:65532 frontend/index.html frontend/tsconfig.json frontend/tsconfig.app.json frontend/tsconfig.node.json /workspace/frontend/
 COPY --chown=65532:65532 frontend/vite.config.ts /workspace/frontend/vite.config.ts

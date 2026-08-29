@@ -1,5 +1,4 @@
 * text=auto eol=lf
-
 *.ps1 text eol=crlf
 *.cmd text eol=crlf
 *.bat text eol=crlf
@@ -9,3 +8,9 @@
 *.gif binary
 *.pdf binary
 *.zip binary
+third_party/gate-c-build/python-wheelhouse/** filter=lfs diff=lfs merge=lfs -text
+third_party/gate-c-build/pnpm-store/** filter=lfs diff=lfs merge=lfs -text
+third_party/gate-c-build/oci-layouts/** filter=lfs diff=lfs merge=lfs -text
+third_party/gate-c-build/sources/** filter=lfs diff=lfs merge=lfs -text
+third_party/gate-c-build/apk/** filter=lfs diff=lfs merge=lfs -text
+third_party/gate-c-build/patches/** binary

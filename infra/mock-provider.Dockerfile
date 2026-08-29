@@ -1,4 +1,4 @@
-ARG PYTHON_IMAGE=python:3.11-alpine@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
+ARG PYTHON_IMAGE=cybercontrol/gate-c-base-python:3.11@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
 
 FROM ${PYTHON_IMAGE}
 

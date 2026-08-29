@@ -393,6 +393,7 @@ jobs:
     env:
       BACKEND_IMAGE_REF: liyans-backend:ci-${{ github.sha }}
       FRONTEND_IMAGE_REF: liyans-frontend:ci-${{ github.sha }}
+      GATE_C_LOAD_IMAGE_REF: liyans-gate-c-load:ci-${{ github.sha }}
       JEMALLOC_PROFILE_IMAGE_REF: liyans-jemalloc-profile:ci-${{ github.sha }}
       MOCK_PROVIDER_IMAGE_REF: liyans-mock-provider:ci-${{ github.sha }}
       GATE_C_PRODUCT_SOURCE_SHA: a57d0ce57427804ede3f3c620fda2a93b3a300ff
@@ -401,17 +402,56 @@ jobs:
       - name: Check out immutable source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          lfs: true
           persist-credentials: false
       - name: Configure Buildx
+        id: buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-      - name: Validate Compose and build pinned production images
+      - name: Verify the offline supply-chain closure
+        run: |
+          mkdir -p artifacts/container artifacts/security artifacts/sbom
+          python3 tools/gate_c_supply_chain.py verify \
+            --skip-docker \
+            --output artifacts/container/offline-supply-chain-verification.json
+          python3 - <<'PY'
+          import os
+          import shutil
+          from pathlib import Path
+
+          from tools.gate_c_image_lock import (
+              _prepare_oci_contexts,
+              _supply_chain,
+              _validate_inputs,
+          )
+
+          root = Path.cwd().resolve()
+          destination = root / "artifacts" / "container" / "offline-contexts"
+          if destination.exists():
+              shutil.rmtree(destination)
+          _, images = _supply_chain(
+              root,
+              _validate_inputs(root / "tests/load/gate-c-build-inputs.v1.json"),
+          )
+          contexts = _prepare_oci_contexts(root, destination, images)
+          names = {
+              "python_base": "PYTHON_BASE_CONTEXT",
+              "node_base": "NODE_BASE_CONTEXT",
+              "nginx_base": "NGINX_BASE_CONTEXT",
+          }
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              for name, env_name in names.items():
+                  stream.write(f"{env_name}={contexts[name]}\n")
+          PY
+      - name: Validate Compose and build pinned production images without network
         run: |
           docker compose -f infra/docker-compose.yml config --quiet
           source_tree="$(git rev-parse 'HEAD^{tree}')"
-          daemon_builder="$(docker context show)"
-          mkdir -p artifacts/container artifacts/security artifacts/sbom
+          source_date_epoch="$(git show -s --format=%ct HEAD)"
+          builder="${{ steps.buildx.outputs.name }}"
+          mkdir -p artifacts/container/backend-oci
           printf 'SOURCE_TREE=%s\n' "$source_tree" >> "$GITHUB_ENV"
           build_args=(
+            --build-arg "SOURCE_DATE_EPOCH=$source_date_epoch"
             --build-arg "CYBERCONTROL_SOURCE_SHA=${{ github.sha }}"
             --build-arg "CYBERCONTROL_SOURCE_TREE=$source_tree"
             --build-arg "CYBERCONTROL_PRODUCT_SOURCE_SHA=$GATE_C_PRODUCT_SOURCE_SHA"
@@ -419,30 +459,86 @@ jobs:
             --build-arg "CYBERCONTROL_PROCESS_VERSION=$GATE_C_PROCESS_VERSION"
           )
           docker buildx build \
+            --builder "$builder" \
+            --platform linux/amd64 \
+            --network none \
+            --no-cache \
+            --provenance=false \
             --file infra/backend.Dockerfile \
             --tag "$BACKEND_IMAGE_REF" \
-            --load \
+            --output "type=docker,name=$BACKEND_IMAGE_REF,rewrite-timestamp=true" \
+            --output "type=oci,dest=artifacts/container/backend-oci,tar=false,rewrite-timestamp=true" \
+            --build-context "python_base=$PYTHON_BASE_CONTEXT" \
+            --build-arg PYTHON_IMAGE=python_base \
             "${build_args[@]}" \
             .
           docker buildx build \
+            --builder "$builder" \
+            --platform linux/amd64 \
+            --network none \
+            --no-cache \
+            --provenance=false \
             --file infra/frontend.Dockerfile \
             --tag "$FRONTEND_IMAGE_REF" \
-            --load \
+            --output "type=docker,name=$FRONTEND_IMAGE_REF,rewrite-timestamp=true" \
+            --build-context "node_base=$NODE_BASE_CONTEXT" \
+            --build-context "nginx_base=$NGINX_BASE_CONTEXT" \
+            --build-arg NODE_IMAGE=node_base \
+            --build-arg NGINX_IMAGE=nginx_base \
             "${build_args[@]}" \
             .
           docker buildx build \
+            --builder "$builder" \
+            --platform linux/amd64 \
+            --network none \
+            --no-cache \
+            --provenance=false \
             --file infra/mock-provider.Dockerfile \
             --tag "$MOCK_PROVIDER_IMAGE_REF" \
-            --load \
+            --output "type=docker,name=$MOCK_PROVIDER_IMAGE_REF,rewrite-timestamp=true" \
+            --build-context "python_base=$PYTHON_BASE_CONTEXT" \
+            --build-arg PYTHON_IMAGE=python_base \
             "${build_args[@]}" \
             .
           docker buildx build \
-            --builder "$daemon_builder" \
+            --builder "$builder" \
+            --platform linux/amd64 \
+            --network none \
             --no-cache \
+            --provenance=false \
+            --file tests/load/Dockerfile \
+            --tag "$GATE_C_LOAD_IMAGE_REF" \
+            --output "type=docker,name=$GATE_C_LOAD_IMAGE_REF,rewrite-timestamp=true" \
+            --build-context "python_base=$PYTHON_BASE_CONTEXT" \
+            --build-arg PYTHON_IMAGE=python_base \
+            "${build_args[@]}" \
+            .
+          backend_manifest="$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          index = json.loads(Path("artifacts/container/backend-oci/index.json").read_text())
+          matches = [
+              item for item in index["manifests"]
+              if item.get("platform") == {"architecture": "amd64", "os": "linux"}
+          ]
+          if len(matches) != 1:
+              raise SystemExit("backend OCI context has an ambiguous linux/amd64 manifest")
+          print(matches[0]["digest"])
+          PY
+          )"
+          docker buildx build \
+            --builder "$builder" \
+            --platform linux/amd64 \
+            --network none \
+            --no-cache \
+            --provenance=false \
             --file tests/load/jemalloc-profile.Dockerfile \
-            --build-context "backend_image=docker-image://$BACKEND_IMAGE_REF" \
+            --build-context "backend_image=oci-layout://./artifacts/container/backend-oci@$backend_manifest" \
+            --build-context "python_base=$PYTHON_BASE_CONTEXT" \
+            --build-arg PYTHON_IMAGE=python_base \
             --tag "$JEMALLOC_PROFILE_IMAGE_REF" \
-            --load \
+            --output "type=docker,name=$JEMALLOC_PROFILE_IMAGE_REF,rewrite-timestamp=true" \
             --metadata-file artifacts/container/jemalloc-profile-build-metadata.json \
             "${build_args[@]}" \
             .
@@ -450,6 +546,7 @@ jobs:
           docker image inspect "$FRONTEND_IMAGE_REF" > artifacts/container/frontend-image-inspect.json
           docker image inspect "$JEMALLOC_PROFILE_IMAGE_REF" > artifacts/container/jemalloc-profile-image-inspect.json
           docker image inspect "$MOCK_PROVIDER_IMAGE_REF" > artifacts/container/mock-provider-image-inspect.json
+          docker image inspect "$GATE_C_LOAD_IMAGE_REF" > artifacts/container/gate-c-load-image-inspect.json
       - name: Enforce non-root and minimal runtime images
         run: |
           test "$(docker image inspect "$BACKEND_IMAGE_REF" --format '{{.Config.User}}')" = "10001:10001"
