@@ -46,7 +46,11 @@ RUN set -eux; \
       --with-lg-page=12 \
       --with-lg-hugepage=21 \
       | tee /build/provenance/configure-summary.txt; \
-    cp config.log /build/provenance/config.log; \
+    sed -E 's#/tmp/cc[[:alnum:]]+\.o#/tmp/ccDETERMINISTIC.o#g' \
+      config.log > /build/provenance/config.log; \
+    printf '%s\n' \
+      'GCC random temporary object names are normalized in config.log; semantic configure results are unchanged.' \
+      > /build/provenance/reproducibility-normalization.txt; \
     make -j"$(getconf _NPROCESSORS_ONLN)"
 
 FROM jemalloc-compiled AS jemalloc-tested
@@ -56,7 +60,7 @@ RUN set -eux; \
       'GCC 15 -O3 removes calls that intentionally violate aligned_alloc preconditions; upstream tests use -fno-builtin-aligned_alloc.' \
       > /build/provenance/upstream-test-compiler-flags.txt; \
     cd /build/jemalloc-5.3.0; \
-    if ! make -j2 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check \
+    if ! make -j1 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check \
       > /build/provenance/upstream-tests.txt 2>&1; then \
          cat /build/provenance/upstream-tests.txt; \
          exit 1; \

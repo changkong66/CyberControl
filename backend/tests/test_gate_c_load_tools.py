@@ -612,7 +612,9 @@ def test_jemalloc_profile_image_is_pinned_and_diagnostic_only() -> None:
 
     assert "--enable-prof" in profile
     assert "--enable-prof-libunwind" in profile
-    assert "make -j2 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check" in profile
+    assert "make -j1 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check" in profile
+    assert "ccDETERMINISTIC.o" in profile
+    assert "reproducibility-normalization.txt" in profile
     assert "upstream-test-compiler-flags.txt" in profile
     assert "2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa" in profile
     assert "555b08620f00919e9b99c98a433cfcb755359395d62622cc8ae967d6717d43a0" in profile
