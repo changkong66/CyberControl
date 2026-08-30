@@ -13,7 +13,7 @@
   "offline_supply_chain": {
     "manifest": {
       "path": "third_party/gate-c-build/manifest.json",
-      "sha256": "e72360c98521f22c7519da2bee10c61a55d28721d56976a88159f55b7388b225"
+      "sha256": "b3de3053ef4c3db67540da4cee84ea1172edfbbdd6bc5666e022defd0e04a8b7"
     },
     "base_images": {
       "path": "third_party/gate-c-build/base-images.json",
@@ -42,6 +42,14 @@
       {
         "filename": "libstdc++-15.2.0-r5.apk",
         "sha256": "14c987b556f5385a5db18376e788c75f37d85321b8dc1920d926ea7daac1d6f6"
+      },
+      {
+        "filename": "libcrypto3-3.5.8-r0.apk",
+        "sha256": "161223a16f042b8e469e9441291e071464fd91d4f4bbe6f496ee8d0abd4e0701"
+      },
+      {
+        "filename": "libssl3-3.5.8-r0.apk",
+        "sha256": "aca521e5ae4a321322a9d47ed64a1775f5ab1ffd215d1e9fc0433c58f7bfd037"
       }
     ]
   }

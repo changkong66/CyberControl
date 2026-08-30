@@ -48,6 +48,8 @@ ARG SOURCE_DATE_EPOCH=0
 COPY third_party/gate-c-build/apk/jemalloc-5.3.0-r6.apk \
     third_party/gate-c-build/apk/libgcc-15.2.0-r5.apk \
     third_party/gate-c-build/apk/libstdc++-15.2.0-r5.apk \
+    third_party/gate-c-build/apk/libcrypto3-3.5.8-r0.apk \
+    third_party/gate-c-build/apk/libssl3-3.5.8-r0.apk \
     /tmp/locked-apks/
 
 LABEL org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA} \
@@ -68,11 +70,17 @@ RUN printf '%s  %s\n' \
         /tmp/locked-apks/libgcc-15.2.0-r5.apk \
         14c987b556f5385a5db18376e788c75f37d85321b8dc1920d926ea7daac1d6f6 \
         /tmp/locked-apks/libstdc++-15.2.0-r5.apk \
+        161223a16f042b8e469e9441291e071464fd91d4f4bbe6f496ee8d0abd4e0701 \
+        /tmp/locked-apks/libcrypto3-3.5.8-r0.apk \
+        aca521e5ae4a321322a9d47ed64a1775f5ab1ffd215d1e9fc0433c58f7bfd037 \
+        /tmp/locked-apks/libssl3-3.5.8-r0.apk \
         > /tmp/locked-apks/SHA256SUMS \
     && sha256sum -c /tmp/locked-apks/SHA256SUMS \
     && apk add --no-network --allow-untrusted \
         /tmp/locked-apks/libgcc-15.2.0-r5.apk \
         /tmp/locked-apks/libstdc++-15.2.0-r5.apk \
+        /tmp/locked-apks/libcrypto3-3.5.8-r0.apk \
+        /tmp/locked-apks/libssl3-3.5.8-r0.apk \
         /tmp/locked-apks/jemalloc-5.3.0-r6.apk \
     && rm -f /var/log/apk.log \
     && rm -rf /tmp/locked-apks \

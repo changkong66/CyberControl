@@ -436,7 +436,15 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     assert inputs["platform"] == "linux/amd64"
     assert inputs["buildkit"]["image_digest"].startswith("sha256:")
     assert inputs["buildkit"]["source_revision"] == "673b7e0196de0cac83308274b88aaed97a91af74"
-    assert len(inputs["alpine"]["backend_runtime_packages"]) == 3
+    assert {
+        package["filename"] for package in inputs["alpine"]["backend_runtime_packages"]
+    } == {
+        "jemalloc-5.3.0-r6.apk",
+        "libgcc-15.2.0-r5.apk",
+        "libstdc++-15.2.0-r5.apk",
+        "libcrypto3-3.5.8-r0.apk",
+        "libssl3-3.5.8-r0.apk",
+    }
     assert "apkindex_sha256" not in inputs["alpine"]
     assert set(inputs["base_image_roles"]) == {
         "python",

@@ -625,6 +625,8 @@ def _propagation_class(section: str, path: Path) -> str:
         "jemalloc-5.3.0-r6.apk",
         "libgcc-15.2.0-r5.apk",
         "libstdc++-15.2.0-r5.apk",
+        "libcrypto3-3.5.8-r0.apk",
+        "libssl3-3.5.8-r0.apk",
     }:
         return "RUNTIME_COPIED"
     if section == "apk" and name in {

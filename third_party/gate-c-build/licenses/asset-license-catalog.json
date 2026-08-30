@@ -169,6 +169,18 @@
       "version": "1.0.8-r6"
     },
     {
+      "component": "libcrypto3",
+      "distribution_scope": "apk",
+      "evidence": "Alpine .PKGINFO",
+      "path": "third_party/gate-c-build/apk/libcrypto3-3.5.8-r0.apk",
+      "propagation_class": "RUNTIME_COPIED",
+      "sha256": "161223a16f042b8e469e9441291e071464fd91d4f4bbe6f496ee8d0abd4e0701",
+      "size_bytes": 1978546,
+      "source": "https://www.openssl.org/",
+      "spdx_license_id": "Apache-2.0",
+      "version": "3.5.8-r0"
+    },
+    {
       "component": "libgcc",
       "distribution_scope": "apk",
       "evidence": "Alpine package runtime license files and GCC Runtime Library Exception",
@@ -215,6 +227,18 @@
       "source": "https://www.darwinsys.com/file/",
       "spdx_license_id": "BSD-2-Clause",
       "version": "5.47-r2"
+    },
+    {
+      "component": "libssl3",
+      "distribution_scope": "apk",
+      "evidence": "Alpine .PKGINFO",
+      "path": "third_party/gate-c-build/apk/libssl3-3.5.8-r0.apk",
+      "propagation_class": "RUNTIME_COPIED",
+      "sha256": "aca521e5ae4a321322a9d47ed64a1775f5ab1ffd215d1e9fc0433c58f7bfd037",
+      "size_bytes": 379265,
+      "source": "https://www.openssl.org/",
+      "spdx_license_id": "Apache-2.0",
+      "version": "3.5.8-r0"
     },
     {
       "component": "libstdc++",
