@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $ProgressPreference = "SilentlyContinue"
+$env:CI = "true"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $RepositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
@@ -160,8 +161,13 @@ try {
     ) -Description "uv frozen synchronization"
 
     Write-Gate "Conventional Commit subject policy"
+    $commitBase = (& $Git merge-base HEAD origin/main).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $commitBase) {
+        throw "Unable to resolve the origin/main merge base for commit validation."
+    }
     Invoke-Native -Executable $Uv -Arguments @(
         "run", "--frozen", "python", "tools/validate_commit_messages.py",
+        "--base", $commitBase,
         "--head", "HEAD"
     ) -Description "commit subject validation"
 
