@@ -162,10 +162,12 @@ remain version controlled.
 
 ## 5. Protected-branch configuration
 
-`main` must require pull requests, an owner review, conversation resolution, and the
-status check named **Release quality redline**. Force pushes and branch deletion are
-disabled. The final job uses `always()` and explicitly rejects failed, cancelled, or
-skipped prerequisites, preventing a bypass through conditional job execution.
+`main` must require pull requests, an owner review, conversation resolution, and both
+the **Container build, runtime, SBOM, and vulnerability scan** and **Release quality
+redline** status checks. Force pushes and branch deletion are disabled. The final job
+uses `always()` and explicitly rejects failed, cancelled, or skipped prerequisites,
+preventing a bypass through conditional job execution. The workflow also listens to
+`merge_group`, so merge-queue validation evaluates the same immutable checks.
 
 Repository administrators may re-run transient network failures, but may not merge
 with a waived gate. Emergency changes use a reviewed corrective branch and the same

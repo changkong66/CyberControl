@@ -171,6 +171,14 @@ try {
         "--head", "HEAD"
     ) -Description "commit subject validation"
 
+    Write-Gate "Gate C process metadata on changed evidence"
+    Invoke-Native -Executable $Uv -Arguments @(
+        "run", "--frozen", "python", "tools/validate_gate_c_metadata.py",
+        "--base", $commitBase,
+        "--head", "HEAD",
+        "--output", "artifacts/quality-gates/process-metadata-validation.json"
+    ) -Description "Gate C process metadata validation"
+
     Write-Gate "Ruff static and format redlines"
     Invoke-Native -Executable $Uv -Arguments @("run", "--frozen", "ruff", "check", ".") `
         -Description "Ruff static analysis"

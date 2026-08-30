@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - "codex/**"
+  merge_group:
   workflow_dispatch:
 
 concurrency:
@@ -43,6 +44,19 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: false
+      - name: Enforce process metadata on changed Gate C evidence
+        env:
+          GATE_C_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
+          GATE_C_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'merge_group' && github.event.merge_group.head_sha || github.sha }}
+        run: |
+          base="$GATE_C_BASE_SHA"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            base="$(git merge-base "$GATE_C_HEAD_SHA" "origin/${{ github.event.repository.default_branch }}")"
+          fi
+          python tools/validate_gate_c_metadata.py \
+            --base "$base" \
+            --head "$GATE_C_HEAD_SHA" \
+            --output artifacts/quality-gates/process-metadata-validation.json
       - name: Install pinned uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
@@ -55,8 +69,8 @@ jobs:
           uv sync --frozen --all-packages --all-extras
       - name: Enforce Conventional Commit subjects
         env:
-          COMMIT_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-          COMMIT_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          COMMIT_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
+          COMMIT_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'merge_group' && github.event.merge_group.head_sha || github.sha }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if [[ "$COMMIT_BASE" =~ ^0+$ ]]; then

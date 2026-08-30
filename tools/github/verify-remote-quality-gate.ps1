@@ -78,6 +78,12 @@ $Redline = @($jobs.jobs) |
 if ($null -eq $Redline -or $Redline.conclusion -ne "success") {
     throw "The required 'Release quality redline' job did not pass."
 }
+$Container = @($jobs.jobs) |
+    Where-Object { $_.name -eq "Container build, runtime, SBOM, and vulnerability scan" } |
+    Select-Object -First 1
+if ($null -eq $Container -or $Container.conclusion -ne "success") {
+    throw "The required container security job did not pass."
+}
 
 $EvidenceRoot = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..\..")) `
     "artifacts\quality-gates"
@@ -92,6 +98,8 @@ $Evidence = [ordered]@{
     workflow_conclusion = $Run.conclusion
     redline_job_id = $Redline.id
     redline_conclusion = $Redline.conclusion
+    container_job_id = $Container.id
+    container_conclusion = $Container.conclusion
     verified_at_utc = [DateTime]::UtcNow.ToString("o")
 }
 $Evidence | ConvertTo-Json -Depth 5 | Set-Content `

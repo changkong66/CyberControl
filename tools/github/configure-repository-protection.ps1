@@ -7,7 +7,10 @@ param(
     [ValidatePattern('^[A-Za-z0-9._/-]+$')]
     [string]$Branch = "main",
 
-    [string]$RequiredContext = "Release quality redline",
+    [string[]]$RequiredContext = @(
+        "Release quality redline",
+        "Container build, runtime, SBOM, and vulnerability scan"
+    ),
 
     [string]$MainRulesetName = "main-release-governance",
 
@@ -19,6 +22,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+$RequiredContext = @(
+    $RequiredContext |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        Select-Object -Unique
+)
+if ($RequiredContext.Count -eq 0) {
+    throw "At least one required status context must be configured."
+}
 
 if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
     throw "GH_TOKEN with repository administration permission is required."
@@ -126,12 +139,12 @@ $RequireLastPushApproval = $MaintenanceMode -eq "Team"
 $classicProtection = @{
     required_status_checks = @{
         strict = $true
-        checks = @(
-            @{
-                context = $RequiredContext
-                app_id = -1
-            }
-        )
+        checks = @($RequiredContext | ForEach-Object {
+                @{
+                    context = $_
+                    app_id = -1
+                }
+            })
     }
     enforce_admins = $true
     required_pull_request_reviews = @{
@@ -187,9 +200,9 @@ $mainRuleset = @{
             parameters = @{
                 do_not_enforce_on_create = $false
                 strict_required_status_checks_policy = $true
-                required_status_checks = @(
-                    @{ context = $RequiredContext }
-                )
+                required_status_checks = @($RequiredContext | ForEach-Object {
+                        @{ context = $_ }
+                    })
             }
         }
     )
@@ -232,8 +245,10 @@ if ($PSCmdlet.ShouldProcess(
 $verifiedClassic = Invoke-GitHubJson -Method GET `
     -Uri "$ApiRoot/branches/$EncodedBranch/protection"
 $contexts = @($verifiedClassic.required_status_checks.contexts)
-if ($contexts -notcontains $RequiredContext) {
-    throw "Required status context '$RequiredContext' is absent after protection update."
+foreach ($context in $RequiredContext) {
+    if ($contexts -notcontains $context) {
+        throw "Required status context '$context' is absent after protection update."
+    }
 }
 $requiredFlags = @(
     $verifiedClassic.enforce_admins.enabled,
@@ -325,9 +340,9 @@ $verifiedMainStatusContexts = @(
 )
 if (
     -not $verifiedMainStatusParameters.strict_required_status_checks_policy -or
-    $verifiedMainStatusContexts -notcontains $RequiredContext
+    @($RequiredContext | Where-Object { $verifiedMainStatusContexts -notcontains $_ }).Count -ne 0
 ) {
-    throw "Main ruleset does not strictly require '$RequiredContext'."
+    throw "Main ruleset does not strictly require all configured status contexts."
 }
 $tagRuleTypes = @($verifiedTag.rules | ForEach-Object { $_.type })
 if ($tagRuleTypes -notcontains "deletion" -or $tagRuleTypes -notcontains "non_fast_forward") {
@@ -349,7 +364,8 @@ $evidence = [ordered]@{
     visibility = $repositoryState.visibility
     branch = $Branch
     maintenance_mode = $MaintenanceMode
-    required_context = $RequiredContext
+    required_context = $RequiredContext[0]
+    required_contexts = $RequiredContext
     classic = [ordered]@{
         strict_status_checks = $verifiedClassic.required_status_checks.strict
         administrators_enforced = $verifiedClassic.enforce_admins.enabled
