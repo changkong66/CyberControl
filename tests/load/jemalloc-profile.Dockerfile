@@ -110,6 +110,7 @@ COPY third_party/gate-c-build/apk/binutils-2.45.1-r1.apk \
     third_party/gate-c-build/apk/zstd-libs-1.5.7-r2.apk \
     /tmp/diagnostic-apks/
 RUN apk add --no-network --allow-untrusted /tmp/diagnostic-apks/*.apk \
+    && rm -f /var/log/apk.log \
     && rm -rf /tmp/diagnostic-apks
 
 COPY --from=jemalloc-tested /out/opt/cybercontrol/jemalloc-prof \

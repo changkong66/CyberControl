@@ -342,6 +342,12 @@ def test_backend_image_removes_wall_clock_apk_log() -> None:
     assert "rm -f /var/log/apk.log" in source
 
 
+def test_diagnostic_image_removes_wall_clock_apk_log() -> None:
+    source = (ROOT / "tests/load/jemalloc-profile.Dockerfile").read_text(encoding="utf-8")
+
+    assert "rm -f /var/log/apk.log" in source
+
+
 def test_diagnostic_build_consumes_each_independent_backend_as_an_oci_context() -> None:
     dockerfile = (ROOT / "tests" / "load" / "jemalloc-profile.Dockerfile").read_text(
         encoding="utf-8"
