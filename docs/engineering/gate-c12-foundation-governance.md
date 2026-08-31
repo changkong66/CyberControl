@@ -28,10 +28,17 @@ The protected `main` branch requires both of these exact job contexts:
 - `Release quality redline`
 
 The workflow runs for pull requests, pushes to `main` and `codex/**`, and
-GitHub merge queues through the `merge_group` event. The release redline keeps
-its `always()` aggregation and rejects every failed, cancelled or skipped
-prerequisite. The container job is required independently so a green aggregate
-cannot hide a missing container security result.
+GitHub merge queues through the `merge_group` event. Organization-owned
+repositories use a native serial Squash merge queue. GitHub rejects the
+`merge_queue` ruleset for a user-owned repository, so that platform shape uses
+the audited `STRICT_PROTECTED_SQUASH_FALLBACK`: Squash is the only merge method,
+strict required checks reject stale heads, and the next PR must revalidate
+against the newly merged main. The workflow retains `merge_group` support so
+native queue activation requires no workflow change after an organization
+transfer. The release redline keeps its `always()` aggregation and rejects
+every failed, cancelled or skipped prerequisite. The container job is required
+independently so a green aggregate cannot hide a missing container security
+result.
 
 ## Infrastructure Abort Classification
 
