@@ -1,4 +1,4 @@
-# CyberControl Gate C Twelfth ADR 0032 D1 Capacity Recovery And Calibration
+# CyberControl Gate C Twelfth Trusted Foundation Closure And D1 Calibration
 
 Process Version: `Gate-C-12-v1.0`
 
@@ -9,9 +9,10 @@ D-G remain locked.
 
 ## Audited Parent Boundary
 
-- Protected main: `d2bee3861adf1129f80aae9b10d4709610a69251`
-- Tree: `69eed0310296f95718660dfd798ea6262bbac291`
-- Protected-main CI: Run `32875417540`, 8/8
+- Verified protected main represented by this snapshot:
+  `70b6466f238887676ff4a0c1482923354ef8bd26`
+- Tree: `abdf8eb9d1226cdfe80eeacda236df0ea7b33c14`
+- Protected-main CI: Run `33357703713`, 8/8
 - Product source: `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
 - Last formal Gate C source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Frozen threshold SHA256:
@@ -21,7 +22,7 @@ D-G remain locked.
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Formal attempts: 12
-- `baseline_history`: 19 entries, ending at diagnostic-capability PR #96
+- `baseline_history`: 23 entries, ending at governance hotfix PR #102
 
 ADR 0032 design PR #95 passed push attempt 2, pull-request and protected-main
 Runs `32858328460`, `32859688307` and `32860487073`, each 8/8, and Squash
@@ -29,6 +30,15 @@ Merged as `2c9d7debb2ba176f0688138d9519dca8805b5a6c`. Diagnostic-capability PR #
 passed push, pull-request and protected-main Runs `32874073910`, `32874795456`
 and `32875417540`, each 8/8, and Squash Merged as the protected main above.
 Neither changes product source or formal evidence.
+
+Trusted-foundation PR #100, governance PR #101 and UTF-8 hotfix PR #102 passed
+push, pull-request and protected-main runs
+`33350927582/33350950282/33351591565`,
+`33355555623/33355558236/33356155706` and
+`33357053660/33357082843/33357703713`, each 8/8. They merged as
+`10c6888454860155d24ad3947a9926c648c63783`,
+`63900736b537c60864f24a24cc312e48d564c2b8` and the protected main above.
+They do not change product source or formal evidence.
 
 The eleventh formal run remains M2. All workload stages, Outbox and
 zero-tolerance controls passed; the only failed control was API cgroup recovery
@@ -52,7 +62,23 @@ This closure authorizes diagnostic calibration only. Product remediation,
 PreflightSmoke, formal Gate C and Gate D-G remain locked. No owner may be
 inferred from tooling availability or the rejected ADR 0030 package.
 
-## D1 Capacity Gate
+## Trusted Foundation Final Closure Gate
+
+The current non-acceptance engineering package is immutable prerelease
+`379521605`, asset `537480740`, size `36710`, SHA256
+`e6d3ef5a04e9f1f39438266e85e71e709859f4bcd1a0c66b1adbe1ee0fedc137`.
+It proves `MIGRATION_VALIDATED`, 13/13 formal volumes, zero running business
+containers, repository protection, offline supply chain, three-root capacity
+and source-bound locks for `70b6466...`.
+
+Do not start D1 from this committed snapshot alone. First Squash Merge this
+status PR, require protected-main 8/8, generate its post-merge closure receipt,
+fetch that exact new main, rebuild both image-lock tracks with two fresh
+network-isolated builders, build the current audit index and require
+`verify-d1-readiness` to emit `PASS` with scope `D1_ONLY`. The status PR cannot
+self-reference its future merge SHA, so this external sequence is mandatory.
+
+## D1 Capacity And Image Gate
 
 The latest manifest-driven cleanup receipt is
 `D:\CyberControlAcceptance\phase7\gate-c\diagnostics\gate-c12-capacity-cleanup-20260825T171029Z\cleanup-receipt.json`,
@@ -62,15 +88,20 @@ Its pre-cleanup manifest SHA256 is
 No prune, formal-volume deletion, evidence-image deletion or stop of the five
 development containers occurred.
 
-D: has `10.823 GiB` free, below the `15 GiB` admission floor. D1 is
-`INFRA_ABORTED_CAPACITY`. Do not build images or run any calibration until
-drive D has at least `15 GiB` free and the protected-main/environment checks pass
-again. The same proven infrastructure cause may be retried at most twice and
-does not consume a design-failure slot or append `gate_c_attempts`.
+The post-build D/F/Docker-internal free-space snapshot is
+`146.205/327.564/827.397 GiB`; all targets are `NORMAL` against the 15/8/5 GiB
+policy. Re-sample all three roots immediately before D1. Any target below the
+15 GiB admission floor blocks execution; the same proven infrastructure cause
+may be retried at most twice and does not consume a design-failure slot or
+append `gate_c_attempts`.
 
-After capacity admission, fetch current `origin/main`, create a new exact-main
-isolated worktree, and build a source-bound all-service normal image lock plus
-the separate diagnostic image role. Verify every digest before execution.
+The pre-status exact-main normal/diagnostic lock SHA256 values are
+`3d35955a2edd961f9364fca32f40d0dc9bbb8ab85d1f2fe4c97d550e6220d1f7` and
+`2d9bf585972a3d0e89c2931f33187b14a98ea3f1d81698796e072355fff83734`;
+build receipt SHA256 is
+`e81a26cf4ecb1747071bc892a8ac5a10b7a4e4a625c1e96c8262eecdbbe1db1e`.
+They prove reproducibility but must be superseded by final locks bound to the
+status-merged main before D1 execution.
 
 ## Exact D1 Diagnostic Scope
 
