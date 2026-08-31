@@ -9,6 +9,10 @@ param(
 
     [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032-l1",
 
+    [string]$DockerDataRoot = "F:\Docker\DockerDesktopWSL",
+
+    [string]$DockerInternalRoot = "/mnt/docker-desktop-disk",
+
     [ValidateRange(1, 65535)]
     [int]$PostgresHostPort = 55432,
 
@@ -23,6 +27,8 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+. (Join-Path $PSScriptRoot "gate-c-capacity.ps1")
+
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $gateRunner = Join-Path $PSScriptRoot "run-phase7-gate-c.ps1"
 $comparisonTool = Join-Path $root "tests\load\gate_c\rss_l1_calibration_compare.py"
@@ -33,6 +39,7 @@ $gateCompose = Join-Path $root "tests\load\docker-compose.gate-c.yml"
 $boundedCompose = Join-Path $root "tests\load\docker-compose.gate-c-bounded-memory-inventory.yml"
 $heartbeatCompose = Join-Path $root "tests\load\docker-compose.gate-c-event-loop-heartbeat.yml"
 $processVersion = "Gate-C-12-v1.0"
+$capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
 [double]$capacityAdmissionGiB = 15.0
 [double]$capacityWarningGiB = 8.0
 [double]$capacityStopGiB = 5.0
@@ -79,27 +86,15 @@ function Write-NewJson {
 }
 
 function Get-CapacitySnapshot {
-    $driveRoot = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($ResultsRoot))
-    $driveName = $driveRoot.TrimEnd('\').TrimEnd(':')
-    $freeBytes = [int64](Get-PSDrive -Name $driveName -ErrorAction Stop).Free
-    $state = if ($freeBytes -lt [int64]($capacityStopGiB * 1GB)) {
-        "HARD_STOP"
-    }
-    elseif ($freeBytes -lt [int64]($capacityWarningGiB * 1GB)) {
-        "WARNING"
-    }
-    else {
-        "NORMAL"
-    }
-    return [ordered]@{
-        free_bytes = $freeBytes
-        free_gib = [math]::Round([double]$freeBytes / 1GB, 3)
-        admission_gib = $capacityAdmissionGiB
-        warning_gib = $capacityWarningGiB
-        stop_gib = $capacityStopGiB
-        state = $state
-        sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")
-    }
+    return Get-GateCMultiRootCapacitySnapshot `
+        -ResultsRoot $ResultsRoot `
+        -DockerDataRoot $DockerDataRoot `
+        -DockerInternalRoot $DockerInternalRoot `
+        -PolicyRevision $capacityPolicyRevision `
+        -AdmissionGiB $capacityAdmissionGiB `
+        -WarningGiB $capacityWarningGiB `
+        -StopGiB $capacityStopGiB `
+        -ProjectName $projectName
 }
 
 function Assert-PriorArm {
@@ -244,9 +239,7 @@ function Remove-ArmResources {
         archived_intermediates_removed = $true
         cleanup_compose_log_sha256 = $cleanupLogSha256
         capacity_after_cleanup = $capacity
-        next_arm_admission_ready = (
-            [int64]$capacity.free_bytes -ge [int64]($capacityAdmissionGiB * 1GB)
-        )
+        next_arm_admission_ready = [bool]$capacity.admission_ready
         completed_at_utc = (Get-Date).ToUniversalTime().ToString("o")
     })
 }
@@ -290,7 +283,7 @@ if ($sourceCommit -ne $originMain -or $status.Count -ne 0) {
 if (
     $imageLock.source.commit -ne $sourceCommit -or
     $imageLock.source.tree -ne $sourceTree -or
-    [int64]$capacityAtStart.free_bytes -lt [int64]($capacityAdmissionGiB * 1GB)
+    $capacityAtStart.admission_ready -ne $true
 ) {
     throw "INFRA_ABORTED: L1 source, image lock or 15 GiB capacity admission failed."
 }
@@ -315,12 +308,15 @@ Write-NewJson -Path $wrapperMetadataPath -Value ([ordered]@{
     capacity_at_start = $capacityAtStart
     started_at_utc = (Get-Date).ToUniversalTime().ToString("o")
 })
+Copy-Item -LiteralPath $wrapperMetadataPath -Destination (Join-Path $armDirectory "execution-context.json")
 
 $runnerArguments = @(
     "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $gateRunner,
     "-Mode", "DiagnosticStages",
     "-ProjectName", $projectName,
     "-ResultsRoot", $rawResultsRoot,
+    "-DockerDataRoot", $DockerDataRoot,
+    "-DockerInternalRoot", $DockerInternalRoot,
     "-PostgresVolumeName", $volumeName,
     "-PostgresHostPort", [string]$PostgresHostPort,
     "-DiagnosticStageNames", "ramp-200",

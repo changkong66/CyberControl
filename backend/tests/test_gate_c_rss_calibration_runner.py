@@ -51,6 +51,8 @@ def test_calibration_and_l1_powershell_scripts_parse() -> None:
         ROOT / "tools" / "windows" / "run-gate-c-rss-l1-calibration-sequence.ps1",
         ROOT / "tools" / "windows" / "invoke-gate-c-bounded-inventory-signal.ps1",
         ROOT / "tools" / "windows" / "run-phase7-gate-c.ps1",
+        ROOT / "tools" / "windows" / "watch-gate-c-capacity.ps1",
+        ROOT / "tools" / "windows" / "gate-c-capacity.ps1",
     )
     for script in scripts:
         command = (

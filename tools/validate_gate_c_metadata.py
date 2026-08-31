@@ -14,6 +14,9 @@ REPORT_SCHEMA = "cybercontrol.gate-c-process-metadata-validation.v1"
 _PROCESS_VERSION_LINE = re.compile(
     rf"(?im)^\s*process version\s*:\s*`?{re.escape(PROCESS_VERSION)}`?\s*$"
 )
+_YAML_PROCESS_VERSION_LINE = re.compile(
+    rf"(?im)^\s*process_version\s*:\s*['\"]?{re.escape(PROCESS_VERSION)}['\"]?\s*$"
+)
 _GOVERNED_PREFIXES = (
     "docs/adr/",
     "docs/diagnostics/",
@@ -37,6 +40,20 @@ def _run_git(root: Path, *arguments: str) -> str:
 def changed_paths(root: Path, base: str, head: str) -> list[str]:
     output = _run_git(root, "diff", "--name-only", "--diff-filter=AMRT", base, head)
     return sorted({line.strip().replace("\\", "/") for line in output.splitlines() if line.strip()})
+
+
+def immutable_path_mutations(root: Path, base: str, head: str) -> list[dict[str, str]]:
+    output = _run_git(root, "diff", "--name-status", "--diff-filter=DR", base, head)
+    mutations: list[dict[str, str]] = []
+    for line in output.splitlines():
+        fields = line.strip().split("\t")
+        if not fields:
+            continue
+        status = fields[0]
+        source = fields[1].replace("\\", "/") if len(fields) > 1 else ""
+        if source and is_governed_path(source):
+            mutations.append({"status": status, "path": source})
+    return mutations
 
 
 def is_governed_path(path: str) -> bool:
@@ -64,6 +81,10 @@ def validate_document(path: Path, content: str) -> dict[str, Any]:
                 f"found {document.get('process_version')!r}"
             )
         return {"path": path.as_posix(), "format": "json", "validated": True}
+    if suffix in {".yaml", ".yml"}:
+        if not _YAML_PROCESS_VERSION_LINE.search(content):
+            raise ValueError(f"{path} must declare process_version: {PROCESS_VERSION}")
+        return {"path": path.as_posix(), "format": suffix.removeprefix("."), "validated": True}
     if not _PROCESS_VERSION_LINE.search(content):
         raise ValueError(f"{path} must contain a Process Version: {PROCESS_VERSION} declaration")
     return {"path": path.as_posix(), "format": suffix.removeprefix("."), "validated": True}
@@ -71,9 +92,17 @@ def validate_document(path: Path, content: str) -> dict[str, Any]:
 
 def validate_changed_documents(root: Path, base: str, head: str) -> dict[str, Any]:
     paths = changed_paths(root, base, head)
+    immutable_mutations = immutable_path_mutations(root, base, head)
     governed = [Path(path) for path in paths if is_governed_path(path)]
     documents: list[dict[str, Any]] = []
     failures: list[dict[str, str]] = []
+    failures.extend(
+        {
+            "path": mutation["path"],
+            "error": "governed evidence and status paths cannot be deleted or renamed",
+        }
+        for mutation in immutable_mutations
+    )
     for path in governed:
         try:
             documents.append(validate_document(path, path.read_text(encoding="utf-8")))
@@ -86,6 +115,7 @@ def validate_changed_documents(root: Path, base: str, head: str) -> dict[str, An
         "head": head,
         "changed_paths": paths,
         "governed_documents": documents,
+        "immutable_path_mutations": immutable_mutations,
         "failures": failures,
         "passed": not failures,
     }

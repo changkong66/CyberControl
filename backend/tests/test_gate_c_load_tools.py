@@ -514,10 +514,22 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert '"INFRA_CAPACITY_WARNING"' in capacity_monitor
     assert '"INFRA_ABORTED"' in capacity_monitor
     assert '"label=com.docker.compose.project=$ProjectName"' in capacity_monitor
-    assert '"label=com.docker.compose.oneoff=True"' in capacity_monitor
+    assert '"label=com.docker.compose.oneoff=True"' not in capacity_monitor
     assert "docker stop --time 30" in capacity_monitor
+    assert "project_container_results" in capacity_monitor
+    assert "volumes_deleted = $false" in capacity_monitor
     assert "docker volume rm" not in capacity_monitor
     assert "docker system prune" not in capacity_monitor
+
+    capacity_library = (root / "tools" / "windows" / "gate-c-capacity.ps1").read_text(
+        encoding="utf-8"
+    )
+    assert '-Name "results_root"' in capacity_library
+    assert '-Name "docker_data_root"' in capacity_library
+    assert 'name = "docker_internal_root"' in capacity_library
+    assert 'distribution = "docker-desktop"' in capacity_library
+    assert 'process_version = "Gate-C-12-v1.0"' in capacity_library
+    assert "admission_ready" in capacity_library
 
     assert compose.count("cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}") == 2
     assert "cybercontrol/gate-c-mock-provider:${GATE_C_IMAGE_TAG:-unknown}" in compose
@@ -554,17 +566,32 @@ foreach ($name in $required) {{
     if ($definition.Count -ne 1) {{ throw "Expected one function named $name." }}
     Invoke-Expression $definition[0].Extent.Text
 }}
-function Get-PSDrive {{
-    [CmdletBinding()]
-    param([string]$Name)
-    return [pscustomobject]@{{ Free = $script:testFreeBytes }}
+function Get-GateCMultiRootCapacitySnapshot {{
+    $state = if ($script:testFreeBytes -lt [int64]($capacityStopGiB * 1GB)) {{
+        "HARD_STOP"
+    }} elseif ($script:testFreeBytes -lt [int64]($capacityWarningGiB * 1GB)) {{
+        "WARNING"
+    }} else {{
+        "NORMAL"
+    }}
+    return [pscustomobject]@{{
+        state = $state
+        free_bytes = $script:testFreeBytes
+        free_gib = [math]::Round([double]$script:testFreeBytes / 1GB, 3)
+        admission_ready = ($script:testFreeBytes -ge [int64]($capacityAdmissionGiB * 1GB))
+        limiting_target = "test"
+    }}
 }}
 $probeTempRoot = [IO.Path]::GetTempPath()
 if ([string]::IsNullOrWhiteSpace($probeTempRoot)) {{
     throw "PowerShell did not provide a platform temp directory."
 }}
 $ResultsRoot = $probeTempRoot
+$DockerDataRoot = $probeTempRoot
+$DockerInternalRoot = "/test"
+$ProjectName = "capacity-test"
 $capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
+[double]$capacityAdmissionGiB = 15.0
 [double]$capacityWarningGiB = 8.0
 [double]$capacityStopGiB = 5.0
 $states = foreach ($freeGiB in @(16.0, 7.0, 4.0)) {{

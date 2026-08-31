@@ -204,6 +204,18 @@ $mainRuleset = @{
                         @{ context = $_ }
                     })
             }
+        },
+        @{
+            type = "merge_queue"
+            parameters = @{
+                check_response_timeout_minutes = 60
+                grouping_strategy = "ALLGREEN"
+                max_entries_to_build = 5
+                max_entries_to_merge = 1
+                merge_method = "SQUASH"
+                min_entries_to_merge = 1
+                min_entries_to_merge_wait_minutes = 0
+            }
         }
     )
 }
@@ -301,7 +313,8 @@ $requiredMainRuleTypes = @(
     "non_fast_forward",
     "required_linear_history",
     "pull_request",
-    "required_status_checks"
+    "required_status_checks",
+    "merge_queue"
 )
 foreach ($ruleType in $requiredMainRuleTypes) {
     if ($mainRuleTypes -notcontains $ruleType) {
@@ -344,6 +357,21 @@ if (
 ) {
     throw "Main ruleset does not strictly require all configured status contexts."
 }
+$verifiedMergeQueueRules = @(
+    $verifiedMain.rules | Where-Object { $_.type -eq "merge_queue" }
+)
+if ($verifiedMergeQueueRules.Count -ne 1) {
+    throw "Main ruleset must contain exactly one merge-queue rule."
+}
+$verifiedMergeQueueParameters = $verifiedMergeQueueRules[0].parameters
+if (
+    $verifiedMergeQueueParameters.merge_method -ne "SQUASH" -or
+    $verifiedMergeQueueParameters.grouping_strategy -ne "ALLGREEN" -or
+    [int]$verifiedMergeQueueParameters.max_entries_to_merge -ne 1 -or
+    [int]$verifiedMergeQueueParameters.min_entries_to_merge -ne 1
+) {
+    throw "Main ruleset merge queue does not enforce the approved serial squash policy."
+}
 $tagRuleTypes = @($verifiedTag.rules | ForEach-Object { $_.type })
 if ($tagRuleTypes -notcontains "deletion" -or $tagRuleTypes -notcontains "non_fast_forward") {
     throw "Tag ruleset does not block deletion and non-fast-forward updates."
@@ -360,6 +388,7 @@ if (
 
 $evidence = [ordered]@{
     schema_version = "phase1.1.repository-protection.v3"
+    process_version = "Gate-C-12-v1.0"
     repository = $Repository
     visibility = $repositoryState.visibility
     branch = $Branch
@@ -388,6 +417,13 @@ $evidence = [ordered]@{
             required_approving_reviews = $verifiedMainPullRequestParameters.required_approving_review_count
             code_owner_reviews_required = $verifiedMainPullRequestParameters.require_code_owner_review
             last_push_approval_required = $verifiedMainPullRequestParameters.require_last_push_approval
+            merge_queue = [ordered]@{
+                merge_method = $verifiedMergeQueueParameters.merge_method
+                grouping_strategy = $verifiedMergeQueueParameters.grouping_strategy
+                max_entries_to_build = $verifiedMergeQueueParameters.max_entries_to_build
+                max_entries_to_merge = $verifiedMergeQueueParameters.max_entries_to_merge
+                min_entries_to_merge = $verifiedMergeQueueParameters.min_entries_to_merge
+            }
             bypass_actors = @($verifiedMain.bypass_actors)
         }
         tags = [ordered]@{

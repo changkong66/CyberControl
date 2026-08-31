@@ -8,6 +8,10 @@ param(
 
     [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c",
 
+    [string]$DockerDataRoot = "F:\Docker\DockerDesktopWSL",
+
+    [string]$DockerInternalRoot = "/mnt/docker-desktop-disk",
+
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$')]
     [string]$PostgresVolumeName,
 
@@ -56,6 +60,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+. (Join-Path $PSScriptRoot "gate-c-capacity.ps1")
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $baseCompose = Join-Path $root "infra\docker-compose.yml"
@@ -175,35 +181,15 @@ function Get-TextSha256 {
 }
 
 function Get-HostCapacitySnapshot {
-    $resultsRootPath = [IO.Path]::GetFullPath($ResultsRoot)
-    $driveRoot = [IO.Path]::GetPathRoot($resultsRootPath)
-    if ([string]::IsNullOrWhiteSpace($driveRoot)) {
-        throw "Gate C results root has no resolvable drive: $ResultsRoot"
-    }
-    $driveName = $driveRoot.TrimEnd('\').TrimEnd(':')
-    $drive = Get-PSDrive -Name $driveName -ErrorAction Stop
-    $freeBytes = [int64]$drive.Free
-    $state = if ($freeBytes -lt [int64]($capacityStopGiB * 1GB)) {
-        "HARD_STOP"
-    }
-    elseif ($freeBytes -lt [int64]($capacityWarningGiB * 1GB)) {
-        "WARNING"
-    }
-    else {
-        "NORMAL"
-    }
-    return [pscustomobject]@{
-        schema_version = "cybercontrol.gate-c-capacity-sample.v1"
-        policy_revision = $capacityPolicyRevision
-        drive = $driveName
-        root = $driveRoot
-        sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")
-        free_bytes = $freeBytes
-        free_gib = [math]::Round([double]$freeBytes / 1GB, 3)
-        warning_gib = $capacityWarningGiB
-        stop_gib = $capacityStopGiB
-        state = $state
-    }
+    return Get-GateCMultiRootCapacitySnapshot `
+        -ResultsRoot $ResultsRoot `
+        -DockerDataRoot $DockerDataRoot `
+        -DockerInternalRoot $DockerInternalRoot `
+        -PolicyRevision $capacityPolicyRevision `
+        -AdmissionGiB $capacityAdmissionGiB `
+        -WarningGiB $capacityWarningGiB `
+        -StopGiB $capacityStopGiB `
+        -ProjectName $ProjectName
 }
 
 function Get-CapacitySnapshotState {
@@ -227,8 +213,8 @@ function Assert-CapacityAdmission {
     $snapshot = Get-HostCapacitySnapshot
     $script:capacityAtStart = $snapshot
     $script:lastCapacitySnapshot = $snapshot
-    if ([int64]$snapshot.free_bytes -lt [int64]($capacityAdmissionGiB * 1GB)) {
-        throw "Gate C capacity admission failed: $($snapshot.free_gib) GiB free on $($snapshot.drive): required $capacityAdmissionGiB GiB."
+    if ($snapshot.admission_ready -ne $true) {
+        throw "Gate C capacity admission failed: limiting target $($snapshot.limiting_target) has $($snapshot.free_gib) GiB free; every root requires $capacityAdmissionGiB GiB."
     }
     return $snapshot
 }
@@ -295,11 +281,14 @@ function Start-CapacityMonitor {
         "-NonInteractive",
         "-File", $capacityMonitorPath,
         "-ResultsRoot", $ResultsRoot,
+        "-DockerDataRoot", $DockerDataRoot,
+        "-DockerInternalRoot", $DockerInternalRoot,
         "-RunDirectory", $runDirectory,
         "-ProjectName", $ProjectName,
         "-StopFile", $script:capacityMonitorStopFile,
         "-ParentProcessId", [string]$PID,
         "-PolicyRevision", $capacityPolicyRevision,
+        "-AdmissionGiB", [string]$capacityAdmissionGiB,
         "-WarningGiB", [string]$capacityWarningGiB,
         "-StopGiB", [string]$capacityStopGiB,
         "-SampleIntervalSeconds", "5"
@@ -331,6 +320,7 @@ function Stop-CapacityMonitor {
     Update-LatestCapacitySnapshot
     [ordered]@{
         schema_version = "cybercontrol.gate-c-capacity-monitor-exit.v1"
+        process_version = $processVersion
         policy_revision = $capacityPolicyRevision
         captured_at_utc = (Get-Date).ToUniversalTime().ToString("o")
         exit_code = $script:capacityMonitorProcess.ExitCode
@@ -1213,7 +1203,7 @@ Copy-Item -LiteralPath (Join-Path $runDirectory "execution-metadata.json") `
     -Destination (Join-Path $runDirectory "execution-context.json")
 
 Set-Content -LiteralPath (Join-Path $runDirectory "capacity-start.json") `
-    -Value ($capacitySnapshot | ConvertTo-Json -Depth 4) -Encoding UTF8
+    -Value ($capacitySnapshot | ConvertTo-Json -Depth 12) -Encoding UTF8
 
 $existingVolume = @(& docker volume ls --filter "name=^${volumeName}$" --format "{{.Name}}")
 if ($existingVolume -contains $volumeName) {
@@ -1378,7 +1368,7 @@ try {
     }
 
     foreach ($stage in $selectedStages) {
-        Assert-CapacityReserve | ConvertTo-Json -Depth 4 |
+        Assert-CapacityReserve | ConvertTo-Json -Depth 12 |
             Set-Content -LiteralPath (Join-Path $runDirectory "capacity-before-$([string]$stage.name).json") -Encoding UTF8
         $stageName = [string]$stage.name
         $stageDirectory = Join-Path $runDirectory "stages\$stageName"
