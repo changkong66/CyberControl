@@ -387,6 +387,7 @@ $execution = [ordered]@{
     started_at_utc = (Get-Date).ToUniversalTime().ToString("o")
 }
 Write-NewJson -Path (Join-Path $evidenceDirectory "execution-metadata.json") -Value $execution
+Write-NewJson -Path (Join-Path $evidenceDirectory "execution-context.json") -Value $execution
 
 $env:GATE_C_POSTGRES_IMAGE = [string]$imageLock.services.postgres.reference
 $env:GATE_C_DIAGNOSTIC_IMAGE_REFERENCE = [string]$diagnostic.reference

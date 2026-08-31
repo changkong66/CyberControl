@@ -1,15 +1,38 @@
-ARG PYTHON_IMAGE=python:3.11-alpine@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
+ARG PYTHON_IMAGE=cybercontrol/gate-c-base-python:3.11@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
 
 FROM ${PYTHON_IMAGE} AS builder
 
-ARG UV_VERSION=0.11.28
-ENV UV_LINK_MODE=copy
+ARG SOURCE_DATE_EPOCH=0
+ENV UV_NO_NETWORK=1 \
+    UV_LINK_MODE=copy \
+    SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
 WORKDIR /app
-RUN python -m pip install "uv==${UV_VERSION}"
+COPY third_party/gate-c-build/sources/uv-0.11.28-x86_64-unknown-linux-musl.tar.gz /tmp/uv.tar.gz
+RUN tar -xzf /tmp/uv.tar.gz -C /tmp \
+    && install -m 0555 /tmp/uv-x86_64-unknown-linux-musl/uv /usr/local/bin/uv \
+    && rm -rf /tmp/uv.tar.gz /tmp/uv-x86_64-unknown-linux-musl \
+    && uv --version | grep -q '^uv 0\.11\.28 '
+COPY third_party/gate-c-build/python-wheelhouse /opt/cybercontrol/wheelhouse
+RUN sed -e '/^zope-interface==8.5/,/# via gevent/d' \
+      /opt/cybercontrol/wheelhouse/gate-c-load-requirements.txt \
+      > /tmp/gate-c-load-linux-requirements.txt
 COPY pyproject.toml uv.lock .python-version /app/
 COPY backend /app/backend
 COPY packages/contracts-python /app/packages/contracts-python
-RUN uv sync --frozen --no-dev --all-packages --no-editable --extra load \
+RUN python -m pip install --no-index --find-links /opt/cybercontrol/wheelhouse \
+        hatchling==1.27.0 \
+    && mkdir -p /tmp/workspace-wheels \
+    && python -m pip wheel --no-index --no-deps --no-build-isolation \
+        --wheel-dir /tmp/workspace-wheels \
+        /app/packages/contracts-python /app/backend \
+    && uv venv /app/.venv \
+    && uv pip install --python /app/.venv/bin/python --offline --no-index \
+        --find-links /opt/cybercontrol/wheelhouse \
+        --requirements /tmp/gate-c-load-linux-requirements.txt \
+    && uv pip install --python /app/.venv/bin/python --offline --no-index \
+        --no-deps /opt/cybercontrol/wheelhouse/zope_interface-8.5-cp311-cp311-linux_x86_64.whl \
+    && uv pip install --python /app/.venv/bin/python --offline --no-index \
+        --no-deps /tmp/workspace-wheels/*.whl \
     && find /app/.venv -path '*/site-packages/*.dist-info/uv_cache.json' \
         -type f -delete \
     && find /app/.venv -path '*/site-packages/*.dist-info/RECORD' \
@@ -23,6 +46,10 @@ ARG CYBERCONTROL_PRODUCT_SOURCE_SHA=unknown
 ARG CYBERCONTROL_ENGINEERING_BASELINE_SHA=unknown
 ARG CYBERCONTROL_PROCESS_VERSION=unknown
 
+COPY third_party/gate-c-build/apk/libcrypto3-3.5.8-r0.apk \
+    third_party/gate-c-build/apk/libssl3-3.5.8-r0.apk \
+    /tmp/locked-apks/
+
 LABEL org.opencontainers.image.revision=${CYBERCONTROL_SOURCE_SHA} \
     com.cybercontrol.source-tree=${CYBERCONTROL_SOURCE_TREE} \
     com.cybercontrol.product-source=${CYBERCONTROL_PRODUCT_SOURCE_SHA} \
@@ -33,7 +60,19 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONPATH=/app/tests/load \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
-RUN addgroup -S -g 10003 gatec \
+RUN printf '%s  %s\n' \
+        161223a16f042b8e469e9441291e071464fd91d4f4bbe6f496ee8d0abd4e0701 \
+        /tmp/locked-apks/libcrypto3-3.5.8-r0.apk \
+        aca521e5ae4a321322a9d47ed64a1775f5ab1ffd215d1e9fc0433c58f7bfd037 \
+        /tmp/locked-apks/libssl3-3.5.8-r0.apk \
+        > /tmp/locked-apks/SHA256SUMS \
+    && sha256sum -c /tmp/locked-apks/SHA256SUMS \
+    && apk add --no-network --allow-untrusted \
+        /tmp/locked-apks/libcrypto3-3.5.8-r0.apk \
+        /tmp/locked-apks/libssl3-3.5.8-r0.apk \
+    && rm -f /var/log/apk.log \
+    && rm -rf /tmp/locked-apks \
+    && addgroup -S -g 10003 gatec \
     && adduser -S -D -H -u 10003 -G gatec -h /app -s /sbin/nologin gatec \
     && mkdir -p /app/tests/load /results \
     && chown -R gatec:gatec /app /results

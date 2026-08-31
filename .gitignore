@@ -47,6 +47,10 @@ dist/
 .vite/
 .playwright-cli/
 *.tsbuildinfo
+third_party/gate-c-build/pnpm-store/work/
+third_party/gate-c-build/pnpm-store/linuxwork/
+third_party/gate-c-build/pnpm-store/v11/
+third_party/gate-c-build/python-wheelhouse/repro-*/
 coverage/
 test-results/
 playwright-report/

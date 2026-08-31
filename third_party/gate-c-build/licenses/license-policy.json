@@ -1,0 +1,31 @@
+{
+  "base_image_spec": "third_party/gate-c-build/base-images.json",
+  "license_propagation_rule": {
+    "BUILD_ONLY_TRANSIENT": "Build-only inputs retain notice and source obligations but do not propagate into the runtime product image.",
+    "DIAGNOSTIC_ONLY": "Diagnostic-only inputs require a separate SBOM and are excluded from formal images.",
+    "LINKED_OR_DERIVED": "Linked, patched, or compiled outputs require a derivation and notice review.",
+    "RUNTIME_COPIED": "Inputs copied into a runtime image are governed by the runtime license policy."
+  },
+  "metadata_normalization": {
+    "Apache Software License": "Apache-2.0",
+    "Apache Software License v2": "Apache-2.0",
+    "BSD": "BSD-3-Clause",
+    "BSD 3-Clause License": "BSD-3-Clause",
+    "BSD License": "BSD-3-Clause",
+    "MIT License": "MIT",
+    "MPL 2.0": "MPL-2.0",
+    "Mozilla Public License 2.0 (MPL 2.0)": "MPL-2.0",
+    "Python Software Foundation License": "PSF-2.0",
+    "Zlib License": "Zlib"
+  },
+  "process_version": "Gate-C-12-v1.0",
+  "runtime_prohibited_families": [
+    "AGPL",
+    "GPL",
+    "SSPL",
+    "BUSL",
+    "Commons-Clause",
+    "Elastic-License"
+  ],
+  "schema_version": "cybercontrol.gate-c-build-license-policy.v1"
+}

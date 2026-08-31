@@ -7,15 +7,26 @@
   "buildkit": {
     "version": "v0.31.1",
     "image_digest": "sha256:6b59b7df63a8cb9902736f9ddf7fcff8261613d3e7449b8ea8b7537fc399c03a",
+    "local_reference": "cybercontrol/gate-c-base-buildkit:buildx-stable-1@sha256:6b59b7df63a8cb9902736f9ddf7fcff8261613d3e7449b8ea8b7537fc399c03a",
     "source_revision": "673b7e0196de0cac83308274b88aaed97a91af74"
   },
-  "python_base_image": {
-    "tag": "3.11-alpine",
-    "digest": "sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4",
-    "builder_mirrors": {
-      "a": "docker.m.daocloud.io",
-      "b": "docker.1ms.run"
+  "offline_supply_chain": {
+    "manifest": {
+      "path": "third_party/gate-c-build/manifest.json",
+      "sha256": "b3de3053ef4c3db67540da4cee84ea1172edfbbdd6bc5666e022defd0e04a8b7"
+    },
+    "base_images": {
+      "path": "third_party/gate-c-build/base-images.json",
+      "sha256": "1e4585241e5d2930396477c5693e394e429729e7037069c332a9b9ad357ff96e"
     }
+  },
+  "base_image_roles": {
+    "python": "python-base",
+    "node": "node-builder-base",
+    "nginx": "nginx-runtime-base",
+    "postgres": "postgres-runtime",
+    "keycloak": "keycloak-runtime",
+    "buildkit": "buildkit-builder"
   },
   "alpine": {
     "repository": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64",
@@ -31,11 +42,15 @@
       {
         "filename": "libstdc++-15.2.0-r5.apk",
         "sha256": "14c987b556f5385a5db18376e788c75f37d85321b8dc1920d926ea7daac1d6f6"
+      },
+      {
+        "filename": "libcrypto3-3.5.8-r0.apk",
+        "sha256": "161223a16f042b8e469e9441291e071464fd91d4f4bbe6f496ee8d0abd4e0701"
+      },
+      {
+        "filename": "libssl3-3.5.8-r0.apk",
+        "sha256": "aca521e5ae4a321322a9d47ed64a1775f5ab1ffd215d1e9fc0433c58f7bfd037"
       }
     ]
-  },
-  "external_images": {
-    "keycloak": "quay.io/keycloak/keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
-    "postgres": "postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777"
   }
 }
