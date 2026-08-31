@@ -10,6 +10,10 @@ param(
     [ValidatePattern('^[a-z0-9][a-z0-9_-]{2,62}$')]
     [string]$ProjectName,
 
+    [string]$DockerDataRoot = "F:\Docker\DockerDesktopWSL",
+
+    [string]$DockerInternalRoot = "/mnt/docker-desktop-disk",
+
     [Parameter(Mandatory = $true)]
     [string]$StopFile,
 
@@ -18,6 +22,9 @@ param(
 
     [Parameter(Mandatory = $true)]
     [string]$PolicyRevision,
+
+    [ValidateRange(1.0, 1024.0)]
+    [double]$AdmissionGiB = 15.0,
 
     [ValidateRange(1.0, 1024.0)]
     [double]$WarningGiB = 8.0,
@@ -32,6 +39,8 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+. (Join-Path $PSScriptRoot "gate-c-capacity.ps1")
+
 if ($StopGiB -ge $WarningGiB) {
     throw "Capacity stop threshold must be lower than the warning threshold."
 }
@@ -42,12 +51,6 @@ if (-not $resolvedStopFile.StartsWith($resolvedRunDirectory, [StringComparison]:
     throw "Capacity monitor stop file escaped the run directory."
 }
 
-$resultsRootPath = [IO.Path]::GetFullPath($ResultsRoot)
-$driveRoot = [IO.Path]::GetPathRoot($resultsRootPath)
-if ([string]::IsNullOrWhiteSpace($driveRoot)) {
-    throw "Gate C results root has no resolvable drive: $ResultsRoot"
-}
-$driveName = $driveRoot.TrimEnd('\').TrimEnd(':')
 $historyPath = Join-Path $resolvedRunDirectory "capacity-history.jsonl"
 $latestPath = Join-Path $resolvedRunDirectory "capacity-latest.json"
 $warningPath = Join-Path $resolvedRunDirectory "capacity-warning.json"
@@ -60,36 +63,21 @@ function Write-JsonAtomically {
     )
 
     $temporaryPath = "$Path.$PID.tmp"
-    $Value | ConvertTo-Json -Depth 8 |
+    $Value | ConvertTo-Json -Depth 12 |
         Set-Content -LiteralPath $temporaryPath -Encoding UTF8
     Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
 }
 
 function Get-CapacitySnapshot {
-    $drive = Get-PSDrive -Name $driveName -ErrorAction Stop
-    $freeBytes = [int64]$drive.Free
-    $state = if ($freeBytes -lt [int64]($StopGiB * 1GB)) {
-        "HARD_STOP"
-    }
-    elseif ($freeBytes -lt [int64]($WarningGiB * 1GB)) {
-        "WARNING"
-    }
-    else {
-        "NORMAL"
-    }
-    return [ordered]@{
-        schema_version = "cybercontrol.gate-c-capacity-sample.v1"
-        policy_revision = $PolicyRevision
-        project = $ProjectName
-        drive = $driveName
-        root = $driveRoot
-        sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")
-        free_bytes = $freeBytes
-        free_gib = [math]::Round([double]$freeBytes / 1GB, 3)
-        warning_gib = $WarningGiB
-        stop_gib = $StopGiB
-        state = $state
-    }
+    return Get-GateCMultiRootCapacitySnapshot `
+        -ResultsRoot $ResultsRoot `
+        -DockerDataRoot $DockerDataRoot `
+        -DockerInternalRoot $DockerInternalRoot `
+        -PolicyRevision $PolicyRevision `
+        -AdmissionGiB $AdmissionGiB `
+        -WarningGiB $WarningGiB `
+        -StopGiB $StopGiB `
+        -ProjectName $ProjectName
 }
 
 while ($true) {
@@ -101,12 +89,14 @@ while ($true) {
     }
 
     $snapshot = Get-CapacitySnapshot
-    Add-Content -LiteralPath $historyPath -Value ($snapshot | ConvertTo-Json -Compress) -Encoding UTF8
+    Add-Content -LiteralPath $historyPath `
+        -Value ($snapshot | ConvertTo-Json -Depth 12 -Compress) -Encoding UTF8
     Write-JsonAtomically -Path $latestPath -Value $snapshot
 
     if ($snapshot.state -eq "WARNING" -and -not (Test-Path -LiteralPath $warningPath)) {
         $warning = [ordered]@{
             schema_version = "cybercontrol.gate-c-capacity-warning.v1"
+            process_version = "Gate-C-12-v1.0"
             policy_revision = $PolicyRevision
             classification = "INFRA_CAPACITY_WARNING"
             acceptance_claim = $false
@@ -120,7 +110,6 @@ while ($true) {
         $containerResults = @()
         $containerIds = @(& docker ps `
             --filter "label=com.docker.compose.project=$ProjectName" `
-            --filter "label=com.docker.compose.oneoff=True" `
             --format "{{.ID}}")
         $enumerationExitCode = $LASTEXITCODE
         if ($enumerationExitCode -eq 0) {
@@ -137,13 +126,15 @@ while ($true) {
         }
         $hardStop = [ordered]@{
             schema_version = "cybercontrol.gate-c-capacity-hard-stop.v1"
+            process_version = "Gate-C-12-v1.0"
             policy_revision = $PolicyRevision
             classification = "INFRA_ABORTED"
             formal_gate_attempt = $false
             acceptance_claim = $false
             snapshot = $snapshot
-            oneoff_container_enumeration_exit_code = $enumerationExitCode
-            oneoff_container_results = $containerResults
+            project_container_enumeration_exit_code = $enumerationExitCode
+            project_container_results = $containerResults
+            volumes_deleted = $false
         }
         Write-JsonAtomically -Path $hardStopPath -Value $hardStop
         exit 42

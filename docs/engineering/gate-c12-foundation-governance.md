@@ -28,10 +28,17 @@ The protected `main` branch requires both of these exact job contexts:
 - `Release quality redline`
 
 The workflow runs for pull requests, pushes to `main` and `codex/**`, and
-GitHub merge queues through the `merge_group` event. The release redline keeps
-its `always()` aggregation and rejects every failed, cancelled or skipped
-prerequisite. The container job is required independently so a green aggregate
-cannot hide a missing container security result.
+GitHub merge queues through the `merge_group` event. Organization-owned
+repositories use a native serial Squash merge queue. GitHub rejects the
+`merge_queue` ruleset for a user-owned repository, so that platform shape uses
+the audited `STRICT_PROTECTED_SQUASH_FALLBACK`: Squash is the only merge method,
+strict required checks reject stale heads, and the next PR must revalidate
+against the newly merged main. The workflow retains `merge_group` support so
+native queue activation requires no workflow change after an organization
+transfer. The release redline keeps its `always()` aggregation and rejects
+every failed, cancelled or skipped prerequisite. The container job is required
+independently so a green aggregate cannot hide a missing container security
+result.
 
 ## Infrastructure Abort Classification
 
@@ -57,12 +64,15 @@ may be used to bypass a failed product or semantic control.
 
 ## Capacity And Cleanup
 
-The 15/8/5 GiB policy remains active even when storage is migrated. The
-capacity monitor covers every result root used by a run. After each diagnostic
-or validation round, the evidence package and hashes are verified first; only
-then are that round's containers, networks, PostgreSQL volume and intermediate
-logs removed. Historical formal volumes, core images and immutable evidence
-are never pruned or deleted.
+The 15/8/5 GiB policy remains active even when storage is migrated. Every
+snapshot covers the results root, the host Docker data root and
+`/mnt/docker-desktop-disk`; all three roots must pass admission. A warning on
+any root blocks stage escalation. A hard stop gracefully stops every running
+container owned by the current Compose project and never deletes a volume.
+After each diagnostic or validation round, the evidence package and hashes are
+verified first; only then are that round's containers, networks, PostgreSQL
+volume and intermediate logs removed. Historical formal volumes, core images
+and immutable evidence are never pruned or deleted.
 
 ## Evidence And State
 
@@ -79,3 +89,31 @@ the normalized `type` values `INFRA`, `STATUS`, `DIAGNOSTIC`, `REMEDIATION`,
 formal-Full-only and remains append-only. State transitions require the exact
 main SHA/tree, protected-main CI, image lock, build receipt and post-merge
 closure receipt.
+
+## Executable Governance
+
+All commands run from a clean isolated worktree. Paths outside the repository
+are supplied explicitly and become SHA-256-bound inputs in the generated JSON.
+
+```powershell
+uv run --frozen python tools/gate_c_governance.py verify-worktree `
+  --expected-ref origin/main --output artifacts/gate-c/worktree.json
+
+uv run --frozen python tools/gate_c_governance.py execution-context `
+  --capacity-snapshot D:\path\capacity-snapshot.json `
+  --classification NON_ACCEPTANCE_ENGINEERING `
+  --image-lock D:\path\normal-image-lock.json `
+  --image-lock D:\path\diagnostic-image-lock.json `
+  --output artifacts/gate-c/execution-context.json
+
+uv run --frozen python tools/gate_c_governance.py build-audit-index `
+  --evidence-root docs/system-acceptance/evidence `
+  --output artifacts/gate-c/gate-c-audit-index.json
+```
+
+`verify-history` runs in CI and rejects reordered or rewritten history, an
+unsupported new baseline type, and any new attempt that is not bound by run ID
+and product source to exactly one changed Full execution metadata record.
+`verify-d1-readiness` is the final target-one gate: it verifies exact main,
+normal and diagnostic locks, Docker migration, three-root capacity, the audit
+index and post-merge receipts. Its output authorizes D1 only.

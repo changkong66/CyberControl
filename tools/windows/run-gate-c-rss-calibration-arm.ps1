@@ -16,6 +16,10 @@ param(
 
     [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032",
 
+    [string]$DockerDataRoot = "F:\Docker\DockerDesktopWSL",
+
+    [string]$DockerInternalRoot = "/mnt/docker-desktop-disk",
+
     [ValidateRange(0, 2)]
     [int]$InfraRetryAttempt = 0,
 
@@ -26,6 +30,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+. (Join-Path $PSScriptRoot "gate-c-capacity.ps1")
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $composePath = Join-Path $root "tests\load\docker-compose.gate-c-rss-calibration.yml"
@@ -85,39 +91,21 @@ function Write-NewJson {
 }
 
 function Get-CapacitySnapshot {
-    $driveRoot = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($ResultsRoot))
-    if ([string]::IsNullOrWhiteSpace($driveRoot)) {
-        throw "ResultsRoot does not resolve to a drive."
-    }
-    $driveName = $driveRoot.TrimEnd('\').TrimEnd(':')
-    $freeBytes = [int64](Get-PSDrive -Name $driveName -ErrorAction Stop).Free
-    $state = if ($freeBytes -lt [int64]($capacityStopGiB * 1GB)) {
-        "HARD_STOP"
-    }
-    elseif ($freeBytes -lt [int64]($capacityWarningGiB * 1GB)) {
-        "WARNING"
-    }
-    else {
-        "NORMAL"
-    }
-    return [ordered]@{
-        schema_version = "cybercontrol.gate-c-capacity-sample.v1"
-        policy_revision = $capacityPolicyRevision
-        sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")
-        drive = $driveName
-        free_bytes = $freeBytes
-        free_gib = [math]::Round([double]$freeBytes / 1GB, 3)
-        admission_gib = $capacityAdmissionGiB
-        warning_gib = $capacityWarningGiB
-        stop_gib = $capacityStopGiB
-        state = $state
-    }
+    return Get-GateCMultiRootCapacitySnapshot `
+        -ResultsRoot $ResultsRoot `
+        -DockerDataRoot $DockerDataRoot `
+        -DockerInternalRoot $DockerInternalRoot `
+        -PolicyRevision $capacityPolicyRevision `
+        -AdmissionGiB $capacityAdmissionGiB `
+        -WarningGiB $capacityWarningGiB `
+        -StopGiB $capacityStopGiB `
+        -ProjectName $projectName
 }
 
 function Assert-CapacityAdmission {
     $snapshot = Get-CapacitySnapshot
-    if ([int64]$snapshot.free_bytes -lt [int64]($capacityAdmissionGiB * 1GB)) {
-        throw "Gate C capacity admission failed: $($snapshot.free_gib) GiB available."
+    if ($snapshot.admission_ready -ne $true) {
+        throw "Gate C capacity admission failed: $($snapshot.limiting_target) has $($snapshot.free_gib) GiB available."
     }
     return $snapshot
 }
@@ -187,11 +175,14 @@ function Start-CapacityMonitor {
     $arguments = @(
         "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $capacityMonitorPath,
         "-ResultsRoot", $ResultsRoot,
+        "-DockerDataRoot", $DockerDataRoot,
+        "-DockerInternalRoot", $DockerInternalRoot,
         "-RunDirectory", $evidenceDirectory,
         "-ProjectName", $projectName,
         "-StopFile", $stopFile,
         "-ParentProcessId", [string]$PID,
         "-PolicyRevision", $capacityPolicyRevision,
+        "-AdmissionGiB", [string]$capacityAdmissionGiB,
         "-WarningGiB", [string]$capacityWarningGiB,
         "-StopGiB", [string]$capacityStopGiB,
         "-SampleIntervalSeconds", "5"
@@ -218,6 +209,7 @@ function Stop-CapacityMonitor {
     $script:capacityMonitor.Refresh()
     Write-NewJson -Path (Join-Path $evidenceDirectory "capacity-monitor-exit.json") -Value ([ordered]@{
         schema_version = "cybercontrol.gate-c-capacity-monitor-exit.v1"
+        process_version = $processVersion
         captured_at_utc = (Get-Date).ToUniversalTime().ToString("o")
         exit_code = $script:capacityMonitor.ExitCode
         hard_stop = (Test-Path -LiteralPath (Join-Path $evidenceDirectory "capacity-hard-stop.json"))
@@ -275,7 +267,7 @@ function Remove-ArmResources {
         secrets_removed = (-not (Test-Path -LiteralPath $resolvedSecrets))
         archived_intermediates_removed = (-not (Test-Path -LiteralPath $resolvedEvidence))
         capacity_after_cleanup = $capacity
-        next_arm_admission_ready = ([int64]$capacity.free_bytes -ge [int64]($capacityAdmissionGiB * 1GB))
+        next_arm_admission_ready = [bool]$capacity.admission_ready
         completed_at_utc = (Get-Date).ToUniversalTime().ToString("o")
     })
 }

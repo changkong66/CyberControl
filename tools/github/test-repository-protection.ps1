@@ -118,6 +118,7 @@ try {
 
     $evidence = [ordered]@{
         schema_version = "phase1.1.repository-protection-probes.v1"
+        process_version = "Gate-C-12-v1.0"
         remote = $Remote
         branch = $Branch
         baseline_sha = $baseline

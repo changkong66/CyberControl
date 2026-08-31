@@ -131,6 +131,8 @@ if ($repositoryState.default_branch -ne $Branch) {
 if (-not $repositoryState.permissions.admin) {
     throw "The current GitHub credential does not have repository administration permission."
 }
+$repositoryOwnerType = [string]$repositoryState.owner.type
+$nativeMergeQueueAvailable = $repositoryOwnerType -eq "Organization"
 
 $RequiredApprovingReviewCount = if ($MaintenanceMode -eq "Solo") { 0 } else { 1 }
 $RequireCodeOwnerReview = $MaintenanceMode -eq "Team"
@@ -187,7 +189,7 @@ $mainRuleset = @{
         @{
             type = "pull_request"
             parameters = @{
-                allowed_merge_methods = @("squash", "rebase")
+                allowed_merge_methods = @("squash")
                 dismiss_stale_reviews_on_push = $true
                 require_code_owner_review = $RequireCodeOwnerReview
                 require_last_push_approval = $RequireLastPushApproval
@@ -205,6 +207,22 @@ $mainRuleset = @{
                     })
             }
         }
+        $(
+            if ($nativeMergeQueueAvailable) {
+                @{
+                    type = "merge_queue"
+                    parameters = @{
+                        check_response_timeout_minutes = 60
+                        grouping_strategy = "ALLGREEN"
+                        max_entries_to_build = 5
+                        max_entries_to_merge = 1
+                        merge_method = "SQUASH"
+                        min_entries_to_merge = 1
+                        min_entries_to_merge_wait_minutes = 0
+                    }
+                }
+            }
+        )
     )
 }
 
@@ -229,6 +247,14 @@ if ($PSCmdlet.ShouldProcess(
     "$Repository/$Branch",
     "Apply Classic and Repository Ruleset redlines in $MaintenanceMode mode"
 )) {
+    Invoke-GitHubJson -Method PATCH `
+        -Uri $ApiRoot `
+        -Body @{
+            allow_squash_merge = $true
+            allow_merge_commit = $false
+            allow_rebase_merge = $false
+            delete_branch_on_merge = $true
+        } | Out-Null
     Invoke-GitHubJson -Method PUT `
         -Uri "$ApiRoot/branches/$EncodedBranch/protection" `
         -Body $classicProtection | Out-Null
@@ -240,6 +266,16 @@ if ($PSCmdlet.ShouldProcess(
         } | Out-Null
     Set-RepositoryRuleset -Definition $mainRuleset | Out-Null
     Set-RepositoryRuleset -Definition $tagRuleset | Out-Null
+}
+
+$verifiedRepository = Invoke-GitHubJson -Method GET -Uri $ApiRoot
+if (
+    -not $verifiedRepository.allow_squash_merge -or
+    $verifiedRepository.allow_merge_commit -or
+    $verifiedRepository.allow_rebase_merge -or
+    -not $verifiedRepository.delete_branch_on_merge
+) {
+    throw "Repository merge controls do not enforce Squash as the only merge method."
 }
 
 $verifiedClassic = Invoke-GitHubJson -Method GET `
@@ -303,6 +339,9 @@ $requiredMainRuleTypes = @(
     "pull_request",
     "required_status_checks"
 )
+if ($nativeMergeQueueAvailable) {
+    $requiredMainRuleTypes += "merge_queue"
+}
 foreach ($ruleType in $requiredMainRuleTypes) {
     if ($mainRuleTypes -notcontains $ruleType) {
         throw "Main ruleset is missing required rule '$ruleType'."
@@ -317,9 +356,8 @@ if ($verifiedMainPullRequestRules.Count -ne 1) {
 $verifiedMainPullRequestParameters = $verifiedMainPullRequestRules[0].parameters
 $verifiedMergeMethods = @($verifiedMainPullRequestParameters.allowed_merge_methods)
 if (
-    $verifiedMergeMethods.Count -ne 2 -or
-    $verifiedMergeMethods -notcontains "squash" -or
-    $verifiedMergeMethods -notcontains "rebase" -or
+    $verifiedMergeMethods.Count -ne 1 -or
+    $verifiedMergeMethods[0] -ne "squash" -or
     -not $verifiedMainPullRequestParameters.dismiss_stale_reviews_on_push -or
     -not $verifiedMainPullRequestParameters.required_review_thread_resolution -or
     [int]$verifiedMainPullRequestParameters.required_approving_review_count -ne $RequiredApprovingReviewCount -or
@@ -344,6 +382,27 @@ if (
 ) {
     throw "Main ruleset does not strictly require all configured status contexts."
 }
+$verifiedMergeQueueRules = @(
+    $verifiedMain.rules | Where-Object { $_.type -eq "merge_queue" }
+)
+$verifiedMergeQueueParameters = $null
+if ($nativeMergeQueueAvailable) {
+    if ($verifiedMergeQueueRules.Count -ne 1) {
+        throw "Main ruleset must contain exactly one merge-queue rule."
+    }
+    $verifiedMergeQueueParameters = $verifiedMergeQueueRules[0].parameters
+    if (
+        $verifiedMergeQueueParameters.merge_method -ne "SQUASH" -or
+        $verifiedMergeQueueParameters.grouping_strategy -ne "ALLGREEN" -or
+        [int]$verifiedMergeQueueParameters.max_entries_to_merge -ne 1 -or
+        [int]$verifiedMergeQueueParameters.min_entries_to_merge -ne 1
+    ) {
+        throw "Main ruleset merge queue does not enforce the approved serial squash policy."
+    }
+}
+elseif ($verifiedMergeQueueRules.Count -ne 0) {
+    throw "Personal repository fallback must not retain an unsupported merge-queue rule."
+}
 $tagRuleTypes = @($verifiedTag.rules | ForEach-Object { $_.type })
 if ($tagRuleTypes -notcontains "deletion" -or $tagRuleTypes -notcontains "non_fast_forward") {
     throw "Tag ruleset does not block deletion and non-fast-forward updates."
@@ -360,10 +419,18 @@ if (
 
 $evidence = [ordered]@{
     schema_version = "phase1.1.repository-protection.v3"
+    process_version = "Gate-C-12-v1.0"
     repository = $Repository
+    repository_owner_type = $repositoryOwnerType
     visibility = $repositoryState.visibility
     branch = $Branch
     maintenance_mode = $MaintenanceMode
+    repository_merge = [ordered]@{
+        squash_enabled = $verifiedRepository.allow_squash_merge
+        merge_commit_enabled = $verifiedRepository.allow_merge_commit
+        rebase_enabled = $verifiedRepository.allow_rebase_merge
+        merged_branch_auto_delete = $verifiedRepository.delete_branch_on_merge
+    }
     required_context = $RequiredContext[0]
     required_contexts = $RequiredContext
     classic = [ordered]@{
@@ -388,6 +455,27 @@ $evidence = [ordered]@{
             required_approving_reviews = $verifiedMainPullRequestParameters.required_approving_review_count
             code_owner_reviews_required = $verifiedMainPullRequestParameters.require_code_owner_review
             last_push_approval_required = $verifiedMainPullRequestParameters.require_last_push_approval
+            merge_queue = if ($nativeMergeQueueAvailable) {
+                [ordered]@{
+                    mode = "NATIVE_SERIAL_SQUASH"
+                    native_available = $true
+                    merge_method = $verifiedMergeQueueParameters.merge_method
+                    grouping_strategy = $verifiedMergeQueueParameters.grouping_strategy
+                    max_entries_to_build = $verifiedMergeQueueParameters.max_entries_to_build
+                    max_entries_to_merge = $verifiedMergeQueueParameters.max_entries_to_merge
+                    min_entries_to_merge = $verifiedMergeQueueParameters.min_entries_to_merge
+                }
+            }
+            else {
+                [ordered]@{
+                    mode = "STRICT_PROTECTED_SQUASH_FALLBACK"
+                    native_available = $false
+                    platform_reason = "GITHUB_USER_OWNED_REPOSITORY_REJECTS_MERGE_QUEUE_RULE"
+                    merge_method = "SQUASH"
+                    strict_required_status_checks = $verifiedMainStatusParameters.strict_required_status_checks_policy
+                    stale_head_requires_revalidation = $true
+                }
+            }
             bypass_actors = @($verifiedMain.bypass_actors)
         }
         tags = [ordered]@{
