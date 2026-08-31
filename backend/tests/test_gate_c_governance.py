@@ -208,3 +208,17 @@ def test_repository_protection_declares_merge_queue() -> None:
     assert "allow_merge_commit = $false" in source
     assert "allow_rebase_merge = $false" in source
     assert "merge_group:" in workflow
+
+
+def test_governance_subprocess_decodes_utf8_output() -> None:
+    assert (
+        governance._run(
+            (
+                sys.executable,
+                "-c",
+                "import sys; sys.stdout.buffer.write('闭环'.encode('utf-8'))",
+            ),
+            cwd=ROOT,
+        )
+        == "闭环"
+    )

@@ -46,6 +46,7 @@ def _run(arguments: tuple[str, ...], *, cwd: Path) -> str:
         check=True,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     ).stdout.strip()
 
 
