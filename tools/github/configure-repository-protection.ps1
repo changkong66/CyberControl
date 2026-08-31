@@ -247,6 +247,14 @@ if ($PSCmdlet.ShouldProcess(
     "$Repository/$Branch",
     "Apply Classic and Repository Ruleset redlines in $MaintenanceMode mode"
 )) {
+    Invoke-GitHubJson -Method PATCH `
+        -Uri $ApiRoot `
+        -Body @{
+            allow_squash_merge = $true
+            allow_merge_commit = $false
+            allow_rebase_merge = $false
+            delete_branch_on_merge = $true
+        } | Out-Null
     Invoke-GitHubJson -Method PUT `
         -Uri "$ApiRoot/branches/$EncodedBranch/protection" `
         -Body $classicProtection | Out-Null
@@ -258,6 +266,16 @@ if ($PSCmdlet.ShouldProcess(
         } | Out-Null
     Set-RepositoryRuleset -Definition $mainRuleset | Out-Null
     Set-RepositoryRuleset -Definition $tagRuleset | Out-Null
+}
+
+$verifiedRepository = Invoke-GitHubJson -Method GET -Uri $ApiRoot
+if (
+    -not $verifiedRepository.allow_squash_merge -or
+    $verifiedRepository.allow_merge_commit -or
+    $verifiedRepository.allow_rebase_merge -or
+    -not $verifiedRepository.delete_branch_on_merge
+) {
+    throw "Repository merge controls do not enforce Squash as the only merge method."
 }
 
 $verifiedClassic = Invoke-GitHubJson -Method GET `
@@ -407,6 +425,12 @@ $evidence = [ordered]@{
     visibility = $repositoryState.visibility
     branch = $Branch
     maintenance_mode = $MaintenanceMode
+    repository_merge = [ordered]@{
+        squash_enabled = $verifiedRepository.allow_squash_merge
+        merge_commit_enabled = $verifiedRepository.allow_merge_commit
+        rebase_enabled = $verifiedRepository.allow_rebase_merge
+        merged_branch_auto_delete = $verifiedRepository.delete_branch_on_merge
+    }
     required_context = $RequiredContext[0]
     required_contexts = $RequiredContext
     classic = [ordered]@{

@@ -204,4 +204,7 @@ def test_repository_protection_declares_merge_queue() -> None:
     assert '$repositoryOwnerType -eq "Organization"' in source
     assert 'mode = "STRICT_PROTECTED_SQUASH_FALLBACK"' in source
     assert 'allowed_merge_methods = @("squash")' in source
+    assert "allow_squash_merge = $true" in source
+    assert "allow_merge_commit = $false" in source
+    assert "allow_rebase_merge = $false" in source
     assert "merge_group:" in workflow
