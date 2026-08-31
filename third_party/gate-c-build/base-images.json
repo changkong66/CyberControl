@@ -1,0 +1,130 @@
+{
+  "base_images": [
+    {
+      "archive_path": "third_party/gate-c-build/oci-layouts/python-base.tar",
+      "archive_sha256": "902ff124b06f5984fb524378d79e98f8250c16f842355ff782b969cbc27c31dd",
+      "archive_size_bytes": 21070336,
+      "config_digest": "sha256:b9943e88789b88be04853f35dff4a2070a900881a3fef98e9a637fd419ea2a59",
+      "digest": "sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4",
+      "disposition": "RUNTIME_SBOM_REQUIRED",
+      "license_evidence": "Official Python Alpine image aggregate; component licenses are verified by the runtime CycloneDX SBOM.",
+      "local_reference": "cybercontrol/gate-c-base-python:3.11@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4",
+      "obligations": [
+        "generate-runtime-cyclonedx-sbom",
+        "retain-upstream-notices",
+        "review-runtime-license-policy"
+      ],
+      "oci_manifest_digest": "sha256:bbc78bdb39abbac9225c0f50643c4313e6b06ba1cf7d1dcc34249f13cecaa3d7",
+      "platform": "linux/amd64",
+      "propagation_class": "RUNTIME_COPIED",
+      "role": "python-base",
+      "source": "https://hub.docker.com/_/python",
+      "spdx_license_id": "LicenseRef-CyberControl-Python-Base-Aggregate"
+    },
+    {
+      "archive_path": "third_party/gate-c-build/oci-layouts/node-base.tar",
+      "archive_sha256": "a2b7ba02d5e6e2fe099b0ef2d64620802650b10382c79797ce2e1e9168708ecb",
+      "archive_size_bytes": 289108992,
+      "config_digest": "sha256:a8288b541165610cc0a4c60d3a00b60577da9e3320c7fe3e7e45718ccff6832c",
+      "digest": "sha256:7f240e0b8a76496e6128948e4cfb0c3c145f629ac2b9d3cee3d554b746e82ca3",
+      "disposition": "BUILD_ONLY_LICENSE_RETAINED",
+      "license_evidence": "Chainguard Node development image; build-only tooling does not enter the final nginx runtime image.",
+      "local_reference": "cybercontrol/gate-c-base-node:latest-dev@sha256:7f240e0b8a76496e6128948e4cfb0c3c145f629ac2b9d3cee3d554b746e82ca3",
+      "obligations": [
+        "retain-upstream-notices",
+        "record-build-only-use"
+      ],
+      "oci_manifest_digest": "sha256:c880f5957fe02d6542428b98b519c74d2621384fe3c0ff0e45b5efd605f45602",
+      "platform": "linux/amd64",
+      "propagation_class": "BUILD_ONLY_TRANSIENT",
+      "role": "node-builder-base",
+      "source": "https://github.com/chainguard-images/images/tree/main/images/node",
+      "spdx_license_id": "LicenseRef-CyberControl-Chainguard-Node-Aggregate"
+    },
+    {
+      "archive_path": "third_party/gate-c-build/oci-layouts/nginx-base.tar",
+      "archive_sha256": "d027919234183caca97855079a04ea115f4ab4d23d2cc8c4c7b50523a96d8699",
+      "archive_size_bytes": 7575552,
+      "config_digest": "sha256:cf1cc3084370d51dfdef191e3380692efff13260c56af2c0c3eca73bf75db6ed",
+      "digest": "sha256:f6cbe96998972d87ebe30952ec1b6f3cff4103c33c889ffca7e13053e2036571",
+      "disposition": "RUNTIME_SBOM_REQUIRED",
+      "license_evidence": "Chainguard nginx runtime image aggregate; component licenses are verified by the runtime CycloneDX SBOM.",
+      "local_reference": "cybercontrol/gate-c-base-nginx:latest@sha256:f6cbe96998972d87ebe30952ec1b6f3cff4103c33c889ffca7e13053e2036571",
+      "obligations": [
+        "generate-runtime-cyclonedx-sbom",
+        "retain-upstream-notices",
+        "review-runtime-license-policy"
+      ],
+      "oci_manifest_digest": "sha256:a9a3e2b9a3c41ed8fe08633c11c7d65a5ea5ef1f0dce71cb56a0fbb081711ad5",
+      "platform": "linux/amd64",
+      "propagation_class": "RUNTIME_COPIED",
+      "role": "nginx-runtime-base",
+      "source": "https://github.com/chainguard-images/images/tree/main/images/nginx",
+      "spdx_license_id": "LicenseRef-CyberControl-Chainguard-Nginx-Aggregate"
+    },
+    {
+      "archive_path": "third_party/gate-c-build/oci-layouts/postgres-base.tar",
+      "archive_sha256": "8a9eb479ef78cae2eab6f9315516c595b8eaff4079837b78eb65b9a02f8b57ff",
+      "archive_size_bytes": 116692480,
+      "config_digest": "sha256:de3a4eab8fdfa507ea92aac488b916b08089e515db49b055fe71dfa271ba3a28",
+      "digest": "sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+      "disposition": "RUNTIME_SBOM_REQUIRED",
+      "license_evidence": "Official PostgreSQL Alpine image aggregate; PostgreSQL is PostgreSQL licensed and bundled components are verified by SBOM.",
+      "local_reference": "cybercontrol/gate-c-base-postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777",
+      "obligations": [
+        "generate-runtime-cyclonedx-sbom",
+        "retain-upstream-notices",
+        "review-runtime-license-policy"
+      ],
+      "oci_manifest_digest": "sha256:7a396fd264a2067788b6551122b50f162bf6136312c7fc9d74381cb92c648382",
+      "platform": "linux/amd64",
+      "propagation_class": "RUNTIME_COPIED",
+      "role": "postgres-runtime",
+      "source": "https://github.com/docker-library/postgres",
+      "spdx_license_id": "LicenseRef-CyberControl-Postgres-Image-Aggregate"
+    },
+    {
+      "archive_path": "third_party/gate-c-build/oci-layouts/keycloak-base.tar",
+      "archive_sha256": "e629b2f40cad7909b0a9750cb23a4674d6a5a64867daa3cba6562b589809815c",
+      "archive_size_bytes": 267221504,
+      "config_digest": "sha256:f800d95004ddcbb04a0f65ec608af4a228eace92b80c126514d2a74533f2afa7",
+      "digest": "sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+      "disposition": "RUNTIME_SBOM_REQUIRED",
+      "license_evidence": "Keycloak image declares Apache-2.0; bundled component licenses are verified by the runtime CycloneDX SBOM.",
+      "local_reference": "cybercontrol/gate-c-base-keycloak:26.7.0@sha256:2eb3cd316835c990e69e26ade292ffa78f6fb0db7d5fc6377463c162e1979ac0",
+      "obligations": [
+        "generate-runtime-cyclonedx-sbom",
+        "retain-apache-notice",
+        "review-runtime-license-policy"
+      ],
+      "oci_manifest_digest": "sha256:1362a9d9f13ab325231ea133610cc905e12805804abc7acbef552dd613720aa6",
+      "platform": "linux/amd64",
+      "propagation_class": "RUNTIME_COPIED",
+      "role": "keycloak-runtime",
+      "source": "https://github.com/keycloak/keycloak",
+      "spdx_license_id": "Apache-2.0"
+    },
+    {
+      "archive_path": "third_party/gate-c-build/oci-layouts/buildkit-base.tar",
+      "archive_sha256": "6237ada29ffdfc4156b9370997a07fe03aa092c17f83dbd1ab96079ad8442b99",
+      "archive_size_bytes": 111511040,
+      "config_digest": "sha256:61b4b32fef9693ecf4c9759ec1bd50f64eeffab59676a4f00a1b124df5fad249",
+      "digest": "sha256:6b59b7df63a8cb9902736f9ddf7fcff8261613d3e7449b8ea8b7537fc399c03a",
+      "disposition": "BUILD_ONLY_LICENSE_RETAINED",
+      "license_evidence": "Moby BuildKit build executor; build-only tooling is not distributed in product runtime images.",
+      "local_reference": "cybercontrol/gate-c-base-buildkit:buildx-stable-1@sha256:6b59b7df63a8cb9902736f9ddf7fcff8261613d3e7449b8ea8b7537fc399c03a",
+      "obligations": [
+        "retain-apache-notice",
+        "record-build-only-use"
+      ],
+      "oci_manifest_digest": "sha256:2caaaf9bc673a82d5b0a87824f8375e6b2b36b55001dad611230516c724e9fba",
+      "platform": "linux/amd64",
+      "propagation_class": "BUILD_ONLY_TRANSIENT",
+      "role": "buildkit-builder",
+      "source": "https://github.com/moby/buildkit",
+      "spdx_license_id": "Apache-2.0"
+    }
+  ],
+  "process_version": "Gate-C-12-v1.0",
+  "schema_version": "cybercontrol.gate-c-build-base-images.v1"
+}

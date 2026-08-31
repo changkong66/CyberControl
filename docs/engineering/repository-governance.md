@@ -8,7 +8,7 @@
 | HTTPS remote | `https://github.com/changkong66/CyberControl.git` |
 | Release branch | `main` |
 | Historical Phase 1.1 branch | `codex/phase-1.1-foundation` |
-| Required status | `Release quality redline` |
+| Required status | `Container build, runtime, SBOM, and vulnerability scan`; `Release quality redline` |
 | Maintenance mode | `Solo` |
 | Current protected main | `190ed863c13f8f71d909b6083b929c899e4db69f` |
 | Current main acceptance | Run `29639495363`, 8/8 jobs successful |
@@ -99,7 +99,6 @@ git push --set-upstream origin codex/phase-1.1-foundation
 & .\tools\github\configure-repository-protection.ps1 `
   -Repository "changkong66/CyberControl" `
   -Branch "main" `
-  -RequiredContext "Release quality redline" `
   -MaintenanceMode "Solo"
 ```
 
@@ -118,7 +117,7 @@ Python 覆盖率门禁配置为 90%；91.19% 是该 Topic 4 验收提交的观�
 
 | 控制面 | 规则 | 固定值 |
 |---|---|---|
-| Classic Protection | Required status | `Release quality redline`, strict |
+| Classic Protection | Required status | container security and `Release quality redline`, strict |
 | Classic Protection | Stale reviews and conversations | dismiss stale, resolve conversations |
 | Classic Protection | Admin enforcement | enabled |
 | Classic Protection | History and refs | linear, no force-push, no deletion |
@@ -149,7 +148,7 @@ Actions 中的 `tools/validate_commit_messages.py` 执行，并被最终必需�
 
 1. 打开 `Settings > Rules > Rulesets`，确认两个规则集均为 `Active`。
 2. 打开 `main-release-governance`，确认目标为默认分支，且启用删除阻断、非快进阻断、
-   PR、线性历史和 `Release quality redline`。
+   PR、线性历史以及容器安全和 `Release quality redline` 两个必需状态。
 3. 确认唯一 bypass actor 是 `Repository Admin`，模式是 `For pull requests only`。
 4. 打开 `immutable-release-tags`，确认包含 `refs/tags/*`，且 bypass actor 为空。
 5. 打开 `Settings > Branches > Branch protection rules > main`，确认管理员同样受约束、

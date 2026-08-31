@@ -1209,6 +1209,8 @@ if ($JemallocProfileArm -ne "None") {
     workload_sha256 = Get-FileSha256 $workloadPath
 } | ConvertTo-Json -Depth 6 |
     Set-Content -LiteralPath (Join-Path $runDirectory "execution-metadata.json") -Encoding UTF8
+Copy-Item -LiteralPath (Join-Path $runDirectory "execution-metadata.json") `
+    -Destination (Join-Path $runDirectory "execution-context.json")
 
 Set-Content -LiteralPath (Join-Path $runDirectory "capacity-start.json") `
     -Value ($capacitySnapshot | ConvertTo-Json -Depth 4) -Encoding UTF8

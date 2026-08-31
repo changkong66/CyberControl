@@ -1,0 +1,42 @@
+{
+  "schema_version": "cybercontrol.docker-migration-policy.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "expected_environment": {
+    "custom_wsl_distro_dir": "F:\\Docker\\DockerDesktopWSL",
+    "docker_server_version": "29.6.1",
+    "docker_buildx_version": "v0.35.0-desktop.2",
+    "buildkit_version": "v0.31.1",
+    "containerd_snapshotter": true
+  },
+  "required_formal_volumes": [
+    "cybercontrol_gate_c_postgres",
+    "cybercontrol_gate_c_rerun_efa5ff1_20260725",
+    "cybercontrol_gate_c_second_7ff03ce_20260725",
+    "cybercontrol_gate_c_third_20260725t192105z",
+    "cybercontrol_gate_c_97bfa5f_20260808t0840z",
+    "cybercontrol_gate_c_fifth_76cd099_20260808t154325z",
+    "cybercontrol_gate_c_sixth_a6979d7_20260811t214703z",
+    "cybercontrol_gate_c_seventh_fa5b4bd_20260812",
+    "cybercontrol_gate_c_eighth_4f0a767_20260813",
+    "cybercontrol_gate_c_ninth_993ed97_20260815",
+    "cybercontrol_gate_c_tenth_main_64792b_20260815050434",
+    "cybercontrol_gate_c_eleventh_5fcb917_20260823",
+    "cybercontrol_release_postgres"
+  ],
+  "system_networks": [
+    "bridge",
+    "host",
+    "none"
+  ],
+  "allowed_missing_image_contents": [
+    {
+      "image_id": "sha256:04c20e3d2a9ff6f302d798a3226ead0a558bbf1cfdb989ee8839247e529d3ce0",
+      "classification": "TRANSIENT_LOCAL_QUALITY_IMAGE",
+      "formal_or_evidence_image": false,
+      "archived_evidence": [
+        "gate-c12-phase0-quality-gates-c3d45b3-20260825T081800Z-v3/supply-chain/backend-container.cdx.json",
+        "gate-c12-phase0-quality-gates-c3d45b3-20260825T081800Z-v3/security/container-trivy.json"
+      ]
+    }
+  ]
+}

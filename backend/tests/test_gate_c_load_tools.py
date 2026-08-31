@@ -436,9 +436,24 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     assert inputs["platform"] == "linux/amd64"
     assert inputs["buildkit"]["image_digest"].startswith("sha256:")
     assert inputs["buildkit"]["source_revision"] == "673b7e0196de0cac83308274b88aaed97a91af74"
-    assert len(inputs["alpine"]["backend_runtime_packages"]) == 3
+    assert {package["filename"] for package in inputs["alpine"]["backend_runtime_packages"]} == {
+        "jemalloc-5.3.0-r6.apk",
+        "libgcc-15.2.0-r5.apk",
+        "libstdc++-15.2.0-r5.apk",
+        "libcrypto3-3.5.8-r0.apk",
+        "libssl3-3.5.8-r0.apk",
+    }
     assert "apkindex_sha256" not in inputs["alpine"]
-    assert set(inputs["python_base_image"]["builder_mirrors"]) == {"a", "b"}
+    assert set(inputs["base_image_roles"]) == {
+        "python",
+        "node",
+        "nginx",
+        "postgres",
+        "keycloak",
+        "buildkit",
+    }
+    assert "builder_mirrors" not in json.dumps(inputs)
+    assert set(inputs["offline_supply_chain"]) == {"manifest", "base_images"}
     for package in inputs["alpine"]["backend_runtime_packages"]:
         assert package["filename"] in backend_dockerfile
         assert package["sha256"] in backend_dockerfile
@@ -446,6 +461,12 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     assert "apk add --no-network --allow-untrusted" in backend_dockerfile
     assert '"docker", "buildx", "inspect", builder, "--bootstrap"' in build_tool
     assert '"--no-cache"' in build_tool
+    assert '"--network"' in build_tool
+    assert '"none"' in build_tool
+    assert "builder_mirrors" not in build_tool
+    assert "normal-image-lock.json" in build_tool
+    assert "diagnostic-image-lock.json" in build_tool
+    assert "all-service-digest-manifest.json" in build_tool
     assert "rewrite-timestamp=true" in build_tool
     assert '"com.docker.compose.project"' in build_tool
 
@@ -597,7 +618,9 @@ def test_jemalloc_profile_image_is_pinned_and_diagnostic_only() -> None:
 
     assert "--enable-prof" in profile
     assert "--enable-prof-libunwind" in profile
-    assert "make -j2 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check" in profile
+    assert "make -j1 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check" in profile
+    assert "ccDETERMINISTIC.o" in profile
+    assert "reproducibility-normalization.txt" in profile
     assert "upstream-test-compiler-flags.txt" in profile
     assert "2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa" in profile
     assert "555b08620f00919e9b99c98a433cfcb755359395d62622cc8ae967d6717d43a0" in profile

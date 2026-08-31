@@ -1,4 +1,4 @@
-ARG PYTHON_IMAGE=python:3.11-alpine@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
+ARG PYTHON_IMAGE=cybercontrol/gate-c-base-python:3.11@sha256:25976e9d34a0fab1f278cae931f34c8303d97bf0c0d7f85b6b4dcf641d7702a4
 
 FROM ${PYTHON_IMAGE} AS jemalloc-compiled
 
@@ -6,24 +6,15 @@ ARG JEMALLOC_SOURCE_SHA256=2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f
 ARG MUSL_PATCH_SHA256=555b08620f00919e9b99c98a433cfcb755359395d62622cc8ae967d6717d43a0
 ARG PKGCONF_PATCH_SHA256=487908875c68b8ceb3fbd2c88f04eb2ddf8dd212272a2b3898e5e4fbd885623d
 
-RUN apk add --no-cache \
-      "autoconf=2.73-r0" \
-      "build-base=0.5-r4" \
-      "bzip2=1.0.8-r6" \
-      "libunwind-dev=1.8.3-r0" \
-      "linux-headers=7.0.0-r1" \
-      "patch=2.8-r0" \
-      "perl=5.42.2-r0" \
+COPY third_party/gate-c-build/apk /tmp/offline-apks
+RUN apk add --no-network --allow-untrusted /tmp/offline-apks/*.apk \
     && mkdir -p /build/inputs /build/provenance /out
 
-ADD --checksum=sha256:2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa \
-    https://github.com/jemalloc/jemalloc/releases/download/5.3.0/jemalloc-5.3.0.tar.bz2 \
+COPY third_party/gate-c-build/sources/jemalloc-5.3.0.tar.bz2 \
     /build/inputs/jemalloc-5.3.0.tar.bz2
-ADD --checksum=sha256:555b08620f00919e9b99c98a433cfcb755359395d62622cc8ae967d6717d43a0 \
-    https://gitlab.alpinelinux.org/alpine/aports/-/raw/fa59839ba07b53b11d12e849222439c785125d6a/main/jemalloc/musl-exception-specification-errors.patch \
+COPY third_party/gate-c-build/patches/musl-exception-specification-errors.patch \
     /build/inputs/musl-exception-specification-errors.patch
-ADD --checksum=sha256:487908875c68b8ceb3fbd2c88f04eb2ddf8dd212272a2b3898e5e4fbd885623d \
-    https://gitlab.alpinelinux.org/alpine/aports/-/raw/fa59839ba07b53b11d12e849222439c785125d6a/main/jemalloc/pkgconf.patch \
+COPY third_party/gate-c-build/patches/pkgconf.patch \
     /build/inputs/pkgconf.patch
 
 RUN set -eux; \
@@ -55,7 +46,11 @@ RUN set -eux; \
       --with-lg-page=12 \
       --with-lg-hugepage=21 \
       | tee /build/provenance/configure-summary.txt; \
-    cp config.log /build/provenance/config.log; \
+    sed -E 's#/tmp/cc[[:alnum:]]+\.o#/tmp/ccDETERMINISTIC.o#g' \
+      config.log > /build/provenance/config.log; \
+    printf '%s\n' \
+      'GCC random temporary object names are normalized in config.log; semantic configure results are unchanged.' \
+      > /build/provenance/reproducibility-normalization.txt; \
     make -j"$(getconf _NPROCESSORS_ONLN)"
 
 FROM jemalloc-compiled AS jemalloc-tested
@@ -65,7 +60,7 @@ RUN set -eux; \
       'GCC 15 -O3 removes calls that intentionally violate aligned_alloc preconditions; upstream tests use -fno-builtin-aligned_alloc.' \
       > /build/provenance/upstream-test-compiler-flags.txt; \
     cd /build/jemalloc-5.3.0; \
-    if ! make -j2 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check \
+    if ! make -j1 EXTRA_CFLAGS=-fno-builtin-aligned_alloc check \
       > /build/provenance/upstream-tests.txt 2>&1; then \
          cat /build/provenance/upstream-tests.txt; \
          exit 1; \
@@ -108,10 +103,15 @@ ARG CYBERCONTROL_ENGINEERING_BASELINE_SHA=unknown
 ARG CYBERCONTROL_PROCESS_VERSION=unknown
 
 USER root
-RUN apk add --no-cache \
-      "binutils=2.45.1-r1" \
-      "libunwind=1.8.3-r0" \
-      "perl=5.42.2-r0"
+COPY third_party/gate-c-build/apk/binutils-2.45.1-r1.apk \
+    third_party/gate-c-build/apk/jansson-2.15.0-r0.apk \
+    third_party/gate-c-build/apk/libunwind-1.8.3-r0.apk \
+    third_party/gate-c-build/apk/perl-5.42.2-r0.apk \
+    third_party/gate-c-build/apk/zstd-libs-1.5.7-r2.apk \
+    /tmp/diagnostic-apks/
+RUN apk add --no-network --allow-untrusted /tmp/diagnostic-apks/*.apk \
+    && rm -f /var/log/apk.log \
+    && rm -rf /tmp/diagnostic-apks
 
 COPY --from=jemalloc-tested /out/opt/cybercontrol/jemalloc-prof \
     /opt/cybercontrol/jemalloc-prof

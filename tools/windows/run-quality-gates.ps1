@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $ProgressPreference = "SilentlyContinue"
+$env:CI = "true"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $RepositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
@@ -160,10 +161,23 @@ try {
     ) -Description "uv frozen synchronization"
 
     Write-Gate "Conventional Commit subject policy"
+    $commitBase = (& $Git merge-base HEAD origin/main).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $commitBase) {
+        throw "Unable to resolve the origin/main merge base for commit validation."
+    }
     Invoke-Native -Executable $Uv -Arguments @(
         "run", "--frozen", "python", "tools/validate_commit_messages.py",
+        "--base", $commitBase,
         "--head", "HEAD"
     ) -Description "commit subject validation"
+
+    Write-Gate "Gate C process metadata on changed evidence"
+    Invoke-Native -Executable $Uv -Arguments @(
+        "run", "--frozen", "python", "tools/validate_gate_c_metadata.py",
+        "--base", $commitBase,
+        "--head", "HEAD",
+        "--output", "artifacts/quality-gates/process-metadata-validation.json"
+    ) -Description "Gate C process metadata validation"
 
     Write-Gate "Ruff static and format redlines"
     Invoke-Native -Executable $Uv -Arguments @("run", "--frozen", "ruff", "check", ".") `
@@ -304,15 +318,50 @@ try {
     }
 
     if (-not $SkipContainer) {
-        Write-Gate "Production container build and runtime constraints"
+        Write-Gate "Offline production container build and runtime constraints"
         $image = "liyans-backend:local-quality"
+        $offlineContextRoot = Join-Path $ArtifactRoot "offline-container-contexts"
+        if (Test-Path -LiteralPath $offlineContextRoot) {
+            Remove-Item -LiteralPath $offlineContextRoot -Recurse -Force
+        }
+        New-Item -ItemType Directory -Path $offlineContextRoot -Force | Out-Null
+        Invoke-Native -Executable $Uv -Arguments @(
+            "run", "--frozen", "python", "tools/gate_c_supply_chain.py", "verify",
+            "--output", "artifacts/quality-gates/offline-supply-chain-verification.json"
+        ) -Description "offline supply-chain closure validation"
+        $pythonBaseArchive = Join-Path $RepositoryRoot `
+            "third_party\gate-c-build\oci-layouts\python-base.tar"
+        Invoke-Native -Executable "tar" -Arguments @(
+            "-xf", $pythonBaseArchive, "-C", $offlineContextRoot
+        ) -Description "offline Python OCI context extraction"
+        $baseImageSpec = Get-Content -LiteralPath (
+            Join-Path $RepositoryRoot "third_party\gate-c-build\base-images.json"
+        ) -Raw | ConvertFrom-Json
+        $pythonBaseSpec = @($baseImageSpec.base_images | Where-Object { $_.role -eq "python-base" })
+        if ($pythonBaseSpec.Count -ne 1) {
+            throw "The offline base-image specification must contain exactly one python-base."
+        }
+        $pythonBase = "oci-layout://./artifacts/offline-container-contexts@" + `
+            [string]$pythonBaseSpec[0].oci_manifest_digest
+        $sourceSha = (& $Git rev-parse HEAD).Trim()
+        $sourceTree = (& $Git rev-parse "HEAD^{tree}").Trim()
+        $sourceEpoch = (& $Git show -s --format=%ct HEAD).Trim()
         Invoke-Native -Executable $Docker -Arguments @(
             "compose", "-f", "infra/docker-compose.yml", "config", "--quiet"
         ) -Description "Docker Compose validation"
         Invoke-Native -Executable $Docker -Arguments @(
-            "build", "--pull=false", "--file", "infra/backend.Dockerfile",
+            "buildx", "build", "--builder", "desktop-linux", "--platform", "linux/amd64",
+            "--network", "none", "--no-cache", "--provenance=false",
+            "--build-context", "python_base=$pythonBase", "--build-arg", "PYTHON_IMAGE=python_base",
+            "--build-arg", "SOURCE_DATE_EPOCH=$sourceEpoch",
+            "--build-arg", "CYBERCONTROL_SOURCE_SHA=$sourceSha",
+            "--build-arg", "CYBERCONTROL_SOURCE_TREE=$sourceTree",
+            "--build-arg", "CYBERCONTROL_PRODUCT_SOURCE_SHA=a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+            "--build-arg", "CYBERCONTROL_ENGINEERING_BASELINE_SHA=$sourceSha",
+            "--build-arg", "CYBERCONTROL_PROCESS_VERSION=Gate-C-12-v1.0",
+            "--file", "infra/backend.Dockerfile", "--load",
             "--tag", $image, "."
-        ) -Description "production image build"
+        ) -Description "offline production image build"
         $configuredUser = (& $Docker image inspect $image --format "{{.Config.User}}").Trim()
         if ($LASTEXITCODE -ne 0 -or $configuredUser -ne "10001:10001") {
             throw "The runtime image must declare USER 10001:10001; found '$configuredUser'."
