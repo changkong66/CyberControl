@@ -15,17 +15,19 @@ against `<=1.10`. Outbox p95/p99 was `1879.698/2898.555ms` and passed.
 Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
-The current protected main is
-`d2bee3861adf1129f80aae9b10d4709610a69251`, tree
-`69eed0310296f95718660dfd798ea6262bbac291`, with protected-main Release
-Quality Gates [Run 32875417540](https://github.com/changkong66/CyberControl/actions/runs/32875417540)
+The current verified protected main represented by this status snapshot is
+`70b6466f238887676ff4a0c1482923354ef8bd26`, tree
+`abdf8eb9d1226cdfe80eeacda236df0ea7b33c14`, with protected-main Release
+Quality Gates [Run 33357703713](https://github.com/changkong66/CyberControl/actions/runs/33357703713)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`d2bee3861adf1129f80aae9b10d4709610a69251`. Product source remains bound to
+`70b6466f238887676ff4a0c1482923354ef8bd26`. Product source remains bound to
 the last core product-behavior change; PR #93 changed reproducible build,
 capacity, diagnostic and test infrastructure, PR #94 changed status documents,
 PR #95 accepted ADR 0032, and PR #96 added only default-off diagnostic
-capability. None changed frozen product semantics or underwent a new formal
+capability. PR #100 established the offline trusted foundation, PR #101 added
+permanent governance gates, and PR #102 repaired Windows UTF-8 evidence
+collection. None changed frozen product semantics or underwent a new formal
 Gate C replay; the last formal evaluation remains bound to `5fcb917b...`.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
@@ -1274,3 +1276,63 @@ or diagnostic run may start until capacity is restored and reverified. This
 infrastructure stop is not a design failure, does not append `gate_c_attempts`,
 and authorizes no owner or remediation conclusion. PreflightSmoke, formal Gate
 C and Gate D-G remain locked.
+
+## Trusted Foundation Rebuild And Status Closure
+
+Status PR [#97](https://github.com/changkong66/CyberControl/pull/97) passed push
+Run `32878844972` and pull-request Run `32879010344` attempt 2 at 8/8, then
+Squash Merged as `689b118c5e61112005770ea0286698f43ae1ca78`, tree
+`c034d19a46ca94818c44ef8bea03d11f44b1c78d`. Protected-main Run
+`32881158651` failed because its container job timed out downloading the
+Alpine jemalloc patch; Release redline failed only as the required aggregate.
+This is preserved as `INFRA_ABORTED`, not a product failure or formal attempt.
+
+Trusted-foundation PR [#100](https://github.com/changkong66/CyberControl/pull/100)
+merged as `10c6888454860155d24ad3947a9926c648c63783`, governance PR
+[#101](https://github.com/changkong66/CyberControl/pull/101) merged as
+`63900736b537c60864f24a24cc312e48d564c2b8`, and UTF-8 hotfix PR
+[#102](https://github.com/changkong66/CyberControl/pull/102) merged as
+`70b6466f238887676ff4a0c1482923354ef8bd26`. Their push/PR/main runs were
+`33350927582/33350950282/33351591565`,
+`33355555623/33355558236/33356155706`, and
+`33357053660/33357082843/33357703713`; every chain passed 8/8.
+
+The resulting foundation closes the original public-network build defect with
+a repository/LFS supply-chain closure, hash-locked APK, Python, pnpm and OCI
+inputs, license propagation classification, offline BuildKit execution and two
+independent empty-cache builders. Repository governance enforces exact-main
+worktrees, append-only history, Full-only attempts, process-version metadata,
+three-root capacity, source-bound locks and post-merge receipts. Because this
+user-owned repository cannot enable native merge queue, the audited mode is
+`STRICT_PROTECTED_SQUASH_FALLBACK`: strict required checks, administrator
+enforcement, linear history, resolved conversations, no force push/deletion,
+and Squash-only merging.
+
+Docker migration is `MIGRATION_VALIDATED`: all 13 historical formal Gate C
+volumes remain present, zero business containers are running, and the G-drive
+rollback checkpoint remains independently usable. The post-build D/F/Docker
+internal capacity snapshot is `146.205/327.564/827.397 GiB`, all `NORMAL`.
+
+The exact `70b6466...` normal lock SHA256 is
+`3d35955a2edd961f9364fca32f40d0dc9bbb8ab85d1f2fe4c97d550e6220d1f7`,
+diagnostic lock SHA256 is
+`2d9bf585972a3d0e89c2931f33187b14a98ea3f1d81698796e072355fff83734`,
+and build receipt SHA256 is
+`e81a26cf4ecb1747071bc892a8ac5a10b7a4e4a625c1e96c8262eecdbbe1db1e`.
+Both lock tracks verify against local canonical images; the diagnostic role
+cannot impersonate a formal service.
+
+The 20-file closure manifest SHA256 is
+`e72232613581aa2b712bd3e26641698592b5e196aaecff4e7c389186c3f93295`.
+Immutable prerelease
+[379521605](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c12-g1-trusted-foundation-20260831-70b6466-evidence-v1),
+asset `537480740`, stores the 36,710-byte package with matching local/server
+SHA256 `e6d3ef5a04e9f1f39438266e85e71e709859f4bcd1a0c66b1adbe1ee0fedc137`.
+
+`baseline_history` appends typed sequences 20-23 for PR #97, #100, #101 and
+#102. Product source remains `a57d0ce...`, `gate_c_attempts` remains 12 and
+the formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. D1 execution is
+still locked until this status PR itself passes protected-main 8/8, receives
+its external closure receipt, and final exact-main image locks plus a passing
+D1-readiness receipt are generated. No diagnostic, remediation, PreflightSmoke
+or Full run is authorized by this report.

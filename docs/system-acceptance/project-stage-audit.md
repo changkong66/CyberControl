@@ -700,3 +700,56 @@ D1 runtime is classified `INFRA_ABORTED_CAPACITY`. No image build, calibration
 or diagnostic run is permitted until free space is restored and reverified.
 This stop consumes neither a design-failure slot nor a formal attempt. Product
 remediation, PreflightSmoke, formal Gate C and Gate D-G remain locked.
+
+## 17. Trusted Foundation And Governance Closure Audit
+
+PR #97 is retained as an explicit infrastructure-aborted state event. Its push
+Run `32878844972` and pull-request Run `32879010344` attempt 2 passed 8/8; it
+Squash Merged as `689b118c5e61112005770ea0286698f43ae1ca78`, tree
+`c034d19a46ca94818c44ef8bea03d11f44b1c78d`, but protected-main Run
+`32881158651` failed when the container job timed out downloading the Alpine
+jemalloc patch. No product decision was made and no formal attempt was added.
+
+PR #100/#101/#102 then closed the underlying foundation, governance and
+Windows evidence-tool defects. They merged as
+`10c6888454860155d24ad3947a9926c648c63783`,
+`63900736b537c60864f24a24cc312e48d564c2b8` and
+`70b6466f238887676ff4a0c1482923354ef8bd26`; all nine push, pull-request and
+protected-main runs passed 8/8. Post-merge closure receipts bind each merge
+SHA/tree to product source `a57d0ce...`, formal state and 12 attempts.
+
+The audit verified the following controls:
+
+- Docker migration result `MIGRATION_VALIDATED`, 13/13 formal volumes, zero
+  running business containers and a validated non-overwriting rollback path.
+- Fully offline build inputs with hash-locked APK, wheelhouse, pnpm and OCI
+  content; license propagation classes distinguish build-only, runtime,
+  linked/derived and diagnostic-only components.
+- Strict protected Squash fallback with required Release redline and container
+  checks, administrator enforcement, linear history and no history rewrite.
+- Exact-main and append-only governance, Full-only attempt updates,
+  `process_version` enforcement, immutable evidence path protection, audit
+  index generation and three-root capacity control.
+- Independent network-isolated empty-cache builders producing identical normal
+  and diagnostic image digests for source `70b6466...`.
+
+Normal lock, diagnostic lock and build receipt SHA256 values are
+`3d35955a2edd961f9364fca32f40d0dc9bbb8ab85d1f2fe4c97d550e6220d1f7`,
+`2d9bf585972a3d0e89c2931f33187b14a98ea3f1d81698796e072355fff83734`
+and `e81a26cf4ecb1747071bc892a8ac5a10b7a4e4a625c1e96c8262eecdbbe1db1e`.
+The post-build three-root snapshot is `NORMAL` at
+`146.205/327.564/827.397 GiB`; temporary builders and running containers are
+both zero.
+
+GitHub prerelease `379521605`, immutable asset `537480740`, stores the
+36,710-byte non-acceptance package. Local and server SHA256 are both
+`e6d3ef5a04e9f1f39438266e85e71e709859f4bcd1a0c66b1adbe1ee0fedc137`;
+all 20 manifest members were independently rehashed with zero mismatch.
+
+Typed `baseline_history` sequences 20-23 classify these events as `STATUS`,
+`INFRA`, `INFRA` and `REMEDIATION`. The prior 19 entries are unchanged,
+`gate_c_attempts` remains 12, product source remains `a57d0ce...`, and Gate D-G
+remain locked. The status PR cannot self-bind its future Squash Merge SHA; its
+own protected-main result and closure receipt must be created externally after
+merge. A final exact-main image-lock batch and passing D1-readiness receipt are
+also required before the `D1_ONLY` authorization exists.
