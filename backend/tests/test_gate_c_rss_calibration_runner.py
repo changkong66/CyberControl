@@ -38,6 +38,20 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     assert "@(Compare-Object $composeImages $expectedImages).Count" in runner
     assert '$classification -ne "DESIGN_REJECTED"' in runner
     assert "orchestration failed before a trusted diagnostic result" in runner
+    entrypoint = (
+        ROOT / "tests" / "load" / "gate_c" / "postgres_calibration_entrypoint.sh"
+    ).read_text(encoding="utf-8")
+    assert "tls_runtime_dir=/run/postgresql/gate-c-tls" in entrypoint
+    assert '"$PGDATA/' not in entrypoint
+    assert "ssl_cert_file=/run/postgresql/gate-c-tls/server.crt" in compose
+    assert "ssl_key_file=/run/postgresql/gate-c-tls/server.key" in compose
+    assert "ssl_ca_file=/run/postgresql/gate-c-tls/ca.crt" in compose
+    assert '$calibrationContainerState = "absent"' in runner
+    assert '$parts[0] -ne "created"' in runner
+    assert "$parts[1] -notmatch '^0001-01-01T'" in runner
+    assert '$classification = "INFRA_ABORTED"' in runner
+    assert "calibration container never started" in runner
+    assert "instrumentation started but did not produce" in runner
     sequence = (ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-sequence.ps1").read_text(
         encoding="utf-8"
     )
@@ -46,6 +60,26 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     assert '-Arm "APrime"' in sequence
     assert "tls_identity_reused_across_arms = $true" in sequence
     assert '--forbidden-value-file (Join-Path $tlsDirectory "server.key")' in sequence
+
+
+def test_calibration_retry_metadata_propagates_across_all_wrapper_levels() -> None:
+    scripts = {
+        name: (ROOT / "tools" / "windows" / name).read_text(encoding="utf-8")
+        for name in (
+            "run-gate-c-rss-calibration-reproduction.ps1",
+            "run-gate-c-rss-calibration-sequence.ps1",
+            "run-gate-c-rss-l1-calibration-sequence.ps1",
+        )
+    }
+
+    for script in scripts.values():
+        assert "[ValidateRange(0, 2)]" in script
+        assert '"-InfraRetryAttempt", [string]$InfraRetryAttempt' in script
+        assert '$arguments += @("-RetryOfRunId", $RetryOfRunId)' in script
+        assert "-RetryOfRunId is valid only when -InfraRetryAttempt is 1 or 2" in script
+        assert "an infrastructure retry requires -RetryOfRunId" in script
+        assert "infra_retry_attempt = $InfraRetryAttempt" in script
+        assert "retry_of_run_id = $RetryOfRunId" in script
 
 
 def test_calibration_and_l1_powershell_scripts_parse() -> None:
