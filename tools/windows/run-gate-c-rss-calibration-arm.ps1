@@ -322,6 +322,11 @@ New-Item -ItemType Directory -Path $evidenceDirectory, $tlsDirectory -Force | Ou
 $passwordBytes = [byte[]]::new(32)
 [Security.Cryptography.RandomNumberGenerator]::Fill($passwordBytes)
 $password = [Convert]::ToBase64String($passwordBytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+[IO.File]::WriteAllText(
+    $passwordPath,
+    $password,
+    [Text.UTF8Encoding]::new($false)
+)
 $resolvedTlsBundle = [IO.Path]::GetFullPath($TlsBundlePath)
 if (-not (Test-Path -LiteralPath $resolvedTlsBundle -PathType Container)) {
     throw "INFRA_ABORTED: sequence TLS bundle does not exist: $resolvedTlsBundle"
@@ -420,7 +425,7 @@ try {
         [string]$imageLock.services.postgres.reference,
         [string]$diagnostic.reference
     ) | Sort-Object -Unique
-    if ((Compare-Object $composeImages $expectedImages).Count -ne 0) {
+    if (@(Compare-Object $composeImages $expectedImages).Count -ne 0) {
         throw "INFRA_ABORTED: calibration Compose images differ from the locked pair."
     }
     Start-CapacityMonitor
@@ -459,8 +464,11 @@ try {
 }
 catch {
     $failureReason = $_.Exception.Message
-    if ($failureReason.StartsWith("INFRA_ABORTED", [StringComparison]::Ordinal)) {
+    if ($classification -ne "DESIGN_REJECTED") {
         $classification = "INFRA_ABORTED"
+        if (-not $failureReason.StartsWith("INFRA_ABORTED", [StringComparison]::Ordinal)) {
+            $failureReason = "INFRA_ABORTED: calibration orchestration failed before a trusted diagnostic result: $failureReason"
+        }
     }
     Write-NewJson -Path (Join-Path $evidenceDirectory "execution-failure.json") -Value ([ordered]@{
         schema_version = "cybercontrol.gate-c-rss-calibration-failure.v1"
