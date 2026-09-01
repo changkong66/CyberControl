@@ -442,8 +442,32 @@ try {
         throw "INFRA_ABORTED: capacity hard stop activated below 5 GiB."
     }
     if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
+        $calibrationContainerIds = @(
+            & docker compose @composeArguments ps --all --quiet calibration 2>$null
+        )
+        $calibrationStarted = $false
+        $calibrationContainerState = "absent"
+        if ($LASTEXITCODE -eq 0 -and $calibrationContainerIds.Count -eq 1) {
+            $stateFields = @(
+                & docker inspect --format '{{.State.Status}}|{{.State.StartedAt}}' `
+                    $calibrationContainerIds[0] 2>$null
+            )
+            if ($LASTEXITCODE -eq 0 -and $stateFields.Count -eq 1) {
+                $parts = [string]$stateFields[0] -split '\|', 2
+                $calibrationContainerState = $parts[0]
+                $calibrationStarted = (
+                    $parts.Count -eq 2 -and
+                    $parts[0] -ne "created" -and
+                    $parts[1] -notmatch '^0001-01-01T'
+                )
+            }
+        }
+        if (-not $calibrationStarted) {
+            $classification = "INFRA_ABORTED"
+            throw "INFRA_ABORTED: calibration container never started (state=$calibrationContainerState)."
+        }
         $classification = "DESIGN_REJECTED"
-        throw "Calibration instrumentation did not produce an arm result."
+        throw "Calibration instrumentation started but did not produce an arm result."
     }
     $armResult = Get-Content -LiteralPath $resultPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if (

@@ -10,7 +10,12 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ImageLockPath,
 
-    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032-reproduction"
+    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032-reproduction",
+
+    [ValidateRange(0, 2)]
+    [int]$InfraRetryAttempt = 0,
+
+    [string]$RetryOfRunId
 )
 
 $ErrorActionPreference = "Stop"
@@ -76,8 +81,12 @@ function Invoke-Sequence {
     $arguments = @(
         "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $sequenceRunner,
         "-ImageLockPath", [IO.Path]::GetFullPath($ImageLockPath),
-        "-ResultsRoot", $sequencesDirectory
+        "-ResultsRoot", $sequencesDirectory,
+        "-InfraRetryAttempt", [string]$InfraRetryAttempt
     )
+    if (-not [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
+        $arguments += @("-RetryOfRunId", $RetryOfRunId)
+    }
     if ($Kind -eq "calibration") {
         $arguments += @("-Variable", $Variable)
     }
@@ -125,6 +134,12 @@ function Invoke-Sequence {
     }
 }
 
+if ($InfraRetryAttempt -eq 0 -and -not [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
+    throw "INFRA_ABORTED: -RetryOfRunId is valid only when -InfraRetryAttempt is 1 or 2."
+}
+if ($InfraRetryAttempt -gt 0 -and [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
+    throw "INFRA_ABORTED: an infrastructure retry requires -RetryOfRunId."
+}
 if (Test-Path -LiteralPath $reproductionDirectory) {
     throw "INFRA_ABORTED: immutable reproduction directory already exists: $reproductionDirectory"
 }
@@ -138,6 +153,8 @@ Write-NewJson -Path (Join-Path $evidenceDirectory "execution-context.json") -Val
     reproduction_id = $reproductionId
     kind = $Kind
     variable = if ($Kind -eq "calibration") { $Variable } else { $null }
+    infra_retry_attempt = $InfraRetryAttempt
+    retry_of_run_id = $RetryOfRunId
     independent_sequence_count = 2
     started_at_utc = (Get-Date).ToUniversalTime().ToString("o")
 })

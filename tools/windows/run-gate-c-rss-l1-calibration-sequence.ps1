@@ -3,7 +3,12 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ImageLockPath,
 
-    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032-l1"
+    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032-l1",
+
+    [ValidateRange(0, 2)]
+    [int]$InfraRetryAttempt = 0,
+
+    [string]$RetryOfRunId
 )
 
 $ErrorActionPreference = "Stop"
@@ -62,8 +67,12 @@ function Invoke-Arm {
         "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $armRunner,
         "-Arm", $Arm,
         "-ImageLockPath", [IO.Path]::GetFullPath($ImageLockPath),
-        "-ResultsRoot", $armResultsRoot
+        "-ResultsRoot", $armResultsRoot,
+        "-InfraRetryAttempt", [string]$InfraRetryAttempt
     )
+    if (-not [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
+        $arguments += @("-RetryOfRunId", $RetryOfRunId)
+    }
     if (-not [string]::IsNullOrWhiteSpace($PriorArmResult)) {
         $arguments += @("-PriorArmResult", $PriorArmResult)
     }
@@ -152,6 +161,12 @@ function Assert-ArmContinuation {
     }
 }
 
+if ($InfraRetryAttempt -eq 0 -and -not [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
+    throw "INFRA_ABORTED: -RetryOfRunId is valid only when -InfraRetryAttempt is 1 or 2."
+}
+if ($InfraRetryAttempt -gt 0 -and [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
+    throw "INFRA_ABORTED: an infrastructure retry requires -RetryOfRunId."
+}
 if (Test-Path -LiteralPath $sequenceDirectory) {
     throw "INFRA_ABORTED: immutable L1 sequence directory already exists: $sequenceDirectory"
 }
@@ -163,6 +178,8 @@ Write-NewJson -Path (Join-Path $evidenceDirectory "sequence-metadata.json") -Val
     formal_gate_attempt = $false
     acceptance_claim = $false
     sequence_id = $sequenceId
+    infra_retry_attempt = $InfraRetryAttempt
+    retry_of_run_id = $RetryOfRunId
     arm_order = @("A", "Measurement", "APrime")
     started_at_utc = (Get-Date).ToUniversalTime().ToString("o")
 })
