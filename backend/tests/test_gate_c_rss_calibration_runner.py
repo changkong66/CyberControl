@@ -46,11 +46,23 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     assert "ssl_cert_file=/run/postgresql/gate-c-tls/server.crt" in compose
     assert "ssl_key_file=/run/postgresql/gate-c-tls/server.key" in compose
     assert "ssl_ca_file=/run/postgresql/gate-c-tls/ca.crt" in compose
+    assert "--readiness-output" in compose
+    assert "/gate-c-results/instrumentation-ready.json" in compose
+    assert (
+        "GATE_C_IMAGE_LOCK_SHA256: ${GATE_C_IMAGE_LOCK_SHA256:"
+        "?GATE_C_IMAGE_LOCK_SHA256 is required}"
+    ) in compose
+    assert (
+        "GATE_C_BUILD_RECEIPT_SHA256: ${GATE_C_BUILD_RECEIPT_SHA256:"
+        "?GATE_C_BUILD_RECEIPT_SHA256 is required}"
+    ) in compose
     assert '$calibrationContainerState = "absent"' in runner
     assert '$parts[0] -ne "created"' in runner
     assert "$parts[1] -notmatch '^0001-01-01T'" in runner
     assert '$classification = "INFRA_ABORTED"' in runner
     assert "calibration container never started" in runner
+    assert "instrumentation did not reach the validated readiness marker" in runner
+    assert "instrumentation readiness marker failed source-bound validation" in runner
     assert "instrumentation started but did not produce" in runner
     sequence = (ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-sequence.ps1").read_text(
         encoding="utf-8"

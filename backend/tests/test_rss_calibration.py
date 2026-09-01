@@ -19,6 +19,7 @@ from gate_c.rss_calibration import (  # noqa: E402
     CalibrationTLS,
     CalibrationTransition,
     create_verified_tls_context,
+    instrumentation_readiness,
     percentile,
     run_calibration,
 )
@@ -152,6 +153,21 @@ def test_percentile_is_nearest_rank_and_validated() -> None:
     assert percentile([], 0.95) == 0
     with pytest.raises(ValueError, match="between"):
         percentile([1], 1.1)
+
+
+def test_instrumentation_readiness_is_source_bound_and_non_formal() -> None:
+    readiness = instrumentation_readiness(
+        arm="A", variable="S", run_id="calibration-ready", source=SOURCE
+    )
+
+    assert readiness["schema_version"] == "cybercontrol.gate-c-rss-calibration-readiness.v1"
+    assert readiness["process_version"] == "Gate-C-12-v1.0"
+    assert readiness["classification"] == "NON_ACCEPTANCE_DIAGNOSTIC"
+    assert readiness["formal_gate_attempt"] is False
+    assert readiness["acceptance_claim"] is False
+    assert readiness["source"] == SOURCE
+    assert readiness["database_credentials_recorded"] is False
+    assert readiness["ready"] is True
 
 
 @pytest.mark.asyncio
