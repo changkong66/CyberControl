@@ -91,7 +91,19 @@ function Invoke-Arm {
         [string]::IsNullOrWhiteSpace($referencePath) -or
         -not (Test-Path -LiteralPath $referencePath -PathType Leaf)
     ) {
-        throw "$Arm arm did not return an immutable package reference."
+        $childError = if (Test-Path -LiteralPath $stderr -PathType Leaf) {
+            Get-Content -LiteralPath $stderr -Raw -Encoding UTF8
+        }
+        else {
+            ""
+        }
+        $childClassification = if ($childError -match "INFRA_ABORTED:") {
+            "INFRA_ABORTED"
+        }
+        else {
+            "DESIGN_REJECTED"
+        }
+        throw "$childClassification`: $Arm arm did not return an immutable package reference."
     }
     $reference = Get-Content -LiteralPath $referencePath -Raw -Encoding UTF8 | ConvertFrom-Json
     $summaryPath = [string]$reference.run_summary.path
@@ -151,13 +163,13 @@ function Assert-ArmContinuation {
 }
 
 if (Test-Path -LiteralPath $sequenceDirectory) {
-    throw "Immutable calibration sequence already exists: $sequenceDirectory"
+    throw "INFRA_ABORTED: immutable calibration sequence already exists: $sequenceDirectory"
 }
 New-Item -ItemType Directory -Path $armResultsRoot, $evidenceDirectory, $tlsDirectory `
     -Force | Out-Null
 & uv run --frozen python $tlsGenerator --output-directory $tlsDirectory --server-hostname postgres
 if ($LASTEXITCODE -ne 0) {
-    throw "Unable to generate the sequence-bound TLS identity."
+    throw "INFRA_ABORTED: unable to generate the sequence-bound TLS identity."
 }
 Copy-Item -LiteralPath (Join-Path $tlsDirectory "tls-manifest.json") `
     -Destination (Join-Path $evidenceDirectory "tls-manifest.json")
@@ -200,6 +212,9 @@ catch {
         "DESIGN_REJECTED", "INFRA_ABORTED"
     )) {
         $classification = [string]$lastReference.classification
+    }
+    elseif ($failureReason.StartsWith("INFRA_ABORTED", [StringComparison]::Ordinal)) {
+        $classification = "INFRA_ABORTED"
     }
     else {
         $classification = "DESIGN_REJECTED"

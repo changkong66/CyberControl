@@ -1,0 +1,56 @@
+{
+  "schema_version": "cybercontrol.gate-c-target2-execution-optimization.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "NON_ACCEPTANCE_ENGINEERING_DESIGN",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "parent_engineering_baseline_sha": "1103cdb4d32a6d169752f8921abfe8b3db4cc870",
+  "review_result": "TARGET2_EXECUTION_BOUNDARY_HARDENING_REQUIRED_BEFORE_D1",
+  "findings": [
+    {
+      "id": "G2-AUDIT-001",
+      "problem": "One A/M/A-prime sequence did not itself prove the two independent reproductions required by ADR-0032.",
+      "resolution": "A reproduction runner now executes and verifies exactly two sequences, six distinct arms, identical source/image bindings, immutable packages and per-arm cleanup receipts."
+    },
+    {
+      "id": "G2-AUDIT-002",
+      "problem": "A child process that failed before writing a package reference could be classified as DESIGN_REJECTED even when it emitted an explicit INFRA_ABORTED cause.",
+      "resolution": "Sequence and L1 wrapper boundaries now preserve explicit INFRA_ABORTED markers; unmarked instrumentation failures remain DESIGN_REJECTED."
+    },
+    {
+      "id": "G2-AUDIT-003",
+      "problem": "The phrase 200-connection calibration could be misread as 200 total connections.",
+      "resolution": "D1 retains ADR-0032 semantics: 2,000 total real TLS PostgreSQL connections, maximum concurrency 200 and admission rate 50 per second."
+    },
+    {
+      "id": "G2-AUDIT-004",
+      "problem": "PreflightSmoke was ordered after higher-load mainline diagnostics.",
+      "resolution": "After remediation merge, fresh smoke-20 is the sole PREFLIGHT_CHECK and is destroyed before 200, 500 and 1,000 non-acceptance diagnostics."
+    },
+    {
+      "id": "G2-AUDIT-005",
+      "problem": "L1 produced three-window physical ledgers but had no two-run attribution reconciler, leaving category selection open to manual interpretation.",
+      "resolution": "The L1 attribution tool verifies two independent Measurement packages, their SHA256 and cleanup receipts, reconciles mutually exclusive physical deltas and selects only the next probe; it cannot authorize remediation."
+    }
+  ],
+  "immutable_rules": {
+    "accepted_adr_0032_rewritten": false,
+    "threshold_or_workload_changed": false,
+    "formal_state_changed": false,
+    "gate_c_attempts_appended": false,
+    "product_remediation_authorized": false,
+    "gate_d_through_g_locked": true
+  },
+  "execution_order": [
+    "G2.0_EXTERNAL_READINESS_AND_COLD_START",
+    "D1_TWO_SEQUENCE_S_R_P_F_CALIBRATION",
+    "D1_TWO_SEQUENCE_L1_CALIBRATION",
+    "D2_LAYERED_ATTRIBUTION",
+    "ADMITTED_SINGLE_OWNER_REMEDIATION_ONLY",
+    "BRANCH_TWO_SEQUENCE_200_A_B_A_PRIME",
+    "MAIN_FRESH_20_PREFLIGHT_AND_DESTROY",
+    "MAIN_200_500_1000_DIAGNOSTICS",
+    "FORMAL_FULL_GATE_C"
+  ]
+}

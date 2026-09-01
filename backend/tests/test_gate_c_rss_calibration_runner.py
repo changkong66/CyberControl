@@ -49,6 +49,7 @@ def test_calibration_and_l1_powershell_scripts_parse() -> None:
         ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-sequence.ps1",
         ROOT / "tools" / "windows" / "run-gate-c-rss-l1-calibration-arm.ps1",
         ROOT / "tools" / "windows" / "run-gate-c-rss-l1-calibration-sequence.ps1",
+        ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-reproduction.ps1",
         ROOT / "tools" / "windows" / "invoke-gate-c-bounded-inventory-signal.ps1",
         ROOT / "tools" / "windows" / "run-phase7-gate-c.ps1",
         ROOT / "tools" / "windows" / "watch-gate-c-capacity.ps1",
@@ -139,6 +140,23 @@ def test_failed_arm_reference_is_indexed_before_sequence_stops() -> None:
         assert measurement_assignment < measurement_guard < a_prime_assignment
         assert "arms = $references" in sequence
         assert '"DESIGN_REJECTED", "INFRA_ABORTED"' in sequence
+        assert '$childError -match "INFRA_ABORTED:"' in sequence
+        assert '$failureReason.StartsWith("INFRA_ABORTED"' in sequence
+
+
+def test_reproduction_runner_requires_two_independent_sequences() -> None:
+    runner = (ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-reproduction.ps1").read_text(
+        encoding="utf-8"
+    )
+
+    assert "$references.first = Invoke-Sequence -Number 1" in runner
+    assert "$references.second = Invoke-Sequence -Number 2" in runner
+    assert "--first-reference ([string]$references.first.reference_path)" in runner
+    assert "--second-reference ([string]$references.second.reference_path)" in runner
+    assert "formal_gate_attempt = $false" in runner
+    assert "acceptance_claim = $false" in runner
+    assert '"INFRA_ABORTED", "DESIGN_REJECTED"' not in runner
+    assert '"DESIGN_REJECTED", "INFRA_ABORTED"' in runner
 
 
 def test_adr0032_d0_and_execution_boundaries_are_structured() -> None:

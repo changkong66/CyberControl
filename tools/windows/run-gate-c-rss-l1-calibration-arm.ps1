@@ -108,16 +108,16 @@ function Assert-PriorArm {
     }
     if ($null -eq $expectedArm) {
         if (-not [string]::IsNullOrWhiteSpace($PriorArmResult)) {
-            throw "A control arm cannot consume a prior L1 arm result."
+            throw "INFRA_ABORTED: A control arm cannot consume a prior L1 arm result."
         }
         return
     }
     if ([string]::IsNullOrWhiteSpace($PriorArmResult)) {
-        throw "$Arm requires the immediately preceding $expectedArm L1 arm result."
+        throw "INFRA_ABORTED: $Arm requires the immediately preceding $expectedArm L1 arm result."
     }
     $priorPath = [IO.Path]::GetFullPath($PriorArmResult)
     if (-not (Test-Path -LiteralPath $priorPath -PathType Leaf)) {
-        throw "Prior L1 arm result does not exist: $priorPath"
+        throw "INFRA_ABORTED: Prior L1 arm result does not exist: $priorPath"
     }
     $prior = Get-Content -LiteralPath $priorPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if (
@@ -129,12 +129,12 @@ function Assert-PriorArm {
         $prior.arm -ne $expectedArm -or
         $prior.passed -ne $true
     ) {
-        throw "Prior L1 arm result is not eligible for $Arm."
+        throw "INFRA_ABORTED: Prior L1 arm result is not eligible for $Arm."
     }
     foreach ($binding in $ExpectedSource.GetEnumerator()) {
         $actual = $prior.source.PSObject.Properties[$binding.Key]
         if ($null -eq $actual -or [string]$actual.Value -ne [string]$binding.Value) {
-            throw "Prior L1 arm source binding $($binding.Key) does not match the current lock."
+            throw "INFRA_ABORTED: Prior L1 arm source binding $($binding.Key) does not match the current lock."
         }
     }
 }
@@ -245,13 +245,13 @@ function Remove-ArmResources {
 }
 
 if ($InfraRetryAttempt -eq 0 -and -not [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
-    throw "-RetryOfRunId is valid only for infrastructure retry attempts 1 or 2."
+    throw "INFRA_ABORTED: -RetryOfRunId is valid only for infrastructure retry attempts 1 or 2."
 }
 if ($InfraRetryAttempt -gt 0 -and [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
-    throw "An infrastructure retry requires -RetryOfRunId."
+    throw "INFRA_ABORTED: an infrastructure retry requires -RetryOfRunId."
 }
 if (Test-Path -LiteralPath $armDirectory) {
-    throw "Immutable L1 arm directory already exists: $armDirectory"
+    throw "INFRA_ABORTED: immutable L1 arm directory already exists: $armDirectory"
 }
 New-Item -ItemType Directory -Path $rawResultsRoot -Force | Out-Null
 
@@ -259,7 +259,12 @@ $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 $sourceTree = (& git -C $root rev-parse "HEAD^{tree}").Trim()
 $originMain = (& git -C $root rev-parse origin/main).Trim()
 $status = @(& git -C $root status --porcelain=v1 --untracked-files=all)
-$capacityAtStart = Get-CapacitySnapshot
+try {
+    $capacityAtStart = Get-CapacitySnapshot
+}
+catch {
+    throw "INFRA_ABORTED: L1 capacity admission probe failed: $($_.Exception.Message)"
+}
 $resolvedLockPath = [IO.Path]::GetFullPath($ImageLockPath)
 & uv run --frozen python $imageLockTool --root $root verify --image-lock $resolvedLockPath `
     *> (Join-Path $armDirectory "image-lock-verification.log")
@@ -278,7 +283,7 @@ $expectedSource = [ordered]@{
 }
 Assert-PriorArm -ExpectedSource $expectedSource
 if ($sourceCommit -ne $originMain -or $status.Count -ne 0) {
-    throw "L1 calibration requires a clean exact origin/main worktree."
+    throw "INFRA_ABORTED: L1 calibration requires a clean exact origin/main worktree."
 }
 if (
     $imageLock.source.commit -ne $sourceCommit -or
@@ -359,11 +364,24 @@ try {
                 $failureReason = [string]$failure.reason
             }
         }
+        if ($classification -eq "DESIGN_REJECTED" -and (Test-Path -LiteralPath $stderrPath)) {
+            $runnerError = Get-Content -LiteralPath $stderrPath -Raw -Encoding UTF8
+            if ($runnerError -match "INFRA_ABORTED") {
+                $classification = "INFRA_ABORTED"
+                $failureReason = "INFRA_ABORTED: L1 Gate C runner reported an infrastructure failure."
+            }
+        }
     }
 }
 catch {
-    $classification = "DESIGN_REJECTED"
-    $failureReason = "L1 wrapper execution failed: $($_.Exception.Message)"
+    $innerFailure = $_.Exception.Message
+    $classification = if ($innerFailure.StartsWith("INFRA_ABORTED", [StringComparison]::Ordinal)) {
+        "INFRA_ABORTED"
+    }
+    else {
+        "DESIGN_REJECTED"
+    }
+    $failureReason = "L1 wrapper execution failed: $innerFailure"
     if ($null -eq $runDirectory) {
         try {
             $runDirectory = Find-RunDirectory

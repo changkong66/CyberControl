@@ -105,7 +105,7 @@ function Get-CapacitySnapshot {
 function Assert-CapacityAdmission {
     $snapshot = Get-CapacitySnapshot
     if ($snapshot.admission_ready -ne $true) {
-        throw "Gate C capacity admission failed: $($snapshot.limiting_target) has $($snapshot.free_gib) GiB available."
+        throw "INFRA_ABORTED: Gate C capacity admission failed: $($snapshot.limiting_target) has $($snapshot.free_gib) GiB available."
     }
     return $snapshot
 }
@@ -118,16 +118,16 @@ function Assert-PriorArm {
     }
     if ($null -eq $expected) {
         if (-not [string]::IsNullOrWhiteSpace($PriorArmResult)) {
-            throw "A control arm cannot consume a prior arm result."
+            throw "INFRA_ABORTED: A control arm cannot consume a prior arm result."
         }
         return
     }
     if ([string]::IsNullOrWhiteSpace($PriorArmResult)) {
-        throw "$Arm requires -PriorArmResult for the immediately preceding $expected arm."
+        throw "INFRA_ABORTED: $Arm requires -PriorArmResult for the immediately preceding $expected arm."
     }
     $resolved = [IO.Path]::GetFullPath($PriorArmResult)
     if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) {
-        throw "Prior arm result does not exist: $resolved"
+        throw "INFRA_ABORTED: Prior arm result does not exist: $resolved"
     }
     $prior = Get-Content -LiteralPath $resolved -Raw -Encoding UTF8 | ConvertFrom-Json
     if (
@@ -148,11 +148,11 @@ function Assert-PriorArm {
         $prior.source.build_receipt_sha256 -ne (Get-FileSha256 $receiptPath) -or
         $prior.passed -ne $true
     ) {
-        throw "Prior arm result is not eligible for $Arm."
+        throw "INFRA_ABORTED: Prior arm result is not eligible for $Arm."
     }
     foreach ($control in $prior.zero_tolerance.PSObject.Properties) {
         if ($control.Value -ne $true) {
-            throw "$Arm is prohibited after zero-tolerance failure $($control.Name)."
+            throw "INFRA_ABORTED: $Arm is prohibited after zero-tolerance failure $($control.Name)."
         }
     }
 }
@@ -162,10 +162,10 @@ function Get-JemallocBinding {
     $values = @(& docker run --rm --entrypoint /bin/sh $ImageReference -c `
         'set -eu; p=/opt/cybercontrol/jemalloc-prof/lib/libjemalloc.so.2; sha256sum "$p" | cut -d" " -f1; readelf -n "$p" | awk ''/Build ID:/ {print $3}''')
     if ($LASTEXITCODE -ne 0 -or $values.Count -ne 2) {
-        throw "Unable to read the diagnostic jemalloc binding."
+        throw "INFRA_ABORTED: unable to read the diagnostic jemalloc binding."
     }
     if ($values[0] -notmatch '^[0-9a-f]{64}$' -or $values[1] -notmatch '^[0-9a-f]{40}$') {
-        throw "Diagnostic jemalloc binding is invalid."
+        throw "INFRA_ABORTED: diagnostic jemalloc binding is invalid."
     }
     return [ordered]@{ sha256 = $values[0]; build_id = $values[1] }
 }
@@ -273,21 +273,21 @@ function Remove-ArmResources {
 }
 
 if ($InfraRetryAttempt -eq 0 -and -not [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
-    throw "-RetryOfRunId is valid only when -InfraRetryAttempt is 1 or 2."
+    throw "INFRA_ABORTED: -RetryOfRunId is valid only when -InfraRetryAttempt is 1 or 2."
 }
 if ($InfraRetryAttempt -gt 0 -and [string]::IsNullOrWhiteSpace($RetryOfRunId)) {
-    throw "An infrastructure retry requires -RetryOfRunId."
+    throw "INFRA_ABORTED: an infrastructure retry requires -RetryOfRunId."
 }
 $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
 $sourceTree = (& git -C $root rev-parse "HEAD^{tree}").Trim()
 $originMain = (& git -C $root rev-parse origin/main).Trim()
 $status = @(& git -C $root status --porcelain=v1 --untracked-files=all)
 if ($LASTEXITCODE -ne 0 -or $sourceCommit -ne $originMain -or $status.Count -ne 0) {
-    throw "Calibration requires a clean exact origin/main worktree."
+    throw "INFRA_ABORTED: calibration requires a clean exact origin/main worktree."
 }
 $runningContainers = @(& docker ps --format "{{.ID}}")
 if ($LASTEXITCODE -ne 0 -or $runningContainers.Count -ne 0) {
-    throw "Calibration requires Docker Server availability and zero running containers."
+    throw "INFRA_ABORTED: calibration requires Docker Server availability and zero running containers."
 }
 $capacityAtStart = Assert-CapacityAdmission
 
@@ -316,7 +316,7 @@ if ($LASTEXITCODE -ne 0 -or $actualDiagnosticId -ne [string]$diagnostic.image_id
 $jemalloc = Get-JemallocBinding -ImageReference ([string]$diagnostic.reference)
 
 if (Test-Path -LiteralPath $runDirectory) {
-    throw "Immutable calibration run directory already exists: $runDirectory"
+    throw "INFRA_ABORTED: immutable calibration run directory already exists: $runDirectory"
 }
 New-Item -ItemType Directory -Path $evidenceDirectory, $tlsDirectory -Force | Out-Null
 $passwordBytes = [byte[]]::new(32)
@@ -324,12 +324,12 @@ $passwordBytes = [byte[]]::new(32)
 $password = [Convert]::ToBase64String($passwordBytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
 $resolvedTlsBundle = [IO.Path]::GetFullPath($TlsBundlePath)
 if (-not (Test-Path -LiteralPath $resolvedTlsBundle -PathType Container)) {
-    throw "Sequence TLS bundle does not exist: $resolvedTlsBundle"
+    throw "INFRA_ABORTED: sequence TLS bundle does not exist: $resolvedTlsBundle"
 }
 foreach ($name in @("ca.crt", "server.crt", "server.key", "tls-manifest.json")) {
     $source = Join-Path $resolvedTlsBundle $name
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
-        throw "Sequence TLS bundle is missing $name."
+        throw "INFRA_ABORTED: sequence TLS bundle is missing $name."
     }
     Copy-Item -LiteralPath $source -Destination (Join-Path $tlsDirectory $name)
 }
@@ -343,7 +343,7 @@ if (
     $tlsManifest.ca_private_key_persisted -ne $false -or
     $tlsManifest.server_private_key_recorded_in_evidence -ne $false
 ) {
-    throw "Sequence TLS bundle manifest is invalid."
+    throw "INFRA_ABORTED: sequence TLS bundle manifest is invalid."
 }
 Copy-Item -LiteralPath (Join-Path $tlsDirectory "tls-manifest.json") `
     -Destination (Join-Path $evidenceDirectory "tls-manifest.json")
