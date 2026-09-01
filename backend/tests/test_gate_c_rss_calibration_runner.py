@@ -33,6 +33,11 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     assert "POSTGRES_PASSWORD_FILE" in compose
     assert "sslmode=verify-full" in compose
     assert "gate_c_calibration:${GATE_C_POSTGRES_PASSWORD" not in compose
+    assert "[IO.File]::WriteAllText(" in runner
+    assert "$passwordPath," in runner
+    assert "@(Compare-Object $composeImages $expectedImages).Count" in runner
+    assert '$classification -ne "DESIGN_REJECTED"' in runner
+    assert "orchestration failed before a trusted diagnostic result" in runner
     sequence = (ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-sequence.ps1").read_text(
         encoding="utf-8"
     )
