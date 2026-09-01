@@ -8,14 +8,16 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`5ac3287bc6bd22dce1c7e179255246a7617b1817`, tree
-`e0a39d9106361ad22023171e3a0960140241ed8b`. Protected-main Release Quality
-Gates Run `33489319860` completed 8/8 jobs successfully. PR #93 changed build,
+`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`, tree
+`e72cab3d31f83a6071141623661b08fb9e48eed6`. Protected-main Release Quality
+Gates Run `33533885658` completed 8/8 jobs successfully. PR #93 changed build,
 capacity and diagnostic infrastructure, PR #94 changed status documents, PR
 #95 accepted the measurement design and PR #96 added default-off diagnostic
 capability. PR #100-#102 rebuilt the trusted engineering foundation, PR #103
-closed its status, and PR #104 hardened only diagnostic execution governance.
-None changed core product behavior, so the current product source
+closed its status, PR #104 hardened only diagnostic execution governance, PR
+#105 closed that status, PRs #106-#108 repaired diagnostic tooling/readiness,
+and PR #109 archived the final design rejection. None changed core product
+behavior, so the current product source
 remains
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
 `963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
@@ -34,6 +36,14 @@ the final aggregate failed the frozen memory-recovery ratio at `1.417200`
 against `<=1.10`. All terminal lifecycle gauges were zero. A stage-local or
 near-threshold pass cannot advance the release state.
 Gate D through Gate G and unrelated product work remain locked.
+
+D1 reached a valid source-bound readiness state and executed one complete S
+control arm, but its physical ledger produced `non_jemalloc_anon=-352256`.
+ADR 0032 classifies this structural inability to produce a nonnegative
+mutually exclusive ledger as design failure two and requires new diagnostic
+design work to stop under `Gate-C-12-v1.0`. No RSS owner or product fix is
+authorized. The current stage is therefore governance decision and audit
+closure, not D2 or remediation.
 
 | Area | Current maturity | Evidence-based judgment |
 | --- | --- | --- |
@@ -777,7 +787,62 @@ formal state changed.
 `baseline_history` appends sequence 24 as `DIAGNOSTIC`; the first 23 entries
 remain byte-for-byte historical, `gate_c_attempts` remains 12, product source
 remains `a57d0ce...`, and Gate D-G remain locked. The prior `1103cdb...` D1
-receipt is superseded because engineering source changed. This target-two
-status PR, its protected-main 8/8, its external receipt, a fresh exact-main
-dual-track image lock and a fresh `D1_ONLY` readiness receipt are mandatory
-before calibration starts.
+receipt was superseded because engineering source changed. At that snapshot,
+the target-two status merge, external receipt, fresh exact-main dual-track
+image lock and fresh `D1_ONLY` receipt were mandatory. PR #105 and the
+`260913a...` readiness evidence below subsequently closed those prerequisites.
+
+## 19. D1 Readiness And Design-Rejection Audit
+
+PR #105 closed the target-two governance snapshot. PRs #106, #107 and #108
+then corrected diagnostic sequence orchestration, bounded bootstrap retry and
+source-bound readiness metadata without changing product runtime. Their merge
+SHAs are `a1ae0f626ba4783e5d50365a3fb6faef22a7d139`,
+`84eddf30d4e1280fafa0f588cbf79311169148ae`,
+`7e88e67cd43d3b7ee529c8841a01699b41a12bc7` and
+`260913a964ee8afbdbfbc073e89090f551b7cc67`. Every push, pull-request and
+protected-main chain passed 8/8 and every merge has an external closure
+receipt.
+
+The final `260913a...` D1-readiness receipt passed with scope `D1_ONLY`. It
+binds source tree `8748b79cf25d31ea158825312ac19eb7b1107e27`, product source
+`a57d0ce...`, normal/diagnostic image locks
+`0c366407ee1baeaa85a9e8c87f4bc529d2618734749169b2e1780db5c9a20f58` /
+`c79df22c2e78b37f4292745d1bd8b0e7438172dea504d510749cfb8daff1e8de`
+and build receipt
+`29b3401895797a3d050e51f3a4008136e713c292c4298413e2577643171b7843`.
+Readiness Release `380635279` has matching local/server package SHA256
+`8bd3be496b0ca0d137812aef887eb652783f9a239eeb9a0dfa71197966e2f961`.
+
+D1/S arm `adr0032-s-a-20260901T155200Z-f160628c` completed 2,000/2,000 TLS
+connections, the full 300-second idle and 600-second recovery windows, sample
+completeness `1.0`, and no OOM or restart. This excludes infrastructure abort
+and confirms that the failure occurred at the accepted design's trust gate.
+Recovery `RssAnon=57,323,520` and jemalloc `resident=57,675,776` yielded
+`non_jemalloc_anon=-352,256`, violating the nonnegative physical-partition
+invariant. The arm is correctly classified `BoundedMemoryInventoryRejected`
+and the overall decision is `ADR_0032_FINAL_DESIGN_REJECTED`.
+
+This is design failure ordinal two. It is not owner non-resolution and cannot
+be reclassified as infrastructure failure. It produces no admissible owner,
+no conservative remediation estimate and no permission for D2, product
+changes, PreflightSmoke or Full. The accepted stop rule prohibits a third
+diagnostic design under `Gate-C-12-v1.0`.
+
+Evidence PR #109 passed push/PR/main Runs
+`33531776126/33532803157/33533885658` at 8/8 and merged as
+`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`, tree
+`e72cab3d31f83a6071141623661b08fb9e48eed6`. Closure receipt SHA256 is
+`239ec2f0cdc64548bfc1ca64557ac90625e9f1edbdde5cdef5f475206f2dfe9a`.
+Immutable Release `380653216` stores the 35,912-byte evidence package with
+matching local/server SHA256
+`94bfd0a483f56a4789588c8fd2968b140acbcb1142744730cec0cb239f32a093`.
+
+The sequence wrapper's missing `reason` property lookup is separately tracked
+as `SEQUENCE_FAILURE_REASON_MASKING`. It did not alter the arm evidence or
+classification, but it must be repaired and regression-tested before any
+future process version permits diagnostic execution. Typed
+`baseline_history` sequences 25-29 close PRs #105-#109; no Full occurred, so
+`gate_c_attempts` remains exactly 12. Product source and all frozen semantics
+remain unchanged. The only admissible next work is this status closure and a
+separate governance decision on whether to define a new process version.
