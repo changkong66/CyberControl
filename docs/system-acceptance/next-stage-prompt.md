@@ -1,4 +1,4 @@
-# CyberControl Gate C Twelfth Trusted Foundation Closure And D1 Calibration
+# CyberControl Gate C Twelfth Target-Two Governance Closure And D1 Calibration
 
 Process Version: `Gate-C-12-v1.0`
 
@@ -10,9 +10,9 @@ D-G remain locked.
 ## Audited Parent Boundary
 
 - Verified protected main represented by this snapshot:
-  `70b6466f238887676ff4a0c1482923354ef8bd26`
-- Tree: `abdf8eb9d1226cdfe80eeacda236df0ea7b33c14`
-- Protected-main CI: Run `33357703713`, 8/8
+  `5ac3287bc6bd22dce1c7e179255246a7617b1817`
+- Tree: `e0a39d9106361ad22023171e3a0960140241ed8b`
+- Protected-main CI: Run `33489319860`, 8/8
 - Product source: `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
 - Last formal Gate C source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Frozen threshold SHA256:
@@ -22,13 +22,14 @@ D-G remain locked.
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Formal attempts: 12
-- `baseline_history`: 23 entries, ending at governance hotfix PR #102
+- `baseline_history`: 24 entries, ending at diagnostic-governance PR #104
 
 ADR 0032 design PR #95 passed push attempt 2, pull-request and protected-main
 Runs `32858328460`, `32859688307` and `32860487073`, each 8/8, and Squash
 Merged as `2c9d7debb2ba176f0688138d9519dca8805b5a6c`. Diagnostic-capability PR #96
 passed push, pull-request and protected-main Runs `32874073910`, `32874795456`
-and `32875417540`, each 8/8, and Squash Merged as the protected main above.
+and `32875417540`, each 8/8, and Squash Merged as
+`d2bee3861adf1129f80aae9b10d4709610a69251`.
 Neither changes product source or formal evidence.
 
 Trusted-foundation PR #100, governance PR #101 and UTF-8 hotfix PR #102 passed
@@ -37,8 +38,18 @@ push, pull-request and protected-main runs
 `33355555623/33355558236/33356155706` and
 `33357053660/33357082843/33357703713`, each 8/8. They merged as
 `10c6888454860155d24ad3947a9926c648c63783`,
-`63900736b537c60864f24a24cc312e48d564c2b8` and the protected main above.
+`63900736b537c60864f24a24cc312e48d564c2b8` and
+`70b6466f238887676ff4a0c1482923354ef8bd26`.
 They do not change product source or formal evidence.
+
+Target-two diagnostic-governance PR #104 head
+`661f62bfd274d56cf59a6c97817ae272bcf059a3` passed push, pull-request and
+protected-main Runs `33487315626`, `33488418124` and `33489319860`, each 8/8.
+It Squash Merged as the protected main above. Its immutable post-merge closure
+receipt SHA256 is
+`b6476dde8bbbd1e2941594349e050083f96be6586d507be67b87ce7685a2836f`.
+It changes only diagnostic orchestration, reproduction validation and failure
+classification; it does not establish an RSS owner or authorize remediation.
 
 The eleventh formal run remains M2. All workload stages, Outbox and
 zero-tolerance controls passed; the only failed control was API cgroup recovery
@@ -72,9 +83,9 @@ containers, repository protection, offline supply chain, three-root capacity
 and source-bound locks for `70b6466...`.
 
 Do not start D1 from this committed snapshot alone. First Squash Merge this
-status PR, require protected-main 8/8, generate its post-merge closure receipt,
-fetch that exact new main, rebuild both image-lock tracks with two fresh
-network-isolated builders, build the current audit index and require
+target-two status PR, require protected-main 8/8, generate its post-merge
+closure receipt, fetch that exact new main, rebuild both image-lock tracks with
+two fresh network-isolated builders, build the current audit index and require
 `verify-d1-readiness` to emit `PASS` with scope `D1_ONLY`. The status PR cannot
 self-reference its future merge SHA, so this external sequence is mandatory.
 

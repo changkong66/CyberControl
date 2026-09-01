@@ -16,18 +16,20 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current verified protected main represented by this status snapshot is
-`70b6466f238887676ff4a0c1482923354ef8bd26`, tree
-`abdf8eb9d1226cdfe80eeacda236df0ea7b33c14`, with protected-main Release
-Quality Gates [Run 33357703713](https://github.com/changkong66/CyberControl/actions/runs/33357703713)
+`5ac3287bc6bd22dce1c7e179255246a7617b1817`, tree
+`e0a39d9106361ad22023171e3a0960140241ed8b`, with protected-main Release
+Quality Gates [Run 33489319860](https://github.com/changkong66/CyberControl/actions/runs/33489319860)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`70b6466f238887676ff4a0c1482923354ef8bd26`. Product source remains bound to
+`5ac3287bc6bd22dce1c7e179255246a7617b1817`. Product source remains bound to
 the last core product-behavior change; PR #93 changed reproducible build,
 capacity, diagnostic and test infrastructure, PR #94 changed status documents,
 PR #95 accepted ADR 0032, and PR #96 added only default-off diagnostic
 capability. PR #100 established the offline trusted foundation, PR #101 added
 permanent governance gates, and PR #102 repaired Windows UTF-8 evidence
-collection. None changed frozen product semantics or underwent a new formal
+collection. PR #104 hardened only ADR-0032 diagnostic orchestration,
+reproduction checks and evidence classification. None changed frozen product
+semantics or underwent a new formal
 Gate C replay; the last formal evaluation remains bound to `5fcb917b...`.
 
 The project is not SYSTEM_ACCEPTED. Gate A and Gate B remain accepted. The
@@ -1270,12 +1272,13 @@ Its pre-cleanup manifest SHA256 is
 No prune, formal-volume deletion, evidence-image deletion or development-
 container stop occurred.
 
-D: currently has `10.823 GiB` free, below the `15 GiB` admission floor. D1 is
-therefore `INFRA_ABORTED_CAPACITY`: no protected-main image build, calibration
-or diagnostic run may start until capacity is restored and reverified. This
-infrastructure stop is not a design failure, does not append `gate_c_attempts`,
-and authorizes no owner or remediation conclusion. PreflightSmoke, formal Gate
-C and Gate D-G remain locked.
+At that pre-foundation capacity checkpoint on 2026-08-25, D: had `10.823 GiB`
+free, below the `15 GiB` admission floor. D1 was therefore classified
+`INFRA_ABORTED_CAPACITY`: no protected-main image build, calibration or
+diagnostic run could start until capacity was restored and reverified. This
+historical infrastructure stop was not a design failure, did not append
+`gate_c_attempts`, and authorized no owner or remediation conclusion.
+PreflightSmoke, formal Gate C and Gate D-G remained locked.
 
 ## Trusted Foundation Rebuild And Status Closure
 
@@ -1331,8 +1334,35 @@ SHA256 `e6d3ef5a04e9f1f39438266e85e71e709859f4bcd1a0c66b1adbe1ee0fedc137`.
 
 `baseline_history` appends typed sequences 20-23 for PR #97, #100, #101 and
 #102. Product source remains `a57d0ce...`, `gate_c_attempts` remains 12 and
-the formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. D1 execution is
-still locked until this status PR itself passes protected-main 8/8, receives
-its external closure receipt, and final exact-main image locks plus a passing
-D1-readiness receipt are generated. No diagnostic, remediation, PreflightSmoke
-or Full run is authorized by this report.
+the formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. PR #103 later
+closed that status snapshot and produced a passing D1-readiness receipt for
+its exact main. PR #104 advances the engineering source, so those image locks
+and that receipt are now historical and must be regenerated. No diagnostic,
+remediation, PreflightSmoke or Full run is authorized by this report.
+
+## Target-Two Diagnostic Governance Closure
+
+Target-two diagnostic-governance PR
+[#104](https://github.com/changkong66/CyberControl/pull/104) head
+`661f62bfd274d56cf59a6c97817ae272bcf059a3` passed push and pull-request Runs
+`33487315626` and `33488418124` at 8/8. It Squash Merged as
+`5ac3287bc6bd22dce1c7e179255246a7617b1817`, tree
+`e0a39d9106361ad22023171e3a0960140241ed8b`, and protected-main Run
+`33489319860` passed 8/8. The immutable post-merge closure receipt SHA256 is
+`b6476dde8bbbd1e2941594349e050083f96be6586d507be67b87ce7685a2836f`.
+
+PR #104 resolves five execution-boundary gaps without changing product
+runtime behavior: two independent calibration sequences are mandatory;
+pre-package infrastructure failures remain `INFRA_ABORTED`; the 200-connection
+calibration is explicitly 2,000 total TLS connections at concurrency 200 and
+50/s; post-remediation Preflight precedes mainline gradients; and L1 now has a
+cross-run physical-ledger attribution check. Full local verification passed
+`783` deterministic tests and `870` PostgreSQL/Keycloak tests at `91.47%`
+coverage; the CI-equivalent database restart probe also passed independently.
+
+`baseline_history` appends sequence 24 as `DIAGNOSTIC`. Product source remains
+`a57d0ce...`, the formal run remains bound to `5fcb917b...`,
+`gate_c_attempts` remains exactly 12 and Gate D-G remain locked. This new status
+PR must itself Squash Merge, pass protected-main 8/8 and receive its external
+post-merge receipt. New normal and diagnostic locks plus a new D1-readiness
+receipt must then bind that exact status-merged main before any D1 arm starts.

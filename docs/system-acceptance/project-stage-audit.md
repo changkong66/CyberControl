@@ -8,12 +8,14 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`d2bee3861adf1129f80aae9b10d4709610a69251`, tree
-`69eed0310296f95718660dfd798ea6262bbac291`. Protected-main Release Quality
-Gates Run `32875417540` completed 8/8 jobs successfully. PR #93 changed build,
+`5ac3287bc6bd22dce1c7e179255246a7617b1817`, tree
+`e0a39d9106361ad22023171e3a0960140241ed8b`. Protected-main Release Quality
+Gates Run `33489319860` completed 8/8 jobs successfully. PR #93 changed build,
 capacity and diagnostic infrastructure, PR #94 changed status documents, PR
 #95 accepted the measurement design and PR #96 added default-off diagnostic
-capability. None changed core product behavior, so the current product source
+capability. PR #100-#102 rebuilt the trusted engineering foundation, PR #103
+closed its status, and PR #104 hardened only diagnostic execution governance.
+None changed core product behavior, so the current product source
 remains
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
 `963fcf73113e39a1e5868fae3957f4adfc102a4c`. The eleventh formal Gate C replay
@@ -62,7 +64,7 @@ highest release risk.
 - Reproducible Python, Node and Go toolchains with frozen lockfiles.
 - Non-root containers and mandatory contract, SBOM, license, Trivy and
   Gitleaks gates.
-- Docker Desktop data disk migrated to the D drive without deleting historical
+- Docker Desktop data disk migrated to the F drive without deleting historical
   project volumes or evidence.
 
 ### 2.2 Trusted Education Product Chain
@@ -749,7 +751,33 @@ all 20 manifest members were independently rehashed with zero mismatch.
 Typed `baseline_history` sequences 20-23 classify these events as `STATUS`,
 `INFRA`, `INFRA` and `REMEDIATION`. The prior 19 entries are unchanged,
 `gate_c_attempts` remains 12, product source remains `a57d0ce...`, and Gate D-G
-remain locked. The status PR cannot self-bind its future Squash Merge SHA; its
-own protected-main result and closure receipt must be created externally after
-merge. A final exact-main image-lock batch and passing D1-readiness receipt are
-also required before the `D1_ONLY` authorization exists.
+remain locked. PR #103 externally closed that status snapshot and produced a
+valid `D1_ONLY` receipt for `1103cdb...`; PR #104 now supersedes its source
+binding, so new exact-main locks and readiness evidence are mandatory.
+
+## 18. Target-Two Diagnostic Governance Closure Audit
+
+PR #104 head `661f62bfd274d56cf59a6c97817ae272bcf059a3` passed push and
+pull-request Runs `33487315626` and `33488418124`, Squash Merged as
+`5ac3287bc6bd22dce1c7e179255246a7617b1817`, tree
+`e0a39d9106361ad22023171e3a0960140241ed8b`, and passed protected-main Run
+`33489319860`; all three chains completed 8/8. Post-merge closure receipt
+SHA256 is `b6476dde8bbbd1e2941594349e050083f96be6586d507be67b87ce7685a2836f`.
+
+The change closes five execution risks before D1: every probe now needs two
+independent sequences; pre-package infrastructure faults propagate as
+`INFRA_ABORTED`; the calibration workload is unambiguously 2,000 total TLS
+connections at maximum concurrency 200 and 50/s; Preflight precedes mainline
+gradients after any remediation; and L1 physical-ledger attribution is checked
+across both runs. Local quality gates passed `783` deterministic tests and
+`870` PostgreSQL/Keycloak tests with `91.47%` coverage, plus one independent
+database-restart probe. No product runtime, migration, threshold, workload or
+formal state changed.
+
+`baseline_history` appends sequence 24 as `DIAGNOSTIC`; the first 23 entries
+remain byte-for-byte historical, `gate_c_attempts` remains 12, product source
+remains `a57d0ce...`, and Gate D-G remain locked. The prior `1103cdb...` D1
+receipt is superseded because engineering source changed. This target-two
+status PR, its protected-main 8/8, its external receipt, a fresh exact-main
+dual-track image lock and a fresh `D1_ONLY` readiness receipt are mandatory
+before calibration starts.
