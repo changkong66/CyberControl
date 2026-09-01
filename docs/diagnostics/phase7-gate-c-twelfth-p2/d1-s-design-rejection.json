@@ -1,0 +1,95 @@
+{
+  "schema_version": "cybercontrol.gate-c-d1-design-rejection.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "DESIGN_REJECTED",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "gate_c_attempts_appended": false,
+  "decision": "ADR_0032_FINAL_DESIGN_REJECTED",
+  "source": {
+    "engineering_baseline_sha": "260913a964ee8afbdbfbc073e89090f551b7cc67",
+    "source_tree": "8748b79cf25d31ea158825312ac19eb7b1107e27",
+    "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "diagnostic_image_digest": "sha256:0ef56e8b3ccdab3e4ced3abc1c93dcb270088973f6e56a50e91ee7c3ccea6d88",
+    "diagnostic_image_lock_sha256": "c79df22c2e78b37f4292745d1bd8b0e7438172dea504d510749cfb8daff1e8de",
+    "build_receipt_sha256": "29b3401895797a3d050e51f3a4008136e713c292c4298413e2577643171b7843"
+  },
+  "frozen_inputs": {
+    "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea"
+  },
+  "readiness": {
+    "state": "GATE_C12_TRUSTED_FOUNDATION_VERIFIED_D1_READY",
+    "authorization_scope": "D1_ONLY",
+    "receipt_sha256": "6cb60d55e8ab21c008b82d34828f656de11b24a80c62bcbea87977fd0e095609",
+    "release_id": 380635279,
+    "release_asset_sha256": "8bd3be496b0ca0d137812aef887eb652783f9a239eeb9a0dfa71197966e2f961"
+  },
+  "execution": {
+    "sequence_id": "adr0032-s-sequence-20260901T155159Z-3637d0e0",
+    "arm_run_id": "adr0032-s-a-20260901T155200Z-f160628c",
+    "variable": "S",
+    "arm": "A",
+    "idle_seconds": 300,
+    "recovery_seconds": 600,
+    "requested_connections": 2000,
+    "successful_connections": 2000,
+    "sample_completeness": 1.0,
+    "tls_verified": true,
+    "oom_or_unplanned_restart": false,
+    "instrumentation_ready": true
+  },
+  "physical_ledger": {
+    "baseline": {
+      "rss_anon_bytes": 49987584,
+      "jemalloc_allocated_bytes": 45875680,
+      "jemalloc_active_bytes": 46612480,
+      "jemalloc_resident_bytes": 49811456,
+      "non_jemalloc_anon_bytes": 176128,
+      "valid": true
+    },
+    "recovery": {
+      "rss_anon_bytes": 57323520,
+      "jemalloc_allocated_bytes": 52889000,
+      "jemalloc_active_bytes": 54329344,
+      "jemalloc_resident_bytes": 57675776,
+      "non_jemalloc_anon_bytes": -352256,
+      "valid": false
+    },
+    "failed_rule": "All mutually exclusive physical partition components must be nonnegative",
+    "failure_type": "BoundedMemoryInventoryRejected"
+  },
+  "classification_boundary": {
+    "readiness_completed": true,
+    "trusted_measurement_completed": false,
+    "infra_aborted": false,
+    "owner_unresolved": false,
+    "design_rejected": true,
+    "design_failure_ordinal": 2,
+    "new_diagnostic_design_under_process_version": "STOPPED"
+  },
+  "secondary_tooling_defect": {
+    "id": "SEQUENCE_FAILURE_REASON_MASKING",
+    "description": "The sequence wrapper read a missing reason property and masked the primary arm failure in its own summary.",
+    "changed_primary_classification": false,
+    "future_fix_required": true
+  },
+  "authorization_after_decision": {
+    "d2": false,
+    "product_remediation": false,
+    "preflight_smoke": false,
+    "formal_full_gate_c": false,
+    "gate_d_through_g": false
+  },
+  "ownership_conclusion": null,
+  "formal_state_unchanged": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+  "gate_c_attempts": 12,
+  "evidence": {
+    "arm_package_sha256": "a138ac27a8d899a7d8ad27e2dc2e05b1d6fb0e9add0d53e5fcc72e1631fcd475",
+    "sequence_package_sha256": "ca2c99b3d2a2a817d5672e63a86d402afd48c13c945cde5612e856b76cf8ed06",
+    "outer_package_sha256": "94bfd0a483f56a4789588c8fd2968b140acbcb1142744730cec0cb239f32a093",
+    "analysis_sha256": "4e9b7d33e3c377de34a4a27a09ebbbdcd873d850116a9a12db16961f2ecb15dd",
+    "classification_addendum_sha256": "a000fd31c55c0407efa4c0e2814f92ee3edb96a5b357af0686fc042d541b23b2",
+    "release_verification_receipt_sha256": "6ecc1c835b568e0396befb8b4797abe369c741e5ffa071b9f33059f73475a1bf"
+  }
+}

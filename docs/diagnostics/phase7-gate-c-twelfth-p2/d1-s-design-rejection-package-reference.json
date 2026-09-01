@@ -1,0 +1,42 @@
+{
+  "schema_version": "cybercontrol.gate-c-diagnostic-package-reference.v1",
+  "process_version": "Gate-C-12-v1.0",
+  "classification": "DESIGN_REJECTED",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "gate_c_attempts_appended": false,
+  "run_id": "adr0032-s-sequence-20260901T155159Z-3637d0e0",
+  "local_package": {
+    "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c12-target2-d1-s-design-rejected-260913a-evidence-v1.zip",
+    "size_bytes": 35912,
+    "sha256": "94bfd0a483f56a4789588c8fd2968b140acbcb1142744730cec0cb239f32a093"
+  },
+  "release": {
+    "id": 380653216,
+    "tag": "phase7-gate-c12-target2-d1-s-design-rejected-20260902-260913a-v1",
+    "url": "https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c12-target2-d1-s-design-rejected-20260902-260913a-v1",
+    "asset_id": 539808826,
+    "asset_name": "gate-c12-target2-d1-s-design-rejected-260913a-evidence-v1.zip",
+    "asset_url": "https://github.com/changkong66/CyberControl/releases/download/phase7-gate-c12-target2-d1-s-design-rejected-20260902-260913a-v1/gate-c12-target2-d1-s-design-rejected-260913a-evidence-v1.zip",
+    "asset_size_bytes": 35912,
+    "asset_sha256": "94bfd0a483f56a4789588c8fd2968b140acbcb1142744730cec0cb239f32a093",
+    "local_remote_match": true
+  },
+  "nested_packages": {
+    "arm": {
+      "run_id": "adr0032-s-a-20260901T155200Z-f160628c",
+      "sha256": "a138ac27a8d899a7d8ad27e2dc2e05b1d6fb0e9add0d53e5fcc72e1631fcd475"
+    },
+    "sequence": {
+      "run_id": "adr0032-s-sequence-20260901T155159Z-3637d0e0",
+      "sha256": "ca2c99b3d2a2a817d5672e63a86d402afd48c13c945cde5612e856b76cf8ed06"
+    }
+  },
+  "release_verification_receipt": {
+    "path": "D:/CyberControlAcceptance/phase7/gate-c/diagnostics/gate-c12-target2-d1-calibration-260913a-20260901T155131Z/design-rejection-release-verification-receipt.json",
+    "sha256": "6ecc1c835b568e0396befb8b4797abe369c741e5ffa071b9f33059f73475a1bf"
+  },
+  "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+  "gate_c_attempts": 12,
+  "formal_state_unchanged": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
+}
