@@ -686,6 +686,25 @@ def _write_new_json(path: Path, document: object) -> None:
         stream.write("\n")
 
 
+def instrumentation_readiness(
+    *, arm: str, variable: str, run_id: str, source: dict[str, str]
+) -> dict[str, object]:
+    return {
+        "schema_version": "cybercontrol.gate-c-rss-calibration-readiness.v1",
+        "process_version": PROCESS_VERSION,
+        "classification": "NON_ACCEPTANCE_DIAGNOSTIC",
+        "formal_gate_attempt": False,
+        "acceptance_claim": False,
+        "run_id": run_id,
+        "arm": arm,
+        "variable": variable,
+        "source": source,
+        "database_credentials_recorded": False,
+        "ready": True,
+        "ready_at_utc": datetime.now(UTC).isoformat(),
+    }
+
+
 def _database_url_from_arguments(arguments: argparse.Namespace) -> str:
     if arguments.database_url:
         return str(arguments.database_url)
@@ -735,6 +754,7 @@ def _parser() -> argparse.ArgumentParser:
         default=os.getenv("GATE_C_POSTGRES_TLS_SERVER_HOSTNAME", "postgres"),
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--readiness-output", type=Path, required=True)
     parser.add_argument("--idle-seconds", type=int, default=300)
     parser.add_argument("--recovery-seconds", type=int, default=600)
     return parser
@@ -742,10 +762,22 @@ def _parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     arguments = _parser().parse_args()
+    if arguments.readiness_output.resolve() == arguments.output.resolve():
+        raise ValueError("calibration readiness and result outputs must be distinct")
     database_url = _database_url_from_arguments(arguments)
+    source = _source_binding_from_environment()
     config = CalibrationConfig(
         idle_seconds=arguments.idle_seconds,
         recovery_seconds=arguments.recovery_seconds,
+    )
+    _write_new_json(
+        arguments.readiness_output,
+        instrumentation_readiness(
+            arm=arguments.arm,
+            variable=arguments.variable,
+            run_id=arguments.run_id,
+            source=source,
+        ),
     )
     document = asyncio.run(
         run_calibration(
@@ -753,7 +785,7 @@ def main() -> int:
             variable=arguments.variable,
             run_id=arguments.run_id,
             database_url=database_url,
-            source=_source_binding_from_environment(),
+            source=source,
             config=config,
             tls=CalibrationTLS(
                 ca_certificate=arguments.tls_ca,

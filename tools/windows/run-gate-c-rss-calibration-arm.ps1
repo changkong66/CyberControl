@@ -56,6 +56,7 @@ $secretsDirectory = Join-Path $runDirectory "secrets"
 $tlsDirectory = Join-Path $secretsDirectory "tls"
 $passwordPath = Join-Path $secretsDirectory "postgres-password"
 $resultPath = Join-Path $evidenceDirectory "calibration-arm.json"
+$readinessPath = Join-Path $evidenceDirectory "instrumentation-ready.json"
 $packagePath = Join-Path $runDirectory "evidence.zip"
 $manifestPath = Join-Path $runDirectory "evidence-manifest.json"
 $cleanupReceiptPath = Join-Path $runDirectory "cleanup-receipt.json"
@@ -441,7 +442,7 @@ try {
         $classification = "INFRA_ABORTED"
         throw "INFRA_ABORTED: capacity hard stop activated below 5 GiB."
     }
-    if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $readinessPath -PathType Leaf)) {
         $calibrationContainerIds = @(
             & docker compose @composeArguments ps --all --quiet calibration 2>$null
         )
@@ -466,6 +467,32 @@ try {
             $classification = "INFRA_ABORTED"
             throw "INFRA_ABORTED: calibration container never started (state=$calibrationContainerState)."
         }
+        $classification = "INFRA_ABORTED"
+        throw "INFRA_ABORTED: calibration container started but instrumentation did not reach the validated readiness marker."
+    }
+    $readiness = Get-Content -LiteralPath $readinessPath -Raw -Encoding UTF8 |
+        ConvertFrom-Json
+    if (
+        $readiness.schema_version -ne
+            "cybercontrol.gate-c-rss-calibration-readiness.v1" -or
+        $readiness.process_version -ne $processVersion -or
+        $readiness.classification -ne "NON_ACCEPTANCE_DIAGNOSTIC" -or
+        $readiness.formal_gate_attempt -ne $false -or
+        $readiness.acceptance_claim -ne $false -or
+        $readiness.run_id -ne $runId -or
+        $readiness.arm -ne $Arm -or
+        $readiness.variable -ne $Variable -or
+        $readiness.ready -ne $true -or
+        $readiness.source.source_sha -ne $sourceCommit -or
+        $readiness.source.source_tree -ne $sourceTree -or
+        $readiness.source.image_id -ne [string]$diagnostic.image_id -or
+        $readiness.source.image_lock_sha256 -ne (Get-FileSha256 $resolvedLockPath) -or
+        $readiness.source.build_receipt_sha256 -ne (Get-FileSha256 $receiptPath)
+    ) {
+        $classification = "INFRA_ABORTED"
+        throw "INFRA_ABORTED: calibration instrumentation readiness marker failed source-bound validation."
+    }
+    if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
         $classification = "DESIGN_REJECTED"
         throw "Calibration instrumentation started but did not produce an arm result."
     }
