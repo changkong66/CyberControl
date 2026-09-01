@@ -1,18 +1,18 @@
-# CyberControl Gate C Twelfth Target-Two Governance Closure And D1 Calibration
+# CyberControl Gate C Twelfth D1 Design Rejection Closure
 
 Process Version: `Gate-C-12-v1.0`
 
-Use only the real protected repository, GitHub Actions, locked images, Docker,
-PostgreSQL, Keycloak-issued tokens and immutable evidence. Do not fabricate a
-source, CI run, image, token, volume, metric, package, owner or decision. Gate
-D-G remain locked.
+Use only the real protected repository, GitHub Actions, source-bound images,
+Docker, PostgreSQL, Keycloak-issued tokens and immutable evidence. Do not
+fabricate a source, CI run, image, token, volume, metric, package, owner or
+decision. Historical evidence is append-only. Gate D-G remain locked.
 
 ## Audited Parent Boundary
 
 - Verified protected main represented by this snapshot:
-  `5ac3287bc6bd22dce1c7e179255246a7617b1817`
-- Tree: `e0a39d9106361ad22023171e3a0960140241ed8b`
-- Protected-main CI: Run `33489319860`, 8/8
+  `44ff28af5b54b574aa8a6fd3f62f2d258244fd74`
+- Tree: `e72cab3d31f83a6071141623661b08fb9e48eed6`
+- Protected-main CI: Run `33533885658`, 8/8
 - Product source: `a57d0ce57427804ede3f3c620fda2a93b3a300ff`
 - Last formal Gate C source: `5fcb917b63889cb6da8dd019efdd133f4ec3fb60`
 - Frozen threshold SHA256:
@@ -22,215 +22,119 @@ D-G remain locked.
 - Formal state:
   `RELEASE_CANDIDATE / PHASE7_GATE_C_FAILED_GATE_D_LOCKED`
 - Formal attempts: 12
-- `baseline_history`: 24 entries, ending at diagnostic-governance PR #104
-
-ADR 0032 design PR #95 passed push attempt 2, pull-request and protected-main
-Runs `32858328460`, `32859688307` and `32860487073`, each 8/8, and Squash
-Merged as `2c9d7debb2ba176f0688138d9519dca8805b5a6c`. Diagnostic-capability PR #96
-passed push, pull-request and protected-main Runs `32874073910`, `32874795456`
-and `32875417540`, each 8/8, and Squash Merged as
-`d2bee3861adf1129f80aae9b10d4709610a69251`.
-Neither changes product source or formal evidence.
-
-Trusted-foundation PR #100, governance PR #101 and UTF-8 hotfix PR #102 passed
-push, pull-request and protected-main runs
-`33350927582/33350950282/33351591565`,
-`33355555623/33355558236/33356155706` and
-`33357053660/33357082843/33357703713`, each 8/8. They merged as
-`10c6888454860155d24ad3947a9926c648c63783`,
-`63900736b537c60864f24a24cc312e48d564c2b8` and
-`70b6466f238887676ff4a0c1482923354ef8bd26`.
-They do not change product source or formal evidence.
-
-Target-two diagnostic-governance PR #104 head
-`661f62bfd274d56cf59a6c97817ae272bcf059a3` passed push, pull-request and
-protected-main Runs `33487315626`, `33488418124` and `33489319860`, each 8/8.
-It Squash Merged as the protected main above. Its immutable post-merge closure
-receipt SHA256 is
-`b6476dde8bbbd1e2941594349e050083f96be6586d507be67b87ce7685a2836f`.
-It changes only diagnostic orchestration, reproduction validation and failure
-classification; it does not establish an RSS owner or authorize remediation.
+- `baseline_history`: 29 entries after this status snapshot, ending at PR #109
 
 The eleventh formal run remains M2. All workload stages, Outbox and
 zero-tolerance controls passed; the only failed control was API cgroup recovery
-ratio `1.417200 > 1.10`, from baseline/recovery/peak
-`262144000/371510477/436941619` bytes. No accepted owner exists.
+ratio `1.417200 > 1.10`. No accepted RSS owner exists.
 
-ADR 0030 rejected the first Gate-C-12 profiling protocol after Measurement
-returned HTTP 500. Package SHA256 is
-`99d6fb8ed47950ea142def94c2fd3a6388ec0091e517ee6737ad5d2cdff7d423`.
-Do not derive an owner from it.
+## Trusted Readiness Boundary
 
-## D0 And Capability Closure
+PRs #105-#108 closed target-two governance and corrected only diagnostic
+orchestration/readiness tooling. All push, pull-request and protected-main
+chains passed 8/8 and each merge has an immutable post-merge closure receipt.
 
-D0 is complete. All six required artifacts are accepted by PR #95: S/R/P/F
-and A/M/A' variable matrix, interference formulas and zero-tolerance controls,
-mutually exclusive ledger, strong/weak attribution rules and multi-owner
-cutoff, failure exits, and evidence/image/cleanup contract. PR #96 implements
-only that bounded diagnostic scope. Accepted ADR 0032 remains immutable.
+Exact source `260913a964ee8afbdbfbc073e89090f551b7cc67`, tree
+`8748b79cf25d31ea158825312ac19eb7b1107e27`, passed
+`GATE_C12_TRUSTED_FOUNDATION_VERIFIED_D1_READY` with scope `D1_ONLY`:
 
-This closure authorizes diagnostic calibration only. Product remediation,
-PreflightSmoke, formal Gate C and Gate D-G remain locked. No owner may be
-inferred from tooling availability or the rejected ADR 0030 package.
+- normal lock SHA256:
+  `0c366407ee1baeaa85a9e8c87f4bc529d2618734749169b2e1780db5c9a20f58`
+- diagnostic lock SHA256:
+  `c79df22c2e78b37f4292745d1bd8b0e7438172dea504d510749cfb8daff1e8de`
+- build receipt SHA256:
+  `29b3401895797a3d050e51f3a4008136e713c292c4298413e2577643171b7843`
+- readiness receipt SHA256:
+  `6cb60d55e8ab21c008b82d34828f656de11b24a80c62bcbea87977fd0e095609`
+- readiness Release/package:
+  `380635279` /
+  `8bd3be496b0ca0d137812aef887eb652783f9a239eeb9a0dfa71197966e2f961`
 
-## Trusted Foundation Final Closure Gate
+This proves that the D1 failure below is not caused by stale source, image
+mismatch, missing readiness, Docker migration or capacity admission.
 
-The current non-acceptance engineering package is immutable prerelease
-`379521605`, asset `537480740`, size `36710`, SHA256
-`e6d3ef5a04e9f1f39438266e85e71e709859f4bcd1a0c66b1adbe1ee0fedc137`.
-It proves `MIGRATION_VALIDATED`, 13/13 formal volumes, zero running business
-containers, repository protection, offline supply chain, three-root capacity
-and source-bound locks for `70b6466...`.
+## Binding D1 Decision
 
-Do not start D1 from this committed snapshot alone. First Squash Merge this
-target-two status PR, require protected-main 8/8, generate its post-merge
-closure receipt, fetch that exact new main, rebuild both image-lock tracks with
-two fresh network-isolated builders, build the current audit index and require
-`verify-d1-readiness` to emit `PASS` with scope `D1_ONLY`. The status PR cannot
-self-reference its future merge SHA, so this external sequence is mandatory.
+D1/S sequence `adr0032-s-sequence-20260901T155159Z-3637d0e0`, arm
+`adr0032-s-a-20260901T155200Z-f160628c`, completed:
 
-## D1 Capacity And Image Gate
+- 2,000 requested and 2,000 successful real TLS connections;
+- 300-second idle and 600-second recovery windows;
+- sample completeness `1.0`;
+- source-bound instrumentation-ready evidence;
+- zero OOM and zero unplanned restart.
 
-The latest manifest-driven cleanup receipt is
-`D:\CyberControlAcceptance\phase7\gate-c\diagnostics\gate-c12-capacity-cleanup-20260825T171029Z\cleanup-receipt.json`,
-SHA256 `cb28d0eedaf1987329469edbb5e8395ef3ed7dedba8d4e78e21382260f3317ed`.
-Its pre-cleanup manifest SHA256 is
-`eff7be833b5e4c0efca35598c48c0b4b687a5ad89262495f27d55c24c12d0029`.
-No prune, formal-volume deletion, evidence-image deletion or stop of the five
-development containers occurred.
-
-The post-build D/F/Docker-internal free-space snapshot is
-`146.205/327.564/827.397 GiB`; all targets are `NORMAL` against the 15/8/5 GiB
-policy. Re-sample all three roots immediately before D1. Any target below the
-15 GiB admission floor blocks execution; the same proven infrastructure cause
-may be retried at most twice and does not consume a design-failure slot or
-append `gate_c_attempts`.
-
-The pre-status exact-main normal/diagnostic lock SHA256 values are
-`3d35955a2edd961f9364fca32f40d0dc9bbb8ab85d1f2fe4c97d550e6220d1f7` and
-`2d9bf585972a3d0e89c2931f33187b14a98ea3f1d81698796e072355fff83734`;
-build receipt SHA256 is
-`e81a26cf4ecb1747071bc892a8ac5a10b7a4e4a625c1e96c8262eecdbbe1db1e`.
-They prove reproducibility but must be superseded by final locks bound to the
-status-merged main before D1 execution.
-
-## Exact D1 Diagnostic Scope
-
-The connection-churn harness uses 2,000 real TLS PostgreSQL connections per
-arm, maximum concurrency 200 and fixed admission rate 50/s. Each variable uses
-fresh matched A/M/A' resources:
-
-- `S`: signal/event-loop delivery with verified mallctl no-op.
-- `R`: `prof.reset` only.
-- `P`: `prof.active=true` only, without reset.
-- `F`: reset plus activation, only after S/R/P independently pass and evidence
-  requires the combination.
-
-Implement L0 passive ledger first. L1 bounded inventory and L2 sampled
-profiling are separate probe levels; both require a 200-connection A/M/A'
-interference pass before escalation. L1, L2, tracemalloc, GC object scans,
-task/frame stacks and heavy checkpoints are pairwise exclusive. L0 alone may
-accompany one active probe.
-
-Every valid calibration requires:
-
-- A/A' drift no more than 10% for connection p95, delivery p95, CPU p95 and
-  event-loop lag p95;
-- M/control median no more than 1.10 for the same metrics;
-- RSS interference no more than `max(8 MiB, 10% of control RSS delta)`;
-- completeness 1.0 for the micro harness and at least 0.95 for real API/L1;
-- two independent matched passes before attribution use;
-- zero HTTP 5xx, Bad address, loss, duplicates, leakage, invalid cursors,
-  Outbox DEAD, pool timeout, OOM, restart or terminal lifecycle ownership.
-
-Check zero-tolerance controls before performance. Any zero-tolerance failure
-stops interpretation and A'.
-
-## Attribution Boundary
-
-Use the physical partition:
+The accepted physical ledger failed its nonnegative-partition invariant:
 
 ```text
-RssAnon = jemalloc_allocated
-        + (jemalloc_active - jemalloc_allocated)
-        + (jemalloc_resident - jemalloc_active)
-        + (RssAnon - jemalloc_resident)
+Recovery RssAnon              57,323,520
+jemalloc resident             57,675,776
+non_jemalloc_anon               -352,256
 ```
 
-Report `RssFile` and `RssShmem` separately and bridge process RSS, other
-processes, file cache and kernel memory to cgroup `memory.current`. Python,
-pool, cache, task, subscriber and replay ownership are overlays and must not be
-added to the physical partition.
+The arm failure is `BoundedMemoryInventoryRejected`. The binding classification
+is `DESIGN_REJECTED`, design-failure ordinal two. It is not `INFRA_ABORTED` and
+not `OWNER_UNRESOLVED`. No RSS owner, owner share or remediation prediction may
+be inferred from this run.
 
-Strong admission requires at least 90% explanation, unknown bytes no more than
-`min(10%, 8 MiB)`, two independent reproductions and the ADR 0032 sampled-stack
-conditions when L2 is used.
+ADR 0032 states that its structural failure is the second and final design
+failure under `Gate-C-12-v1.0`. New diagnostic-design work under this process
+version is stopped. Do not run a second S sequence, R/P/F, L1, L2, D2,
+remediation validation, PreflightSmoke or formal Full.
 
-Weak admission requires one owner at least 70%, category-known residual, no
-lifecycle anomaly and conservative compliance using the lower of two measured
-improvements minus noise. It also requires a new numbered append-only
-ADR-0032 weak-admission addendum. That separate docs/evidence PR must include
-residual classes/ratios, full calculation and two run IDs, summary paths and
-package SHA256 values; only explicit `WEAK_ADMISSION_APPROVED`, Squash Merge
-and protected-main 8/8 authorize remediation. Do not edit accepted ADR 0032.
+## Immutable Evidence
 
-If multiple owners exist, remediate the largest first and remeasure. Stop when
-the conservative residual meets 1.10; do not change secondary owners merely
-to increase explanatory completeness.
+Design-rejection Release `380653216` contains the 35,912-byte package with
+matching local/server SHA256
+`94bfd0a483f56a4789588c8fd2968b140acbcb1142744730cec0cb239f32a093`.
+Nested arm and sequence package SHA256 values are
+`a138ac27a8d899a7d8ad27e2dc2e05b1d6fb0e9add0d53e5fcc72e1631fcd475`
+and `ca2c99b3d2a2a817d5672e63a86d402afd48c13c945cde5612e856b76cf8ed06`.
 
-## Stops, Capacity And Evidence
+Evidence PR #109 passed push/PR/main Runs
+`33531776126/33532803157/33533885658` at 8/8 and Squash Merged as the parent
+main above. Its post-merge closure receipt SHA256 is
+`239ec2f0cdc64548bfc1ca64557ac90625e9f1edbdde5cdef5f475206f2dfe9a`.
 
-- `DESIGN_REJECTED` means probe design/calibration cannot produce trustworthy
-  data. ADR 0030 is design failure one; ADR 0032 failure is the second and
-  final design failure under this process.
-- `OWNER_UNRESOLVED` means data is trustworthy but no owner meets strong or
-  weak admission. It is not design failure, but it stops product modification.
-- `INFRA_ABORTED` means independently proven image, environment, Docker, disk
-  or network failure. Retry the interrupted level for the same cause at most
-  twice; a third abort requires an infrastructure report. It never appends
-  design-failure count or `gate_c_attempts`.
+The sequence wrapper later read a missing `reason` property and masked the
+primary arm error in its own summary. Append-only correction evidence records
+`SEQUENCE_FAILURE_REASON_MASKING`; it does not change the classification. Any
+future process version must repair this P1 defect and add a regression test
+before authorizing execution.
 
-Capacity remains 15/8/5 GiB. Before every round require at least 15 GiB free.
-After every round, archive and verify the package, then mandatorily remove only
-that round's temporary containers, network, PostgreSQL volume and archived
-intermediate logs. Confirm zero project resources and restored admission
-space before continuing. Below 8 GiB only manifest-proven unreferenced
-temporary cleanup is allowed; below 5 GiB stop gracefully. Never prune or
-delete historical formal volumes, core images or immutable evidence.
+## Only Allowed Next Scope
 
-Normal image lock covers backend, frontend, migrate, provider, load generator
-and supporting services. Diagnostic API uses a separate image role and digest.
-Any normal service digest mismatch is `INFRA_ABORTED`. Diagnostic images may
-not impersonate formal protected-main images.
+1. Squash Merge this D1 design-rejection status PR.
+2. Require its protected-main Release Quality Gates to pass 8/8.
+3. Generate the status PR's external post-merge closure receipt and preserve
+   its SHA256 without recursively opening another immediate status PR.
+4. Reconfirm product source, formal state, 12 attempts, Docker zero-running
+   state, capacity and historical formal volumes.
+5. Submit a separate governance proposal only if the project owner chooses to
+   define a new process version. Such a proposal must preserve all historical
+   classifications and cannot retroactively relax ADR 0032.
 
-Every diagnostic package records process version, dual baseline, source tree,
-frozen hashes, environment, image locks, run ID, variable, samples, ledger,
-controls, decision, redaction, manifest, package SHA256/reference and cleanup
-receipt. Diagnostics, preflight, rollback and infrastructure aborts do not
-append `gate_c_attempts`.
+A future governance proposal is not diagnostic authorization. Before any new
+execution it must explicitly define a new process version, a replacement ADR,
+the physical-ledger reconciliation/noise model, sample-clock alignment,
+observer-interference gate, failure budget, evidence schema and migration from
+the old read-only evidence. It must pass push/PR/main 8/8 and receive its own
+external closure receipt.
 
-## Remediation And Formal Boundary
+## Locked Scope
 
-No remediation is allowed without strong admission or the merged weak
-addendum. A future remediation uses a new exact-main
-`codex/phase7-gate-c-twelfth-p2-<owner>-remediation` branch, one owner and one
-ownership mechanism per PR, a behavior ADR, test-layer A/B/A' and all semantic
-and quality gates.
+- No third diagnostic design under `Gate-C-12-v1.0`.
+- No D1 continuation or D2 attribution.
+- No product behavior change or lifecycle remediation.
+- No weak-admission addendum because no trusted owner data exists.
+- No PreflightSmoke or formal Gate C Full.
+- No threshold, workload, recovery-window or statistical change.
+- No migration 0001-0010, RLS, `TenantContext`, SERIALIZABLE, C12, Outbox,
+  idempotency or partition-order change.
+- No force GC, allocator purge, restart, pool disposal, periodic clearing,
+  background janitor or inflated baseline.
+- No Gate D-G work.
 
-Fresh validation is PreflightSmoke 20, then independent 200/500/1,000. Stop
-before escalation if a zero-tolerance item fails, peak RSS exceeds matched
-control by 10%, recovery residual exceeds control by 15%, or actual residual
-exceeds 130% of the remediation ADR's conservative prediction. Do not run a
-non-formal 2,000 diagnostic before Full.
-
-Only after remediation, three CI chains 8/8 and fresh gradients pass may one
-formal Full run execute 20/200/500/1000/2000 plus recovery. Only that Full may
-append attempt 13. M3 and Gate D readiness require every frozen control in the
-same run, immutable Release evidence, evidence PR merge and protected-main
-8/8.
-
-Do not modify migrations 0001-0010, RLS, `TenantContext`, SERIALIZABLE, C12,
-identity derivation, Outbox atomicity, idempotency, partition order, threshold,
-workload, timeout, grace period or aggregation. Force GC, restart, allocator
-purge, pool disposal, periodic clearing, background janitors and inflated
-baselines are prohibited. Gate D-G remain locked.
+`gate_c_attempts` remains 12 because no formal Full occurred. The formal state
+remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Only a future same-run Full PASS,
+followed by immutable evidence and status closure, can reach M3.

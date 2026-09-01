@@ -16,19 +16,21 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current verified protected main represented by this status snapshot is
-`5ac3287bc6bd22dce1c7e179255246a7617b1817`, tree
-`e0a39d9106361ad22023171e3a0960140241ed8b`, with protected-main Release
-Quality Gates [Run 33489319860](https://github.com/changkong66/CyberControl/actions/runs/33489319860)
+`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`, tree
+`e72cab3d31f83a6071141623661b08fb9e48eed6`, with protected-main Release
+Quality Gates [Run 33533885658](https://github.com/changkong66/CyberControl/actions/runs/33533885658)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`5ac3287bc6bd22dce1c7e179255246a7617b1817`. Product source remains bound to
+`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`. Product source remains bound to
 the last core product-behavior change; PR #93 changed reproducible build,
 capacity, diagnostic and test infrastructure, PR #94 changed status documents,
 PR #95 accepted ADR 0032, and PR #96 added only default-off diagnostic
 capability. PR #100 established the offline trusted foundation, PR #101 added
 permanent governance gates, and PR #102 repaired Windows UTF-8 evidence
 collection. PR #104 hardened only ADR-0032 diagnostic orchestration,
-reproduction checks and evidence classification. None changed frozen product
+reproduction checks and evidence classification. PR #105 closed that status,
+PRs #106-#108 repaired only diagnostic orchestration/readiness tooling and PR
+#109 archived the resulting design rejection. None changed frozen product
 semantics or underwent a new formal
 Gate C replay; the last formal evaluation remains bound to `5fcb917b...`.
 
@@ -1362,7 +1364,76 @@ coverage; the CI-equivalent database restart probe also passed independently.
 
 `baseline_history` appends sequence 24 as `DIAGNOSTIC`. Product source remains
 `a57d0ce...`, the formal run remains bound to `5fcb917b...`,
-`gate_c_attempts` remains exactly 12 and Gate D-G remain locked. This new status
-PR must itself Squash Merge, pass protected-main 8/8 and receive its external
-post-merge receipt. New normal and diagnostic locks plus a new D1-readiness
-receipt must then bind that exact status-merged main before any D1 arm starts.
+`gate_c_attempts` remains exactly 12 and Gate D-G remain locked. At that
+snapshot, a status merge, external receipt and new exact-main locks/readiness
+receipt were mandatory before D1. PR #105 and the `260913a...` readiness
+evidence described below subsequently closed those prerequisites.
+
+## D1 Readiness, Execution And Final Design Rejection
+
+Target-two status PR #105 and diagnostic execution PRs #106-#108 merged as
+`a1ae0f626ba4783e5d50365a3fb6faef22a7d139`,
+`84eddf30d4e1280fafa0f588cbf79311169148ae`,
+`7e88e67cd43d3b7ee529c8841a01699b41a12bc7` and
+`260913a964ee8afbdbfbc073e89090f551b7cc67`. Their respective push/PR/main
+chains were `33493438202/33493469764/33494300593`,
+`33499078437/33499170842/33500067449`,
+`33512886059/33512943358/33514029521` and
+`33521838621/33521918271/33523108418`; all twelve runs passed 8/8. Their
+post-merge closure receipt SHA256 values are
+`dcfecc9c8eb85756147a73d3a7bd17006e614b0d8f0052010204fb0c68c98fcd`,
+`575e9cef86af2bafda02f59be1109b60ce52829c4cefb45f19e12664429f05c7`,
+`5878cee03a48d16a458eab774e2a59a66554b9d9aff06328e44f6f08a3e0dc22`
+and `4a155db997a8e5ae823ed277d05d6849d5d6b22705f580aacd8fb4ee06e528af`.
+
+The exact `260913a...` source then passed
+`GATE_C12_TRUSTED_FOUNDATION_VERIFIED_D1_READY` with scope `D1_ONLY`.
+Normal and diagnostic lock SHA256 values are
+`0c366407ee1baeaa85a9e8c87f4bc529d2618734749169b2e1780db5c9a20f58`
+and `c79df22c2e78b37f4292745d1bd8b0e7438172dea504d510749cfb8daff1e8de`;
+build and readiness receipt SHA256 values are
+`29b3401895797a3d050e51f3a4008136e713c292c4298413e2577643171b7843`
+and `6cb60d55e8ab21c008b82d34828f656de11b24a80c62bcbea87977fd0e095609`.
+Immutable readiness Release `380635279` stores the 48,913-byte package with
+matching local/server SHA256
+`8bd3be496b0ca0d137812aef887eb652783f9a239eeb9a0dfa71197966e2f961`.
+
+D1/S sequence `adr0032-s-sequence-20260901T155159Z-3637d0e0`, arm
+`adr0032-s-a-20260901T155200Z-f160628c`, completed its only admissible control
+measurement: 2,000/2,000 real TLS connections, five-minute idle, ten-minute
+recovery, completeness `1.0`, instrumentation-ready evidence, no OOM and no
+unplanned restart. The recovery physical ledger was nevertheless invalid:
+
+```text
+RssAnon                    57,323,520
+jemalloc resident          57,675,776
+non_jemalloc_anon            -352,256
+```
+
+ADR 0032 requires every mutually exclusive physical partition to be
+nonnegative. This structural failure is therefore `DESIGN_REJECTED`, design
+failure ordinal two. It is not `INFRA_ABORTED`, not `OWNER_UNRESOLVED`, and
+does not establish an RSS owner. Under the accepted ADR, it ends all new
+diagnostic-design work for `Gate-C-12-v1.0`; D1 continuation, D2, product
+remediation, PreflightSmoke and formal Full are prohibited.
+
+Immutable design-rejection Release
+[#380653216](https://github.com/changkong66/CyberControl/releases/tag/phase7-gate-c12-target2-d1-s-design-rejected-20260902-260913a-v1)
+stores the 35,912-byte package with matching local/server SHA256
+`94bfd0a483f56a4789588c8fd2968b140acbcb1142744730cec0cb239f32a093`.
+Evidence PR [#109](https://github.com/changkong66/CyberControl/pull/109) passed
+push/PR/main Runs `33531776126/33532803157/33533885658` at 8/8 and Squash
+Merged as `44ff28af5b54b574aa8a6fd3f62f2d258244fd74`, tree
+`e72cab3d31f83a6071141623661b08fb9e48eed6`. Its post-merge closure receipt
+SHA256 is
+`239ec2f0cdc64548bfc1ca64557ac90625e9f1edbdde5cdef5f475206f2dfe9a`.
+
+The sequence wrapper also attempted to read a missing `reason` property after
+the arm failure and masked the primary reason in its own summary. Append-only
+correction evidence records `SEQUENCE_FAILURE_REASON_MASKING`; it is P1
+tooling debt for a future process version and does not change the primary
+classification. `baseline_history` appends typed sequences 25-29, while
+product source remains `a57d0ce...`, `gate_c_attempts` remains 12 and the
+formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Any further
+diagnostic proposal requires a separately approved process-version governance
+decision; the present status PR authorizes only its own audit closure.
