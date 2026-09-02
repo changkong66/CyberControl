@@ -224,6 +224,80 @@ def test_governance_subprocess_decodes_utf8_output() -> None:
     )
 
 
+def _sealed_migration_report() -> dict[str, object]:
+    source_documents = {
+        name: {"path": f"evidence/{name}.json", "sha256": "a" * 64}
+        for name in governance._MIGRATION_SOURCE_DOCUMENTS
+    }
+    return {
+        "schema_version": "cybercontrol.docker-migration-validation.v1",
+        "process_version": governance.SEALED_DOCKER_MIGRATION_PROCESS_VERSION,
+        "classification": "NON_ACCEPTANCE_INFRASTRUCTURE_VERIFICATION",
+        "result": "MIGRATION_VALIDATED",
+        "formal_volume_result": "PASS",
+        "formal_state_changed": False,
+        "gate_c_attempts_appended": False,
+        "environment": {
+            "passed": True,
+            "checks": {"docker_server_version": True, "zero_running_containers": True},
+            "observed": {"running_containers": 0},
+        },
+        "unexplained_differences": {},
+        "source_documents": source_documents,
+    }
+
+
+def test_d1_readiness_accepts_hash_bound_sealed_v1_migration_evidence() -> None:
+    governance._validate_sealed_migration_report(_sealed_migration_report())
+
+
+def test_d1_readiness_requires_exact_status_bound_migration_report(tmp_path: Path) -> None:
+    report_path = tmp_path / "migration.json"
+    report_path.write_text(json.dumps(_sealed_migration_report()), encoding="utf-8")
+    status = {
+        "docker_migration": {
+            "result": "MIGRATION_VALIDATED",
+            "migration_report_sha256": governance._sha256(report_path),
+            "formal_gate_c_volumes_expected": 13,
+            "formal_gate_c_volumes_verified": 13,
+            "running_business_containers": 0,
+        }
+    }
+
+    governance._validate_sealed_migration_binding(status, report_path)
+
+    status["docker_migration"]["migration_report_sha256"] = "b" * 64
+    with pytest.raises(ValueError, match="does not match the status binding"):
+        governance._validate_sealed_migration_binding(status, report_path)
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("process_version",), governance.PROCESS_VERSION),
+        (("formal_volume_result",), "FAIL"),
+        (("environment", "passed"), False),
+        (("environment", "checks", "zero_running_containers"), False),
+        (("environment", "observed", "running_containers"), 1),
+        (("unexplained_differences",), {"volume": "missing"}),
+        (("source_documents", "policy", "sha256"), "not-a-sha256"),
+    ],
+)
+def test_d1_readiness_rejects_weakened_or_relabeled_migration_evidence(
+    path: tuple[str, ...], value: object
+) -> None:
+    report = _sealed_migration_report()
+    target = report
+    for key in path[:-1]:
+        nested = target[key]
+        assert isinstance(nested, dict)
+        target = nested
+    target[path[-1]] = value
+
+    with pytest.raises(ValueError, match="sealed validated Docker migration"):
+        governance._validate_sealed_migration_report(report)
+
+
 def test_quality_workflow_separates_v2_image_from_legacy_profile_contract() -> None:
     workflow = (ROOT / ".github/workflows/quality-gates.yml").read_text(encoding="utf-8")
 
