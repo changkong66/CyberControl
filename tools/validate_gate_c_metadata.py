@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 REPORT_SCHEMA = "cybercontrol.gate-c-process-metadata-validation.v1"
 _PROCESS_VERSION_LINE = re.compile(
     rf"(?im)^\s*process version\s*:\s*`?{re.escape(PROCESS_VERSION)}`?\s*$"

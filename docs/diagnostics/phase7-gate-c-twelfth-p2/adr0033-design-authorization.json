@@ -1,0 +1,179 @@
+{
+  "schema_version": "cybercontrol.gate-c-p2-domain-separated-design.v1",
+  "process_version": "Gate-C-12-v2.0",
+  "classification": "NON_ACCEPTANCE_DIAGNOSTIC_DESIGN",
+  "formal_gate_attempt": false,
+  "acceptance_claim": false,
+  "gate_c_attempts_appended": false,
+  "design_adr": 33,
+  "design_status": "CANDIDATE_PENDING_SQUASH_MERGE_AND_PROTECTED_MAIN_8_OF_8",
+  "supersedes": {
+    "adr": 32,
+    "scope": [
+      "cross_domain_physical_partition_equation",
+      "diagnostic_design_stop_under_Gate-C-12-v1.0"
+    ],
+    "historical_record_modified": false
+  },
+  "source": {
+    "engineering_parent_sha": "841020d0f97737adf925950792f3bb4f0dc8df2e",
+    "engineering_parent_tree_sha": "d5e07269d971236674e48d2d7bee99c1bf131d3b",
+    "product_source_sha": "a57d0ce57427804ede3f3c620fda2a93b3a300ff",
+    "parent_protected_main_ci_run": 33540046732,
+    "parent_protected_main_ci_jobs": "8/8"
+  },
+  "frozen_inputs": {
+    "threshold_sha256": "d2b8c8c450934cc5341c815f497a5581370a20644fdb9d0a511e3e7c0ff1e855",
+    "workload_sha256": "38f4dbf0ce34726a30833f235c8b5aa66c62c6012e296e01ce0ea34d7dac57ea",
+    "formal_memory_metric": "api_cgroup_memory_current",
+    "formal_recovery_ratio_limit": 1.1,
+    "formal_reference_baseline_bytes": 262144000,
+    "formal_reference_recovery_bytes": 371510477,
+    "formal_reference_peak_bytes": 436941619,
+    "formal_reference_ratio": 1.4172
+  },
+  "root_cause": {
+    "rejected_equation": "non_jemalloc_anon=RssAnon-jemalloc_resident",
+    "observed_signed_difference_bytes": -352256,
+    "reason": "jemalloc resident and Linux RssAnon are non-atomic counters from different accounting domains",
+    "owner_conclusion": null
+  },
+  "d0_deliverables": {
+    "variable_matrix": "PRESENT",
+    "interference_formulas_and_zero_tolerance": "PRESENT",
+    "domain_separated_memory_ledgers": "PRESENT",
+    "bounded_sampling_and_noise_model": "PRESENT",
+    "attribution_admission_and_multi_owner_cutoff": "PRESENT",
+    "failure_exit_paths": "PRESENT",
+    "evidence_image_lock_and_cleanup_contract": "PRESENT"
+  },
+  "ledgers": {
+    "cgroup_physical": {
+      "target": "memory.current",
+      "top_level": ["anon", "file", "kernel"],
+      "signed_reconciliation": "current-anon-file-kernel",
+      "drilldowns_non_additive": ["sock", "slab", "pagetables", "kernel_stack"]
+    },
+    "linux_process": {
+      "counters": [
+        "VmRSS",
+        "RssAnon",
+        "RssFile",
+        "RssShmem",
+        "PSS",
+        "USS",
+        "swap",
+        "fd_count",
+        "map_count"
+      ],
+      "signed_reconciliation": "VmRSS-RssAnon-RssFile-RssShmem",
+      "l1_vma_classes_mutually_exclusive": true
+    },
+    "jemalloc_accounting": {
+      "epoch_refreshed": true,
+      "counters": [
+        "allocated",
+        "active",
+        "resident",
+        "mapped",
+        "metadata",
+        "retained",
+        "arenas"
+      ],
+      "same_domain_invariants": [
+        "allocated<=active",
+        "active<=resident",
+        "allocated+(active-allocated)=active",
+        "active+(resident-active)=resident"
+      ]
+    },
+    "cross_domain": {
+      "value": "jemalloc_resident_minus_rss_anon_signed",
+      "additive": false,
+      "owner_evidence": false,
+      "negative_value_is_structural_failure": false
+    }
+  },
+  "bounded_sampling": {
+    "measurement_variable": "D",
+    "samples_per_window": 5,
+    "sample_spacing_ms": 50,
+    "maximum_sample_duration_ms": 250,
+    "maximum_burst_duration_ms": 2000,
+    "order": [
+      "process_before",
+      "cgroup_before",
+      "jemalloc_epoch_and_stats",
+      "cgroup_after",
+      "process_after"
+    ],
+    "aggregation": ["minimum", "maximum", "median", "median_absolute_deviation"],
+    "process_reconciliation_limit": "max(1048576,0.02*VmRSS)",
+    "stable_window_spread_limit": "max(8388608,0.10*median)",
+    "atomic_cross_subsystem_timestamp_claimed": false
+  },
+  "variable_matrix": {
+    "sequence": ["A", "D", "A_PRIME"],
+    "independent_sequences_required": 2,
+    "connections_per_arm": 2000,
+    "maximum_concurrency": 200,
+    "admission_rate_per_second": 50,
+    "stable_idle_seconds": 300,
+    "recovery_seconds": 600,
+    "fresh_resources_per_arm": true
+  },
+  "interference_gate": {
+    "maximum_control_drift_ratio": 0.1,
+    "maximum_measurement_to_control_ratio": 1.1,
+    "rss_interference_limit": "max(8388608,0.10*abs(control_rss_delta))",
+    "sample_completeness_minimum": 1.0,
+    "zero_tolerance": [
+      "connection_failure",
+      "http_5xx",
+      "bad_address",
+      "pool_timeout",
+      "oom",
+      "unplanned_restart",
+      "semantic_regression",
+      "terminal_lifecycle_ownership",
+      "evidence_integrity_failure"
+    ]
+  },
+  "attribution": {
+    "formal_residual_domain": "cgroup_physical",
+    "process_and_allocator_lanes_additive_to_cgroup": false,
+    "cross_domain_difference_can_admit_owner": false,
+    "strong_minimum_explained_ratio": 0.9,
+    "strong_maximum_unknown_bytes": "min(0.10*residual,8388608)",
+    "weak_minimum_single_owner_ratio": 0.7,
+    "weak_requires_separate_append_only_adr": true,
+    "measurement_uncertainty_counts_as_unknown": true,
+    "multi_owner_rule": "largest_first_then_remeasure"
+  },
+  "outcomes": {
+    "DESIGN_REJECTED": {
+      "definition": "same-domain invariant, bounded-sampling, interference or evidence-integrity failure",
+      "cross_domain_signed_difference_alone_permitted": true,
+      "effect": "STOP_NEW_DESIGN_UNDER_GATE_C_12_V2_0"
+    },
+    "OWNER_UNRESOLVED": {
+      "definition": "trusted data but no owner satisfies admission",
+      "product_remediation_authorized": false
+    },
+    "INFRA_ABORTED": {
+      "definition": "independently proven external infrastructure interruption",
+      "same_cause_maximum_retries": 2,
+      "gate_c_attempts_appended": false
+    }
+  },
+  "authorization_boundary": {
+    "after_external_closure": "IMPLEMENT_AND_CALIBRATE_ADR_0033_D_VARIABLE_ONLY",
+    "d2_requires_two_d1_sequences": true,
+    "product_remediation_authorized": false,
+    "preflight_authorized": false,
+    "formal_gate_c_authorized": false,
+    "gate_d_through_g_locked": true,
+    "formal_state_unchanged": "PHASE7_GATE_C_FAILED_GATE_D_LOCKED",
+    "gate_c_attempts": 12
+  }
+}

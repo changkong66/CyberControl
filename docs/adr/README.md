@@ -1,5 +1,7 @@
 # Architecture Decision Records
 
+Process Version: `Gate-C-12-v2.0`
+
 ADRs are immutable after acceptance. A superseding decision creates a new ADR
 and links to the prior record; it does not rewrite history.
 
@@ -22,3 +24,4 @@ Current records:
 - ADR-0030: Phase 7 Gate C twelfth jemalloc calibration rejection
 - ADR-0031: Phase 7 Gate C twelfth capacity probe temp portability
 - ADR-0032: Phase 7 Gate C twelfth low-interference RSS attribution
+- ADR-0033: Phase 7 Gate C twelfth domain-separated RSS attribution
