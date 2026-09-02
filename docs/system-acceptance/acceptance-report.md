@@ -1,6 +1,6 @@
 # CyberControl System Acceptance Report
 
-Process Version: `Gate-C-12-v1.0`
+Process Version: `Gate-C-12-v2.0`
 
 ## Decision
 
@@ -16,12 +16,12 @@ Formal state:
 PHASE7_GATE_C_FAILED_GATE_D_LOCKED.
 
 The current verified protected main represented by this status snapshot is
-`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`, tree
-`e72cab3d31f83a6071141623661b08fb9e48eed6`, with protected-main Release
-Quality Gates [Run 33533885658](https://github.com/changkong66/CyberControl/actions/runs/33533885658)
+`b4b3c6eaf00f4c9f013fad8acfd2f0d9d2860211`, tree
+`f21426de47935f043055519558bb0816095b509a`, with protected-main Release
+Quality Gates [Run 33582128563](https://github.com/changkong66/CyberControl/actions/runs/33582128563)
 at 8/8. The current dual baseline is product source
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff` and engineering baseline
-`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`. Product source remains bound to
+`b4b3c6eaf00f4c9f013fad8acfd2f0d9d2860211`. Product source remains bound to
 the last core product-behavior change; PR #93 changed reproducible build,
 capacity, diagnostic and test infrastructure, PR #94 changed status documents,
 PR #95 accepted ADR 0032, and PR #96 added only default-off diagnostic
@@ -30,7 +30,8 @@ permanent governance gates, and PR #102 repaired Windows UTF-8 evidence
 collection. PR #104 hardened only ADR-0032 diagnostic orchestration,
 reproduction checks and evidence classification. PR #105 closed that status,
 PRs #106-#108 repaired only diagnostic orchestration/readiness tooling and PR
-#109 archived the resulting design rejection. None changed frozen product
+#109 archived the resulting design rejection, PR #110 closed that status, and
+PR #111 authorized ADR-0033's versioned diagnostic redesign. None changed frozen product
 semantics or underwent a new formal
 Gate C replay; the last formal evaluation remains bound to `5fcb917b...`.
 
@@ -1430,10 +1431,33 @@ SHA256 is
 
 The sequence wrapper also attempted to read a missing `reason` property after
 the arm failure and masked the primary reason in its own summary. Append-only
-correction evidence records `SEQUENCE_FAILURE_REASON_MASKING`; it is P1
-tooling debt for a future process version and does not change the primary
-classification. `baseline_history` appends typed sequences 25-29, while
-product source remains `a57d0ce...`, `gate_c_attempts` remains 12 and the
-formal state remains `PHASE7_GATE_C_FAILED_GATE_D_LOCKED`. Any further
-diagnostic proposal requires a separately approved process-version governance
-decision; the present status PR authorizes only its own audit closure.
+correction evidence records `SEQUENCE_FAILURE_REASON_MASKING`; it does not
+change the primary classification. ADR-0033 requires the versioned diagnostic
+implementation to repair and regression-test this wrapper before D1/D.
+
+## Gate-C-12-v2.0 ADR-0033 Authorization
+
+Status PR #110 closed the v1 design-rejection snapshot as
+`841020d0f97737adf925950792f3bb4f0dc8df2e`, tree
+`d5e07269d971236674e48d2d7bee99c1bf131d3b`; Runs
+`33539024249/33539091225/33540046732` passed 8/8. Its receipt SHA256 is
+`09cbab9803ea6e984fc3e94ca4166ee0b5fe5f1b718a3d1e5a4cdf54168d6733`.
+The containing immutable Release package SHA256 is
+`9e1b988662ca8f59c59fc3de65ac49278c19e866bab1a66565b4d7a736687efe`.
+
+ADR-0033 governance PR #111 passed push/PR/main Runs
+`33581087504/33581119453/33582128563` at 8/8 and Squash Merged as
+`b4b3c6eaf00f4c9f013fad8acfd2f0d9d2860211`, tree
+`f21426de47935f043055519558bb0816095b509a`. Its immutable post-merge
+receipt is Release `380938164`, asset `540485459`, 1,579 bytes, with matching
+local/server SHA256
+`b01073c7191b919a3826940ef3027f44c645ea11a35f5a8bb11eedb75f844c96`.
+
+ADR-0033 does not reclassify ADR-0032 or establish an RSS owner. It replaces
+only the invalid cross-domain equation with cgroup, Linux process and jemalloc
+accounting ledgers, and authorizes a default-off implementation plus two
+independent D1 `A/D/A'` sequences after this status PR and the implementation
+chain are externally closed. `baseline_history` appends sequence 30 as
+`DIAGNOSTIC`; product source remains `a57d0ce...`, `gate_c_attempts` remains
+12, and D2, remediation, PreflightSmoke, formal Full and Gate D-G remain
+locked.
