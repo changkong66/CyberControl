@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 PROCESS_VERSION = "Gate-C-12-v2.0"
+SEALED_DOCKER_MIGRATION_PROCESS_VERSION = "Gate-C-12-v1.0"
 PRODUCT_SOURCE_SHA = "a57d0ce57427804ede3f3c620fda2a93b3a300ff"
 FORMAL_STATE = "PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
 D1_READY_STATE = "GATE_C12_TRUSTED_FOUNDATION_VERIFIED_D1_READY"
@@ -37,6 +38,14 @@ EXPECTED_JOBS = {
     "Release quality redline",
 }
 _PROCESS_VERSION_LINE = re.compile(r"(?im)^\s*process version\s*:\s*`?([^`\s]+)`?\s*$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_MIGRATION_SOURCE_DOCUMENTS = {
+    "checkpoint_verification",
+    "cleanup_receipt",
+    "policy",
+    "reference_inventory",
+    "volume_copy_verification",
+}
 
 
 def _run(arguments: tuple[str, ...], *, cwd: Path) -> str:
@@ -520,6 +529,43 @@ def build_closure_receipt(
     }
 
 
+def _validate_sealed_migration_report(migration: dict[str, Any]) -> None:
+    environment = migration.get("environment")
+    checks = environment.get("checks") if isinstance(environment, dict) else None
+    observed = environment.get("observed") if isinstance(environment, dict) else None
+    source_documents = migration.get("source_documents")
+    source_bindings_valid = (
+        isinstance(source_documents, dict)
+        and set(source_documents) == _MIGRATION_SOURCE_DOCUMENTS
+        and all(
+            isinstance(binding, dict)
+            and isinstance(binding.get("path"), str)
+            and bool(binding["path"].strip())
+            and _SHA256.fullmatch(str(binding.get("sha256"))) is not None
+            for binding in source_documents.values()
+        )
+    )
+    if (
+        migration.get("schema_version") != "cybercontrol.docker-migration-validation.v1"
+        or migration.get("process_version") != SEALED_DOCKER_MIGRATION_PROCESS_VERSION
+        or migration.get("classification") != "NON_ACCEPTANCE_INFRASTRUCTURE_VERIFICATION"
+        or migration.get("result") != "MIGRATION_VALIDATED"
+        or migration.get("formal_volume_result") != "PASS"
+        or migration.get("formal_state_changed") is not False
+        or migration.get("gate_c_attempts_appended") is not False
+        or not isinstance(environment, dict)
+        or environment.get("passed") is not True
+        or not isinstance(checks, dict)
+        or not checks
+        or any(value is not True for value in checks.values())
+        or not isinstance(observed, dict)
+        or observed.get("running_containers") != 0
+        or migration.get("unexplained_differences") != {}
+        or not source_bindings_valid
+    ):
+        raise ValueError("D1 readiness requires the sealed validated Docker migration report")
+
+
 def _validate_d1_documents(
     status: dict[str, Any],
     status_path: Path,
@@ -543,11 +589,7 @@ def _validate_d1_documents(
         or target_names != {"results_root", "docker_data_root", "docker_internal_root"}
     ):
         raise ValueError("D1 readiness requires a normal three-root capacity snapshot")
-    if (
-        migration.get("process_version") != PROCESS_VERSION
-        or migration.get("result") != "MIGRATION_VALIDATED"
-    ):
-        raise ValueError("D1 readiness requires the validated Docker migration report")
+    _validate_sealed_migration_report(migration)
     if (
         audit_index.get("process_version") != PROCESS_VERSION
         or audit_index.get("result") != "PASS"
@@ -643,6 +685,7 @@ def verify_d1_readiness(
         "closure_receipts": receipt_entries,
         "capacity_snapshot_sha256": _sha256(capacity_snapshot_path),
         "migration_report_sha256": _sha256(migration_report_path),
+        "migration_report_process_version": SEALED_DOCKER_MIGRATION_PROCESS_VERSION,
         "audit_index_sha256": _sha256(audit_index_path),
         "authorization_scope": "D1_ONLY",
         "gate_d_through_g_locked": True,
