@@ -7,7 +7,6 @@ import json
 import math
 import os
 import re
-import signal
 import ssl
 import time
 from collections import Counter
@@ -16,10 +15,12 @@ from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from statistics import median
 from time import perf_counter
 from typing import Any, Protocol
 
 from liyans.infrastructure.observability.bounded_memory_inventory import (
+    BoundedMemoryInventoryRejected,
     _read_cgroup_memory,
     _read_process_memory,
     build_memory_ledger,
@@ -31,13 +32,30 @@ from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 CLASSIFICATION = "NON_ACCEPTANCE_DIAGNOSTIC"
 ARMS = ("A", "Measurement", "APrime")
-VARIABLES = ("S", "R", "P", "F")
+VARIABLES = ("D",)
 GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
-Window = tuple[dict[str, int], dict[str, int], dict[str, object], dict[str, object] | None]
+Window = tuple[
+    dict[str, int],
+    dict[str, int],
+    dict[str, object],
+    dict[str, object] | None,
+    dict[str, object],
+]
+BRACKET_SAMPLE_COUNT = 5
+BRACKET_SAMPLE_SPACING_SECONDS = 0.05
+BRACKET_SAMPLE_MAX_SECONDS = 0.25
+BRACKET_BURST_MAX_SECONDS = 2.0
+BRACKET_SAMPLE_ORDER = (
+    "process_before",
+    "cgroup_before",
+    "jemalloc_epoch_and_stats",
+    "cgroup_after",
+    "process_after",
+)
 
 
 class Mallctl(Protocol):
@@ -161,149 +179,55 @@ class CalibrationTransition:
         self,
         mallctl: Mallctl,
         *,
-        signal_number: int | None = getattr(signal, "SIGUSR2", None),
+        signal_number: int | None = None,
         signal_sender: Callable[[int, int], None] = os.kill,
     ) -> None:
         self._mallctl = mallctl
-        self._signal_number = signal_number
-        self._signal_sender = signal_sender
-        self._loop: asyncio.AbstractEventLoop | None = None
-        self._transition: asyncio.Task[None] | None = None
-        self._completed = asyncio.Event()
-        self._variable = ""
-        self._requested_at = 0.0
-        self._operations: list[dict[str, int | str | bool]] = []
-        self._activated = False
-        self._signal_installed = False
-        self._error: BaseException | None = None
+        # Retain the constructor shape for callers while making ADR-0033 D
+        # incapable of reaching the superseded signal/profile transition path.
+        self._legacy_signal_arguments = (signal_number, signal_sender)
 
     def validate_capability(self) -> None:
-        values = {
-            name: self._mallctl.read_bool(name)
-            for name in ("config.prof", "config.stats", "opt.prof", "prof.active")
-        }
+        values = {name: self._mallctl.read_bool(name) for name in ("config.stats", "prof.active")}
         if any(value is None for value in values.values()):
-            raise RuntimeError("jemalloc profiling capability readback is unavailable")
-        if not values["config.prof"] or not values["config.stats"] or not values["opt.prof"]:
-            raise RuntimeError("jemalloc profiling capability is unavailable")
+            raise RuntimeError("jemalloc accounting capability readback is unavailable")
+        if not values["config.stats"]:
+            raise RuntimeError("jemalloc accounting capability is unavailable")
         if values["prof.active"]:
-            raise RuntimeError("jemalloc profiling must start inactive")
+            raise RuntimeError("jemalloc profiling must remain inactive for variable D")
 
     @property
     def profiler_active(self) -> bool | None:
         return self._mallctl.read_bool("prof.active")
 
     async def apply(self, variable: str) -> dict[str, object]:
-        if variable not in VARIABLES:
+        if variable != "D":
             raise ValueError("calibration variable is invalid")
-        if self._signal_number is None:
-            raise RuntimeError("calibration signal is unavailable")
         self.validate_capability()
-        self._variable = variable
-        self._loop = asyncio.get_running_loop()
-        try:
-            self._loop.add_signal_handler(self._signal_number, self._handle_signal)
-        except (NotImplementedError, RuntimeError) as exc:
-            raise RuntimeError("calibration signal ownership is unavailable") from exc
-        self._signal_installed = True
-        self._requested_at = perf_counter()
-        self._signal_sender(os.getpid(), self._signal_number)
-        await asyncio.wait_for(self._completed.wait(), timeout=5.0)
-        if self._transition is not None:
-            await self._transition
-        if self._error is not None:
-            raise self._error
+        started = perf_counter()
+        active = self._mallctl.read_bool("prof.active")
+        completed = perf_counter()
+        if active is not False:
+            raise RuntimeError("jemalloc profiling became active during passive calibration")
         return {
-            "signal": int(self._signal_number),
-            "delivery_latency_ms": round(
-                1000
-                * (float(self._operations[0]["started_monotonic_seconds"]) - self._requested_at),
-                6,
-            ),
-            "operations": self._operations,
-            "prof_active_after_transition": bool(self._mallctl.read_bool("prof.active")),
+            "signal": None,
+            "signal_delivered": False,
+            "mode": "PASSIVE_DOMAIN_SAMPLING",
+            "operations": [
+                {
+                    "operation": "read prof.active=false",
+                    "result": 0,
+                    "started_monotonic_seconds": started,
+                    "completed_monotonic_seconds": completed,
+                    "duration_ms": round(1000 * (completed - started), 6),
+                }
+            ],
+            "prof_active_after_transition": False,
         }
 
-    def _handle_signal(self) -> None:
-        if self._loop is None or self._transition is not None:
-            self._error = RuntimeError("calibration signal was duplicated or out of order")
-            self._completed.set()
-            return
-        self._transition = self._loop.create_task(
-            self._apply_variable(),
-            name=f"rss-calibration:{self._variable}",
-        )
-        self._transition.add_done_callback(self._transition_finished)
-
-    def _transition_finished(self, task: asyncio.Task[None]) -> None:
-        try:
-            task.result()
-        except BaseException as exc:
-            self._error = exc
-        finally:
-            self._completed.set()
-
-    async def _apply_variable(self) -> None:
-        await asyncio.sleep(0)
-        started = perf_counter()
-        if self._variable == "S":
-            active = self._mallctl.read_bool("prof.active")
-            if active is not False:
-                raise RuntimeError("S mallctl no-op did not verify inactive profiling")
-            result = 0
-            operation = "read prof.active=false"
-        elif self._variable == "R":
-            result = self._mallctl.reset()
-            operation = "prof.reset"
-        elif self._variable == "P":
-            result = self._mallctl.write_bool("prof.active", True)
-            operation = "prof.active=true"
-            self._activated = result == 0
-        else:
-            reset_result = self._mallctl.reset()
-            self._record_operation("prof.reset", reset_result, started)
-            if reset_result != 0:
-                raise RuntimeError(f"prof.reset failed with mallctl code {reset_result}")
-            started = perf_counter()
-            result = self._mallctl.write_bool("prof.active", True)
-            operation = "prof.active=true"
-            self._activated = result == 0
-        self._record_operation(operation, result, started)
-        if result != 0:
-            raise RuntimeError(f"{operation} failed with mallctl code {result}")
-
-    def _record_operation(self, operation: str, result: int, started: float) -> None:
-        completed = perf_counter()
-        self._operations.append(
-            {
-                "operation": operation,
-                "result": result,
-                "started_monotonic_seconds": started,
-                "completed_monotonic_seconds": completed,
-                "duration_ms": round(1000 * (completed - started), 6),
-            }
-        )
-
     async def close(self) -> None:
-        try:
-            if self._activated:
-                started = perf_counter()
-                result = self._mallctl.write_bool("prof.active", False)
-                self._record_operation("prof.active=false", result, started)
-                if result != 0:
-                    raise RuntimeError(f"prof.active=false failed with mallctl code {result}")
-                self._activated = False
-            if self._mallctl.read_bool("prof.active") is not False:
-                raise RuntimeError("jemalloc profiling remained active after calibration")
-        finally:
-            if (
-                self._signal_installed
-                and self._loop is not None
-                and self._signal_number is not None
-            ):
-                self._loop.remove_signal_handler(self._signal_number)
-            self._signal_installed = False
-            self._loop = None
+        if self._mallctl.read_bool("prof.active") is not False:
+            raise RuntimeError("jemalloc profiling became active during passive calibration")
 
 
 class RuntimeSampler:
@@ -475,24 +399,195 @@ async def _run_connections(
 
 
 def _allocator_snapshot(reader: _JemallocStatsReader) -> dict[str, object]:
-    summary = reader.snapshot()
+    summary = reader.accounting_snapshot()
     if summary is None:
         raise RuntimeError("jemalloc statistics are unavailable")
     return {"summary": summary}
+
+
+def _median_integer(values: Sequence[int]) -> int:
+    if not values:
+        raise BoundedMemoryInventoryRejected("bounded sampling produced no values")
+    return int(median(values))
+
+
+def _representative_mapping(
+    before: Mapping[str, int],
+    after: Mapping[str, int],
+    *,
+    identity_field: str,
+) -> dict[str, int]:
+    if set(before) != set(after) or any(
+        not isinstance(value, int) for value in (*before.values(), *after.values())
+    ):
+        raise BoundedMemoryInventoryRejected("bounded sample domain fields changed")
+    if before.get(identity_field) != after.get(identity_field):
+        raise BoundedMemoryInventoryRejected(
+            f"bounded sampling {identity_field} changed within a bracket"
+        )
+    return {name: _median_integer((before[name], after[name])) for name in before}
+
+
+def _aggregate_mappings(samples: Sequence[Mapping[str, int]]) -> dict[str, int]:
+    if not samples or any(set(sample) != set(samples[0]) for sample in samples[1:]):
+        raise BoundedMemoryInventoryRejected("bounded sample domains are inconsistent")
+    return {name: _median_integer([int(sample[name]) for sample in samples]) for name in samples[0]}
+
+
+def _distribution(values: Sequence[int]) -> dict[str, int]:
+    center = _median_integer(values)
+    return {
+        "minimum": min(values),
+        "maximum": max(values),
+        "median": center,
+        "median_absolute_deviation": _median_integer([abs(value - center) for value in values]),
+        "spread": max(values) - min(values),
+    }
+
+
+def _validate_identity(samples: Sequence[Mapping[str, int]], name: str) -> None:
+    values = {sample.get(name) for sample in samples}
+    if len(values) != 1 or None in values:
+        raise BoundedMemoryInventoryRejected(f"bounded sampling {name} changed or is unavailable")
+
+
+def _capture_bracketed_window(
+    process_reader: Callable[[], dict[str, int]],
+    cgroup_reader: Callable[[], dict[str, int]],
+    allocator: _JemallocStatsReader,
+    *,
+    sleeper: Callable[[float], None] = time.sleep,
+) -> Window:
+    burst_started = perf_counter()
+    samples: list[dict[str, object]] = []
+    process_representatives: list[dict[str, int]] = []
+    cgroup_representatives: list[dict[str, int]] = []
+    allocator_summaries: list[dict[str, int]] = []
+    for index in range(BRACKET_SAMPLE_COUNT):
+        sample_started = perf_counter()
+        process_before = process_reader()
+        cgroup_before = cgroup_reader()
+        allocator_snapshot = _allocator_snapshot(allocator)
+        cgroup_after = cgroup_reader()
+        process_after = process_reader()
+        sample_completed = perf_counter()
+        duration = sample_completed - sample_started
+        if duration > BRACKET_SAMPLE_MAX_SECONDS:
+            raise BoundedMemoryInventoryRejected("bounded domain sample exceeded 250 ms")
+        process_value = _representative_mapping(
+            process_before,
+            process_after,
+            identity_field="process_id",
+        )
+        cgroup_value = _representative_mapping(
+            cgroup_before,
+            cgroup_after,
+            identity_field="cgroup_inode",
+        )
+        summary = allocator_snapshot["summary"]
+        if not isinstance(summary, Mapping) or any(
+            not isinstance(value, int) for value in summary.values()
+        ):
+            raise BoundedMemoryInventoryRejected("bounded allocator sample is invalid")
+        allocator_value = {str(name): int(value) for name, value in summary.items()}
+        build_memory_ledger(process_value, cgroup_value, allocator_snapshot)
+        process_representatives.append(process_value)
+        cgroup_representatives.append(cgroup_value)
+        allocator_summaries.append(allocator_value)
+        samples.append(
+            {
+                "index": index + 1,
+                "order": list(BRACKET_SAMPLE_ORDER),
+                "started_monotonic_seconds": sample_started,
+                "completed_monotonic_seconds": sample_completed,
+                "duration_seconds": round(duration, 6),
+                "process_before": process_before,
+                "cgroup_before": cgroup_before,
+                "allocator": allocator_snapshot,
+                "cgroup_after": cgroup_after,
+                "process_after": process_after,
+                "process_representative": process_value,
+                "cgroup_representative": cgroup_value,
+            }
+        )
+        if index + 1 < BRACKET_SAMPLE_COUNT:
+            sleeper(BRACKET_SAMPLE_SPACING_SECONDS)
+
+    burst_completed = perf_counter()
+    burst_duration = burst_completed - burst_started
+    if burst_duration > BRACKET_BURST_MAX_SECONDS:
+        raise BoundedMemoryInventoryRejected("bounded domain burst exceeded two seconds")
+    _validate_identity(process_representatives, "process_id")
+    _validate_identity(cgroup_representatives, "cgroup_inode")
+    process = _aggregate_mappings(process_representatives)
+    cgroup = _aggregate_mappings(cgroup_representatives)
+    allocator_summary = _aggregate_mappings(allocator_summaries)
+    rss_anon = [sample["rss_anon_bytes"] for sample in process_representatives]
+    cgroup_current = [sample["memory_current_bytes"] for sample in cgroup_representatives]
+    rss_distribution = _distribution(rss_anon)
+    cgroup_distribution = _distribution(cgroup_current)
+    for name, distribution in (
+        ("RssAnon", rss_distribution),
+        ("cgroup current", cgroup_distribution),
+    ):
+        spread_limit = max(8 * 1024 * 1024, round(distribution["median"] * 0.10))
+        distribution["spread_limit"] = spread_limit
+        if distribution["spread"] > spread_limit:
+            raise BoundedMemoryInventoryRejected(f"bounded {name} spread exceeded its limit")
+    allocator_snapshot = {"summary": allocator_summary}
+    sampling = {
+        "schema_version": "cybercontrol.gate-c-bracketed-domain-sampling.v1",
+        "mode": "FIVE_SAMPLE_BRACKETED_DOMAIN",
+        "sample_count": len(samples),
+        "required_sample_count": BRACKET_SAMPLE_COUNT,
+        "spacing_seconds": BRACKET_SAMPLE_SPACING_SECONDS,
+        "sample_max_seconds": BRACKET_SAMPLE_MAX_SECONDS,
+        "burst_max_seconds": BRACKET_BURST_MAX_SECONDS,
+        "burst_started_monotonic_seconds": burst_started,
+        "burst_completed_monotonic_seconds": burst_completed,
+        "burst_duration_seconds": round(burst_duration, 6),
+        "process_rss_anon": rss_distribution,
+        "cgroup_memory_current": cgroup_distribution,
+        "samples": samples,
+    }
+    return process, cgroup, allocator_snapshot, None, sampling
 
 
 def _capture_window(
     process_reader: Callable[[], dict[str, int]],
     cgroup_reader: Callable[[], dict[str, int]],
     allocator: _JemallocStatsReader,
+    *,
+    bracketed: bool,
 ) -> Window:
-    return process_reader(), cgroup_reader(), _allocator_snapshot(allocator), None
+    if bracketed:
+        return _capture_bracketed_window(process_reader, cgroup_reader, allocator)
+    return (
+        process_reader(),
+        cgroup_reader(),
+        _allocator_snapshot(allocator),
+        None,
+        {"mode": "MINIMAL_CONTROL", "sample_count": 1},
+    )
 
 
 def _reconcile_windows(baseline: Window, recovery: Window) -> tuple[Window, Window]:
     baseline_ledger = build_memory_ledger(baseline[0], baseline[1], baseline[2])
     recovery_ledger = build_memory_ledger(recovery[0], recovery[1], recovery[2])
-    return (*baseline[:3], baseline_ledger), (*recovery[:3], recovery_ledger)
+    return (*baseline[:3], baseline_ledger, baseline[4]), (
+        *recovery[:3],
+        recovery_ledger,
+        recovery[4],
+    )
+
+
+def _failure_details(exc: Exception, phase: str) -> tuple[str, str]:
+    reason = (
+        str(exc)
+        if isinstance(exc, BoundedMemoryInventoryRejected)
+        else f"{type(exc).__name__} during {phase}"
+    )
+    return type(exc).__name__, reason
 
 
 def _result_document(
@@ -512,6 +607,7 @@ def _result_document(
     baseline: Window,
     recovery: Window,
     failure: str | None,
+    failure_reason: str | None,
     profiler_active: bool | None,
 ) -> dict[str, object]:
     cpu_values = [float(sample["cpu_one_core_units"]) for sample in sampler.samples]
@@ -575,16 +671,19 @@ def _result_document(
                 "cgroup": baseline[1],
                 "allocator": baseline[2],
                 "ledger": baseline[3],
+                "sampling": baseline[4],
             },
             "recovery": {
                 "process": recovery[0],
                 "cgroup": recovery[1],
                 "allocator": recovery[2],
                 "ledger": recovery[3],
+                "sampling": recovery[4],
             },
         },
         "zero_tolerance": zero_tolerance,
         "failure_type": failure,
+        "reason": failure_reason,
         "passed": all(zero_tolerance.values()) and successful == config.total_connections,
     }
 
@@ -622,33 +721,48 @@ async def run_calibration(
         "operations": [],
         "prof_active_after_transition": False,
     }
-    baseline: Window = ({}, {}, {}, None)
-    recovery: Window = ({}, {}, {}, None)
+    baseline: Window = ({}, {}, {}, None, {})
+    recovery: Window = ({}, {}, {}, None, {})
     connections: dict[str, object] = {}
     failure: str | None = None
+    failure_reason: str | None = None
     try:
         transition.validate_capability()
         if config.idle_seconds:
             await asyncio.sleep(config.idle_seconds)
-        baseline = _capture_window(process_reader, cgroup_reader, allocator)
+        baseline = _capture_window(
+            process_reader, cgroup_reader, allocator, bracketed=arm == "Measurement"
+        )
         if arm == "Measurement":
-            transition_evidence = await transition.apply(variable)
-            transition_evidence["signal_delivered"] = True
+            transition_evidence = {
+                "signal_delivered": False,
+                "operations": [
+                    {
+                        "operation": "five-sample bracketed domain capture",
+                        "result": 0,
+                    }
+                ],
+                "prof_active_after_transition": False,
+                "sampling_enabled": True,
+            }
         connections = await connection_runner(database_url, config, tls)
         await transition.close()
         if config.recovery_seconds:
             await asyncio.sleep(config.recovery_seconds)
-        recovery = _capture_window(process_reader, cgroup_reader, allocator)
+        recovery = _capture_window(
+            process_reader, cgroup_reader, allocator, bracketed=arm == "Measurement"
+        )
     except asyncio.CancelledError:
         with suppress(Exception):
             await asyncio.shield(transition.close())
         raise
     except Exception as exc:
-        failure = type(exc).__name__
+        failure, failure_reason = _failure_details(exc, "calibration execution")
         try:
             await transition.close()
         except Exception:
             failure = f"{failure}+TransitionCloseFailure"
+            failure_reason = f"{failure_reason}; passive transition close failed"
     finally:
         await sampler.stop()
 
@@ -656,7 +770,7 @@ async def run_calibration(
         try:
             baseline, recovery = _reconcile_windows(baseline, recovery)
         except Exception as exc:
-            failure = type(exc).__name__
+            failure, failure_reason = _failure_details(exc, "ledger reconciliation")
 
     completed = perf_counter()
     return _result_document(
@@ -675,6 +789,7 @@ async def run_calibration(
         baseline=baseline,
         recovery=recovery,
         failure=failure,
+        failure_reason=failure_reason,
         profiler_active=transition.profiler_active,
     )
 
@@ -725,7 +840,7 @@ def _database_url_from_arguments(arguments: argparse.Namespace) -> str:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run one ADR-0032 RSS calibration arm.")
+    parser = argparse.ArgumentParser(description="Run one ADR-0033 RSS calibration arm.")
     parser.add_argument("--arm", choices=ARMS, required=True)
     parser.add_argument("--variable", choices=VARIABLES, required=True)
     parser.add_argument("--run-id", required=True)

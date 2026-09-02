@@ -32,10 +32,12 @@ def _lock_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
         "source_date_epoch": 1,
     }
     inputs = {
+        "schema_version": "cybercontrol.gate-c-build-inputs.v1",
+        "process_version": gate_c_image_lock.SEALED_BUILD_INPUT_PROCESS_VERSION,
         "offline_supply_chain": {
             "manifest": {"path": "manifest.json", "sha256": "1" * 64},
             "base_images": {"path": "base-images.json", "sha256": "2" * 64},
-        }
+        },
     }
     inputs_path = tmp_path / "build-inputs.json"
     _write_json(inputs_path, inputs)
@@ -69,8 +71,14 @@ def _lock_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, object]]:
                 "path": inputs_path.name,
                 "sha256": _digest(inputs_path),
                 "document": inputs,
+                "sealed_input_process_version": (
+                    gate_c_image_lock.SEALED_BUILD_INPUT_PROCESS_VERSION
+                ),
             },
             "offline_supply_chain": {
+                "sealed_input_process_version": (
+                    gate_c_image_lock.SEALED_BUILD_INPUT_PROCESS_VERSION
+                ),
                 "manifest": inputs["offline_supply_chain"]["manifest"],
                 "base_images": inputs["offline_supply_chain"]["base_images"],
                 "network_policy": "BUILDKIT_CONTAINER_NONE_AND_RUN_NETWORK_NONE",
@@ -136,12 +144,22 @@ def test_image_lock_rejects_tampered_build_receipt(tmp_path: Path) -> None:
         gate_c_image_lock._validated_lock(ROOT, lock_path)
 
 
+def test_v2_receipt_identifies_sealed_v1_build_inputs(tmp_path: Path) -> None:
+    root, _, _ = _lock_fixture(tmp_path)
+    receipt = json.loads((root / "build-receipt.json").read_text(encoding="utf-8"))
+
+    assert receipt["process_version"] == "Gate-C-12-v2.0"
+    assert receipt["inputs"]["document"]["process_version"] == "Gate-C-12-v1.0"
+    assert receipt["inputs"]["sealed_input_process_version"] == "Gate-C-12-v1.0"
+    assert receipt["offline_supply_chain"]["sealed_input_process_version"] == ("Gate-C-12-v1.0")
+
+
 def test_supply_chain_accepts_manifest_license_evidence_enrichment(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     manifest = {
         "schema_version": gate_c_image_lock.OFFLINE_MANIFEST_SCHEMA,
-        "process_version": gate_c_image_lock.PROCESS_VERSION,
+        "process_version": gate_c_image_lock.SEALED_BUILD_INPUT_PROCESS_VERSION,
         "base_images": [
             {
                 "role": "python-base",
@@ -155,7 +173,7 @@ def test_supply_chain_accepts_manifest_license_evidence_enrichment(
     }
     specification = {
         "schema_version": gate_c_image_lock.BASE_IMAGE_SPEC_SCHEMA,
-        "process_version": gate_c_image_lock.PROCESS_VERSION,
+        "process_version": gate_c_image_lock.SEALED_BUILD_INPUT_PROCESS_VERSION,
         "base_images": [
             {
                 "role": "python-base",

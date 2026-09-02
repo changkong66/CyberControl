@@ -358,7 +358,7 @@ try {
             "--build-arg", "CYBERCONTROL_SOURCE_TREE=$sourceTree",
             "--build-arg", "CYBERCONTROL_PRODUCT_SOURCE_SHA=a57d0ce57427804ede3f3c620fda2a93b3a300ff",
             "--build-arg", "CYBERCONTROL_ENGINEERING_BASELINE_SHA=$sourceSha",
-            "--build-arg", "CYBERCONTROL_PROCESS_VERSION=Gate-C-12-v1.0",
+            "--build-arg", "CYBERCONTROL_PROCESS_VERSION=Gate-C-12-v2.0",
             "--file", "infra/backend.Dockerfile", "--load",
             "--tag", $image, "."
         ) -Description "offline production image build"

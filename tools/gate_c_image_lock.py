@@ -14,7 +14,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
+SEALED_BUILD_INPUT_PROCESS_VERSION = "Gate-C-12-v1.0"
 PRODUCT_SOURCE_SHA = "a57d0ce57427804ede3f3c620fda2a93b3a300ff"
 IMAGE_LOCK_SCHEMA = "cybercontrol.gate-c-image-lock.v1"
 BUILD_RECEIPT_SCHEMA = "cybercontrol.gate-c-build-receipt.v1"
@@ -117,7 +118,7 @@ def _validate_inputs(path: Path) -> dict[str, Any]:  # noqa: C901, PLR0912
     inputs = _read_json(path)
     if inputs.get("schema_version") != "cybercontrol.gate-c-build-inputs.v1":
         raise ValueError("Gate C build inputs have the wrong schema")
-    if inputs.get("process_version") != PROCESS_VERSION:
+    if inputs.get("process_version") != SEALED_BUILD_INPUT_PROCESS_VERSION:
         raise ValueError("Gate C build inputs have the wrong process version")
     buildkit = inputs.get("buildkit")
     if (
@@ -183,7 +184,7 @@ def _supply_chain(  # noqa: C901, PLR0912
         document = _read_json(path)
         if document.get("schema_version") != schema:
             raise ValueError(f"Gate C offline supply-chain {name} schema is invalid")
-        if document.get("process_version") != PROCESS_VERSION:
+        if document.get("process_version") != SEALED_BUILD_INPUT_PROCESS_VERSION:
             raise ValueError(f"Gate C offline supply-chain {name} process version is invalid")
         documents[name] = document
     manifest_images = documents["manifest"].get("base_images")
@@ -631,8 +632,10 @@ def build(args: argparse.Namespace) -> None:  # noqa: PLR0915
             "path": str(inputs_path.relative_to(root)).replace("\\", "/"),
             "sha256": _sha256(inputs_path),
             "document": inputs,
+            "sealed_input_process_version": SEALED_BUILD_INPUT_PROCESS_VERSION,
         },
         "offline_supply_chain": {
+            "sealed_input_process_version": SEALED_BUILD_INPUT_PROCESS_VERSION,
             "manifest": {
                 "path": inputs["offline_supply_chain"]["manifest"]["path"],
                 "sha256": inputs["offline_supply_chain"]["manifest"]["sha256"],
@@ -819,10 +822,14 @@ def _validated_lock(root: Path, lock_path: Path) -> dict[str, Any]:  # noqa: C90
     inputs = _validate_inputs(inputs_path)
     if inputs_binding.get("document") != inputs:
         raise ValueError("Gate C build input document does not match the receipt")
+    if inputs_binding.get("sealed_input_process_version") != SEALED_BUILD_INPUT_PROCESS_VERSION:
+        raise ValueError("Gate C build receipt does not identify its sealed input process version")
     _supply_chain(root, inputs)
     receipt_offline = receipt.get("offline_supply_chain")
     if not isinstance(receipt_offline, dict):
         raise ValueError("Gate C build receipt lacks the offline supply-chain binding")
+    if receipt_offline.get("sealed_input_process_version") != SEALED_BUILD_INPUT_PROCESS_VERSION:
+        raise ValueError("Gate C receipt offline supply-chain process version is invalid")
     for name in ("manifest", "base_images"):
         recorded = receipt_offline.get(name)
         expected = inputs["offline_supply_chain"][name]

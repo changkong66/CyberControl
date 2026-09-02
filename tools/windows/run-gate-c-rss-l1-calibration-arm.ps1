@@ -413,7 +413,8 @@ try {
         --evidence-directory $armDirectory `
         --package $packagePath `
         --manifest $manifestPath `
-        --run-id $runId
+        --run-id $runId `
+        --process-version $processVersion
     if ($LASTEXITCODE -ne 0) {
         throw "L1 evidence package creation or verification failed."
     }

@@ -9,10 +9,9 @@ from typing import Any
 
 from gate_c.diagnostic_evidence_package import verify_package
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 KINDS = {
     "calibration": "cybercontrol.gate-c-rss-calibration-comparison.v1",
-    "l1": "cybercontrol.gate-c-rss-l1-calibration-comparison.v1",
 }
 
 
@@ -184,7 +183,7 @@ def compare_reproductions(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Verify two independent ADR-0032 A/M/A' sequences."
+        description="Verify two independent ADR-0033 A/D/A' sequences."
     )
     parser.add_argument("--kind", choices=sorted(KINDS), required=True)
     parser.add_argument("--first-reference", type=Path, required=True)

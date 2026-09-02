@@ -247,7 +247,8 @@ Copy-Item -LiteralPath $summarySource -Destination $runSummaryPath
     --evidence-directory $evidenceDirectory `
     --package $packagePath `
     --manifest $manifestPath `
-    --run-id $sequenceId
+    --run-id $sequenceId `
+    --process-version $processVersion
 if ($LASTEXITCODE -ne 0) {
     throw "L1 sequence evidence package creation or verification failed."
 }

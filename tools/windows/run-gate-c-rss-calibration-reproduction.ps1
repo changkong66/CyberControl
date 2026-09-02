@@ -1,16 +1,16 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("calibration", "l1")]
+    [ValidateSet("calibration")]
     [string]$Kind,
 
-    [ValidateSet("S", "R", "P", "F")]
+    [ValidateSet("D")]
     [string]$Variable,
 
     [Parameter(Mandatory = $true)]
     [string]$ImageLockPath,
 
-    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032-reproduction",
+    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0033-reproduction",
 
     [ValidateRange(0, 2)]
     [int]$InfraRetryAttempt = 0,
@@ -22,25 +22,17 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-$sequenceRunner = if ($Kind -eq "calibration") {
-    Join-Path $PSScriptRoot "run-gate-c-rss-calibration-sequence.ps1"
-}
-else {
-    Join-Path $PSScriptRoot "run-gate-c-rss-l1-calibration-sequence.ps1"
-}
+$sequenceRunner = Join-Path $PSScriptRoot "run-gate-c-rss-calibration-sequence.ps1"
 $comparisonTool = Join-Path $root "tests\load\gate_c\rss_reproduction_compare.py"
 $packageTool = Join-Path $root "tests\load\gate_c\diagnostic_evidence_package.py"
-$processVersion = "Gate-C-12-v1.0"
+$processVersion = "Gate-C-12-v2.0"
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
 $suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
 if ($Kind -eq "calibration" -and [string]::IsNullOrWhiteSpace($Variable)) {
     throw "INFRA_ABORTED: calibration reproduction requires -Variable."
 }
-if ($Kind -eq "l1" -and -not [string]::IsNullOrWhiteSpace($Variable)) {
-    throw "INFRA_ABORTED: L1 reproduction does not accept -Variable."
-}
-$variableName = if ($Kind -eq "calibration") { $Variable.ToLowerInvariant() } else { "inventory" }
-$reproductionId = "adr0032-$Kind-$variableName-reproduction-$timestamp-$suffix"
+$variableName = $Variable.ToLowerInvariant()
+$reproductionId = "adr0033-$Kind-$variableName-reproduction-$timestamp-$suffix"
 $reproductionDirectory = [IO.Path]::GetFullPath((Join-Path $ResultsRoot $reproductionId))
 $sequencesDirectory = Join-Path $reproductionDirectory "sequences"
 $evidenceDirectory = Join-Path $reproductionDirectory "evidence"
@@ -222,7 +214,8 @@ Copy-Item -LiteralPath $summarySource -Destination $runSummaryPath
     --evidence-directory $evidenceDirectory `
     --package $packagePath `
     --manifest $manifestPath `
-    --run-id $reproductionId
+    --run-id $reproductionId `
+    --process-version $processVersion
 if ($LASTEXITCODE -ne 0) {
     throw "Reproduction evidence package creation or verification failed."
 }

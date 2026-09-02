@@ -16,9 +16,13 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     )
 
     assert "[ValidateRange(0, 2)]" in runner
+    assert '[ValidateSet("D")]' in runner
+    assert '$processVersion = "Gate-C-12-v2.0"' in runner
     assert "[double]$capacityAdmissionGiB = 15.0" in runner
     assert "[double]$capacityWarningGiB = 8.0" in runner
     assert "[double]$capacityStopGiB = 5.0" in runner
+    assert "-ProcessVersion $processVersion" in runner
+    assert "--process-version $processVersion" in runner
     assert 'classification = "NON_ACCEPTANCE_DIAGNOSTIC"' in runner
     assert "formal_gate_attempt = $false" in runner
     assert "acceptance_claim = $false" in runner
@@ -64,6 +68,8 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     assert "instrumentation did not reach the validated readiness marker" in runner
     assert "instrumentation readiness marker failed source-bound validation" in runner
     assert "instrumentation started but did not produce" in runner
+    assert '$armReasonProperty = $armResult.PSObject.Properties["reason"]' in runner
+    assert "without a result reason" in runner
     sequence = (ROOT / "tools" / "windows" / "run-gate-c-rss-calibration-sequence.ps1").read_text(
         encoding="utf-8"
     )
@@ -71,6 +77,7 @@ def test_calibration_runner_enforces_non_formal_resource_and_retry_boundaries() 
     assert '-Arm "Measurement"' in sequence
     assert '-Arm "APrime"' in sequence
     assert "tls_identity_reused_across_arms = $true" in sequence
+    assert "--process-version $processVersion" in sequence
     assert '--forbidden-value-file (Join-Path $tlsDirectory "server.key")' in sequence
 
 
@@ -193,6 +200,9 @@ def test_failed_arm_reference_is_indexed_before_sequence_stops() -> None:
         assert '"DESIGN_REJECTED", "INFRA_ABORTED"' in sequence
         assert '$childError -match "INFRA_ABORTED:"' in sequence
         assert '$failureReason.StartsWith("INFRA_ABORTED"' in sequence
+        if name == "run-gate-c-rss-calibration-sequence.ps1":
+            assert '$reasonProperty = $summary.PSObject.Properties["reason"]' in sequence
+            assert "failed without a summary reason" in sequence
 
 
 def test_reproduction_runner_requires_two_independent_sequences() -> None:
@@ -206,47 +216,48 @@ def test_reproduction_runner_requires_two_independent_sequences() -> None:
     assert "--second-reference ([string]$references.second.reference_path)" in runner
     assert "formal_gate_attempt = $false" in runner
     assert "acceptance_claim = $false" in runner
+    assert "--process-version $processVersion" in runner
     assert '"INFRA_ABORTED", "DESIGN_REJECTED"' not in runner
     assert '"DESIGN_REJECTED", "INFRA_ABORTED"' in runner
 
 
-def test_adr0032_d0_and_execution_boundaries_are_structured() -> None:
+def test_adr0033_d0_and_execution_boundaries_are_structured() -> None:
     design = json.loads(
         (
             ROOT
             / "docs"
             / "diagnostics"
             / "phase7-gate-c-twelfth-p2"
-            / "adr0032-design-authorization.json"
+            / "adr0033-design-authorization.json"
         ).read_text(encoding="utf-8")
     )
 
     assert set(design["d0_deliverables"]) == {
         "variable_matrix",
         "interference_formulas_and_zero_tolerance",
-        "mutually_exclusive_memory_ledger",
+        "domain_separated_memory_ledgers",
+        "bounded_sampling_and_noise_model",
         "attribution_admission_and_multi_owner_cutoff",
         "failure_exit_paths",
         "evidence_image_lock_and_cleanup_contract",
     }
     assert set(design["d0_deliverables"].values()) == {"PRESENT"}
-    weak = design["attribution_admission"]["weak"]
-    assert weak["minimum_dominant_owner_ratio"] == 0.7
-    assert weak["independent_matched_runs"] == 2
-    assert "APPEND_ONLY_ADR_0032_WEAK_ADMISSION_ADDENDUM" in weak["approval"]
-    assert set(weak["required_evidence"]) >= {
-        "residual_categories_bytes_and_ratios",
-        "stable_reproduction_and_controls",
-        "full_conservative_calculation",
-        "two_run_ids",
-        "two_package_sha256_values",
-    }
-    assert design["remediation_validation"]["prediction_deviation_stop_ratio"] == 1.3
+    assert design["process_version"] == "Gate-C-12-v2.0"
+    assert design["bounded_sampling"]["order"] == [
+        "process_before",
+        "cgroup_before",
+        "jemalloc_epoch_and_stats",
+        "cgroup_after",
+        "process_after",
+    ]
+    assert design["variable_matrix"]["sequence"] == ["A", "D", "A_PRIME"]
+    assert design["attribution"]["weak_minimum_single_owner_ratio"] == 0.7
+    assert design["attribution"]["weak_requires_separate_append_only_adr"] is True
     infra = design["outcomes"]["INFRA_ABORTED"]
     assert infra["same_cause_maximum_retries"] == 2
-    assert infra["retry_scope"] == "CURRENT_LEVEL_ONLY"
-    assert infra["counts_as_design_failure"] is False
     assert infra["gate_c_attempts_appended"] is False
+    assert design["authorization_boundary"]["d2_requires_two_d1_sequences"] is True
+    assert design["authorization_boundary"]["product_remediation_authorized"] is False
 
 
 def test_sequence_archives_summary_before_removing_intermediates() -> None:

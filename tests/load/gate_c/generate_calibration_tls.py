@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 
 
 def _certificate_sha256(certificate: x509.Certificate) -> str:
@@ -139,7 +139,7 @@ def generate_tls_material(output_directory: Path, server_hostname: str) -> dict[
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Generate one ephemeral ADR-0032 PostgreSQL TLS identity."
+        description="Generate one ephemeral ADR-0033 PostgreSQL TLS identity."
     )
     parser.add_argument("--output-directory", type=Path, required=True)
     parser.add_argument("--server-hostname", default="postgres")

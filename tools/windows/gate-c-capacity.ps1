@@ -95,6 +95,8 @@ function Get-GateCMultiRootCapacitySnapshot {
         [Parameter(Mandatory = $true)][double]$AdmissionGiB,
         [Parameter(Mandatory = $true)][double]$WarningGiB,
         [Parameter(Mandatory = $true)][double]$StopGiB,
+        [ValidatePattern('^Gate-C-12-v[12]\.0$')]
+        [string]$ProcessVersion = "Gate-C-12-v1.0",
         [string]$ProjectName
     )
 
@@ -127,7 +129,7 @@ function Get-GateCMultiRootCapacitySnapshot {
     $minimum = $targets | Sort-Object free_bytes | Select-Object -First 1
     return [ordered]@{
         schema_version = "cybercontrol.gate-c-capacity-sample.v2"
-        process_version = "Gate-C-12-v1.0"
+        process_version = $ProcessVersion
         policy_revision = $PolicyRevision
         project = $ProjectName
         sampled_at_utc = (Get-Date).ToUniversalTime().ToString("o")

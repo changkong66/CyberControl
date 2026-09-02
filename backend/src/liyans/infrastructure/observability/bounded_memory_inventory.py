@@ -25,7 +25,7 @@ INVENTORY_LABELS: Final = ("baseline", "peak", "recovery")
 INVENTORY_SIGNAL: Final = getattr(signal, "SIGUSR1", None)
 APPROVED_INVENTORY_NAMES: Final = frozenset({"cursor", "platform", "sse"})
 SHA_PATTERN: Final = re.compile(r"^[0-9a-f]{40}$")
-PROCESS_VERSION: Final = "Gate-C-12-v1.0"
+PROCESS_VERSION: Final = "Gate-C-12-v2.0"
 
 
 class BoundedMemoryInventoryRejected(RuntimeError):
@@ -59,6 +59,7 @@ def _read_process_memory() -> dict[str, int]:
         frozenset({"Pss", "Private_Clean", "Private_Dirty", "Private_Hugetlb", "Swap"}),
     )
     values = {
+        "process_id": os.getpid(),
         "rss_bytes": status.get("VmRSS", 0),
         "virtual_bytes": status.get("VmSize", 0),
         "data_bytes": status.get("VmData", 0),
@@ -117,6 +118,7 @@ def _read_cgroup_memory() -> dict[str, int]:
             int(value)
             for value in (directory / "cgroup.procs").read_text(encoding="ascii").splitlines()
         }
+        cgroup_inode = directory.stat().st_ino
     except (FileNotFoundError, OSError, ValueError):
         return {}
     stats: dict[str, int] = {}
@@ -137,6 +139,7 @@ def _read_cgroup_memory() -> dict[str, int]:
         else:
             other_process_rss += status["VmRSS"]
     return {
+        "cgroup_inode": cgroup_inode,
         "memory_current_bytes": current,
         "anon_bytes": stats.get("anon", 0),
         "file_bytes": stats.get("file", 0),
@@ -158,57 +161,105 @@ def build_memory_ledger(
     if allocator is None or not isinstance(allocator.get("summary"), Mapping):
         raise BoundedMemoryInventoryRejected("jemalloc allocation summary is unavailable")
     summary = allocator["summary"]
-    required = ("allocated", "active", "resident")
+    required = ("allocated", "active", "resident", "mapped", "metadata", "retained", "arenas")
     if any(not isinstance(summary.get(name), int) for name in required):
         raise BoundedMemoryInventoryRejected("jemalloc allocation summary is incomplete")
     allocated = int(summary["allocated"])
     active = int(summary["active"])
     resident = int(summary["resident"])
-    rss_anon = int(process.get("rss_anon_bytes", 0))
-    physical = {
-        "allocator_payload_bytes": allocated,
+    mapped = int(summary["mapped"])
+    metadata = int(summary["metadata"])
+    retained = int(summary["retained"])
+    arenas = int(summary["arenas"])
+    if min(allocated, active, resident, mapped, metadata, retained, arenas) < 0:
+        raise BoundedMemoryInventoryRejected("jemalloc accounting is negative")
+    if allocated > active or active > resident:
+        raise BoundedMemoryInventoryRejected("jemalloc same-domain accounting is inconsistent")
+
+    allocator_ledger = {
+        "allocated_bytes": allocated,
+        "active_bytes": active,
+        "resident_bytes": resident,
+        "mapped_bytes": mapped,
+        "metadata_bytes": metadata,
+        "retained_bytes": retained,
+        "arena_count": arenas,
         "allocator_slack_bytes": active - allocated,
         "allocator_resident_gap_bytes": resident - active,
-        "non_jemalloc_anon_bytes": rss_anon - resident,
     }
-    if rss_anon <= 0 or any(value < 0 for value in physical.values()):
-        raise BoundedMemoryInventoryRejected("physical memory partition is negative or empty")
-    if sum(physical.values()) != rss_anon:
-        raise BoundedMemoryInventoryRejected("physical memory partition does not reconcile")
 
     process_rss = int(process.get("rss_bytes", 0))
+    rss_anon = int(process.get("rss_anon_bytes", 0))
+    rss_file = int(process.get("rss_file_bytes", 0))
+    rss_shmem = int(process.get("rss_shmem_bytes", 0))
+    pss = int(process.get("pss_bytes", 0))
+    uss = int(process.get("uss_bytes", 0))
+    swap = int(process.get("swap_bytes", 0))
+    fd_count = int(process.get("fd_count", 0))
+    map_count = int(process.get("map_count", 0))
+    if min(process_rss, rss_anon, rss_file, rss_shmem, pss, uss, swap, fd_count, map_count) < 0:
+        raise BoundedMemoryInventoryRejected("Linux process accounting is negative")
+    if process_rss <= 0 or rss_anon <= 0:
+        raise BoundedMemoryInventoryRejected("Linux process RSS accounting is empty")
+    process_reconciliation = process_rss - rss_anon - rss_file - rss_shmem
+    process_reconciliation_limit = max(1024 * 1024, round(process_rss * 0.02))
+    if abs(process_reconciliation) > process_reconciliation_limit:
+        raise BoundedMemoryInventoryRejected("Linux process RSS components do not reconcile")
+    process_ledger = {
+        "vmrss_bytes": process_rss,
+        "rss_anon_bytes": rss_anon,
+        "rss_file_bytes": rss_file,
+        "rss_shmem_bytes": rss_shmem,
+        "pss_bytes": pss,
+        "uss_bytes": uss,
+        "swap_bytes": swap,
+        "fd_count": fd_count,
+        "map_count": map_count,
+        "rss_reconciliation_signed_bytes": process_reconciliation,
+        "rss_reconciliation_limit_bytes": process_reconciliation_limit,
+    }
+
     required_cgroup = (
         "memory_current_bytes",
+        "anon_bytes",
         "file_bytes",
         "kernel_bytes",
-        "other_process_rss_bytes",
-        "unreadable_process_count",
     )
     if any(not isinstance(cgroup.get(name), int) for name in required_cgroup):
         raise BoundedMemoryInventoryRejected("cgroup bridge inputs are incomplete")
-    if int(cgroup["unreadable_process_count"]) != 0:
-        raise BoundedMemoryInventoryRejected("cgroup process RSS inventory is incomplete")
     cgroup_current = int(cgroup.get("memory_current_bytes", 0))
+    cgroup_anon = int(cgroup.get("anon_bytes", 0))
     file_cache = int(cgroup.get("file_bytes", 0))
     kernel = int(cgroup.get("kernel_bytes", 0))
-    other_process_rss = int(cgroup.get("other_process_rss_bytes", 0))
-    if cgroup_current <= 0 or min(file_cache, kernel, other_process_rss) < 0:
-        raise BoundedMemoryInventoryRejected("cgroup bridge input is negative or empty")
-    bridge = {
-        "api_process_rss_bytes": process_rss,
-        "other_process_rss_bytes": other_process_rss,
-        "cgroup_file_cache_bytes": file_cache,
-        "kernel_memory_bytes": kernel,
-        "signed_reconciliation_residual_bytes": (
-            cgroup_current - process_rss - other_process_rss - file_cache - kernel
-        ),
+    if cgroup_current <= 0 or min(cgroup_anon, file_cache, kernel) < 0:
+        raise BoundedMemoryInventoryRejected("cgroup physical accounting is negative or empty")
+    cgroup_ledger = {
+        "memory_current_bytes": cgroup_current,
+        "anon_bytes": cgroup_anon,
+        "file_bytes": file_cache,
+        "kernel_bytes": kernel,
+        "unclassified_signed_bytes": cgroup_current - cgroup_anon - file_cache - kernel,
+        "drilldowns_non_additive": {
+            name: int(cgroup.get(name, 0))
+            for name in (
+                "sock_bytes",
+                "slab_bytes",
+                "pagetables_bytes",
+                "kernel_stack_bytes",
+                "other_process_rss_bytes",
+                "unreadable_process_count",
+            )
+        },
     }
     return {
-        "physical_partition": physical,
-        "rss_anon_bytes": rss_anon,
-        "rss_file_bytes": int(process.get("rss_file_bytes", 0)),
-        "rss_shmem_bytes": int(process.get("rss_shmem_bytes", 0)),
-        "cgroup_bridge": bridge,
+        "schema_version": "cybercontrol.domain-separated-memory-ledger.v1",
+        "cgroup_physical": cgroup_ledger,
+        "linux_process": process_ledger,
+        "jemalloc_accounting": allocator_ledger,
+        "cross_domain_non_additive": {
+            "classification": "NON_ADDITIVE_CROSS_DOMAIN",
+            "jemalloc_resident_minus_rss_anon_signed_bytes": resident - rss_anon,
+        },
     }
 
 

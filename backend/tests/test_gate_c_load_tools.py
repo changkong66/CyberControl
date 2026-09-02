@@ -430,7 +430,8 @@ def test_gate_c_build_inputs_lock_builder_packages_and_external_images() -> None
     build_tool = (root / "tools" / "gate_c_image_lock.py").read_text(encoding="utf-8")
     backend_dockerfile = (root / "infra" / "backend.Dockerfile").read_text(encoding="utf-8")
 
-    assert PROCESS_VERSION == "Gate-C-12-v1.0"
+    assert PROCESS_VERSION == "Gate-C-12-v2.0"
+    assert inputs["process_version"] == "Gate-C-12-v1.0"
     assert IMAGE_LOCK_SCHEMA == "cybercontrol.gate-c-image-lock.v1"
     assert BUILD_RECEIPT_SCHEMA == "cybercontrol.gate-c-build-receipt.v1"
     assert inputs["platform"] == "linux/amd64"
@@ -528,7 +529,8 @@ def test_gate_c_candidate_smoke_supports_same_digest_independent_scenarios() -> 
     assert '-Name "docker_data_root"' in capacity_library
     assert 'name = "docker_internal_root"' in capacity_library
     assert 'distribution = "docker-desktop"' in capacity_library
-    assert 'process_version = "Gate-C-12-v1.0"' in capacity_library
+    assert '[string]$ProcessVersion = "Gate-C-12-v1.0"' in capacity_library
+    assert "process_version = $ProcessVersion" in capacity_library
     assert "admission_ready" in capacity_library
 
     assert compose.count("cybercontrol/gate-c-backend:${GATE_C_IMAGE_TAG:-unknown}") == 2

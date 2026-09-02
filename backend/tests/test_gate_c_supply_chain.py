@@ -80,7 +80,7 @@ def _manifest(**overrides: object) -> dict[str, object]:
     }
     value: dict[str, object] = {
         "schema_version": supply_chain.MANIFEST_SCHEMA,
-        "process_version": supply_chain.PROCESS_VERSION,
+        "process_version": supply_chain.SEALED_INPUT_PROCESS_VERSION,
         "required_directories": ["sources", "patches", "apk", "licenses"],
         "sources": [],
         "patches": [],
@@ -174,6 +174,7 @@ def test_remote_add_is_rejected(tmp_path: Path) -> None:
 
 def test_manifest_schema_is_stable() -> None:
     assert json.loads(json.dumps(_manifest()))["process_version"] == "Gate-C-12-v1.0"
+    assert supply_chain.PROCESS_VERSION == "Gate-C-12-v2.0"
 
 
 def test_spdx_expression_accepts_parentheses_and_rejects_malformed_values() -> None:
@@ -210,7 +211,7 @@ def test_generated_manifest_is_deterministic_and_validates_assets(tmp_path: Path
     archive_hash = supply_chain.sha256(archive)
     base_spec = {
         "schema_version": supply_chain.BASE_IMAGE_SPEC_SCHEMA,
-        "process_version": supply_chain.PROCESS_VERSION,
+        "process_version": supply_chain.SEALED_INPUT_PROCESS_VERSION,
         "base_images": [
             {
                 "role": "python-base",
@@ -247,6 +248,15 @@ def test_generated_manifest_is_deterministic_and_validates_assets(tmp_path: Path
         )
     }
     manifest = supply_chain._read_json(tmp_path / "third_party/gate-c-build/manifest.json")
+    policy = supply_chain._read_json(
+        tmp_path / "third_party/gate-c-build/licenses/license-policy.json"
+    )
+    catalog = supply_chain._read_json(
+        tmp_path / "third_party/gate-c-build/licenses/asset-license-catalog.json"
+    )
+    assert manifest["process_version"] == "Gate-C-12-v1.0"
+    assert policy["process_version"] == "Gate-C-12-v1.0"
+    assert catalog["process_version"] == "Gate-C-12-v1.0"
     assert len(supply_chain.validate_manifest(manifest)) == 4
     supply_chain.validate_assets(tmp_path, manifest)
     supply_chain.generate(arguments)

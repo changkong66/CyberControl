@@ -13,11 +13,14 @@ LOAD_ROOT = ROOT / "tests" / "load"
 if str(LOAD_ROOT) not in sys.path:
     sys.path.insert(0, str(LOAD_ROOT))
 
+import gate_c.rss_calibration as calibration_module  # noqa: E402
 from gate_c.generate_calibration_tls import generate_tls_material  # noqa: E402
 from gate_c.rss_calibration import (  # noqa: E402
+    BRACKET_SAMPLE_ORDER,
     CalibrationConfig,
     CalibrationTLS,
     CalibrationTransition,
+    _capture_bracketed_window,
     create_verified_tls_context,
     instrumentation_readiness,
     percentile,
@@ -51,11 +54,13 @@ class FakeMallctl:
 
 
 class FakeAllocator:
-    def snapshot(self) -> dict[str, int]:
+    def accounting_snapshot(self) -> dict[str, int]:
         return {
             "allocated": 100,
             "active": 120,
             "resident": 150,
+            "mapped": 180,
+            "metadata": 10,
             "retained": 0,
             "arenas": 1,
         }
@@ -96,13 +101,21 @@ SOURCE = {
     "library_build_id": "f" * 40,
 }
 PROCESS = {
+    "process_id": 123,
     "rss_bytes": 300,
     "rss_anon_bytes": 200,
     "rss_file_bytes": 90,
     "rss_shmem_bytes": 10,
+    "pss_bytes": 280,
+    "uss_bytes": 260,
+    "swap_bytes": 0,
+    "fd_count": 7,
+    "map_count": 11,
 }
 CGROUP = {
+    "cgroup_inode": 456,
     "memory_current_bytes": 500,
+    "anon_bytes": 350,
     "file_bytes": 50,
     "kernel_bytes": 50,
     "other_process_rss_bytes": 0,
@@ -157,11 +170,11 @@ def test_percentile_is_nearest_rank_and_validated() -> None:
 
 def test_instrumentation_readiness_is_source_bound_and_non_formal() -> None:
     readiness = instrumentation_readiness(
-        arm="A", variable="S", run_id="calibration-ready", source=SOURCE
+        arm="A", variable="D", run_id="calibration-ready", source=SOURCE
     )
 
     assert readiness["schema_version"] == "cybercontrol.gate-c-rss-calibration-readiness.v1"
-    assert readiness["process_version"] == "Gate-C-12-v1.0"
+    assert readiness["process_version"] == "Gate-C-12-v2.0"
     assert readiness["classification"] == "NON_ACCEPTANCE_DIAGNOSTIC"
     assert readiness["formal_gate_attempt"] is False
     assert readiness["acceptance_claim"] is False
@@ -171,32 +184,24 @@ def test_instrumentation_readiness_is_source_bound_and_non_formal() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("variable", "expected_operations", "active_after"),
-    (
-        ("S", ["read prof.active=false"], False),
-        ("R", ["prof.reset"], False),
-        ("P", ["prof.active=true"], True),
-        ("F", ["prof.reset", "prof.active=true"], True),
-    ),
-)
-async def test_transition_changes_exactly_one_declared_variable(
-    variable: str,
-    expected_operations: list[str],
-    active_after: bool,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+async def test_variable_d_is_passive_and_cannot_reach_legacy_profile_transitions() -> None:
     mallctl = FakeMallctl()
-    transition = CalibrationTransition(mallctl, signal_number=12)
-    loop = asyncio.get_running_loop()
-    monkeypatch.setattr(loop, "add_signal_handler", lambda *_args: None)
-    monkeypatch.setattr(loop, "remove_signal_handler", lambda *_args: True)
-    transition._signal_sender = lambda *_args: transition._handle_signal()
+    signal_calls: list[tuple[int, int]] = []
+    transition = CalibrationTransition(
+        mallctl,
+        signal_number=12,
+        signal_sender=lambda pid, number: signal_calls.append((pid, number)),
+    )
 
-    evidence = await transition.apply(variable)
+    evidence = await transition.apply("D")
 
-    assert [item["operation"] for item in evidence["operations"]] == expected_operations
-    assert evidence["prof_active_after_transition"] is active_after
+    assert evidence["mode"] == "PASSIVE_DOMAIN_SAMPLING"
+    assert evidence["signal_delivered"] is False
+    assert [item["operation"] for item in evidence["operations"]] == ["read prof.active=false"]
+    assert signal_calls == []
+    assert not any(call[0] in {"reset", "write"} for call in mallctl.calls)
+    with pytest.raises(ValueError, match="variable is invalid"):
+        await transition.apply("F")
     await transition.close()
     assert mallctl.values["prof.active"] is False
 
@@ -212,7 +217,7 @@ async def test_calibration_control_is_non_formal_and_reconciles_ledgers(tmp_path
 
     result = await run_calibration(
         arm="A",
-        variable="S",
+        variable="D",
         run_id="calibration-a",
         database_url="postgresql+asyncpg://user:secret@postgres:5432/liyans",
         source=SOURCE,
@@ -238,7 +243,53 @@ async def test_calibration_control_is_non_formal_and_reconciles_ledgers(tmp_path
     assert result["database"]["credentials_recorded"] is False
     assert result["database"]["tls"]["hostname_verified"] is True
     assert "secret" not in str(result)
-    assert result["windows"]["recovery"]["ledger"]["rss_anon_bytes"] == 200
+    assert result["windows"]["recovery"]["sampling"] == {
+        "mode": "MINIMAL_CONTROL",
+        "sample_count": 1,
+    }
+    assert result["windows"]["recovery"]["ledger"]["linux_process"]["rss_anon_bytes"] == 200
+
+
+@pytest.mark.asyncio
+async def test_calibration_preserves_bounded_structural_failure_reason(tmp_path: Path) -> None:
+    tls = _tls(tmp_path)
+
+    async def connections(
+        _url: str, config: CalibrationConfig, connection_tls: CalibrationTLS
+    ) -> dict[str, object]:
+        return _connection_result(connection_tls, config.total_connections)
+
+    result = await run_calibration(
+        arm="A",
+        variable="D",
+        run_id="calibration-invalid-ledger",
+        database_url="postgresql+asyncpg://user:secret@postgres:5432/liyans",
+        source=SOURCE,
+        tls=tls,
+        config=CalibrationConfig(
+            total_connections=1,
+            maximum_concurrency=1,
+            idle_seconds=0,
+            recovery_seconds=0,
+            sample_interval_seconds=0.01,
+        ),
+        mallctl=FakeMallctl(),
+        allocator_reader=FakeAllocator(),  # type: ignore[arg-type]
+        process_reader=lambda: {
+            **PROCESS,
+            "rss_bytes": 4 * 1024 * 1024,
+            "rss_anon_bytes": 1,
+            "rss_file_bytes": 0,
+            "rss_shmem_bytes": 0,
+        },
+        cgroup_reader=lambda: CGROUP,
+        connection_runner=connections,
+    )
+
+    assert result["passed"] is False
+    assert result["failure_type"] == "BoundedMemoryInventoryRejected"
+    assert result["reason"] == "Linux process RSS components do not reconcile"
+    assert "secret" not in str(result)
 
 
 @pytest.mark.asyncio
@@ -257,7 +308,7 @@ async def test_calibration_cancellation_cleans_up_and_propagates(tmp_path: Path)
     task = asyncio.create_task(
         run_calibration(
             arm="A",
-            variable="S",
+            variable="D",
             run_id="cancelled-calibration",
             database_url="postgresql+asyncpg://user:secret@postgres:5432/liyans",
             source=SOURCE,
@@ -289,7 +340,7 @@ def test_tls_generator_is_ephemeral_bounded_and_fail_closed(tmp_path: Path) -> N
     tls = _tls(tmp_path)
     manifest = json.loads((tls.ca_certificate.parent / "tls-manifest.json").read_text())
 
-    assert manifest["process_version"] == "Gate-C-12-v1.0"
+    assert manifest["process_version"] == "Gate-C-12-v2.0"
     assert manifest["server_hostname"] == "postgres"
     assert manifest["ca_private_key_persisted"] is False
     assert "PRIVATE KEY" not in str(manifest)
@@ -362,7 +413,7 @@ async def test_non_tls_database_result_is_zero_tolerance_failure(tmp_path: Path)
 
     result = await run_calibration(
         arm="A",
-        variable="S",
+        variable="D",
         run_id="calibration-non-tls",
         database_url="postgresql+asyncpg://user:secret@postgres:5432/liyans",
         source=SOURCE,
@@ -385,16 +436,223 @@ async def test_non_tls_database_result_is_zero_tolerance_failure(tmp_path: Path)
     assert result["passed"] is False
 
 
+def test_bracketed_sampling_uses_five_fixed_order_samples() -> None:
+    events: list[str] = []
+
+    class LoggingAllocator(FakeAllocator):
+        def accounting_snapshot(self) -> dict[str, int]:
+            events.append("jemalloc_epoch_and_stats")
+            return super().accounting_snapshot()
+
+    def process_reader() -> dict[str, int]:
+        events.append("process")
+        return dict(PROCESS)
+
+    def cgroup_reader() -> dict[str, int]:
+        events.append("cgroup")
+        return dict(CGROUP)
+
+    window = _capture_bracketed_window(
+        process_reader,
+        cgroup_reader,
+        LoggingAllocator(),  # type: ignore[arg-type]
+        sleeper=lambda _seconds: None,
+    )
+
+    assert events == ["process", "cgroup", "jemalloc_epoch_and_stats", "cgroup", "process"] * 5
+    assert window[4]["sample_count"] == 5
+    assert all(sample["order"] == list(BRACKET_SAMPLE_ORDER) for sample in window[4]["samples"])
+
+
+def test_bracketed_sampling_fails_closed_on_duration_identity_and_spread(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ticks = iter((0.0, 0.0, 0.3))
+    monkeypatch.setattr(calibration_module, "perf_counter", lambda: next(ticks))
+    with pytest.raises(calibration_module.BoundedMemoryInventoryRejected, match="250 ms"):
+        _capture_bracketed_window(
+            lambda: dict(PROCESS),
+            lambda: dict(CGROUP),
+            FakeAllocator(),  # type: ignore[arg-type]
+            sleeper=lambda _seconds: None,
+        )
+
+    monkeypatch.undo()
+    process_calls = 0
+
+    def changed_process() -> dict[str, int]:
+        nonlocal process_calls
+        sample = process_calls // 2
+        process_calls += 1
+        return {**PROCESS, "process_id": 123 if sample == 0 else 124}
+
+    with pytest.raises(calibration_module.BoundedMemoryInventoryRejected, match="process_id"):
+        _capture_bracketed_window(
+            changed_process,
+            lambda: dict(CGROUP),
+            FakeAllocator(),  # type: ignore[arg-type]
+            sleeper=lambda _seconds: None,
+        )
+
+    process_calls = 0
+
+    def changed_process_within_bracket() -> dict[str, int]:
+        nonlocal process_calls
+        process_calls += 1
+        return {**PROCESS, "process_id": 123 if process_calls % 2 else 124}
+
+    with pytest.raises(calibration_module.BoundedMemoryInventoryRejected, match="within a bracket"):
+        _capture_bracketed_window(
+            changed_process_within_bracket,
+            lambda: dict(CGROUP),
+            FakeAllocator(),  # type: ignore[arg-type]
+            sleeper=lambda _seconds: None,
+        )
+
+    cgroup_calls = 0
+
+    def changed_cgroup() -> dict[str, int]:
+        nonlocal cgroup_calls
+        sample = cgroup_calls // 2
+        cgroup_calls += 1
+        return {**CGROUP, "cgroup_inode": 456 if sample == 0 else 789}
+
+    with pytest.raises(calibration_module.BoundedMemoryInventoryRejected, match="cgroup_inode"):
+        _capture_bracketed_window(
+            lambda: dict(PROCESS),
+            changed_cgroup,
+            FakeAllocator(),  # type: ignore[arg-type]
+            sleeper=lambda _seconds: None,
+        )
+
+    process_calls = 0
+
+    def unstable_process() -> dict[str, int]:
+        nonlocal process_calls
+        sample = process_calls // 2
+        process_calls += 1
+        rss_anon = 200 if sample < 4 else 10 * 1024 * 1024
+        return {
+            **PROCESS,
+            "rss_bytes": rss_anon + 100,
+            "rss_anon_bytes": rss_anon,
+        }
+
+    with pytest.raises(calibration_module.BoundedMemoryInventoryRejected, match="RssAnon spread"):
+        _capture_bracketed_window(
+            unstable_process,
+            lambda: dict(CGROUP),
+            FakeAllocator(),  # type: ignore[arg-type]
+            sleeper=lambda _seconds: None,
+        )
+
+
+def test_bracketed_sampling_fails_closed_on_burst_duration(monkeypatch: pytest.MonkeyPatch) -> None:
+    ticks = [0.0]
+    for index in range(5):
+        ticks.extend((index * 0.1, index * 0.1 + 0.01))
+    ticks.append(2.1)
+    values = iter(ticks)
+    monkeypatch.setattr(calibration_module, "perf_counter", lambda: next(values))
+
+    with pytest.raises(calibration_module.BoundedMemoryInventoryRejected, match="two seconds"):
+        _capture_bracketed_window(
+            lambda: dict(PROCESS),
+            lambda: dict(CGROUP),
+            FakeAllocator(),  # type: ignore[arg-type]
+            sleeper=lambda _seconds: None,
+        )
+
+
+def _ledger() -> dict[str, object]:
+    return {
+        "schema_version": "cybercontrol.domain-separated-memory-ledger.v1",
+        "cgroup_physical": {
+            "memory_current_bytes": 500,
+            "anon_bytes": 350,
+            "file_bytes": 50,
+            "kernel_bytes": 50,
+            "unclassified_signed_bytes": 50,
+            "drilldowns_non_additive": {},
+        },
+        "linux_process": {
+            "vmrss_bytes": 100,
+            "rss_anon_bytes": 80,
+            "rss_file_bytes": 20,
+            "rss_shmem_bytes": 0,
+            "pss_bytes": 90,
+            "uss_bytes": 80,
+            "swap_bytes": 0,
+            "fd_count": 7,
+            "map_count": 11,
+            "rss_reconciliation_signed_bytes": 0,
+            "rss_reconciliation_limit_bytes": 1024 * 1024,
+        },
+        "jemalloc_accounting": {
+            "allocated_bytes": 100,
+            "active_bytes": 120,
+            "resident_bytes": 150,
+            "mapped_bytes": 180,
+            "metadata_bytes": 10,
+            "retained_bytes": 25,
+            "arena_count": 1,
+            "allocator_slack_bytes": 20,
+            "allocator_resident_gap_bytes": 30,
+        },
+        "cross_domain_non_additive": {
+            "classification": "NON_ADDITIVE_CROSS_DOMAIN",
+            "jemalloc_resident_minus_rss_anon_signed_bytes": 70,
+        },
+    }
+
+
+def _measurement_sampling() -> dict[str, object]:
+    samples = [
+        {
+            "index": index,
+            "order": list(BRACKET_SAMPLE_ORDER),
+            "started_monotonic_seconds": float(index),
+            "completed_monotonic_seconds": float(index) + 0.01,
+            "duration_seconds": 0.01,
+            "process_representative": {"process_id": 123},
+            "cgroup_representative": {"cgroup_inode": 456},
+            "process_before": {"process_id": 123},
+            "process_after": {"process_id": 123},
+            "cgroup_before": {"cgroup_inode": 456},
+            "cgroup_after": {"cgroup_inode": 456},
+        }
+        for index in range(1, 6)
+    ]
+    return {
+        "schema_version": "cybercontrol.gate-c-bracketed-domain-sampling.v1",
+        "mode": "FIVE_SAMPLE_BRACKETED_DOMAIN",
+        "sample_count": 5,
+        "required_sample_count": 5,
+        "spacing_seconds": 0.05,
+        "sample_max_seconds": 0.25,
+        "burst_max_seconds": 2.0,
+        "burst_duration_seconds": 0.25,
+        "process_rss_anon": {"spread": 0, "spread_limit": 8 * 1024 * 1024},
+        "cgroup_memory_current": {"spread": 0, "spread_limit": 8 * 1024 * 1024},
+        "samples": samples,
+    }
+
+
 def _arm(name: str, *, multiplier: float = 1.0) -> dict[str, object]:
+    sampling = (
+        _measurement_sampling()
+        if name == "Measurement"
+        else {"mode": "MINIMAL_CONTROL", "sample_count": 1}
+    )
     return {
         "schema_version": "cybercontrol.gate-c-rss-calibration-arm.v1",
-        "process_version": "Gate-C-12-v1.0",
+        "process_version": "Gate-C-12-v2.0",
         "classification": "NON_ACCEPTANCE_DIAGNOSTIC",
         "formal_gate_attempt": False,
         "acceptance_claim": False,
         "run_id": f"run-{name}",
         "arm": name,
-        "variable": "S",
+        "variable": "D",
         "source": SOURCE,
         "config": {"fixed": True},
         "database": {"driver": "postgresql+asyncpg", "host": "postgres"},
@@ -408,8 +666,16 @@ def _arm(name: str, *, multiplier: float = 1.0) -> dict[str, object]:
             "event_loop_lag_p95_ms": 1 * multiplier,
         },
         "windows": {
-            "baseline": {"process": {"rss_bytes": 100}},
-            "recovery": {"process": {"rss_bytes": 110}},
+            "baseline": {
+                "process": {"rss_bytes": 100},
+                "ledger": _ledger(),
+                "sampling": sampling,
+            },
+            "recovery": {
+                "process": {"rss_bytes": 110},
+                "ledger": _ledger(),
+                "sampling": sampling,
+            },
         },
         "zero_tolerance": {"evidence_integrity": True},
         "passed": True,
@@ -432,3 +698,25 @@ def test_comparator_rejects_drift_and_cross_source_arms() -> None:
     wrong_source["source"] = {**SOURCE, "source_sha": "9" * 40}
     with pytest.raises(ValueError, match="same source"):
         compare_arms(_arm("A"), _arm("Measurement"), wrong_source)
+
+
+def test_comparator_rejects_tampered_measurement_sampling() -> None:
+    measurement = _arm("Measurement")
+    measurement["windows"]["baseline"]["sampling"]["samples"][0]["order"] = ["wrong"]
+
+    with pytest.raises(ValueError, match="sample order"):
+        compare_arms(_arm("A"), measurement, _arm("APrime"))
+
+
+def test_comparator_rejects_tampered_ledger_and_zero_tolerance_claim() -> None:
+    measurement = _arm("Measurement")
+    measurement["windows"]["recovery"]["ledger"]["jemalloc_accounting"]["allocator_slack_bytes"] = (
+        19
+    )
+    with pytest.raises(ValueError, match="allocator ledger is inconsistent"):
+        compare_arms(_arm("A"), measurement, _arm("APrime"))
+
+    measurement = _arm("Measurement")
+    measurement["zero_tolerance"]["evidence_integrity"] = False
+    with pytest.raises(ValueError, match="zero-tolerance controls"):
+        compare_arms(_arm("A"), measurement, _arm("APrime"))
