@@ -1,6 +1,6 @@
 # CyberControl Project Stage Audit
 
-Process Version: `Gate-C-12-v1.0`
+Process Version: `Gate-C-12-v2.0`
 
 ## 1. Precise Stage Position
 
@@ -8,15 +8,16 @@ CyberControl is in **Phase 7 release closure**. The current product scope,
 clean-volume Gate B business replay, Keycloak-backed registration and account
 management, and the `zh-CN`/`zh-TW`/`en-US` workbench are implemented on
 protected main. The current protected-main engineering baseline is
-`44ff28af5b54b574aa8a6fd3f62f2d258244fd74`, tree
-`e72cab3d31f83a6071141623661b08fb9e48eed6`. Protected-main Release Quality
-Gates Run `33533885658` completed 8/8 jobs successfully. PR #93 changed build,
+`b4b3c6eaf00f4c9f013fad8acfd2f0d9d2860211`, tree
+`f21426de47935f043055519558bb0816095b509a`. Protected-main Release Quality
+Gates Run `33582128563` completed 8/8 jobs successfully. PR #93 changed build,
 capacity and diagnostic infrastructure, PR #94 changed status documents, PR
 #95 accepted the measurement design and PR #96 added default-off diagnostic
 capability. PR #100-#102 rebuilt the trusted engineering foundation, PR #103
 closed its status, PR #104 hardened only diagnostic execution governance, PR
 #105 closed that status, PRs #106-#108 repaired diagnostic tooling/readiness,
-and PR #109 archived the final design rejection. None changed core product
+PR #109 archived the final design rejection, PR #110 closed that status, and
+PR #111 authorized ADR-0033. None changed core product
 behavior, so the current product source
 remains
 `a57d0ce57427804ede3f3c620fda2a93b3a300ff`, tree
@@ -41,8 +42,10 @@ D1 reached a valid source-bound readiness state and executed one complete S
 control arm, but its physical ledger produced `non_jemalloc_anon=-352256`.
 ADR 0032 classifies this structural inability to produce a nonnegative
 mutually exclusive ledger as design failure two and requires new diagnostic
-design work to stop under `Gate-C-12-v1.0`. No RSS owner or product fix is
-authorized. The current stage is therefore governance decision and audit
+design work to stop under `Gate-C-12-v1.0`. ADR-0033 now authorizes only a
+versioned, default-off replacement diagnostic implementation under
+`Gate-C-12-v2.0`; no RSS owner or product fix is authorized. The current stage
+is therefore ADR-0033 status closure followed by implementation and D1/D
 closure, not D2 or remediation.
 
 | Area | Current maturity | Evidence-based judgment |
@@ -840,9 +843,29 @@ matching local/server SHA256
 
 The sequence wrapper's missing `reason` property lookup is separately tracked
 as `SEQUENCE_FAILURE_REASON_MASKING`. It did not alter the arm evidence or
-classification, but it must be repaired and regression-tested before any
-future process version permits diagnostic execution. Typed
-`baseline_history` sequences 25-29 close PRs #105-#109; no Full occurred, so
-`gate_c_attempts` remains exactly 12. Product source and all frozen semantics
-remain unchanged. The only admissible next work is this status closure and a
-separate governance decision on whether to define a new process version.
+classification. ADR-0033 requires a fail-preserving wrapper repair and test
+before D1/D execution.
+
+## 20. Gate-C-12-v2.0 Domain-Separated Attribution Authorization
+
+PR #110 closed the v1 design-rejection status. It merged as
+`841020d0f97737adf925950792f3bb4f0dc8df2e`, tree
+`d5e07269d971236674e48d2d7bee99c1bf131d3b`, after push/PR/main Runs
+`33539024249/33539091225/33540046732` passed 8/8. Its immutable receipt SHA256
+is `09cbab9803ea6e984fc3e94ca4166ee0b5fe5f1b718a3d1e5a4cdf54168d6733`.
+
+ADR-0033 PR #111 passed Runs `33581087504/33581119453/33582128563` at 8/8
+and merged as `b4b3c6eaf00f4c9f013fad8acfd2f0d9d2860211`, tree
+`f21426de47935f043055519558bb0816095b509a`. Immutable Release `380938164`
+stores its 1,579-byte closure receipt; local and server SHA256 are both
+`b01073c7191b919a3826940ef3027f44c645ea11a35f5a8bb11eedb75f844c96`.
+
+`Gate-C-12-v2.0` is a new diagnostic-governance cycle. Historical v1 evidence
+and classifications remain unchanged. The new model separates cgroup physical,
+Linux process and jemalloc accounting domains, treats cross-domain differences
+as signed non-additive signals, and calibrates bounded bracketed sampling as
+variable `D`. This closes the identified measurement-model defect but does not
+establish an owner. Only implementation and D1/D become eligible after the
+status and implementation chains close. Typed `baseline_history` sequence 30
+records PR #111; no Full occurred, so `gate_c_attempts` remains 12 and all
+product and downstream gates remain locked.
