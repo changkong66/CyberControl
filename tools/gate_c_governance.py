@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 PRODUCT_SOURCE_SHA = "a57d0ce57427804ede3f3c620fda2a93b3a300ff"
 FORMAL_STATE = "PHASE7_GATE_C_FAILED_GATE_D_LOCKED"
 D1_READY_STATE = "GATE_C12_TRUSTED_FOUNDATION_VERIFIED_D1_READY"
