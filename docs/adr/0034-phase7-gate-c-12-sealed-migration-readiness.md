@@ -38,7 +38,9 @@ must have:
 
 The newly generated readiness receipt remains `Gate-C-12-v2.0`, records the
 sealed migration process version explicitly and binds the complete historical
-report by SHA-256. It does not rewrite or supersede the migration evidence.
+report by SHA-256. The digest and 13/13 formal-volume result must also match the
+append-only migration binding in the accepted status snapshot. It does not
+rewrite or supersede the migration evidence.
 
 ## Boundaries
 

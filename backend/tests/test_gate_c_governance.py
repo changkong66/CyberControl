@@ -251,6 +251,26 @@ def test_d1_readiness_accepts_hash_bound_sealed_v1_migration_evidence() -> None:
     governance._validate_sealed_migration_report(_sealed_migration_report())
 
 
+def test_d1_readiness_requires_exact_status_bound_migration_report(tmp_path: Path) -> None:
+    report_path = tmp_path / "migration.json"
+    report_path.write_text(json.dumps(_sealed_migration_report()), encoding="utf-8")
+    status = {
+        "docker_migration": {
+            "result": "MIGRATION_VALIDATED",
+            "migration_report_sha256": governance._sha256(report_path),
+            "formal_gate_c_volumes_expected": 13,
+            "formal_gate_c_volumes_verified": 13,
+            "running_business_containers": 0,
+        }
+    }
+
+    governance._validate_sealed_migration_binding(status, report_path)
+
+    status["docker_migration"]["migration_report_sha256"] = "b" * 64
+    with pytest.raises(ValueError, match="does not match the status binding"):
+        governance._validate_sealed_migration_binding(status, report_path)
+
+
 @pytest.mark.parametrize(
     ("path", "value"),
     [

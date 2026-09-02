@@ -566,11 +566,25 @@ def _validate_sealed_migration_report(migration: dict[str, Any]) -> None:
         raise ValueError("D1 readiness requires the sealed validated Docker migration report")
 
 
+def _validate_sealed_migration_binding(status: dict[str, Any], report_path: Path) -> None:
+    binding = status.get("docker_migration")
+    if (
+        not isinstance(binding, dict)
+        or binding.get("result") != "MIGRATION_VALIDATED"
+        or binding.get("migration_report_sha256") != _sha256(report_path)
+        or binding.get("formal_gate_c_volumes_expected") != 13
+        or binding.get("formal_gate_c_volumes_verified") != 13
+        or binding.get("running_business_containers") != 0
+    ):
+        raise ValueError("D1 readiness migration evidence does not match the status binding")
+
+
 def _validate_d1_documents(
     status: dict[str, Any],
     status_path: Path,
     capacity: dict[str, Any],
     migration: dict[str, Any],
+    migration_report_path: Path,
     audit_index: dict[str, Any],
 ) -> None:
     if status.get("formal_release_state") != FORMAL_STATE:
@@ -590,6 +604,7 @@ def _validate_d1_documents(
     ):
         raise ValueError("D1 readiness requires a normal three-root capacity snapshot")
     _validate_sealed_migration_report(migration)
+    _validate_sealed_migration_binding(status, migration_report_path)
     if (
         audit_index.get("process_version") != PROCESS_VERSION
         or audit_index.get("result") != "PASS"
@@ -647,7 +662,14 @@ def verify_d1_readiness(
     capacity = _read_json(capacity_snapshot_path)
     migration = _read_json(migration_report_path)
     audit_index = _read_json(audit_index_path)
-    _validate_d1_documents(status, status_path, capacity, migration, audit_index)
+    _validate_d1_documents(
+        status,
+        status_path,
+        capacity,
+        migration,
+        migration_report_path,
+        audit_index,
+    )
     for name, lock, track, lock_path in (
         ("normal", normal, "FORMAL_NORMAL", normal_lock_path),
         (
