@@ -15,7 +15,7 @@ if str(LOAD_ROOT) not in sys.path:
 from gate_c.diagnostic_evidence_package import create_package  # noqa: E402
 from gate_c.rss_reproduction_compare import compare_reproductions  # noqa: E402
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 SOURCE = {
     "source_commit": "a" * 40,
     "source_tree": "b" * 40,
@@ -35,7 +35,7 @@ def _write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
-def _sequence(tmp_path: Path, number: int, *, kind: str = "l1") -> Path:
+def _sequence(tmp_path: Path, number: int) -> Path:
     directory = tmp_path / f"sequence-{number}"
     evidence = directory / "evidence"
     evidence.mkdir(parents=True)
@@ -73,25 +73,25 @@ def _sequence(tmp_path: Path, number: int, *, kind: str = "l1") -> Path:
     )
     package = directory / "evidence.zip"
     manifest = directory / "evidence-manifest.json"
-    create_package(evidence, package, manifest, run_id=f"sequence-{number}")
-    summary = directory / "run-summary.json"
-    schema = (
-        "cybercontrol.gate-c-rss-l1-calibration-comparison.v1"
-        if kind == "l1"
-        else "cybercontrol.gate-c-rss-calibration-comparison.v1"
+    create_package(
+        evidence,
+        package,
+        manifest,
+        run_id=f"sequence-{number}",
+        process_version=PROCESS_VERSION,
     )
+    summary = directory / "run-summary.json"
     value = {
-        "schema_version": schema,
+        "schema_version": "cybercontrol.gate-c-rss-calibration-comparison.v1",
         "process_version": PROCESS_VERSION,
         "classification": "NON_ACCEPTANCE_DIAGNOSTIC",
         "formal_gate_attempt": False,
         "acceptance_claim": False,
         "source": SOURCE,
         "run_ids": run_ids,
+        "variable": "D",
         "passed": True,
     }
-    if kind == "calibration":
-        value["variable"] = "S"
     _write_json(summary, value)
     cleanup = directory / "cleanup-receipt.json"
     _write_json(
@@ -120,12 +120,13 @@ def _sequence(tmp_path: Path, number: int, *, kind: str = "l1") -> Path:
     return reference
 
 
-@pytest.mark.parametrize("kind", ["calibration", "l1"])
-def test_reproduction_requires_two_verified_disjoint_sequences(tmp_path: Path, kind: str) -> None:
-    first = _sequence(tmp_path, 1, kind=kind)
-    second = _sequence(tmp_path, 2, kind=kind)
+def test_reproduction_requires_two_verified_disjoint_sequences(tmp_path: Path) -> None:
+    first = _sequence(tmp_path, 1)
+    second = _sequence(tmp_path, 2)
 
-    result = compare_reproductions(kind=kind, first_reference=first, second_reference=second)
+    result = compare_reproductions(
+        kind="calibration", first_reference=first, second_reference=second
+    )
 
     assert result["passed"] is True
     assert result["independent_sequence_count"] == 2
@@ -136,4 +137,6 @@ def test_reproduction_rejects_reused_sequence(tmp_path: Path) -> None:
     reference = _sequence(tmp_path, 1)
 
     with pytest.raises(ValueError, match="distinct sequence IDs"):
-        compare_reproductions(kind="l1", first_reference=reference, second_reference=reference)
+        compare_reproductions(
+            kind="calibration", first_reference=reference, second_reference=reference
+        )

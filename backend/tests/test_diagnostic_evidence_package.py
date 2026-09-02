@@ -23,13 +23,22 @@ def test_package_is_deterministic_complete_and_non_formal(tmp_path: Path) -> Non
     (evidence / "logs" / "compose.log").write_text("clean\n", encoding="ascii")
 
     first = create_package(
-        evidence, tmp_path / "first.zip", tmp_path / "first-manifest.json", run_id="run-a"
+        evidence,
+        tmp_path / "first.zip",
+        tmp_path / "first-manifest.json",
+        run_id="run-a",
+        process_version="Gate-C-12-v2.0",
     )
     second = create_package(
-        evidence, tmp_path / "second.zip", tmp_path / "second-manifest.json", run_id="run-a"
+        evidence,
+        tmp_path / "second.zip",
+        tmp_path / "second-manifest.json",
+        run_id="run-a",
+        process_version="Gate-C-12-v2.0",
     )
 
     assert first["package"]["sha256"] == second["package"]["sha256"]
+    assert first["process_version"] == "Gate-C-12-v2.0"
     assert first["formal_gate_attempt"] is False
     assert first["acceptance_claim"] is False
     assert {item["path"] for item in first["files"]} == {
@@ -39,6 +48,21 @@ def test_package_is_deterministic_complete_and_non_formal(tmp_path: Path) -> Non
     with zipfile.ZipFile(tmp_path / "first.zip") as archive:
         embedded = json.loads(archive.read("evidence-manifest.json"))
     assert embedded["run_id"] == "run-a"
+
+
+def test_package_requires_an_explicit_supported_process_version(tmp_path: Path) -> None:
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    (evidence / "result.json").write_text("{}\n", encoding="ascii")
+
+    with pytest.raises(ValueError, match="process version"):
+        create_package(
+            evidence,
+            tmp_path / "invalid.zip",
+            tmp_path / "invalid-manifest.json",
+            run_id="run-invalid-version",
+            process_version="Gate-C-12-v3.0",
+        )
 
 
 @pytest.mark.parametrize(
@@ -64,6 +88,7 @@ def test_package_rejects_secrets_and_leaves_no_artifact(
             package,
             manifest,
             run_id="run-secret",
+            process_version="Gate-C-12-v2.0",
             forbidden_values=(b"database-password",),
         )
     assert not package.exists()
@@ -78,5 +103,11 @@ def test_package_rejects_preexisting_outputs_and_symlinks(tmp_path: Path) -> Non
     package.write_bytes(b"preserve")
 
     with pytest.raises(FileExistsError, match="already exists"):
-        create_package(evidence, package, tmp_path / "manifest.json", run_id="run-existing")
+        create_package(
+            evidence,
+            package,
+            tmp_path / "manifest.json",
+            run_id="run-existing",
+            process_version="Gate-C-12-v2.0",
+        )
     assert package.read_bytes() == b"preserve"

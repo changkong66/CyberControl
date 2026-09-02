@@ -145,6 +145,7 @@ class _JemallocStatsReader:
     """Read fixed-cardinality jemalloc process statistics when available."""
 
     _BYTE_STATS = ("allocated", "active", "resident", "retained")
+    _ACCOUNTING_BYTE_STATS = (*_BYTE_STATS, "mapped", "metadata")
     _MAX_INVENTORY_ARENAS = 16
     _MAX_INVENTORY_BINS = 256
     _MAX_INVENTORY_LARGE_EXTENTS = 256
@@ -185,7 +186,7 @@ class _JemallocStatsReader:
             return None
         return int(value.value) if result == 0 else None
 
-    def snapshot(self) -> dict[str, int] | None:
+    def _snapshot(self, byte_stats: tuple[str, ...]) -> dict[str, int] | None:
         if self._mallctl is None:
             return None
         epoch = ctypes.c_uint64(1)
@@ -201,14 +202,21 @@ class _JemallocStatsReader:
             return None
         if result != 0:
             return None
-        values = {name: self._read(f"stats.{name}", ctypes.c_size_t) for name in self._BYTE_STATS}
+        values = {name: self._read(f"stats.{name}", ctypes.c_size_t) for name in byte_stats}
         values["arenas"] = self._read("opt.narenas", ctypes.c_uint)
         if any(value is None for value in values.values()):
             return None
         return {name: int(value) for name, value in values.items()}
 
+    def snapshot(self) -> dict[str, int] | None:
+        return self._snapshot(self._BYTE_STATS)
+
+    def accounting_snapshot(self) -> dict[str, int] | None:
+        """Read the extended allocator ledger used only by explicit diagnostics."""
+        return self._snapshot(self._ACCOUNTING_BYTE_STATS)
+
     def allocation_inventory(self) -> dict[str, object] | None:
-        summary = self.snapshot()
+        summary = self.accounting_snapshot()
         if summary is None:
             return None
         arena_count = self._read("arenas.narenas", ctypes.c_uint)

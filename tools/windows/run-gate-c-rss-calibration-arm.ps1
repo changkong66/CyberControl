@@ -5,7 +5,7 @@ param(
     [string]$Arm,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet("S", "R", "P", "F")]
+    [ValidateSet("D")]
     [string]$Variable,
 
     [Parameter(Mandatory = $true)]
@@ -14,7 +14,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$TlsBundlePath,
 
-    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032",
+    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0033",
 
     [string]$DockerDataRoot = "F:\Docker\DockerDesktopWSL",
 
@@ -38,7 +38,7 @@ $composePath = Join-Path $root "tests\load\docker-compose.gate-c-rss-calibration
 $imageLockTool = Join-Path $root "tools\gate_c_image_lock.py"
 $packageTool = Join-Path $root "tests\load\gate_c\diagnostic_evidence_package.py"
 $capacityMonitorPath = Join-Path $root "tools\windows\watch-gate-c-capacity.ps1"
-$processVersion = "Gate-C-12-v1.0"
+$processVersion = "Gate-C-12-v2.0"
 $capacityPolicyRevision = "Gate-C-12-capacity-v1.1"
 [double]$capacityAdmissionGiB = 15.0
 [double]$capacityWarningGiB = 8.0
@@ -47,7 +47,7 @@ $thresholdPath = Join-Path $root "tests\load\gate-c-thresholds.v1.json"
 $workloadPath = Join-Path $root "tests\load\gate-c-workload.v1.json"
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
 $suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
-$runId = "adr0032-$($Variable.ToLowerInvariant())-$($Arm.ToLowerInvariant())-$timestamp-$suffix"
+$runId = "adr0033-$($Variable.ToLowerInvariant())-$($Arm.ToLowerInvariant())-$timestamp-$suffix"
 $projectName = "cc-gc12-$($Variable.ToLowerInvariant())-$($Arm.ToLowerInvariant())-$suffix"
 $volumeName = "cc_gc12_${suffix}_postgres"
 $runDirectory = [IO.Path]::GetFullPath((Join-Path $ResultsRoot $runId))
@@ -100,6 +100,7 @@ function Get-CapacitySnapshot {
         -AdmissionGiB $capacityAdmissionGiB `
         -WarningGiB $capacityWarningGiB `
         -StopGiB $capacityStopGiB `
+        -ProcessVersion $processVersion `
         -ProjectName $projectName
 }
 
@@ -186,6 +187,7 @@ function Start-CapacityMonitor {
         "-AdmissionGiB", [string]$capacityAdmissionGiB,
         "-WarningGiB", [string]$capacityWarningGiB,
         "-StopGiB", [string]$capacityStopGiB,
+        "-ProcessVersion", $processVersion,
         "-SampleIntervalSeconds", "5"
     )
     $script:capacityMonitor = Start-Process -FilePath $pwsh -ArgumentList $arguments `
@@ -409,7 +411,7 @@ $env:GATE_C_JEMALLOC_PROFILE_LIBRARY_BUILD_ID = [string]$jemalloc.build_id
 
 try {
     & docker volume create `
-        --label com.cybercontrol.purpose=gate-c-12-adr0032-calibration `
+        --label com.cybercontrol.purpose=gate-c-12-adr0033-calibration `
         --label com.cybercontrol.run-id=$runId `
         --label com.cybercontrol.data-class=ephemeral-diagnostic-postgres `
         $volumeName | Out-Null
@@ -510,7 +512,14 @@ try {
     }
     if ($composeExitCode -ne 0 -or $armResult.passed -ne $true) {
         $classification = "DESIGN_REJECTED"
-        throw "Calibration arm failed its zero-tolerance controls."
+        $armReasonProperty = $armResult.PSObject.Properties["reason"]
+        if (
+            $null -ne $armReasonProperty -and
+            -not [string]::IsNullOrWhiteSpace([string]$armReasonProperty.Value)
+        ) {
+            throw "Calibration arm failed: $([string]$armReasonProperty.Value)"
+        }
+        throw "Calibration arm failed its zero-tolerance controls without a result reason."
     }
 }
 catch {
@@ -546,6 +555,7 @@ try {
         --package $packagePath `
         --manifest $manifestPath `
         --run-id $runId `
+        --process-version $processVersion `
         --forbidden-value-file $passwordPath
     if ($LASTEXITCODE -ne 0) {
         throw "Diagnostic evidence package creation or verification failed."

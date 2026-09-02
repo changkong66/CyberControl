@@ -63,7 +63,13 @@ def _measurement(tmp_path: Path, number: int) -> Path:
     _write_json(evidence / "recovery.json", _inventory("recovery", 180, 25))
     package = directory / "evidence.zip"
     manifest = directory / "evidence-manifest.json"
-    create_package(directory / "runs", package, manifest, run_id=f"run-{number}")
+    create_package(
+        directory / "runs",
+        package,
+        manifest,
+        run_id=f"run-{number}",
+        process_version=PROCESS_VERSION,
+    )
     cleanup = directory / "cleanup-receipt.json"
     _write_json(
         cleanup,

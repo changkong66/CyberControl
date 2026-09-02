@@ -33,7 +33,10 @@ param(
     [double]$StopGiB = 5.0,
 
     [ValidateRange(1, 60)]
-    [int]$SampleIntervalSeconds = 5
+    [int]$SampleIntervalSeconds = 5,
+
+    [ValidatePattern('^Gate-C-12-v[12]\.0$')]
+    [string]$ProcessVersion = "Gate-C-12-v1.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -77,6 +80,7 @@ function Get-CapacitySnapshot {
         -AdmissionGiB $AdmissionGiB `
         -WarningGiB $WarningGiB `
         -StopGiB $StopGiB `
+        -ProcessVersion $ProcessVersion `
         -ProjectName $ProjectName
 }
 
@@ -96,7 +100,7 @@ while ($true) {
     if ($snapshot.state -eq "WARNING" -and -not (Test-Path -LiteralPath $warningPath)) {
         $warning = [ordered]@{
             schema_version = "cybercontrol.gate-c-capacity-warning.v1"
-            process_version = "Gate-C-12-v1.0"
+            process_version = $ProcessVersion
             policy_revision = $PolicyRevision
             classification = "INFRA_CAPACITY_WARNING"
             acceptance_claim = $false
@@ -126,7 +130,7 @@ while ($true) {
         }
         $hardStop = [ordered]@{
             schema_version = "cybercontrol.gate-c-capacity-hard-stop.v1"
-            process_version = "Gate-C-12-v1.0"
+            process_version = $ProcessVersion
             policy_revision = $PolicyRevision
             classification = "INFRA_ABORTED"
             formal_gate_attempt = $false

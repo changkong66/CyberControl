@@ -3,12 +3,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import stat
 import zipfile
 from pathlib import Path
 from typing import Any
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 FORBIDDEN_NAMES = frozenset({"server.key", "postgres-password", "ca.key"})
 FORBIDDEN_CONTENT = (b"-----BEGIN PRIVATE KEY-----", b"-----BEGIN RSA PRIVATE KEY-----")
 ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
@@ -55,16 +56,19 @@ def create_package(
     manifest_path: Path,
     *,
     run_id: str,
+    process_version: str,
     forbidden_values: tuple[bytes, ...] = (),
 ) -> dict[str, Any]:
     if not run_id or run_id != run_id.strip():
         raise ValueError("evidence run ID is invalid")
+    if re.fullmatch(r"Gate-C-12-v[12]\.0", process_version) is None:
+        raise ValueError("evidence process version is invalid")
     if package_path.exists() or manifest_path.exists():
         raise FileExistsError("evidence package or manifest already exists")
     files = _files(evidence_directory, forbidden_values)
     manifest: dict[str, Any] = {
         "schema_version": "cybercontrol.gate-c-diagnostic-evidence-manifest.v1",
-        "process_version": PROCESS_VERSION,
+        "process_version": process_version,
         "classification": "NON_ACCEPTANCE_DIAGNOSTIC",
         "formal_gate_attempt": False,
         "acceptance_claim": False,
@@ -114,6 +118,7 @@ def main() -> int:
     parser.add_argument("--package", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--process-version", required=True)
     parser.add_argument("--forbidden-value-file", type=Path, action="append", default=[])
     arguments = parser.parse_args()
     values = (path.read_bytes().strip() for path in arguments.forbidden_value_file)
@@ -123,6 +128,7 @@ def main() -> int:
         arguments.package,
         arguments.manifest,
         run_id=arguments.run_id,
+        process_version=arguments.process_version,
         forbidden_values=forbidden_values,
     )
     print(json.dumps(result["package"], sort_keys=True))

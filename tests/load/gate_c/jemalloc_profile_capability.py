@@ -11,7 +11,7 @@ from pathlib import Path
 
 from liyans.infrastructure.observability.jemalloc_profiles import JemallocProfileController
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
 COHORT_LIBRARY = Path("/opt/cybercontrol/jemalloc-prof/lib/libprofile-cohort.so")
 SYMBOL = "cybercontrol_profile_allocate"
 

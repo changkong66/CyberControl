@@ -1,13 +1,13 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("S", "R", "P", "F")]
+    [ValidateSet("D")]
     [string]$Variable,
 
     [Parameter(Mandatory = $true)]
     [string]$ImageLockPath,
 
-    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0032",
+    [string]$ResultsRoot = "D:\CyberControlAcceptance\phase7\gate-c\diagnostics\adr0033",
 
     [ValidateRange(0, 2)]
     [int]$InfraRetryAttempt = 0,
@@ -23,10 +23,10 @@ $armRunner = Join-Path $PSScriptRoot "run-gate-c-rss-calibration-arm.ps1"
 $tlsGenerator = Join-Path $root "tests\load\gate_c\generate_calibration_tls.py"
 $compareTool = Join-Path $root "tests\load\gate_c\rss_calibration_compare.py"
 $packageTool = Join-Path $root "tests\load\gate_c\diagnostic_evidence_package.py"
-$processVersion = "Gate-C-12-v1.0"
+$processVersion = "Gate-C-12-v2.0"
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
 $suffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
-$sequenceId = "adr0032-$($Variable.ToLowerInvariant())-sequence-$timestamp-$suffix"
+$sequenceId = "adr0033-$($Variable.ToLowerInvariant())-sequence-$timestamp-$suffix"
 $sequenceDirectory = [IO.Path]::GetFullPath((Join-Path $ResultsRoot $sequenceId))
 $armResultsRoot = Join-Path $sequenceDirectory "arms"
 $evidenceDirectory = Join-Path $sequenceDirectory "evidence"
@@ -152,7 +152,21 @@ function Invoke-Arm {
         classification = [string]$reference.classification
         process_exit_code = $process.ExitCode
         eligible_for_continuation = $eligibleForContinuation
-        failure_reason = if ($eligibleForContinuation) { $null } else { [string]$summary.reason }
+        failure_reason = if ($eligibleForContinuation) {
+            $null
+        }
+        else {
+            $reasonProperty = $summary.PSObject.Properties["reason"]
+            if (
+                $null -ne $reasonProperty -and
+                -not [string]::IsNullOrWhiteSpace([string]$reasonProperty.Value)
+            ) {
+                [string]$reasonProperty.Value
+            }
+            else {
+                "$([string]$reference.classification): $Arm arm failed without a summary reason."
+            }
+        }
         result_path = $summaryPath
         result_sha256 = [string]$reference.run_summary.sha256
         cleanup_receipt_path = [string]$reference.cleanup_receipt.path
@@ -219,7 +233,7 @@ try {
         --a-prime ([string]$references.APrime.result_path) `
         --output (Join-Path $evidenceDirectory "comparison.json")
     if ($LASTEXITCODE -ne 0) {
-        throw "The matched A/M/A' sequence failed the ADR-0032 interference gate."
+        throw "The matched A/D/A' sequence failed the ADR-0033 interference gate."
     }
 }
 catch {
@@ -270,6 +284,7 @@ try {
         --package $packagePath `
         --manifest $manifestPath `
         --run-id $sequenceId `
+        --process-version $processVersion `
         --forbidden-value-file (Join-Path $tlsDirectory "server.key")
     if ($LASTEXITCODE -ne 0) {
         throw "Sequence evidence package creation or verification failed."

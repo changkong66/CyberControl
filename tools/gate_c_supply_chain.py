@@ -12,7 +12,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-PROCESS_VERSION = "Gate-C-12-v1.0"
+PROCESS_VERSION = "Gate-C-12-v2.0"
+SEALED_INPUT_PROCESS_VERSION = "Gate-C-12-v1.0"
 MANIFEST_SCHEMA = "cybercontrol.gate-c-build-supply-chain.v1"
 LICENSE_CATALOG_SCHEMA = "cybercontrol.gate-c-build-license-catalog.v1"
 LICENSE_POLICY_SCHEMA = "cybercontrol.gate-c-build-license-policy.v1"
@@ -351,7 +352,7 @@ def _validate_oci_archive(path: Path, image: dict[str, Any]) -> None:
 def validate_manifest(document: dict[str, Any]) -> list[dict[str, Any]]:
     if document.get("schema_version") != MANIFEST_SCHEMA:
         raise ValueError("supply-chain manifest has the wrong schema")
-    if document.get("process_version") != PROCESS_VERSION:
+    if document.get("process_version") != SEALED_INPUT_PROCESS_VERSION:
         raise ValueError("supply-chain manifest has the wrong process version")
     required = document.get("required_directories")
     if (
@@ -574,7 +575,7 @@ def _asset_identity(path: Path) -> dict[str, str]:
     if path.suffix == ".json":
         return {
             "component": path.stem,
-            "version": PROCESS_VERSION,
+            "version": SEALED_INPUT_PROCESS_VERSION,
             "source": f"repository://{path.name}",
         }
     return {
@@ -677,13 +678,13 @@ def generate(args: argparse.Namespace) -> None:
     base_specs = _read_json(base_spec_path)
     if base_specs.get("schema_version") != BASE_IMAGE_SPEC_SCHEMA:
         raise ValueError("base image specification has the wrong schema")
-    if base_specs.get("process_version") != PROCESS_VERSION:
+    if base_specs.get("process_version") != SEALED_INPUT_PROCESS_VERSION:
         raise ValueError("base image specification has the wrong process version")
     base_images = _validate_base_image_specs(base_specs.get("base_images"))
 
     policy = {
         "schema_version": LICENSE_POLICY_SCHEMA,
-        "process_version": PROCESS_VERSION,
+        "process_version": SEALED_INPUT_PROCESS_VERSION,
         "license_propagation_rule": {
             "BUILD_ONLY_TRANSIENT": (
                 "Build-only inputs retain notice and source obligations but do not "
@@ -756,7 +757,7 @@ def generate(args: argparse.Namespace) -> None:
     catalog.sort(key=lambda item: item["path"])
     catalog_document = {
         "schema_version": LICENSE_CATALOG_SCHEMA,
-        "process_version": PROCESS_VERSION,
+        "process_version": SEALED_INPUT_PROCESS_VERSION,
         "license_policy": {
             "path": policy_path.relative_to(root).as_posix(),
             "sha256": sha256(policy_path),
@@ -813,7 +814,7 @@ def generate(args: argparse.Namespace) -> None:
 
     manifest: dict[str, Any] = {
         "schema_version": MANIFEST_SCHEMA,
-        "process_version": PROCESS_VERSION,
+        "process_version": SEALED_INPUT_PROCESS_VERSION,
         "required_directories": [
             "third_party/gate-c-build/sources",
             "third_party/gate-c-build/patches",
@@ -919,6 +920,7 @@ def verify(args: argparse.Namespace) -> None:
         "manifest": {
             "path": str(manifest_path.relative_to(root)).replace("\\", "/"),
             "sha256": sha256(manifest_path),
+            "sealed_input_process_version": SEALED_INPUT_PROCESS_VERSION,
         },
         "dockerfiles": findings,
         "asset_count": len(entries),

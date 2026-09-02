@@ -42,6 +42,8 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
             "active": 20,
             "resident": 30,
             "retained": 40,
+            "mapped": 50,
+            "metadata": 60,
             "arenas": 1,
         }
     )
@@ -51,6 +53,8 @@ def test_metrics_expose_bounded_jemalloc_allocator_statistics() -> None:
     assert "liyans_jemalloc_available 1.0" in rendered
     assert 'liyans_jemalloc_bytes{metric="allocated"} 10.0' in rendered
     assert 'liyans_jemalloc_bytes{metric="retained"} 40.0' in rendered
+    assert 'liyans_jemalloc_bytes{metric="mapped"}' not in rendered
+    assert 'liyans_jemalloc_bytes{metric="metadata"}' not in rendered
     assert "liyans_jemalloc_arenas 1.0" in rendered
     assert "tenant" not in rendered
     assert "cursor" not in rendered
@@ -77,8 +81,16 @@ def test_jemalloc_inventory_retains_active_bin_and_large_extent_counts(monkeypat
     reader = _JemallocStatsReader()
     monkeypatch.setattr(
         reader,
-        "snapshot",
-        lambda: {"allocated": 10, "active": 20, "resident": 30, "retained": 0, "arenas": 1},
+        "accounting_snapshot",
+        lambda: {
+            "allocated": 10,
+            "active": 20,
+            "resident": 30,
+            "retained": 0,
+            "mapped": 40,
+            "metadata": 5,
+            "arenas": 1,
+        },
     )
     values = {
         "arenas.narenas": 1,
@@ -124,8 +136,16 @@ def test_jemalloc_inventory_rejects_an_unbounded_allocator_shape(monkeypatch) ->
     reader = _JemallocStatsReader()
     monkeypatch.setattr(
         reader,
-        "snapshot",
-        lambda: {"allocated": 10, "active": 20, "resident": 30, "retained": 0, "arenas": 1},
+        "accounting_snapshot",
+        lambda: {
+            "allocated": 10,
+            "active": 20,
+            "resident": 30,
+            "retained": 0,
+            "mapped": 40,
+            "metadata": 5,
+            "arenas": 1,
+        },
     )
     values = {
         "arenas.narenas": reader._MAX_INVENTORY_ARENAS + 1,

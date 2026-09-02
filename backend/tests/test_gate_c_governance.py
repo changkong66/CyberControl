@@ -222,3 +222,15 @@ def test_governance_subprocess_decodes_utf8_output() -> None:
         )
         == "闭环"
     )
+
+
+def test_quality_workflow_separates_v2_image_from_legacy_profile_contract() -> None:
+    workflow = (ROOT / ".github/workflows/quality-gates.yml").read_text(encoding="utf-8")
+
+    assert "GATE_C_PROCESS_VERSION: Gate-C-12-v2.0" in workflow
+    assert "GATE_C_JEMALLOC_PROFILE_PROCESS_VERSION: Gate-C-12-v1.0" in workflow
+    assert (
+        'LIYAN_JEMALLOC_PROFILE_PROCESS_VERSION="$GATE_C_JEMALLOC_PROFILE_PROCESS_VERSION"'
+        in workflow
+    )
+    assert '"process_version": os.environ["GATE_C_JEMALLOC_PROFILE_PROCESS_VERSION"]' in workflow
